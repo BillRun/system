@@ -2277,6 +2277,12 @@ runOnce(lastConfig, 'BRCD-5278', function () {
 	configValues.response_sftp_remote_directory = "";
 });
 
+runOnce(lastConfig, 'BRCD-4950', function () {
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_1" });
+	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index");
+
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

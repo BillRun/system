@@ -218,8 +218,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       
       if ($success1 && $success2 && $success3 && $success4) { //todo::remove this if 
           Billrun_Factory::log("Initialize system succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('is_system_initialize', true);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['is_system_initialize' => true, 'last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
     protected function clearTeldasCollections(){
@@ -230,21 +229,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
 
-  protected function updateConfigTeldasData($field, $value) {
+  protected function updateConfigTeldasData($fields) {
       Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
       $model = new ConfigModel();
       $updatedData = $model->getConfig();
       unset($updatedData['_id']);
-      $updatedData['teldas'][$field] = $value;
+      $updatedData['urt'] = new Mongodloid_Date();
+      foreach($fields as $field => $value){
+        Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+        $updatedData['teldas'][$field] = $value;
+      }
       $ret = Billrun_Factory::db()->configCollection(['force' => true])->insert($updatedData);
       $saveResult = !empty($ret['ok']);
       if ($saveResult) {
           // Reload timezone.
           Billrun_Config::getInstance()->refresh();
-          Billrun_Factory::log("Succeeded to update teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+          Billrun_Factory::log("Succeeded to update teldas fields :" . json_encode($fields). " in config", Zend_Log::DEBUG);
           return;
       }
-      Billrun_Factory::log("Failed to update teldas." . $field . " in config to value: " . $value, Zend_Log::ALERT);
+      Billrun_Factory::log("Failed to update teldas." . json_encode($fields). " in config" , Zend_Log::ALERT);
       return;
   }
 
@@ -273,10 +276,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               if($inaNumber['modifyPending'] === true){
                   //handle modifyPending= true in initialize
                   $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-                  if($modifyPendingRevision === false){
-                      return false;
+                  if($modifyPendingRevision !== false){
+                    $modifyPendingRevisions[] = $modifyPendingRevision;
                   }
-                  $modifyPendingRevisions[] = $modifyPendingRevision;
               }
               $totalInaNumbers[] = $inaNumber;
               $historyBackLimit = strtotime(Billrun_Factory::config()->getConfigValue('teldas.initialize.ina_numbers_history.limit', "-1 month"));              
@@ -285,10 +287,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               }
               $modifyPendingFound = false;
               $inaNumberHistory = $this->getInaNumberHistory($inaNumber['subscriberNumber'], $historyBackLimit, $modifyPendingFound, false, true);
-              if($inaNumberHistory === false){
-                  return false;
+              if($inaNumberHistory !== false){
+                $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
               }
-              $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
           }
           $parameters = array(
             'transactionDateTimeTo' => $parameters['transactionDateTimeFrom'],
@@ -411,7 +412,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     
       if ($success1 && $success2 && $success3) {//todo:: remove this if 
           Billrun_Factory::log("Keep system up to date succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
 
@@ -487,10 +488,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if($inaNumber['modifyPending'] === true){
               //handle modifyPending= true in update
               $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           } 
           $query = array('subscriberNumber' => $inaNumber['subscriberNumber'], 'transactionDatetimeTo' => null);
           $update = array('$set' => array('transactionDatetimeTo' => $inaNumber['transactionDatetime']));
@@ -643,8 +643,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             if($selectiveResult === false){
                 return false;
             }
-            if($result["errors"][0]["numberOfRecords"] !== count($selectiveResult)){
-                Billrun_Factory::log("Missing records. Need to have: " . $result["errors"][0]["numberOfRecords"] . " found only  " .  count($selectiveResult)  , Zend_Log::ALERT);
+            $selectiveResultCount = count($selectiveResult);
+            $totalNumberOfRecords = $result["errors"][0]["numberOfRecords"];
+            if($totalNumberOfRecords !== $selectiveResultCount){
+                Billrun_Factory::log("Missing records. Need to have: " . $totalNumberOfRecords . " found only " .  $selectiveResultCount  , Zend_Log::ALERT);
+                $allowMistakeError = Billrun_Factory::config()->getConfigValue('teldas.initialize.allow_mistake_error', 0.0001);
+                if(Billrun_Util::isEqual($selectiveResultCount/$totalNumberOfRecords, 1, $allowMistakeError)){
+                    return $selectiveResult;
+                }
                 return false;
             }
             return $selectiveResult;
@@ -663,29 +669,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function doMoreSelectiveQuery($parameters){
-    $stamp =  Billrun_Util::generateArrayStamp($parameters);
-    if(isset($this->moreSelctiveQuery[$stamp])){
-        $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
-        if($res === false){
+    $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
+    if($res === false){
+        $endDateStr = $parameters["transactionDateTimeTo"];
+        $startDateStr = $parameters["transactionDateTimeFrom"];
+        $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
+        $result1 = $this->getInaNumbers($parameters);
+        if($result1 === false){
             return false;
         }
-        return $res;
+        $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
+        $parameters["transactionDateTimeTo"] = $endDateStr;
+        $result2 = $this->getInaNumbers($parameters);
+        if($result2 === false){
+            return false;
+        }
+        return array_merge($result2, $result1);
     }
-    $this->moreSelctiveQuery[$stamp] = true;
-    $endDateStr = $parameters["transactionDateTimeTo"];
-    $startDateStr = $parameters["transactionDateTimeFrom"];
-    $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
-    $result1 = $this->getInaNumbers($parameters);
-    if($result1 === false){
-        return false;
-    }
-    $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
-    $parameters["transactionDateTimeTo"] = $endDateStr;
-    $result2 = $this->getInaNumbers($parameters);
-    if($result2 === false){
-        return false;
-    }
-    return array_merge($result2, $result1);
+    return $res;
+   
   }
 
   protected function moreSelectiveQueryWithSubscriberNumber($parameters){
@@ -698,6 +700,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         [
             'from' => '0840000000',
             'to' => '0849999999'
+        ],
+        [
+            'from' => '0878000000',
+            'to' => '0878999999'
         ],
         [
             'from' => '0900000000',
@@ -718,6 +724,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
             return false;
         }
+        Billrun_Factory::log("Found " . count($result)." INA numbers for more selective query api with params: " . print_r($parameters, true), Zend_Log::DEBUG);
         $selectiveResult = array_merge($selectiveResult, $result);
     }
     return $selectiveResult;
@@ -725,8 +732,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   protected function getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr) {
-    $start = new DateTime($startDateStr);
-    $end = new DateTime($endDateStr);
+    $tz = new DateTimeZone('UTC');
+    $start = new DateTime($startDateStr, $tz);
+    $end = new DateTime($endDateStr, $tz);
 
     // Convert to float seconds including microtime
     $startTs = (float) $start->format('U.u');
@@ -736,9 +744,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $middleTs = ($startTs + $endTs) / 2;
 
     // Create DateTime from float seconds
-    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''));
+    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''), $tz);
 
     // Format with milliseconds (3 digits of microseconds)
+    $middle->setTimezone(new DateTimeZone('Europe/Zurich'));
     $formatted = $middle->format("Y-m-d\TH:i:s.") . substr($middle->format('u'), 0, 3);
 
     return $formatted;
@@ -804,12 +813,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingInaNumberRevision($inaNumber, $urt) {
       $query = array('subscriberNumber' => $inaNumber, 'transactionDatetime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDatetimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDatetimeTo' => array('$eq' => null))));
-      $inaNumberRevisions = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();
-      if ($inaNumberRevisions->isEmpty()) {
+      $inaNumberRevision = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();//can be more then 1 but with the same info (future modify)
+      if ($inaNumberRevision->isEmpty()) {
           Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query), Zend_Log::NOTICE);
           return false;
       }
-            return $inaNumberRevisions;//can be more then 1 but with the same info (future modify)
+            return $inaNumberRevision;
   }
 
   protected function getInaNumberHistory($subscriberNumber, $historyBackLimit, &$modifyPendingFound, $addFirst = true, $addPreviousBeforeLimit = false) {
@@ -889,12 +898,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if ($missingInaNumberRevisions === false) {
               return false;
           }
-          if($modifyPendingFound){
+          if($modifyPendingFound && $missingInaNumberRevisions[0]['modifyPending'] === true){
               $modifyPendingRevision = $this->handleModifyPending($missingInaNumberRevisions[0]);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           }
           $missingInaNumbersRevisions = array_merge($missingInaNumbersRevisions, $missingInaNumberRevisions);
           $oldestMissingInaNumberRevision = end($missingInaNumberRevisions);
@@ -936,7 +944,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $modifyPendingRevision = $inaNumberHistory[0];
       if($modifyPendingRevision['status'] !== 'F_MOD'){
-          Billrun_Factory::log("Something wrong. modify pending revision status need to be F_MOD" . print_r($modifyPendingRevision, 1), Zend_Log::ERR);
+          Billrun_Factory::log("modify pending revision status need to be F_MOD if not the last revision already modify " . print_r($modifyPendingRevision, 1), Zend_Log::DEBUG);
           return false;
       }
       $modifyPendingRevision['originalTransactionDatetime'] = $modifyPendingRevision['transactionDatetime'];
