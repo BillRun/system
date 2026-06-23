@@ -121,6 +121,8 @@ class CreatetenantAction extends ApiAction {
 			$data['shared_secret'] = [];
 		}
 		$data['shared_secret'][] = Billrun_Utils_Security::generateSecretKey();
+		// generate a per-tenant field-encryption key unless one is supplied via the environment
+		Billrun_Utils_Encryption::ensureConfigKey($data);
 		$data['creation_date'] = new Mongodloid_Date();
 		$data['name'] = 'Initial Secret';
 		$data['company_name'] = $this->tenant;

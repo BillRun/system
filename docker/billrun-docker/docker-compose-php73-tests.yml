@@ -26,6 +26,7 @@ services:
         volumes:
             - ${PWD}/../..:/billrun
             - ${PWD}/../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         healthcheck:
             test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"] 
             interval: 20s
@@ -41,6 +42,7 @@ services:
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup 
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27018:27017
     chrome:
@@ -55,6 +57,7 @@ services:
         container_name: billrun-mockups
         volumes:
             - ${PWD}/mockup-servers:/mockups
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: php -S 0.0.0.0:8081 router.php
         ports:
         - 8081:8081

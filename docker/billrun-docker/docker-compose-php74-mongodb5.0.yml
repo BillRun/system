@@ -31,6 +31,7 @@ services:
         volumes:
             - ./../..:/billrun
             - ${PWD}/../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:
         image: mongo:5.0
@@ -39,6 +40,7 @@ services:
         volumes:
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
 

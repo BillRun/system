@@ -325,13 +325,34 @@ class Models_Entity {
 					}
 				}
 			}
+			$isEncrypted = ($fieldTypes[$field] === 'encrypted');
 			if (!is_null($val)) {
-				Billrun_Util::setIn($this->update, $field, $val);
+				$this->setUpdateFieldValue($field, $val, $isEncrypted);
 			} else if ($this->action === 'create' && !is_null($defaultFieldsValues[$field])) {
-				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
+				$this->setUpdateFieldValue($field, $defaultFieldsValues[$field], $isEncrypted);
 			}
 		}
 //		print_R($this->update);die;
+	}
+
+	/**
+	 * set a CUSTOM field value on the update document, encrypting it when the
+	 * field is of type=encrypted.
+	 *
+	 * Encryption ownership: custom fields (config.<collection>.fields) are the
+	 * ONLY fields routed here - they bypass the translator pipeline. Fields
+	 * declared in update_parameters are encrypted by Api_Translator_EncryptedModel
+	 * instead, and the two sets are mutually exclusive (addCustomFields() computes
+	 * custom fields as array_diff(custom, update_parameters)). So a field is
+	 * encrypted by exactly one path; encryptValue() is idempotent (isEncrypted
+	 * guard) regardless, so even an overlap could not double-encrypt.
+	 *
+	 * @param string $field
+	 * @param mixed $value plaintext value
+	 * @param boolean $isEncrypted
+	 */
+	protected function setUpdateFieldValue($field, $value, $isEncrypted) {
+		Billrun_Util::setIn($this->update, $field, $isEncrypted ? Billrun_Utils_Encryption::encryptValue($value) : $value);
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
@@ -340,9 +361,12 @@ class Models_Entity {
 		if ($fieldType == 'ranges') {
 			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
 		} else if (is_array($val)) {
-			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
+			// encryption is deterministic, so the stored ciphertext can be matched by encrypting each value
+			$matchVals = $fieldType === 'encrypted' ? array_map(array('Billrun_Utils_Encryption', 'encryptValue'), $val) : $val;
+			$uniqueQuery = array($field => array('$in' => $matchVals)); // not revisions of same entity, but has same unique value
 		} else {
-			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+			$matchVal = $fieldType === 'encrypted' ? Billrun_Utils_Encryption::encryptValue($val) : $val;
+			$uniqueQuery = array($field => $matchVal); // not revisions of same entity, but has same unique value
 		}
 		$startTime = strtotime(isset($data['from'])? $data['from'] : $this->getDefaultFrom());
 		$endTime = strtotime(isset($data['to'])? $data['to'] : $this->getDefaultTo());
