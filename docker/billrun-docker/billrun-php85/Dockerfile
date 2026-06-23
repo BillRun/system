@@ -4,13 +4,15 @@ from php:8.5-fpm
 RUN apt-get update && apt-get install -y \
         wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev  \
-                libssl-dev unzip \ 
+                libssl-dev unzip \
                 openjdk-21-jre-headless \
+                python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
     && pecl install mongodb-2.3.1 \
     && pecl install xdebug \
     && docker-php-ext-enable yaf mongodb xdebug \
-    && docker-php-ext-install pcntl bcmath gd zip sockets gmp
+    && docker-php-ext-install pcntl bcmath gd zip sockets gmp \
+    && pip3 install --break-system-packages 'weasyprint>=62'
 
 RUN  wget 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb' \
 	&& apt-get install -y ./wkhtmltox_0.12.6.1-3.bookworm_amd64.deb

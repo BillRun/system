@@ -1,7 +1,9 @@
 FROM php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get update && \
+        apt-get upgrade -y perl perl-base && \
+        apt-get install --no-install-recommends -y \
         wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
         unzip openjdk-21-jre-headless \
@@ -9,12 +11,14 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
     && pecl install mongodb-2.3.1 \
     && pecl install memcached \
     && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
+    && pip3 install --break-system-packages 'weasyprint>=62' \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update \
@@ -30,17 +34,14 @@ RUN wget -O /tmp/jsignpdf.zip \
 
 WORKDIR /billrun
 # Copy over custom configurations
-# (Assuming php-fpm.conf and php.ini are still in the old directory. If they are also in cicd, change their source paths too!)
 COPY docker/billrun-docker/billrun-php85/php-fpm.conf /usr/local/etc/
 COPY docker/billrun-docker/billrun-php85/php.ini /usr/local/etc/php/
 
-# These are now pulling right from your docker/cicd folder
-COPY docker/cicd/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-# Nginx config is shipped as a template; entrypoint.sh renders it on container
-# start so APPLICATION_MULTITENANT (and any future runtime params) can come
-# from env vars rather than being baked into the image.
+COPY docker/cicd/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/cicd/billrun.conf /etc/supervisor/conf.d/billrun.conf
+COPY docker/cicd/nginx.conf /etc/nginx/nginx.conf
 COPY docker/cicd/nginx.conf.template /etc/nginx/sites-available/default.template
-# Re-link Nginx site config if it isn't automatically caught
+
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 COPY ./ /billrun
@@ -57,11 +58,17 @@ RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose HTTP web server port instead of FastCGI port.
+RUN mkdir -p /data /run/nginx /var/cache/nginx \
+    && chown -R www-data:www-data \
+        /data /billrun /run/nginx /var/cache/nginx \
+        /etc/nginx/sites-available /etc/nginx/sites-enabled
+
+USER www-data
+
 # Port 8074 is chosen to align with the BillRun ecosystem convention
 EXPOSE 8074
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Command tells Supervisor to launch and run everything in the foreground
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

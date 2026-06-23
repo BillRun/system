@@ -47,7 +47,7 @@ services:
         restart: always
         volumes:
             - ${PWD}/../..:/billrun:ro
-            - ${PWD}/init-mongosh.sh:/docker-entrypoint-initdb.d/init-mongosh.sh
+            - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017

@@ -28,6 +28,7 @@ services:
         volumes:
             - ${PWD}/../..:/billrun
             - ${PWD}/../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongo
@@ -37,6 +38,7 @@ services:
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27018:27017
 
