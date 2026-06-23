@@ -264,7 +264,7 @@ abstract class Billrun_Bill {
 				);
 			}
 		}
-		$results = static::getTotalDue($query, $notFormatted);
+		$results = static::getTotalDue($query, false, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
 			$totalWaiting = current($results)['waiting_for_confirmation_total'];
@@ -433,6 +433,84 @@ abstract class Billrun_Bill {
 	public static function getBills($query = array(), $sort = array(), $read_preference = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
+	}
+	
+	/**
+	 * Get the latest $limit valid bills for the account (newest first by 'urt'),
+	 * with a running 'balance' on each entry — what the customer owed at the time
+	 * of that bill. Includes both invoices and payments.
+	 *
+	 * TODO: exclude pending payments.
+	 *
+	 * @param int $aid
+	 * @param int $limit
+	 * @return array bills with an extra 'balance' field
+	 */
+	public static function getLatestValidBillsWithBalance($aid, $limit) {
+		$total = static::getTotalDueForAccount($aid, null, true)['total'];
+		$validQuery = array_merge(['aid' => (int) $aid], static::getNotRejectedOrCancelledQuery());
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$bills = iterator_to_array(
+			$billsColl->find($validQuery)->sort(['urt' => -1])->limit((int) $limit),
+			false
+		);
+		$running = 0;
+		foreach ($bills as &$bill) {
+			$bill['balance'] = $total - $running;
+			$running += isset($bill['due']) ? $bill['due'] : 0;
+		}
+		unset($bill);
+		return $bills;
+	}
+
+	public static function buildBaseBillFromInvoice(array $invoice, $dueDate = null, $chargeNotBefore = null) {
+		$bill = [
+			'type' => 'inv',
+			'invoice_id' => $invoice['invoice_id'],
+			'aid' => $invoice['aid'],
+			'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
+			'due_date' => $dueDate,
+			'charge' => ['not_before' => $chargeNotBefore],
+			'due' => $invoice['totals']['after_vat_rounded'],
+			'due_before_vat' => $invoice['totals']['before_vat'],
+			'customer_status' => 'open',//$invoice['attributes']['account_status'],
+			'payer_name' => $invoice['attributes']['lastname'] . ' ' . $invoice['attributes']['firstname'],
+			'billrun_key' => $invoice['billrun_key'],
+			'amount' => abs($invoice['totals']['after_vat_rounded']),
+			'lastname' => $invoice['attributes']['lastname'],
+			'firstname' => $invoice['attributes']['firstname'],
+			'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
+			'method' => Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
+			'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'], null),
+			'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'], null),
+			'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'], null),
+			'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'], null),
+			'urt' => new Mongodloid_Date(),
+			'invoice_date' => $invoice['invoice_date'],
+			'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
+			'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+			'paid' => '0',
+			'total_paid' => 0
+		];
+		if (!empty($invoice['note'])) {
+			$bill['note'] = $invoice['note'];
+		}
+		if (!empty($invoice['invoicing_day'])) {
+			$bill['invoicing_day'] = $invoice['invoicing_day'];
+		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
+		if ($bill['due'] < 0) {
+			$bill['left'] = $bill['amount'];
+		} else {
+			$bill['left_to_pay'] = $bill['due'];
+			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
+		}
+		if (!empty($invoice['attributes']['suspend_debit'])) {
+			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
+		}
+		return $bill;
 	}
 
 	public static function getOverPayingBills($query = array(), $sort = array(), $read_preference = null) {
@@ -1328,16 +1406,9 @@ abstract class Billrun_Bill {
 	 */
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $min_debt = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$account = Billrun_Factory::account();
-		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
-		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
-		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
-		$rejection_required_aids = array_column(array_map(function($account) {
-				return $account->getRawData();
-			}, $currentAccounts), 'aid') ?? [];
+		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+	
+		$rejection_required_aids = static::getRejectionRequiredAids($account_query);
 		Billrun_Factory::log()->log("Building aggregate query", Zend_Log::DEBUG);
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1473,7 +1544,40 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
-	
+
+	protected static function getRejectionRequiredAids($account_query){
+		$account = Billrun_Factory::account();
+		$currentAccounts = [];	
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
+		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
+		$loadFromBills = true;
+		foreach(array_merge($rejectionQuery, $account_query) as $queryKey => $field){
+			if(!in_array($queryKey, $billsFields)) {	
+				$loadFromBills = false;
+				break;
+			}
+		}
+		if(!empty($account_query)){
+			$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
+		}
+		if($loadFromBills){
+			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
+			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
+			$currentAccounts = iterator_to_array($currentAccounts);
+
+		}else{
+			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
+			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
+			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
+
+		}
+		$rejection_required_aids = array_column(array_map(function($account) {
+				return $account->getRawData();
+			}, $currentAccounts), 'aid') ?? [];
+		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts that require rejection in order to be in collection.", Zend_Log::DEBUG);
+		return $rejection_required_aids;
+	}
 	
 	protected function setChargeNotBefore($chargeNotBefore) {
 		$rawData = $this->getRawData();

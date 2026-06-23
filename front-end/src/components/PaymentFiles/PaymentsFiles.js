@@ -34,7 +34,7 @@ import {
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
-import { getFieldName } from "@/common/Util";
+import { getFieldName, buildPaymentFileSource } from "@/common/Util";
 
 class PaymentsFiles extends Component {
 
@@ -374,8 +374,10 @@ class PaymentsFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    // Same `source` formula as `baseFilter.source` below, so upload and list agree.
+    const source = buildPaymentFileSource(paymentGateway, 'payments');
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments'))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'payments', source))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -452,7 +454,8 @@ class PaymentsFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: paymentGateway + 'Payments',
+                // Must match BE `log.source`, e.g. `ABC`+`payments` => `ABCPayments`.
+                source: buildPaymentFileSource(paymentGateway, 'payments'),
                 cpg_file_type: {"$in" : [fileType]},
               }}
               // filterFields={this.getFilterFields()}

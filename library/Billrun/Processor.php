@@ -953,11 +953,38 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function processorByPath($options){
+		$absPath = Billrun_Util::getBillRunPath($options['path']);
+		if (is_dir($absPath)) {
+			return $this->processorByDir($options, $absPath);
+		}
 		if(!$this->createLogForProcessWithPath($options)){
 			return;
 		}
 		$this->setShouldremovefromWorkspace(false);
-		return $this->process_files(Billrun_Util::getBillRunPath($options['path']));
+		return $this->process_files($absPath);
+	}
+
+	protected function processorByDir($options, $dir) {
+		$entries = glob(rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*');
+		if ($entries === false) {
+			return;
+		}
+		sort($entries);
+		$hasFiles = false;
+		foreach ($entries as $entry) {
+			if (!is_file($entry)) {
+				continue;
+			}
+			$fileOptions = array_merge($options, array('path' => $entry));
+			if ($this->createLogForProcessWithPath($fileOptions)) {
+				$hasFiles = true;
+			}
+		}
+		if (!$hasFiles) {
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files();
 	}
 
 	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){

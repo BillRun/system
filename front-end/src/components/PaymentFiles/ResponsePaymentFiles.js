@@ -6,7 +6,7 @@ import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
-import { titleCase, pascalCase } from "change-case";
+import { titleCase } from "change-case";
 import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
 import { WithTooltip, CreateButton } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
@@ -32,7 +32,7 @@ import {
 } from "@/actions/paymentFilesActions";
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
-import { getFieldName } from "@/common/Util";
+import { getFieldName, buildPaymentFileSource } from "@/common/Util";
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 
 class ResponsePaymentFiles extends Component {
@@ -373,8 +373,10 @@ class ResponsePaymentFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    // Same `source` formula as `baseFilter.source` below, so upload and list agree.
+    const source = buildPaymentFileSource(paymentGateway, 'transactions_response');
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response'))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response', source))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -451,7 +453,8 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: pascalCase(paymentGateway) + 'TransactionsResponse',
+                // Must match BE `log.source`, e.g. `ABC`+`transactions_response` => `ABCTransactionsResponse`.
+                source: buildPaymentFileSource(paymentGateway, 'transactions_response'),
                 pg_file_type: fileType,
               }}
               // filterFields={this.getFilterFields()}

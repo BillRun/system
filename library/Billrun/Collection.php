@@ -16,7 +16,9 @@ class Billrun_Collection extends Billrun_Base {
 	use Billrun_Traits_ConditionsCheck;
 
 
+	protected $reallyInCollectionAids = [];
 	public function collect($aids = array(), $collectDir = '') {
+
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling accounts that are subject to collection", Zend_Log::DEBUG);
 		$markedAsInCollection = $account->getInCollection($aids);
@@ -27,7 +29,7 @@ class Billrun_Collection extends Billrun_Base {
 		$aidsValues = array_values(array_map(function($debtByAid) {
 			return $debtByAid->getRawData()['aid'];
 		}, $debtByAids));
-		
+
 		$updateCollectionStateChangedByProcess = [];
 
 		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
@@ -40,9 +42,9 @@ class Billrun_Collection extends Billrun_Base {
 		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
 		$accountsInConditions = [];
 		for ($i = 0; $i < count($aidsBatches); $i++) {
-			
+
 			$query = ['aid' => array('$in' => $aidsBatches[$i])];
-			$query['read_preference'] = 'RP_PRIMARY'; 
+			$query['read_preference'] = 'RP_PRIMARY';
 			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
 		}
 		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
@@ -52,7 +54,16 @@ class Billrun_Collection extends Billrun_Base {
 			$matchProcess = $processes[$processIndex];
 			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
 		}
+		if(empty($aids)){
+			$this->removeAllCollectionStepsOfCustomerNotInCollection();
+		}
 		return $result;
+	}
+
+	protected function removeAllCollectionStepsOfCustomerNotInCollection(){
+		Billrun_Factory::log()->log("Removing any future collection steps for a customer not in collection of all processes", Zend_Log::DEBUG);
+		$collectionSteps = Billrun_Factory::collectionSteps();
+		$res = $collectionSteps->removeCollectionSteps(array('$nin' => $this->reallyInCollectionAids));
 	}
 
 	/**
@@ -96,12 +107,13 @@ class Billrun_Collection extends Billrun_Base {
 			}
 			$processMinDebt = floatval($matchProcess['settings']['min_debt'] ?? '10');
 
-			$aid = $accountInConditions['aid'];
+			$aid = intval($accountInConditions['aid']);
 			if(isset($accountInConditions['in_collection']) && $accountInConditions['in_collection'] == true ){
 				$markedAsInCollectionByProcess[$processIndex][$aid] = $accountInConditions;
 			}
 			if(isset($debtByAids[$aid]) && $debtByAids[$aid]['total'] >= $processMinDebt){
 				$reallyInCollectionByProcess[$processIndex][$aid] = $debtByAids[$aid];
+				$this->reallyInCollectionAids[] = $aid;
 			}
 			$aidsAlreadyProcess[$aid] = true;
 			if ($collectDir == 'enter_collection' || empty($collectDir)) {
