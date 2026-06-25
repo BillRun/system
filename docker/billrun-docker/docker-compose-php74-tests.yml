@@ -30,11 +30,12 @@ services:
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         healthcheck:
-            test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"]
-            interval: 20s
+            test: ["CMD-SHELL", "test -f /tmp/composer-install-done || exit 1"]
+            interval: 3s
             timeout: 3s
-            retries: 4
-        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
+            retries: 5
+            start_period: 180s
+        command: sh -c "rm -f /tmp/composer-install-done; composer install --no-interaction --no-progress --prefer-dist && touch /tmp/composer-install-done && php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
