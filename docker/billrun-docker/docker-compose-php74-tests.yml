@@ -15,7 +15,10 @@ services:
         environment:
         - "APPLICATION_ENV=container"    
     php:
-        image: git.bill.run:5050/sdoc/billrun/billrun-dev-base:1.0.0
+        build: 
+            context: ./billrun-php74
+            dockerfile: Dockerfile
+        image: billrun-php74
         container_name: billrun-app
         restart: always
         user: "${USER_ID:-0}:${GROUP_ID:-0}"
