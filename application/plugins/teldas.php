@@ -435,44 +435,51 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         ['collection' =>  $this->tariffSwitchingClassesCollection, 'sortField' => 'id']
     ];
     foreach($mappingUpdates as $map){
-        $collection = $map['collection'];
-        // Step 1: Find the latest document _id per sortField
-        $pipeline = [
-            ['$sort' => [$map['sortField'] => 1, 'transactionDatetime' => -1]],
-            [
-                '$group' => [
-                    '_id' => '$' . $map['sortField'],
-                    'latestId' => ['$first' => '$_id'],
-                    'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
-                ]
-            ],
-            [
-                '$match' => ['transactionDatetimeTo' => ['$ne' => null]]
-            ]
-
-        ];
-        
-        $cursor = $collection->aggregate($pipeline);
-    
-        $latestIds = [];
-        $latestIdsCount = 0;
-        foreach ($cursor as $doc) {
-            $latestIdsCount++;
-            $latestIds[] = $doc['latestId'];
-        }
-        Billrun_Factory::log("Updating " . $latestIdsCount . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
-
-        // Step 2: Update only those latest documents
-        if (!empty($latestIds)) {
-            $res = $collection->update(
-                ['_id' => ['$in' => $latestIds]],
-                ['$set' => ['transactionDatetimeTo' => null]]
-            , ['multiple' => true]);
-
-        }
+        $this->reopenLatestRevision($map['collection'], $map['sortField']);
     }
   }
-    
+
+  /**
+   * Reopen the latest revision per $sortField by setting its transactionDatetimeTo back to null.
+   * Only the latest document of each group whose transactionDatetimeTo is currently not null is reopened.
+   *
+   * @param Mongodloid_Collection $collection the collection to update
+   * @param string $sortField the field that identifies a revision chain (e.g. subscriberNumber / id)
+   * @param array $match optional aggregation match to scope the reopen to specific revisions
+   */
+  protected function reopenLatestRevision($collection, $sortField, $match = []) {
+    // Step 1: Find the latest document _id per sortField (optionally scoped by $match)
+    $pipeline = [];
+    if (!empty($match)) {
+        $pipeline[] = ['$match' => $match];
+    }
+    $pipeline[] = ['$sort' => [$sortField => 1, 'transactionDatetime' => -1]];
+    $pipeline[] = [
+        '$group' => [
+            '_id' => '$' . $sortField,
+            'latestId' => ['$first' => '$_id'],
+            'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
+        ]
+    ];
+    $pipeline[] = ['$match' => ['transactionDatetimeTo' => ['$ne' => null]]];
+
+    $cursor = $collection->aggregate($pipeline);
+
+    $latestIds = [];
+    foreach ($cursor as $doc) {
+        $latestIds[] = $doc['latestId'];
+    }
+    Billrun_Factory::log("Updating " . count($latestIds) . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
+
+    // Step 2: Update only those latest documents
+    if (!empty($latestIds)) {
+        $collection->update(
+            ['_id' => ['$in' => $latestIds]],
+            ['$set' => ['transactionDatetimeTo' => null]]
+        , ['multiple' => true]);
+    }
+  }
+
 
   protected function keepSystemUpToDateOfInaNumbers($parameters) {
       Billrun_Factory::log("Keeping system up-to-date of INA numbers", Zend_Log::DEBUG);
@@ -504,7 +511,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
 
-      $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers");
+      $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers", 'subscriberNumber');
       if(!$result){
           return false;
       }
@@ -536,7 +543,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $updatingTariffsProfiles += $ret['nModified'];
       }
       Billrun_Factory::log("Update " . $updatingTariffsProfiles . " $type tariffs profiles previous record ", Zend_Log::DEBUG);
-      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles");
+      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles", 'id');
         if(!$result){
             return false;
         }
@@ -545,7 +552,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   
-  protected function batchInsert($collection, $entitiesToInsert, $logTiltle){
+  protected function batchInsert($collection, $entitiesToInsert, $logTiltle, $sortField = null){
     Billrun_Factory::log("Inserting " . count($entitiesToInsert) . " $logTiltle."  , Zend_Log::DEBUG);
     try {
         if(!empty($entitiesToInsert)){
@@ -568,6 +575,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 } catch (Exception $e) {
                     if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
                         Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::NOTICE);
+                        // The previous revision was already closed (transactionDatetimeTo set from null
+                        // to the new value) before this insert. Since the new revision was not inserted,
+                        // reopen the latest revision of this specific entity to keep the version chain valid.
+                        if (!empty($sortField) && isset($entity[$sortField])) {
+                            Billrun_Factory::log("Reverting transactionDatetimeTo to null for " . $sortField . ": " . $entity[$sortField] . " after duplicate key on " . $logTiltle, Zend_Log::NOTICE);
+                            $this->reopenLatestRevision($collection, $sortField, [$sortField => $entity[$sortField]]);
+                        }
                         continue;
                     } else {
                         Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::ALERT);
@@ -917,7 +931,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             $updatingInaNumbers += $ret['nModified'] ?? 0;
       }
       Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
-      $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers");
+      $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers", 'subscriberNumber');
       if(!$result){
         return false;
       }
