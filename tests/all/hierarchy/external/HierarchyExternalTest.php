@@ -55,7 +55,14 @@ class HierarchyExternalTest extends \Codeception\Test\Unit {
 	}
 
 	protected function subAids($billrun) {
-		return array_map(function ($sub) { return intval($sub['aid']); }, $billrun['subs']);
+		// $billrun['subs'] is a MongoDB BSONArray of BSONDocuments; iterate rather than array_map.
+		$aids = array();
+		foreach ($billrun['subs'] as $sub) {
+			if (isset($sub['aid'])) {
+				$aids[] = intval($sub['aid']);
+			}
+		}
+		return $aids;
 	}
 
 	public function testSubAccountConsolidatedIntoInvoicingOwner() {
