@@ -128,12 +128,12 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         return $fcBill['txid'];
     }
 
-    private function processResponseFile(int $aid, string $fcTxid): void
+    private function processResponseFile(int $aid, string $fcTxid, string $fixture = self::RESPONSE_FIXTURE): void
     {
         // Billrun_Processor_Updater::process() calls removefromWorkspace unconditionally,
         // so we work on a /tmp copy, leaving the original test file intact.
         $tmpPath = '/tmp/cg_response_' . $aid . '.csv';
-        copy(Billrun_Util::getBillRunPath(self::RESPONSE_FIXTURE), $tmpPath);
+        copy(Billrun_Util::getBillRunPath($fixture), $tmpPath);
 
         $options = array_merge(
             $this->getCreditGuardConfiguration(),
@@ -204,6 +204,41 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $bill = $this->tester->grabFromCollection('bills', ['txid' => $txid]);
         $this->assertNotEmpty($bill, 'No bill found with txid ' . $txid . ' after response processing');
         return (array) $bill;
+    }
+
+    private function assertPgResponseUnderVendorResponse(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $vr = (array) $bill['vendor_response'];
+        // user_x_field is the txid overridden by formatLine; its saved
+        // value proves the substitution ran and the right bill was matched.
+        $this->assertEquals($fcTxid,                   $vr['user_x_field'], 'vendor_response.user_x_field equals runtime txid');
+        // total: 1100 in the file × value_mult 0.01 = 11
+        $this->assertEquals('000',                     $vr['result'],    'vendor_response.result');
+        $this->assertEquals('10427223',                $vr['Reference'], 'vendor_response.Reference');
+        $this->assertEquals(11,                        $vr['total'],     'vendor_response.total');
+        $this->assertEquals('291020241500088280000001', $vr['uid'],       'vendor_response.uid');
+        $this->assertEquals('8867300000004',           $vr['cgUid'],     'vendor_response.cgUid');
+    }
+
+    private function assertVendorResponseIdentityPreserved(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $vr = (array) $bill['vendor_response'];
+        $this->assertEquals('CreditGuard', $vr['name'],   'vendor_response.name');
+        $this->assertEquals('mixed',       $vr['status'], 'vendor_response.status');
+    }
+
+    private function assertNoPgResponseField(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $this->assertArrayNotHasKey('pg_response', $bill, 'pg_response field must not exist after BRCD-5384');
+    }
+
+    private function assertPaymentConfirmed(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $this->assertFalse((bool) $bill['pending'], 'Payment must be confirmed (pending must be false)');
     }
 
     private function assertVoucherNumberIsSplit(string $fcTxid): void
