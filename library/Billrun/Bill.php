@@ -1633,8 +1633,10 @@ abstract class Billrun_Bill {
 				Billrun_Util::setIn($paymentData, $path, $value);
 			} else {
 				$current_value = Billrun_Util::getIn($paymentData, $path);
-				if (is_array($current_value)) {
+				if (is_array($current_value) && is_array($value)) {
 					$current_value = array_unique(array_merge_recursive($current_value, $value));
+				} else {
+					$current_value = $value; // scalar: just overwrite
 				}
 				Billrun_Util::setIn($paymentData, $path, $current_value);
 			}
