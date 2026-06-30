@@ -232,7 +232,47 @@ class Billrun_Cycle_Account_Invoice {
 	public function addConfigurableData() {
 		Billrun_Factory::dispatcher()->trigger('beforeAddInvoiceConfigurableData', array($this, &$this->data));
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
+		$this->addLastBills();
 		Billrun_Factory::dispatcher()->trigger('afterAddInvoiceConfigurableData', array($this, &$this->data));
+	}
+
+	protected function addLastBills() {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.last_bills', []);
+		if (empty($options)) {
+			return;
+		}
+		$invoiceData = $this->data->getRawData();
+		$count = null;
+		foreach ($options as $option) {
+			if (!empty($option['conditions']) && $this->isConditionsMeet($invoiceData, $option['conditions'])) {
+				$count = (int) ($option['count'] ?? 0);
+				break;
+			}
+		}
+		if ($count === null) {
+			return;
+		}
+		$priorBills = $count > 0 ? Billrun_Bill::getLatestValidBillsWithBalance($this->getAid(), $count) : [];
+		$currentBill = Billrun_Bill::buildBaseBillFromInvoice($invoiceData);
+		$total = !empty($priorBills) ? $priorBills[0]['balance'] : Billrun_Bill::getTotalDueForAccount($this->getAid(), null, true)['total'];
+		$currentBill['balance'] = $total + ($currentBill['due'] ?? 0);
+		$entries = array_merge([$currentBill], $priorBills);
+		$projected = [];
+		foreach ($entries as $entry) {
+			$projected[] = $this->projectLastBillsEntry($entry);
+		}
+		$invoiceData['last_bills'] = $projected;
+		$this->data->setRawData($invoiceData);
+	}
+
+	protected function projectLastBillsEntry(array $bill) {
+		$out = [];
+		foreach (['type', 'urt', 'invoice_id', 'txid', 'invoice_type', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
+			if (isset($bill[$field])) {
+				$out[$field] = $bill[$field];
+			}
+		}
+		return $out;
 	}
 	/**
 	 * 
