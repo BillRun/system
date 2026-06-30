@@ -5,7 +5,8 @@ import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
 import pluralize from 'pluralize';
 import isNumber from 'is-number';
-import { FormGroup, Col, ControlLabel, InputGroup, MenuItem, DropdownButton, Panel } from 'react-bootstrap';
+import { Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import { ControlLabel, FormGroup, InputGroupButton, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Conditions, Actions } from '@/components/Elements';
 import { reportUsageFieldsSelector } from '@/selectors/reportSelectors';
@@ -110,7 +111,7 @@ class Filtration extends Component {
     return (
       <>
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>
+          <Col sm={3} lg={2} as={ControlLabel}>
             {getFieldName('time_range', 'export_generator', 'Time Range')}
           </Col>
           <Col sm={8} lg={9}>
@@ -123,26 +124,28 @@ class Filtration extends Component {
               onChange={this.onChangeTimeRange}
               preffix={prefix}
             />
-            <DropdownButton
+            <InputGroupButton>
+              <DropdownButton
               id="balance-period-unit"
-              componentClass={InputGroup.Button}
               title={timeRangeSuffix}
-            >
+              variant="outline-secondary"
+              >
               {timeRangeOptions.map((timeRangeOption, idx) => (
-                <MenuItem
-                  key={idx}
-                  eventKey={timeRangeOption}
-                  onSelect={this.onSelectTimeRangeUnit}
-                >
-                  {sentenceCase(timeRangeOption)}
-                </MenuItem>
+              <Dropdown.Item
+              key={idx}
+              eventKey={timeRangeOption}
+              onSelect={this.onSelectTimeRangeUnit}
+              >
+              {sentenceCase(timeRangeOption)}
+              </Dropdown.Item>
               ))}
-            </DropdownButton>
+              </DropdownButton>
+            </InputGroupButton>
           </InputGroup>
           </Col>
         </FormGroup>
 
-        <Panel header="Conditions" className="mb0">
+        <Panel header="Conditions" className="mt10 mb0">
           <Col sm={12}>
             <Conditions
               conditions={data.getIn(Filtration.queryPath, Immutable.List())}
@@ -152,9 +155,11 @@ class Filtration extends Component {
               onChangeOperator={this.onChangeConditionOp}
               onChangeValue={this.onChangeConditionValue}
               onRemove={this.onRemoveCondition}
+              removeButtonVariant="outline-secondary"
+              removeButtonClass="pull-left"
             />
           </Col>
-          <Col sm={12} className="mt10 ml15">
+          <Col sm={12} className="mt10">
             <Actions actions={this.getListActions()} />
           </Col>
         </Panel>

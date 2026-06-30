@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';
 import Immutable from 'immutable';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { setSegmentation, addSegmentation, deleteSegmentation } from '@/actions/exportGeneratorActions';
 import Help from '../../Help';
 import { CreateButton } from '@/components/Elements';
@@ -48,7 +48,7 @@ class Segmentation extends Component {
               key={index}
             />
           ))}
-          <CreateButton onClick={this.props.addSegmentation} label="Add Segment" />
+          <CreateButton onClick={this.props.addSegmentation} label="Add Segment" buttonClass="btn-xs" />
         </Panel>
       </div>
     )

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import TaxDetails from './TaxDetails';
 import { EntityRevisionDetails } from '../../Entity';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
@@ -66,9 +66,11 @@ class TaxSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'tax', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -80,6 +82,7 @@ class TaxSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clearTax());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {

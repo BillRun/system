@@ -162,25 +162,13 @@ export const revisionsSelector = createSelector(
   selectRevisions,
 );
 
-export const tabSelector = createSelector(
-  getTab,
-  tab => tab,
-);
+export const tabSelector = getTab;
 
-export const timestampSelector = createSelector(
-  getTimestamp,
-  timestamp => timestamp
-);
+export const timestampSelector = getTimestamp;
 
-export const usernameSelector = createSelector(
-  getUsername,
-  username => username
-);
+export const usernameSelector = getUsername;
 
-export const sigSelector = createSelector(
-  getSignature,
-  signature => signature
-);
+export const sigSelector = getSignature;
 
 export const messageSelector = createSelector(
   getMessage,
@@ -196,20 +184,11 @@ export const messageSelector = createSelector(
   },
 );
 
-export const itemSourceSelector = createSelector(
-  getItemSource,
-  item => item,
-);
+export const itemSourceSelector = getItemSource;
 
-export const itemSelector = createSelector(
-  getItem,
-  item => item,
-);
+export const itemSelector = getItem;
 
-export const idSelector = createSelector(
-  getId,
-  id => id,
-);
+export const idSelector = getId;
 
 export const modeSelector = createSelector(
   getAction,

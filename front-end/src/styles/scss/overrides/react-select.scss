@@ -38,6 +38,20 @@
   border-top: none !important;
 }
 
+/* Entity list state filter: keep control compact (no chips in value area) */
+.entity-state-select {
+  min-width: 145px;
+}
+
+.entity-state-select .react-select__value-container {
+  padding: 0 8px;
+}
+
+.entity-state-select .react-select__placeholder {
+  margin: 0;
+  color: #555;
+}
+
 //
 // .Select-menu-outer{
 // }

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Panel, Form, Col, Row } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import PlanProduct from './components/PlanProduct';
 import PlanProductRemoved from './components/PlanProductRemoved';
@@ -60,7 +61,9 @@ class PlanProductsPriceTab extends Component {
     products: Immutable.List(),
   };
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const { planRates } = this.props;
     if (!planRates.isEmpty()) {
       const planRatesKeys = planRates.keySeq();
@@ -68,9 +71,11 @@ class PlanProductsPriceTab extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { planRates, products } = nextProps;
-    const { planRates: oldPlanRates } = this.props;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { planRates, products } = this.props;
+    const { planRates: oldPlanRates } = prevProps;
     if (!Immutable.is(planRates, oldPlanRates)) {
       const newProductsKeys = planRates.keySeq().filter(planRateKey =>
         // Get all products that exist in plan but not fetched from server
