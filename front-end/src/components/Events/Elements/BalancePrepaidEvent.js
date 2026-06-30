@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import BalancePrepaidEventCondition from './BalancePrepaidEventCondition';
 import {
@@ -49,10 +50,10 @@ class BalancePrepaidEvent extends Component {
     const isEventCodeError = errors.get('event_code', false);
     const conditions = item.get('conditions', Immutable.List());
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
           <FormGroup validationState={isEventCodeError ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Event Code
               <span className="danger-red"> *</span>
             </Col>
@@ -64,7 +65,7 @@ class BalancePrepaidEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Description
             </Col>
             <Col sm={7}>
@@ -72,7 +73,7 @@ class BalancePrepaidEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>Status</Col>
+            <Col as={ControlLabel} sm={3}>Status</Col>
             <Col sm={7}>
               <span>
                 <span className="mr20 inline">

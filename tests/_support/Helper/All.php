@@ -23,7 +23,8 @@ class All extends \Codeception\Module
             'operationsCollection',
             'balancesCollection',
             'chargesCollection',
-            'collection_stepsCollection'
+            'collection_stepsCollection',
+            'logCollection'
         ];
 
         foreach ($collections as $collectionMethod) {

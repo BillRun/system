@@ -50,17 +50,6 @@ const SubMenu = (props) => {
   );
 };
 
-SubMenu.defaultProps = {
-  children: null,
-  id: '',
-  title: '',
-  icon: '',
-  open: false,
-  active: false,
-  collapse: false,
-  onClick: () => {},
-};
-
 SubMenu.propTypes = {
   children: PropTypes.node,
   id: PropTypes.string,

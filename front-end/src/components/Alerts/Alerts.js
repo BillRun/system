@@ -37,7 +37,9 @@ class Alerts extends Component {
 
   renderClearAll = () => (
     <div style={{ textAlign: 'right' }}>
-      <Button onClick={this.handleAlertsDismiss}>{this.props.clearAllButtobLabel}</Button>
+      <Button variant="outline-secondary" onClick={this.handleAlertsDismiss}>
+        {this.props.clearAllButtobLabel}
+      </Button>
     </div>
   );
 

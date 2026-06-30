@@ -7,16 +7,15 @@ import { getConfig } from "@/common/Util";
 import { discountAccountFieldsSelector } from "@/selectors/discountSelectors";
 import { setFormModalError } from "@/actions/guiStateActions/pageActions";
 
-
 const CollectionConditions = ({
-  conditions,
-  path,
-  editable,
-  errors,
+  conditions = Immutable.List(),
+  path = [0, "account", "fields"],
+  editable = true,
+  errors = Immutable.Map(),
   onChange,
-  conditionsOperators,
-  accountConditionFields,
-  valueOptions,
+  conditionsOperators = getConfig(["discount", "conditions", "operators"], Immutable.List()),
+  accountConditionFields = Immutable.List(),
+  valueOptions = getConfig(["discount", "conditions", "valueOptions"], Immutable.List()),
   dispatch
 }) => {
 
@@ -103,11 +102,13 @@ const CollectionConditions = ({
       onChangeOperator={changeConditionOpWithClearError}
       onChangeValue={changeConditionValueWithClearError}
       onAdd={addNewConditionWithCheckError}
+      addButtonClass="btn-xs"
+      removeButtonVariant="outline-secondary"
+      removeButtonClass="pull-left"
       onRemove={removeConditionWithClearError}
     />
   );
 };
-
 
 CollectionConditions.propTypes = {
   conditions: PropTypes.instanceOf(Immutable.List),
@@ -118,16 +119,6 @@ CollectionConditions.propTypes = {
   accountConditionFields: PropTypes.instanceOf(Immutable.List),
   onChange: PropTypes.func.isRequired,
   dispatch: PropTypes.func.isRequired,
-};
-
-CollectionConditions.defaultProps = {
-  conditions: Immutable.List(),
-  errors: Immutable.Map(),
-  editable: true,
-  path: [0, "account", "fields"],
-  conditionsOperators: getConfig(["discount", "conditions", "operators"], Immutable.List()),
-  valueOptions: getConfig(["discount", "conditions", "valueOptions"], Immutable.List()),
-  accountConditionFields: Immutable.List(),
 };
 
 const mapStateToProps = (state, props) => ({
