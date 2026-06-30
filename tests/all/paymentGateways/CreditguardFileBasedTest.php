@@ -138,7 +138,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
     private function assertVoucherNumberIsSplit(string $fcTxid): void
     {
         $bill = $this->getProcessedBill($fcTxid);
-        $pgr = (array) $bill['pg_response'];
+        $pgr = (array) $bill['vendor_response'];
         $pgrDump = json_encode($pgr);
         $this->assertEquals('28',     $pgr['File number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
         $this->assertEquals('002648', $pgr['Voucher number'], 'Voucher number must be the suffix after stripping the 2-char prefix');
