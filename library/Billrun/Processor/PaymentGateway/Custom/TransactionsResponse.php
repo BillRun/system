@@ -30,7 +30,6 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$customFields = $this->getCustomPaymentGatewayFields($row);
 		$this->setTransactionsFields($row,  $currentProcessor);
-		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
@@ -44,6 +43,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                                 Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
                         }
                 }
+		$payment->setExtraFields(array_merge(['vendor_response' => $this->billSavedFields], $customFields), array_merge(array_keys($customFields), ['vendor_response']));
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {

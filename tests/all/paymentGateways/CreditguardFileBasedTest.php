@@ -1,17 +1,18 @@
+<?php
 
 /**
- * BRCD-5394 — Verify that the payment update time (urt) is taken from the
+ * File-based tests for the CreditGuard payment gateway.
+ * Covers the full cycle: generate request file → process response file.
+ * Verify that the payment update time (urt) is taken from the
  * Transmission Date in the response file and is not overridden by the core
  * confirmation / rejection save flow.
- * BRCD-5383 — File-based tests for the CreditGuard payment gateway.
- * Covers the full cycle: generate request file → process response file.
  */
 class CreditguardFileBasedTest extends \Codeception\Test\Unit
 {
     protected $tester;
     private $configModel;
 
-    private const RESPONSE_FIXTURE          = 'tests/all/paymentGateways/test_files/cg_response.csv';
+    private const RESPONSE_FIXTURE = 'tests/all/paymentGateways/test_files/cg_response.csv';
     private const RESPONSE_REJECTED_FIXTURE = 'tests/all/paymentGateways/test_files/cg_response_rejected.csv';
 
     /** Raw "Transmission Date" value present in both fixture files. */
@@ -24,7 +25,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $this->insertCreditGuardFileBasedSettings();
     }
 
-   /**
+    /**
      * BRCD-5383: The 2-char prefix of the Voucher number in the CG response file
      * must be split into a separate "File number" field. The remaining digits stay
      * in "Voucher number". Both are saved under vendor_response.
@@ -40,6 +41,24 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-5384: pg_response fields from the response file must land under
+     * vendor_response, and the original vendor_response fields must "survive"
+     * the merge. The old pg_response field must not exist.
+     */
+    public function testVendorResponseMergesFromResponseFile()
+    {
+        $account = $this->createAccountWithCreditGuardPG();
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 10, 'dir' => 'tc']);
+        $this->generateRequestFile();
+        $fcTxid = $this->findGeneratedFcTxid($account['aid'], 10);
+        $this->processResponseFile($account['aid'], $fcTxid);
+        $this->assertPgResponseUnderVendorResponse($fcTxid);
+        $this->assertVendorResponseIdentityPreserved($fcTxid);
+        $this->assertNoPgResponseField($fcTxid);
+        $this->assertPaymentConfirmed($fcTxid);
+    }
+
+   /**
      * BRCD-5394: after a successful confirmation the payment's urt must equal
      * the Transmission Date from the file, not the time updateConfirmation() ran.
      */
@@ -79,8 +98,8 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
             'payment_gateway' => [
                 'active' => [
                     'name'        => 'CreditGuard',
-                    'card_token'  => '1022273188555888',
-                    'personal_id' => '890108566',
+                    'card_token'      => '1022273188555888',
+                    'personal_id'     => '890108566',
                     'card_expiration' => '1228',
                 ],
             ],
@@ -109,12 +128,12 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         return $fcBill['txid'];
     }
 
-    private function processResponseFile(int $aid, string $fcTxid): void
+    private function processResponseFile(int $aid, string $fcTxid, string $fixture = self::RESPONSE_FIXTURE): void
     {
         // Billrun_Processor_Updater::process() calls removefromWorkspace unconditionally,
         // so we work on a /tmp copy, leaving the original test file intact.
         $tmpPath = '/tmp/cg_response_' . $aid . '.csv';
-        copy(Billrun_Util::getBillRunPath(self::RESPONSE_FIXTURE), $tmpPath);
+        copy(Billrun_Util::getBillRunPath($fixture), $tmpPath);
 
         $options = array_merge(
             $this->getCreditGuardConfiguration(),
@@ -187,10 +206,45 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         return (array) $bill;
     }
 
+    private function assertPgResponseUnderVendorResponse(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $vr = (array) $bill['vendor_response'];
+        // user_x_field is the txid overridden by formatLine; its saved
+        // value proves the substitution ran and the right bill was matched.
+        $this->assertEquals($fcTxid,                   $vr['user_x_field'], 'vendor_response.user_x_field equals runtime txid');
+        // total: 1100 in the file × value_mult 0.01 = 11
+        $this->assertEquals('000',                     $vr['result'],    'vendor_response.result');
+        $this->assertEquals('10427223',                $vr['Reference'], 'vendor_response.Reference');
+        $this->assertEquals(11,                        $vr['total'],     'vendor_response.total');
+        $this->assertEquals('291020241500088280000001', $vr['uid'],       'vendor_response.uid');
+        $this->assertEquals('8867300000004',           $vr['cgUid'],     'vendor_response.cgUid');
+    }
+
+    private function assertVendorResponseIdentityPreserved(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $vr = (array) $bill['vendor_response'];
+        $this->assertEquals('CreditGuard', $vr['name'],   'vendor_response.name');
+        $this->assertEquals('mixed',       $vr['status'], 'vendor_response.status');
+    }
+
+    private function assertNoPgResponseField(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $this->assertArrayNotHasKey('pg_response', $bill, 'pg_response field must not exist after BRCD-5384');
+    }
+
+    private function assertPaymentConfirmed(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $this->assertFalse((bool) $bill['pending'], 'Payment must be confirmed (pending must be false)');
+    }
+
     private function assertVoucherNumberIsSplit(string $fcTxid): void
     {
         $bill = $this->getProcessedBill($fcTxid);
-        $pgr = (array) $bill['pg_response'];
+        $pgr = (array) $bill['vendor_response'];
         $pgrDump = json_encode($pgr);
         $this->assertEquals('28',     $pgr['File number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
         $this->assertEquals('002648', $pgr['Voucher number'], 'Voucher number must be the suffix after stripping the 2-char prefix');
@@ -269,7 +323,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
                         "remote_directory" => "",
                         "export_directory" => "/tmp",
                     ],
-                    "filename"   => "billing_test.csv",
+                    "filename" => "billing_test.csv",
                     "filtration" => [
                         "accounts" => [
                             [
@@ -333,7 +387,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
                     "file_type"   => "transactions1",
                     "file_status" => "mixed",
                     "processor"   => [
-                        "amount_field"               => "total",
+                        "amount_field"                => "total",
                         "transaction_identifier_field" => "user_x_field",
                         "orphan_files_time"           => "1 hour",
                         "date_field"                  => [
