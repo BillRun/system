@@ -1,9 +1,6 @@
 <?php
 
-/**
- * BRCD-5384 — First file-based tests for the CreditGuard payment gateway.
- * Covers the full cycle: generate request file → process response file.
- */
+
 class CreditguardFileBasedTest extends \Codeception\Test\Unit
 {
     protected $tester;
@@ -16,6 +13,21 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $this->configModel = new ConfigModel();
         $this->tester->cleanDB();
         $this->insertCreditGuardFileBasedSettings();
+    }
+
+    /**
+     * BRCD-5383: The 2-char prefix of the Voucher number in the CG response file
+     * must be split into a separate "File number" field. The remaining digits stay
+     * in "Voucher number". Both are saved under vendor_response.
+     */
+    public function testVoucherNumberIsSplitIntoVoucherAndFileNumber()
+    {
+        $account = $this->createAccountWithCreditGuardPG();
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 10, 'dir' => 'tc']);
+        $this->generateRequestFile();
+        $fcTxid = $this->findGeneratedFcTxid($account['aid'], 10);
+        $this->processResponseFile($account['aid'], $fcTxid);
+        $this->assertVoucherNumberIsSplit($fcTxid);
     }
 
     /**
@@ -46,8 +58,9 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
             'payment_gateway' => [
                 'active' => [
                     'name'        => 'CreditGuard',
-                    'card_token'  => '1022273188555888',
-                    'personal_id' => '890108566',
+                    'card_token'      => '1022273188555888',
+                    'personal_id'     => '890108566',
+                    'card_expiration' => '1228',
                 ],
             ],
         ])['entity'];
@@ -92,8 +105,8 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
             ]
         );
 
-        // Override formatLine — called after each CSV row is parsed, before the
-        // txid is used to look up the bill. Substituting the file's txid field
+        // formatLine function reflection — called after each CSV row is parsed, before the
+        // txid is used to look up the bill. Replace the file's txid field
         // with the actual FC bill txid lets the static fixture work regardless
         // of what auto-incremented value the generator assigned.
         $processor = new class($options, $fcTxid) extends Billrun_Processor_PaymentGateway_Custom_TransactionsResponse {
@@ -120,6 +133,15 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $bill = $this->tester->grabFromCollection('bills', ['txid' => $txid]);
         $this->assertNotEmpty($bill, 'No bill found with txid ' . $txid . ' after response processing');
         return (array) $bill;
+    }
+
+    private function assertVoucherNumberIsSplit(string $fcTxid): void
+    {
+        $bill = $this->getProcessedBill($fcTxid);
+        $pgr = (array) $bill['pg_response'];
+        $pgrDump = json_encode($pgr);
+        $this->assertEquals('28',     $pgr['File number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
+        $this->assertEquals('002648', $pgr['Voucher number'], 'Voucher number must be the suffix after stripping the 2-char prefix');
     }
 
     private function assertPgResponseUnderVendorResponse(string $fcTxid): void
@@ -172,8 +194,47 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         } else {
             $currentConf['payment_gateways'][] = $conf;
         }
+        $pluginConf = [
+            'name'         => 'creditGuardPlugin',
+            'enabled'      => true,
+            'system'       => true,
+            'hide_from_ui' => false,
+            'configuration' => [
+                'values' => [
+                    'card_expiration_field_name'       => 'card_expiration',
+                    'oldest_card_expiration'           => '20 years ago',
+                    'years_to_extend_card_expiration'  => 3,
+                    'extend_card_expiration'           => true,
+                ],
+            ],
+        ];
+        $existingPluginIdx = array_search('creditGuardPlugin', array_column($currentConf['plugins'] ?? [], 'name'));
+        if ($existingPluginIdx !== false) {
+            $currentConf['plugins'][$existingPluginIdx] = $pluginConf;
+        } else {
+            $currentConf['plugins'][] = $pluginConf;
+        }
         $this->configModel->setConfig($currentConf);
         Billrun_Config::getInstance()->loadDbConfig();
+        $this->attachConfiguredPlugins();
+    }
+
+    private function attachConfiguredPlugins(): void
+    {
+        $dispatcher = Billrun_Factory::dispatcher();
+        if (in_array('creditGuard', $dispatcher->getImplementors('beforeUpdatePayments'))) {
+            return;
+        }
+        $values = [
+            'card_expiration_field_name'      => 'card_expiration',
+            'oldest_card_expiration'          => '20 years ago',
+            'years_to_extend_card_expiration' => 3,
+            'extend_card_expiration'          => true,
+        ];
+        $plugin = new creditGuardPlugin($values);
+        $dispatcher->attach($plugin);
+        $plugin->setAvailability(true);
+        $plugin->setOptions($values);
     }
 
     protected function getCreditGuardConfiguration()
