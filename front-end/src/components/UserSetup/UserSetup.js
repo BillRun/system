@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { Col, Panel } from 'react-bootstrap';
+import withRouter from '@/common/withRouter';
+import { Col } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import User from './User';
@@ -44,19 +45,27 @@ class UserSetup extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  
+  componentDidUpdate(prevProps) {
     const { username } = this.state;
-    const { item, mode } = nextProps;
-    if (username === '') {
-      this.setState({ username: item.get('username', '') });
+    const { item, mode } = this.props;
+    // Only initialize username once, and only when the item actually has one.
+    // Comparing to prevProps.item prevents an infinite loop: if item.username
+    // is '' then the old code would setState('') → re-render → setState('') → ∞
+    const newUsername = item.get('username', '');
+    if (username === '' && newUsername !== '' && item !== prevProps.item) {
+      this.setState({ username: newUsername }); // eslint-disable-line react/no-did-update-set-state
     }
-    if (mode === 'update' && username !== '') {
+    // Only dispatch the title update when the username has just been resolved
+    if (mode === 'update' && username !== '' && item !== prevProps.item) {
       this.props.dispatch(setPageTitle(`Edit user - ${username}`));
     }
   }
 
   componentWillUnmount() {
     this.props.dispatch(clearUser());
+    this.props.dispatch(setPageTitle(''));
   }
 
   onBack = () => {

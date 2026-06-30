@@ -14,6 +14,8 @@ class unifyCest
             // $this->createServices($I);
         }
         $I->cleanDB();
+        $I->resetBillrunInstances();
+
     }
 
     protected function setUP(ApiTester $I, $inputProcessor = null)

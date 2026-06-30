@@ -21,25 +21,22 @@ RUN wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wk
     && apt-get update && apt-get install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# install jsignpdf
-RUN wget -O /tmp/jsignpdf.zip https://github.com/JSignPdf/JSignPdfBin/archive/refs/tags/1.0.1.zip \
-    && unzip /tmp/jsignpdf.zip -d /tmp \
-    && mv /tmp/JSignPdfBin-1.0.1/bin/jsignpdf-1.6.4/ /opt \
-    && rm -rf /tmp/*
+RUN wget -O /tmp/jsignpdf.zip \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+    && unzip /tmp/jsignpdf.zip -d /opt \
+    && rm -f /tmp/jsignpdf.zip
 
 WORKDIR /billrun
 # Copy over custom configurations
-# (Assuming php-fpm.conf and php.ini are still in the old directory. If they are also in cicd, change their source paths too!)
+
 COPY docker/billrun-docker/billrun-php74/php-fpm.conf /usr/local/etc/
 COPY docker/billrun-docker/billrun-php74/php.ini /usr/local/etc/php/
 
-# These are now pulling right from your docker/cicd folder
-COPY docker/cicd/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-# Nginx config is shipped as a template; entrypoint.sh renders it on container
-# start so APPLICATION_MULTITENANT (and any future runtime params) can come
-# from env vars rather than being baked into the image.
+COPY docker/cicd/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/cicd/billrun.conf /etc/supervisor/conf.d/billrun.conf
+COPY docker/cicd/nginx.conf /etc/nginx/nginx.conf
 COPY docker/cicd/nginx.conf.template /etc/nginx/sites-available/default.template
-# Re-link Nginx site config if it isn't automatically caught
+
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 COPY ./ /billrun
@@ -50,11 +47,17 @@ RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose HTTP web server port instead of FastCGI port.
+RUN mkdir -p /data /run/nginx /var/cache/nginx \
+    && chown -R www-data:www-data \
+        /data /billrun /run/nginx /var/cache/nginx \
+        /etc/nginx/sites-available /etc/nginx/sites-enabled
+
+USER www-data
+
 # Port 8074 is chosen to align with the BillRun ecosystem convention
 EXPOSE 8074
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Command tells Supervisor to launch and run everything in the foreground
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Button, FormGroup, Col, HelpBlock, InputGroup, Panel} from 'react-bootstrap';
+import { Button, Col, InputGroup } from 'react-bootstrap';
+import { FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { reportUsageFieldsSelector } from '@/selectors/reportSelectors';
 import { parseConfigSelectOptions } from '@/common/Util'
@@ -222,9 +223,6 @@ class MapRow extends Component {
       <>
       <FormGroup className="form-inner-edit-row" validationState={error ? 'error' : null}>
         <Col sm={12}>
-          <Col smHidden mdHidden lgHidden>
-            <label htmlFor="name">Field</label>
-          </Col>
           <Col sm={2} className="pl0">
             <Field
               value={item.get('name', '')}
@@ -232,9 +230,6 @@ class MapRow extends Component {
             />
           </Col>
 
-          <Col smHidden mdHidden lgHidden>
-            <label htmlFor="type_field">Type</label>
-          </Col>
           <Col sm={2} className="pl0">
             <Field
               fieldType="select"
@@ -245,9 +240,6 @@ class MapRow extends Component {
             />
           </Col>
 
-          <Col smHidden mdHidden lgHidden>
-            <label htmlFor="operator_field">Operator</label>
-          </Col>
           <Col sm={2} className="pl0">
             <Field
               fieldType="select"
@@ -259,9 +251,6 @@ class MapRow extends Component {
             />
           </Col>
 
-          <Col smHidden mdHidden lgHidden>
-            <label htmlFor="value_field">Value</label>
-          </Col>
           <Col sm={3} className="pl0">
             {selectedOp === 'linked_entity' && (
               <Field
@@ -302,9 +291,6 @@ class MapRow extends Component {
             )}
           </Col>
 
-          <Col smHidden mdHidden lgHidden>
-            <label htmlFor="fromat_field">Format</label>
-          </Col>
           <Col sm={2} className="pl0">
             <Field
               value={selectedFormat}
@@ -314,7 +300,7 @@ class MapRow extends Component {
           </Col>
           {editable && (
             <Col sm={1} className="actions pr0 rl0 action-fix-height">
-              <Button onClick={this.onRemove} bsSize="small" className="pull-right">
+              <Button onClick={this.onRemove} size="sm" variant="outline-secondary" className="pull-right">
                 <i className="fa fa-trash-o danger-red" />
               </Button>
             </Col>
@@ -330,11 +316,11 @@ class MapRow extends Component {
           </Col>
         )}
         {isFixed && (
-          <Col sm={12} className="mt5 pl0">
+          <Col sm={12} className="mt10 pl0">
             <Panel className="collapsible" collapsible header="Padding">
               <Col sm={4} className="pl0">
                 <InputGroup>
-                  <InputGroup.Addon>Direction</InputGroup.Addon>
+                  <InputGroup.Text>Direction</InputGroup.Text>
                   <Field
                     fieldType="select"
                     clearable={false}
