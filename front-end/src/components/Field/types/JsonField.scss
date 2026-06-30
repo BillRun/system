@@ -1,0 +1,166 @@
+$json-font-size: 11px;
+$json-line-height: 1.4;
+$json-font-family: 'Roboto Mono', Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+
+$json-bg: #fcfdfd;
+$json-default: #222222;
+$json-keys: #59a5d8;
+$json-string: #fa7921;
+$json-number: #70ce35;
+$json-colon: #49b8f7;
+$json-primitive: #386fa4;
+$json-line-number: #222222;
+
+.json-field-wrapper {
+  background-color: $json-bg;
+  min-height: 120px;
+  font-size: $json-font-size;
+  line-height: $json-line-height;
+  font-family: $json-font-family;
+}
+
+.json-field-editor {
+  font-size: $json-font-size;
+  line-height: $json-line-height;
+  font-family: $json-font-family;
+
+  &__body {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  &__gutter {
+    flex: 0 0 44px;
+    box-sizing: border-box;
+    padding: 5px 0 5px 10px;
+    margin: 0;
+    user-select: none;
+    text-align: left;
+    overflow: hidden;
+  }
+
+  &__line-number {
+    color: $json-line-number;
+  }
+
+  &__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
+
+    > div {
+      font-size: $json-font-size;
+      line-height: $json-line-height;
+      font-family: $json-font-family;
+    }
+  }
+
+  textarea,
+  pre {
+    font-family: $json-font-family !important;
+    font-size: $json-font-size !important;
+    line-height: $json-line-height !important;
+  }
+
+  textarea {
+    outline: none;
+    box-shadow: none;
+    border: none;
+    background: transparent !important;
+    color: transparent !important;
+    caret-color: $json-default;
+  }
+
+  textarea:focus,
+  textarea:active,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border: none;
+  }
+
+  code[class*='language-'],
+  pre[class*='language-'] {
+    color: $json-default;
+    background: transparent;
+    text-shadow: none;
+    font-family: $json-font-family !important;
+    font-size: $json-font-size !important;
+    line-height: $json-line-height !important;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    tab-size: 2;
+    hyphens: none;
+  }
+
+  .token {
+    font-family: $json-font-family !important;
+    font-size: $json-font-size !important;
+    line-height: $json-line-height !important;
+  }
+
+  pre[class*='language-'] {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .token.property,
+  .token.unquoted {
+    color: $json-keys;
+  }
+
+  .token.string {
+    color: $json-string;
+  }
+
+  .token.number {
+    color: $json-number;
+  }
+
+  .token.boolean,
+  .token.null,
+  .token.keyword {
+    color: $json-primitive;
+  }
+
+  .token.operator {
+    color: $json-colon;
+  }
+
+  .token.punctuation {
+    color: $json-default;
+  }
+
+  .token.comment {
+    color: slategray;
+  }
+
+  &--error {
+    border-bottom: 2px solid #e74c3c;
+  }
+}
+
+.json-field-view {
+  margin: 0;
+  padding: 5px;
+  font-family: $json-font-family;
+  font-size: $json-font-size;
+  line-height: $json-line-height;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: $json-default;
+  background: transparent;
+  border: none;
+}
+
+.json-field-error-hint {
+  color: #e74c3c;
+  font-size: 11px;
+  margin-top: 3px;
+  font-family: monospace;
+}

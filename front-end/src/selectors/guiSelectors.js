@@ -3,82 +3,61 @@ import Immutable from 'immutable';
 import { onBoardingStates } from '@/actions/guiStateActions/pageActions';
 
 
+// Plain input selectors — no createSelector wrapper needed for identity transforms
 const getOnBoardingState = state => state.guiState.page.getIn(['onBoarding', 'state']);
-export const onBoardingStateSelector = createSelector(
-  getOnBoardingState,
-  state => state,
-);
+export const onBoardingStateSelector = getOnBoardingState;
 
 const getOnBoardingStep = state => state.guiState.page.getIn(['onBoarding', 'step']);
-export const onBoardingStepSelector = createSelector(
-  getOnBoardingStep,
-  step => step,
-);
+export const onBoardingStepSelector = getOnBoardingStep;
 
 export const onBoardingIsRunnigSelector = createSelector(
-  onBoardingStateSelector,
+  getOnBoardingState,
   state => state === onBoardingStates.RUNNING,
 );
 
 export const onBoardingIsFinishedSelector = createSelector(
-  onBoardingStateSelector,
+  getOnBoardingState,
   state => state === onBoardingStates.FINISHED,
 );
 
 export const onBoardingIsReadySelector = createSelector(
-  onBoardingStateSelector,
+  getOnBoardingState,
   state => state === onBoardingStates.READY,
 );
 
 export const onBoardingIsPausedSelector = createSelector(
-  onBoardingStateSelector,
+  getOnBoardingState,
   state => state === onBoardingStates.PAUSED,
 );
 
 export const onBoardingIsStartingSelector = createSelector(
-  onBoardingStateSelector,
+  getOnBoardingState,
   state => state === onBoardingStates.STARTING,
 );
 
 const getFormModalItem = state => state.guiState.page.getIn(['formModalData', 'item']);
-export const formModalItemSelector = createSelector(
-  getFormModalItem,
-  item => item,
-);
+export const formModalItemSelector = getFormModalItem;
+
 const getFormModalComponent = state => state.guiState.page.getIn(['formModalData', 'component']);
-export const formModalComponentSelector = createSelector(
-  getFormModalComponent,
-  component => component,
-);
+export const formModalComponentSelector = getFormModalComponent;
+
 const getFormModalConfig = state => state.guiState.page.getIn(['formModalData', 'config']);
-export const formModalConfigSelector = createSelector(
-  getFormModalConfig,
-  config => config,
-);
+export const formModalConfigSelector = getFormModalConfig;
 
 const getFormModalErrors = state => state.guiState.page.getIn(['formModalData', 'errors']);
-export const formModalErrosSelector = createSelector(
-  getFormModalErrors,
-  errors => errors,
-);
+export const formModalErrosSelector = getFormModalErrors;
 
 export const getPageErrors = createSelector(
-  formModalErrosSelector,
+  getFormModalErrors,
   (state, props, page = '') => page,
   (allErrors, page) => allErrors ? allErrors.get(page) : undefined,
 );
 
 const getFormModalShowState = state => state.guiState.page.getIn(['formModalData', 'show']);
-export const formModalShowStateSelector = createSelector(
-  getFormModalShowState,
-  show => show,
-);
+export const formModalShowStateSelector = getFormModalShowState;
 
 const getConfirm = state => state.guiState.page.getIn(['confirm']);
-export const confirmSelector = createSelector(
-  getConfirm,
-  confirm => confirm,
-);
+export const confirmSelector = getConfirm;
 
 const getMainMenu = state => state.guiState.menu.getIn(['main']);
 export const permissionsSelector = createSelector(

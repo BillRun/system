@@ -1,12 +1,22 @@
 <?php
 
-
+/**
+ * File-based tests for the CreditGuard payment gateway.
+ * Covers the full cycle: generate request file → process response file.
+ * Verify that the payment update time (urt) is taken from the
+ * Transmission Date in the response file and is not overridden by the core
+ * confirmation / rejection save flow.
+ */
 class CreditguardFileBasedTest extends \Codeception\Test\Unit
 {
     protected $tester;
     private $configModel;
 
     private const RESPONSE_FIXTURE = 'tests/all/paymentGateways/test_files/cg_response.csv';
+    private const RESPONSE_REJECTED_FIXTURE = 'tests/all/paymentGateways/test_files/cg_response_rejected.csv';
+
+    /** Raw "Transmission Date" value present in both fixture files. */
+    private const TRANSMISSION_DATE_RAW = '260611181359';
 
     protected function _before()
     {
@@ -46,6 +56,36 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $this->assertVendorResponseIdentityPreserved($fcTxid);
         $this->assertNoPgResponseField($fcTxid);
         $this->assertPaymentConfirmed($fcTxid);
+    }
+
+   /**
+     * BRCD-5394: after a successful confirmation the payment's urt must equal
+     * the Transmission Date from the file, not the time updateConfirmation() ran.
+     */
+    public function testUrtPreservedOnConfirmation()
+    {
+        $account = $this->createAccountWithCreditGuardPG();
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 10, 'dir' => 'tc']);
+        $this->generateRequestFile();
+        $fcTxid = $this->findGeneratedFcTxid($account['aid'], 10);
+        $this->processResponseFile($account['aid'], $fcTxid, self::RESPONSE_FIXTURE);
+        $this->assertUrtMatchesTransmissionDate($fcTxid, 'confirmed payment');
+    }
+
+    /**
+     * BRCD-5394: after a rejection both the original payment and the rejection
+     * record must have a urt equal to the Transmission Date from the file, not
+     * the time markRejected() or save() ran.
+     */
+    public function testUrtPreservedOnRejection()
+    {
+        $account = $this->createAccountWithCreditGuardPG();
+        $this->tester->payApi(['aid' => $account['aid'], 'amount' => 10, 'dir' => 'tc']);
+        $this->generateRequestFile();
+        $fcTxid = $this->findGeneratedFcTxid($account['aid'], 10);
+        $this->processResponseFile($account['aid'], $fcTxid, self::RESPONSE_REJECTED_FIXTURE);
+        $this->assertUrtMatchesTransmissionDate($fcTxid, 'rejected payment');
+        $this->assertRejectionUrtMatchesTransmissionDate($fcTxid);
     }
 
     // -------------------------------------------------------------------------
@@ -128,6 +168,37 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
     // Assertions
     // -------------------------------------------------------------------------
 
+    private function expectedTransmissionTimestamp(): int
+    {
+        return (int) strtotime(
+            DateTime::createFromFormat('ymdHis', self::TRANSMISSION_DATE_RAW)->format('Y-m-d H:i:s')
+        );
+    }
+
+    private function assertUrtMatchesTransmissionDate(string $txid, string $label): void
+    {
+        $bill = $this->tester->grabFromCollection('bills', ['txid' => $txid]);
+        $this->assertNotEmpty($bill, "No bill found with txid $txid");
+        $actualUrt = $bill['urt']->toDateTime()->getTimestamp();
+        $this->assertEquals(
+            $this->expectedTransmissionTimestamp(),
+            $actualUrt,
+            "urt on $label must match the Transmission Date from the response file"
+        );
+    }
+
+    private function assertRejectionUrtMatchesTransmissionDate(string $originalTxid): void
+    {
+        $rejection = $this->tester->grabFromCollection('bills', ['original_txid' => $originalTxid, 'rejection' => true]);
+        $this->assertNotEmpty($rejection, "No rejection bill found for original txid $originalTxid");
+        $actualUrt = $rejection['urt']->toDateTime()->getTimestamp();
+        $this->assertEquals(
+            $this->expectedTransmissionTimestamp(),
+            $actualUrt,
+            'urt on rejection record must match the Transmission Date from the response file'
+        );
+    }
+
     private function getProcessedBill(string $txid): array
     {
         $bill = $this->tester->grabFromCollection('bills', ['txid' => $txid]);
@@ -142,41 +213,6 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $pgrDump = json_encode($pgr);
         $this->assertEquals('28',     $pgr['File number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
         $this->assertEquals('002648', $pgr['Voucher number'], 'Voucher number must be the suffix after stripping the 2-char prefix');
-    }
-
-    private function assertPgResponseUnderVendorResponse(string $fcTxid): void
-    {
-        $bill = $this->getProcessedBill($fcTxid);
-        $vr = (array) $bill['vendor_response'];
-        // user_x_field is the txid overridden by formatLine; its saved
-        // value proves the substitution ran and the right bill was matched.
-        $this->assertEquals($fcTxid,                   $vr['user_x_field'], 'vendor_response.user_x_field equals runtime txid');
-        // total: 1100 in the file × value_mult 0.01 = 11
-        $this->assertEquals('000',                     $vr['result'],    'vendor_response.result');
-        $this->assertEquals('10427223',                $vr['Reference'], 'vendor_response.Reference');
-        $this->assertEquals(11,                        $vr['total'],     'vendor_response.total');
-        $this->assertEquals('291020241500088280000001', $vr['uid'],       'vendor_response.uid');
-        $this->assertEquals('8867300000004',           $vr['cgUid'],     'vendor_response.cgUid');
-    }
-
-    private function assertVendorResponseIdentityPreserved(string $fcTxid): void
-    {
-        $bill = $this->getProcessedBill($fcTxid);
-        $vr = (array) $bill['vendor_response'];
-        $this->assertEquals('CreditGuard', $vr['name'],   'vendor_response.name');
-        $this->assertEquals('mixed',       $vr['status'], 'vendor_response.status');
-    }
-
-    private function assertNoPgResponseField(string $fcTxid): void
-    {
-        $bill = $this->getProcessedBill($fcTxid);
-        $this->assertArrayNotHasKey('pg_response', $bill, 'pg_response field must not exist after BRCD-5384');
-    }
-
-    private function assertPaymentConfirmed(string $fcTxid): void
-    {
-        $bill = $this->getProcessedBill($fcTxid);
-        $this->assertFalse((bool) $bill['pending'], 'Payment must be confirmed (pending must be false)');
     }
 
     // -------------------------------------------------------------------------
@@ -351,7 +387,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
                             ["name" => "Voucher number",   "checked" => true, "save_to_bill" => true],
                             ["name" => "authNumber",       "checked" => true, "save_to_bill" => true],
                             ["name" => "cardId",           "checked" => true, "save_to_bill" => true],
-                            ["name" => "Transmission Date","checked" => true, "save_to_bill" => true],
+                            ["name" => "Transmission Date","checked" => true, "format" => "ymdHis", "type" => "date", "save_to_bill" => true],
                             ["name" => "total",            "checked" => true, "value_mult" => 0.01, "save_to_bill" => true],
                             ["name" => "cardAcquirer",     "checked" => true, "save_to_bill" => true],
                             ["name" => "tranId",           "checked" => true, "save_to_bill" => true],
