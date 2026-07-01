@@ -2,6 +2,7 @@ import React, { useCallback, memo } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import Immutable from "immutable";
+import uuid from "uuid";
 import { Conditions } from "@/components/Elements";
 import { getConfig } from "@/common/Util";
 import { discountAccountFieldsSelector } from "@/selectors/discountSelectors";
@@ -40,7 +41,7 @@ const CollectionConditions = ({
           return false;
         }
       }
-      const newConditions = existingConditions.push(newCondition);
+      const newConditions = existingConditions.push(newCondition.setIn(['ui_flags', 'id'], uuid.v4()));
       onChange(path, newConditions);
       const errorStringPath = [...path, count].join(".") // TODO check
       if (errors.has(errorStringPath)) {
