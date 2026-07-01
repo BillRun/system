@@ -133,9 +133,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             foreach ($warningMessages as $warningMessage){
                 $this->logFile->updateLogFileField('warnings', $warningMessage);
             }
-            if (isset($dataField['value_mult'])) {
-                $dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
-            }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];

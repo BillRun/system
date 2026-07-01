@@ -5,7 +5,7 @@ var globalSetting = {
   // serverUrl : "http://10.162.20.247", // Shani
   serverUrl: "http://billrun",
   //serverUrl: "",
-  serverApiVersion: '5.26.1',
+  serverApiVersion: '5.28.1',
   serverApiTimeOut: 300000, // 5 minutes
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',

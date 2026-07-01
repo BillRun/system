@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { SettingsDescription } from '../../language/FieldDescriptions';
 
-
-const Invoicing = ({ data, chargingDayOptions, onChange }) => {
+const Invoicing = ({ data = Immutable.Map(), chargingDayOptions = [...Array(28)].map((_, i) => ({value: i + 1, label: i + 1})), onChange }) => {
 
   const onChangeValue = (key, value) => {
     onChange('billrun', key, value);
@@ -37,9 +37,9 @@ const Invoicing = ({ data, chargingDayOptions, onChange }) => {
 
   return (
     <div className="Invoicing">
-      <Form horizontal>
+    <Form className="form-horizontal">
         <FormGroup controlId="charging_day" key="charging_day">
-          <Col componentClass={ControlLabel} sm={2}>
+          <Col as={ControlLabel} sm={2}>
             Charging Day
           </Col>
           <Col sm={6}>
@@ -53,7 +53,7 @@ const Invoicing = ({ data, chargingDayOptions, onChange }) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={{ span: 10, offset: 2 }} className="mt10">
             <Field
               fieldType="checkbox"
               label="Billing cycle generates PDF invoices"
@@ -63,7 +63,7 @@ const Invoicing = ({ data, chargingDayOptions, onChange }) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={{ span: 10, offset: 2 }} className="mt10">
             <Field
               fieldType="checkbox"
               label="Detailed Invoices"
@@ -74,7 +74,7 @@ const Invoicing = ({ data, chargingDayOptions, onChange }) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={{ span: 10, offset: 2 }} className="mt10">
             <Field
               fieldType="checkbox"
               label="Send invoices to customers by email"
@@ -91,11 +91,6 @@ const Invoicing = ({ data, chargingDayOptions, onChange }) => {
     </div>
   );
 }
-
-Invoicing.defaultProps = {
-  data: Immutable.Map(),
-  chargingDayOptions: [...Array(28)].map((_, i) => ({value: i + 1, label: i + 1}))
-};
 
 Invoicing.propTypes = {
   data: PropTypes.instanceOf(Immutable.Map),

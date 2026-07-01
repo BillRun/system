@@ -4,17 +4,17 @@ import Immutable from 'immutable';
 import { Actions, StateIcon } from '@/components/Elements';
 
 const Plugin = ({
-  plugin,
+  plugin = Immutable.Map(),
   index,
-  showEnableAction,
+  showEnableAction = true,
   onEdit,
   onDisable,
   onEnable,
 }) => {
   const getListActions = [
-    { type: 'edit', helpText: 'Edit', onClick: onEdit },
-    { type: 'enable', helpText: 'Enable', onClick: onEnable, show: showEnableAction },
-    { type: 'disable', helpText: 'Disable', onClick: onDisable, show: !showEnableAction },
+    { type: 'edit', helpText: 'Edit', onClick: onEdit, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'enable', helpText: 'Enable', onClick: onEnable, show: showEnableAction, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'disable', helpText: 'Disable', onClick: onDisable, show: !showEnableAction, actionStyle: 'link', actionSize: 'xsmall' },
   ];
   return (
     <tr key={index}>
@@ -36,11 +36,6 @@ Plugin.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDisable: PropTypes.func.isRequired,
   onEnable: PropTypes.func.isRequired,
-};
-
-Plugin.defaultProps = {
-  plugin: Immutable.Map(),
-  showEnableAction: true,
 };
 
 export default Plugin;

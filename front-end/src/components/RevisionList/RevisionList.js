@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { lowerCase, sentenceCase } from 'change-case';
@@ -98,7 +98,7 @@ class RevisionList extends Component {
     const statusWithTwoDate = this.isItemExpired(item)
       || (this.isItemActive(item) && !this.isItemLast(item));
     if (moment.isMoment(toDate) && (isItemClosed(item) || statusWithTwoDate)) {
-      return <ZoneDate value={toDate.subtract(1,'seconds')} format={getConfig('dateFormat', 'DD/MM/YYYY')} />;
+      return <ZoneDate value={toDate.clone().subtract(1, 'seconds')} format={getConfig('dateFormat', 'DD/MM/YYYY')} />;
     }
     return '-';
   };
@@ -134,15 +134,13 @@ class RevisionList extends Component {
     const { itemName } = this.props;
     this.props.onSelectItem();
     if (!this.props.onActionClone) {
-      const itemId = getItemId(item, '');
+      const itemId = getItemId(item, null);
       const itemType = getConfig(['systemItems', itemName, 'itemType'], '');
       const itemsType = getConfig(['systemItems', itemName, 'itemsType'], '');
-      this.props.router.push({
-        pathname: `${itemsType}/${itemType}/${itemId}`,
-        query: {
-          action: 'clone',
-        },
-      });
+      if (itemId) {
+        // Use string URL so HashRouter navigation is consistent.
+        this.props.router.push(`${itemsType}/${itemType}/${itemId}?action=clone`);
+      }
     } else {
       this.props.onActionClone(item, itemName, 'clone');
     }
@@ -252,12 +250,54 @@ class RevisionList extends Component {
   ]
 
   getListActions = () => [
-    { type: 'view', helpText: this.getActionHelpText, onClick: this.onClickEdit, show: this.parseViewShow, onClickColumn: 'from' },
-    { type: 'edit', helpText: this.getActionHelpText, onClick: this.onClickEdit, show: this.parseEditShow, onClickColumn: 'from' },
-    { type: 'clone', helpText: this.getActionHelpText, onClick: this.onClickClone },
-    { type: 'move', helpText: this.getActionHelpText, onClick: this.onClickMove, enable: this.parseMoveEnable },
-    { type: 'reopen', helpText: this.getActionHelpText, onClick: this.onClickReopen, enable: this.parseReopenEnable },
-    { type: 'remove', helpText: this.getActionHelpText, onClick: this.onClickRemove },
+    {
+      type: 'view',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickEdit,
+      show: this.parseViewShow,
+      onClickColumn: 'from',
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    {
+      type: 'edit',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickEdit,
+      show: this.parseEditShow,
+      onClickColumn: 'from',
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    {
+      type: 'clone',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickClone,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    {
+      type: 'move',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickMove,
+      enable: this.parseMoveEnable,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    {
+      type: 'reopen',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickReopen,
+      enable: this.parseReopenEnable,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    {
+      type: 'remove',
+      helpText: this.getActionHelpText,
+      onClick: this.onClickRemove,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
   ]
 
   renderMoveModal = () => {

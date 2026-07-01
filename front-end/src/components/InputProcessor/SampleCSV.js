@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { HelpBlock } from 'react-bootstrap';
+import { HelpBlock } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 /* COMPONENTS */
 import Field from '@/components/Field';
@@ -151,7 +151,7 @@ class SampleCSV extends Component {
           { fieldsHTML }
           <div className="form-group">
             <div className="col-lg-2">
-              <CreateButton onClick={onAddField} label="Add Field" />
+              <CreateButton onClick={onAddField} label="Add Field" buttonClass="btn-xs" />
             </div>
           </div>
         </div>
