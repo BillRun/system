@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Col } from 'react-bootstrap'
 import { FormGroup } from '@/common/BootstrapCompat';
-import uuid from 'uuid';
 import { CreateButton } from '@/components/Elements';
 import Condition from './Condition';
 
@@ -87,7 +86,7 @@ class Conditions extends Component {
     const { conditions, operators, fields, customValueOptions, disabled, editable, errors, removeButtonVariant, removeButtonClass } = this.props;    
     return (
       <Condition
-        key={uuid.v4()} // to support reordering need unique Key not base on index because it change condition data even if not change
+        key={condition.getIn(['ui_flags', 'id'], index)}
         item={condition}
         index={index}
         fields={fields}
