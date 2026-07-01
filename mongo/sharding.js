@@ -11,6 +11,8 @@ sh.shardCollection(_dbName + ".balances",{ "aid" : 1, "sid" : 1 }  );
 //sh.shardCollection(_dbName + ".bills",{ "aid" : 1 }  ); ; SHARDING bills COLLECTION WILL CAUSE SOME CLIENTS BI REPORTS TO FAIL DUE TO LOOKUPS!
 sh.shardCollection(_dbName + ".audit",  { "stamp" : 1 } );
 sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
+sh.shardCollection(_dbName + ".billrun_subs", { "aid" : 1, "key" : 1 } );
+sh.shardCollection(_dbName + ".billrun_grouping", { "aid" : 1, "billrun_key" : 1 } );
 if (db.version() >= "6") {
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }

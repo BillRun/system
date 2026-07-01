@@ -325,4 +325,14 @@ class Mongodloid_Db {
 		return $this->getCollection($name);
 	}
 
+	/**
+	 * Check if the database environment supports transactions.
+	 * Transactions require MongoDB 4.2+ and a Replica Set or Sharded Cluster (not standalone).
+	 *
+	 * @return boolean
+	 */
+	public function supportsTransactions()
+	{
+		return $this->compareServerVersion('4.2.0', '>=') && !$this->isStandalone();
+	}
 }
