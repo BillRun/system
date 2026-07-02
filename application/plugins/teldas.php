@@ -230,7 +230,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   protected function updateConfigTeldasData($fields) {
-      Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
       $model = new ConfigModel();
       $updatedData = $model->getConfig();
       unset($updatedData['_id']);
@@ -453,7 +452,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     if (!empty($match)) {
         $pipeline[] = ['$match' => $match];
     }
-    $pipeline[] = ['$sort' => [$sortField => 1, 'transactionDatetime' => -1]];
+    // Sort so that null transactionDatetimeTo (open revision) comes first, then by transactionDatetimeTo descending.
+    // MongoDB orders null lower than any date, so a plain -1 would place nulls last; a helper flag fixes the order.
+    $pipeline[] = ['$addFields' => [
+        'toIsNull' => ['$cond' => [['$eq' => ['$transactionDatetimeTo', null]], 0, 1]]
+    ]];
+    $pipeline[] = ['$sort' => [$sortField => 1, 'transactionDatetime' => -1, 'toIsNull' => 1, 'transactionDatetimeTo' => -1]];
     $pipeline[] = [
         '$group' => [
             '_id' => '$' . $sortField,
@@ -565,7 +569,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 	} catch (Exception $e) {
         try {
             Billrun_Factory::log("Inserting " . $logTiltle . " line by line",  Zend_Log::DEBUG);
-
             foreach ($entitiesToInsert as $entity) {
                 try {
                     $ret = $collection->insert($entity); // ok==1, err null
