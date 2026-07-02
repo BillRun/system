@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, InputGroup, HelpBlock } from 'react-bootstrap';
+import { Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -36,7 +37,7 @@ class CollectionDetails extends Component {
     return (
       <div>
         <FormGroup validationState={errors.has('name') ? 'error' : null}>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Title<span className="danger-red"> *</span></Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Title<span className="danger-red"> *</span></Col>
           <Col sm={8} lg={9}>
             <Field onChange={this.onChangeName} value={item.get('name', '')} />
             { errors.has('name') && <HelpBlock>{errors.get('name', '')}</HelpBlock> }
@@ -44,11 +45,11 @@ class CollectionDetails extends Component {
         </FormGroup>
 
         <FormGroup validationState={errors.has('do_after_days') ? 'error' : null}>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Trigger after<span className="danger-red"> *</span></Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Trigger after<span className="danger-red"> *</span></Col>
           <Col sm={4}>
             <InputGroup>
               <Field onChange={this.onChangeDays} value={item.get('do_after_days', '')} fieldType="number" min="1" style={{ minWidth: 50 }} />
-              <InputGroup.Addon>Days</InputGroup.Addon>
+              <InputGroup.Text>Days</InputGroup.Text>
             </InputGroup>
             <HelpBlock className="mb0">Days since entering debt collection process</HelpBlock>
             { errors.has('do_after_days') && <HelpBlock>{errors.get('do_after_days', '')}</HelpBlock> }
@@ -56,7 +57,7 @@ class CollectionDetails extends Component {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Status</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Status</Col>
           <Col sm={4}>
             <span>
               <span style={{ display: 'inline-block', marginRight: 20 }}>

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Panel, Form, Col, Row } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { List } from 'immutable';
 import Field from '@/components/Field';
 import Help from '../Help';
@@ -28,10 +29,7 @@ class PlanIncludedServicesTab extends Component {
     plays: List(),
   };
 
-  componentWillMount() {
-    this.props.dispatch(getList('services_keys', getIncludedServicesKeysQuery()));
-  }
-
+  
   onChangeServices = (services) => {
     const servicesList = (services.length) ? services.split(',') : [];
     this.props.onChangeFieldValue(['include', 'services'], List(servicesList));
@@ -94,6 +92,11 @@ class PlanIncludedServicesTab extends Component {
     const { mode } = this.props;
     const editable = (mode !== 'view');
     return editable ? this.renderEditableServices() : this.renderNonEditableServices();
+  }
+
+  
+  componentDidMount() {
+    this.props.dispatch(getList('services_keys', getIncludedServicesKeysQuery()));
   }
 
   render() {

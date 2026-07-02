@@ -1633,7 +1633,15 @@ abstract class Billrun_Bill {
 				Billrun_Util::setIn($paymentData, $path, $value);
 			} else {
 				$currentArray = Billrun_Util::getIn($paymentData, $path);
-				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
+				$merged = array_merge_recursive($currentArray, $value);
+				$merged = array_map(function($v) {
+					if (!is_array($v)) {
+						return $v;
+					}
+					$unique = array_unique($v, SORT_REGULAR);
+					return count($unique) === 1 ? reset($unique) : array_values($unique);
+				}, $merged);
+				Billrun_Util::setIn($paymentData, $path, $merged);
 			}
 		}
 		$this->setRawData($paymentData);

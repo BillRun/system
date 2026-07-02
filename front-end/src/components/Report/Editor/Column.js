@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Button, FormGroup, Col } from 'react-bootstrap';
-import { SortableElement } from 'react-sortable-hoc';
+import { Button, Col } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import { DragHandle } from '@/components/Elements';
 import Field from '@/components/Field';
 import { parseConfigSelectOptions } from '@/common/Util';
@@ -121,9 +121,6 @@ class Column extends Component {
           <DragHandle />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="field_field">Field</label>
-        </Col>
         <Col sm={4}>
           {!isCountColumn && (
             <Field
@@ -138,11 +135,6 @@ class Column extends Component {
           )}
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          {type !== reportTypes.SIMPLE && (
-            <label htmlFor="operator_field">Function</label>
-          )}
-        </Col>
         <Col sm={3}>
           {type !== reportTypes.SIMPLE && (
             <Field
@@ -156,9 +148,6 @@ class Column extends Component {
           )}
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="label_field">Label</label>
-        </Col>
         <Col sm={3}>
           <Field
             value={item.get('label', '')}
@@ -168,7 +157,7 @@ class Column extends Component {
         </Col>
 
         <Col sm={1} className="actions">
-          <Button onClick={this.onRemove} bsSize="small" className="pull-left" disabled={disabled}>
+          <Button onClick={this.onRemove} size="sm" variant="outline-secondary" className="pull-left" disabled={disabled}>
             <i className="fa fa-trash-o danger-red" />
           </Button>
         </Col>
@@ -178,4 +167,4 @@ class Column extends Component {
 
 }
 
-export default SortableElement(Column);
+export default Column;

@@ -6,6 +6,8 @@ import classNames from 'classnames';
 import Immutable from 'immutable';
 import moment from 'moment';
 
+const dateFormat = 'dd/MM/yyyy';
+
 
 export default class AdvancedFilter extends Component {
 
@@ -27,21 +29,21 @@ export default class AdvancedFilter extends Component {
     this.onChange(id, value);
   }
 
-  onChangeDate = (id, momentDate) => {
-    const value = momentDate ? momentDate.toJSON() : '';
+  onChangeDate = (id, date) => {
+    const value = date ? moment(date).toJSON() : '';
     this.onChange('urt', value);
   }
 
-  onChangeDateFrom = (id, momentFromDate) => {
-    const fromValue = momentFromDate ? momentFromDate.toJSON() : '';
+  onChangeDateFrom = (id, dateFrom) => {
+    const fromValue = dateFrom ? moment(dateFrom).toJSON() : '';
     const { filters } = this.state;
     const value = filters.get(id, {});
     value.from = fromValue;
     this.onChange(id, value);
   }
 
-  onChangeDateTo = (id, momentToDate) => {
-    const toValue = momentToDate ? momentToDate.toJSON() : '';
+  onChangeDateTo = (id, dateTo) => {
+    const toValue = dateTo ? moment(dateTo).toJSON() : '';
     const { filters } = this.state;
     const value = filters.get(id, {});
     value.to = toValue;
@@ -100,8 +102,8 @@ export default class AdvancedFilter extends Component {
         return (
           <DatePicker
             className="form-control"
-            dateFormat="DD/MM/YYYY"
-            selected={value.length ? moment(value) : null}
+            dateFormat={dateFormat}
+            selected={value.length ? moment(value).toDate() : null}
             onChange={this.onChangeDate.bind(this, field.id)}
             isClearable={true}
             placeholderText="Select Date..."
@@ -110,16 +112,16 @@ export default class AdvancedFilter extends Component {
       }
       case 'date-range': {
         let dateFrom = value ? value.from : '';
-        dateFrom = (dateFrom ? moment(dateFrom) : null);
+        dateFrom = (dateFrom ? moment(dateFrom).toDate() : null);
 
         let dateTo = value ? value.to : '';
-        dateTo = (dateTo ? moment(dateTo) : null);
+        dateTo = (dateTo ? moment(dateTo).toDate() : null);
         return (
           <div style={{ width: '100%' }}>
             <div className="pull-left" style={{ width: '48%' }}>
               <DatePicker
                 className="form-control"
-                dateFormat="DD/MM/YYYY"
+                dateFormat={dateFormat}
                 selected={dateFrom}
                 selectsStart
                 startDate={dateFrom}
@@ -132,7 +134,7 @@ export default class AdvancedFilter extends Component {
             <div className="pull-right" style={{ width: '48%' }}>
               <DatePicker
                 className="form-control"
-                dateFormat="DD/MM/YYYY"
+                dateFormat={dateFormat}
                 selected={dateTo}
                 selectsEnd
                 startDate={dateFrom}
@@ -167,10 +169,10 @@ export default class AdvancedFilter extends Component {
     const { fields } = this.props;
     return ([
       <td colSpan={fields.length - 1} className="pl0" key="search">
-        <Button bsStyle="primary" onClick={this.onApplay} className="full-width mr10"><i className="fa fa-search" />&nbsp;Search</Button>
+        <Button variant="primary" onClick={this.onApplay} className="full-width mr10"><i className="fa fa-search" />&nbsp;Search</Button>
       </td>,
       <td className="pr0" key="reset">
-        <Button onClick={this.onClear} className="full-width"><i className="fa fa-eraser danger-red" />&nbsp;Reset</Button>
+        <Button variant="outline-secondary" onClick={this.onClear} className="full-width"><i className="fa fa-eraser danger-red" />&nbsp;Reset</Button>
       </td>,
     ]);
   }

@@ -1,35 +1,33 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Button } from 'react-bootstrap';
-
-
-const ConfirmModal = props => (
-  <Modal show={props.show}>
+const ConfirmModal = ({
+  show,
+  message,
+  type = 'confirm',
+  children,
+  labelCancel = 'Cancel',
+  labelOk = 'OK',
+  onCancel,
+  onOk,
+}) => (
+  <Modal show={show}>
     <Modal.Header closeButton={false}>
-      <Modal.Title>{ props.message }</Modal.Title>
+      <Modal.Title>{ message }</Modal.Title>
     </Modal.Header>
-    { props.children &&
+    { children &&
       <Modal.Body>
-        { props.children }
+        { children }
       </Modal.Body>
     }
     <Modal.Footer>
-      {props.type !== 'alert' && (
-        <Button bsSize="small" style={{ minWidth: 90, marginRight: 5 }} onClick={props.onCancel} >{props.labelCancel}</Button>
+      {type !== 'alert' && (
+        <Button size="sm" variant="outline-secondary" style={{ minWidth: 90, marginRight: 5 }} onClick={onCancel} >{labelCancel}</Button>
       )}
-      <Button bsSize="small" style={{ minWidth: 90 }} onClick={props.onOk} bsStyle={props.type === 'delete' ? 'danger' : 'primary'} >{props.labelOk}</Button>
+      <Button size="sm" style={{ minWidth: 90 }} onClick={onOk} variant={type === 'delete' ? 'danger' : 'primary'} >{labelOk}</Button>
     </Modal.Footer>
   </Modal>
 );
-
-ConfirmModal.defaultProps = {
-  show: false,
-  type: 'confirm',
-  children: null,
-  labelCancel: 'Cancel',
-  labelOk: 'Ok',
-  onCancel: null,
-};
 
 ConfirmModal.propTypes = {
   show: PropTypes.bool.isRequired,
