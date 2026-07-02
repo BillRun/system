@@ -9,7 +9,7 @@ namespace Helper;
  * Extends BillRunAPI (like RealTimeApiHelper) so it can reuse the generate /
  * create entity helpers and getLastEntity directly.
  */
-class Teldas extends BillRunAPI
+class Teldas extends \Codeception\Module
 {
     /** Dialed INA number with no tariff (the BRCD-5292 fixture). */
     const INA_NUMBER = '0800000523';
