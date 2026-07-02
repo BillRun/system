@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { titleCase } from 'change-case';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Exporter from './Exporter';
 import { exportItemTypeSelector } from '../../selectors/entitySelector';
 import { getConfig } from '@/common/Util';
@@ -23,18 +23,14 @@ class ExporterSetup extends Component {
     dispatch: PropTypes.func.isRequired,
   };
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const { exportEntity } = this.props;
     this.updatePageTitle(exportEntity);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { exportEntity } = nextProps;
-    if (this.props.exportEntity !== exportEntity) {
-      this.updatePageTitle(exportEntity);
-    }
-  }
-
+  
   updatePageTitle = (exportEntity = null) => {
     if (exportEntity === null) {
       this.props.dispatch(setPageTitle('Export'));
@@ -47,6 +43,18 @@ class ExporterSetup extends Component {
   handleExport = (entity, exportParams) => this.props.dispatch(
     exportEntities(entity, exportParams)
   );
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { exportEntity } = this.props;
+    if (prevProps.exportEntity !== exportEntity) {
+      this.updatePageTitle(exportEntity);
+    }
+  }
+
+  componentWillUnmount() {
+    this.props.dispatch(setPageTitle(''));
+  }
 
   render() {
     const { exportEntity } = this.props;

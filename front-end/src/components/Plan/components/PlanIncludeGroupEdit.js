@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Col, Button, Form, FormGroup, ControlLabel, Checkbox, Tooltip, OverlayTrigger, HelpBlock } from 'react-bootstrap';
+import { Modal, Col, Button, Form, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Checkbox, ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import changeCase from 'change-case';
 import isNumber from 'is-number';
@@ -176,14 +177,17 @@ export default class PlanIncludeGroupEdit extends Component {
     } = this.props;
     const { isEditMode, errorInclude, errorUoM } = this.state;
     return (
-      <Modal show={isEditMode} bsSize="large">
-        <Modal.Header closeButton={false}>
-          <Modal.Title>Edit {name} <i>{usages.join(', ')}</i></Modal.Title>
-        </Modal.Header>
+      <Modal show={isEditMode} size="lg">
+        <div className="modal-header">
+          <button type="button" className="close" onClick={this.toggleBoby} aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 className="modal-title">Edit {name} <i>{usages.join(', ')}</i></h4>
+        </div>
         <Modal.Body>
-          <Form horizontal className="mb0">
+          <Form className="form-horizontal mb0">
             <FormGroup validationState={errorInclude.length > 0 || errorUoM.length > 0 ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={2}>Include</Col>
+              <Col as={ControlLabel} sm={2}>Include</Col>
               <Col sm={5}>
                 {this.isMonetaryBased()
                   ? <Field onChange={this.onChangeIncludeMonetaryBased} value={value} fieldType="text" />
@@ -206,26 +210,26 @@ export default class PlanIncludeGroupEdit extends Component {
             </FormGroup>
 
             <FormGroup>
-              <Col smOffset={2} sm={9}>
+              <Col  sm={9} className="col-sm-offset-2">
                 <Checkbox checked={shared} onChange={this.onChangeShared}>{"Share with all account's subscribers"}<Help contents={GroupsInclude.shared_desc} /></Checkbox>
               </Col>
             </FormGroup>
 
             <FormGroup>
-              <Col smOffset={2} sm={9}>
+              <Col  sm={9} className="col-sm-offset-2">
                 <Checkbox disabled={!shared} checked={pooled} onChange={this.onChangePooled}>{'Includes is pooled?'}<Help contents={GroupsInclude.pooled_desc} /></Checkbox>
               </Col>
             </FormGroup>
             {type === 'service' &&
               <FormGroup>
-                <Col smOffset={2} sm={9}>
+                <Col  sm={9} className="col-sm-offset-2">
                   <Checkbox checked={quantityAffected} onChange={this.onChangeQuantityAffected}>{'Multiply by Service Quantity'}<Help contents={GroupsInclude.quantityAffected_desc} /></Checkbox>
                 </Col>
               </FormGroup>
             }
 
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={2}>Products</Col>
+              <Col as={ControlLabel} sm={2}>Products</Col>
               <Col sm={9}>
                 <div style={{ marginTop: 10, minWidth: 250, width: '100%', minHeight: 42 }}>
                   <ProductSearchByUsagetype
@@ -241,7 +245,7 @@ export default class PlanIncludeGroupEdit extends Component {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button onClick={this.toggleBoby} bsStyle="primary" bsSize="small" style={{ minWidth: 90 }}>OK</Button>
+          <Button onClick={this.toggleBoby} variant="primary" size="sm" style={{ minWidth: 90 }}>OK</Button>
         </Modal.Footer>
       </Modal>
     );

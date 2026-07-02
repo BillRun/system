@@ -5,7 +5,8 @@ import Immutable from 'immutable';
 import isNumber from 'is-number';
 import moment from 'moment';
 import uuid from 'uuid';
-import { Col, FormGroup, ControlLabel, Panel, Button } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import { CreateButton, Actions, ActionButtons } from '@/components/Elements';
 import Help from '@/components/Help';
 import Field from '@/components/Field';
@@ -14,7 +15,7 @@ import ViewExpectedInvoice from './ViewExpectedInvoice';
 import {
   getAccountsQuery,
 } from '@/common/ApiQueries';
-import { getList } from '@/actions/listActions';
+import { getList, clearList } from '@/actions/listActions';
 import { showDanger } from '@/actions/alertsActions';
 import {
   showConfirmModal,
@@ -39,8 +40,7 @@ import {
   itemSelector,
 } from '@/selectors/entitySelector';
 
-
-const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, dispatch }) => {
+const ImmediateInvoiceSetup = ({ accountsOptions = [], currency = '', immediateInvoice = Immutable.Map(), dispatch }) => {
 
   const apiFormat = getConfig('apiDateTimeFormat', '');
   const aid = immediateInvoice.getIn(['customer', 'aid'], '');
@@ -57,6 +57,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     dispatch(getList('available_accounts', getAccountsQuery()));
     // component will unmount in functional component.
     return () => {
+      dispatch(clearList('available_accounts'));
       // TODO: find another way to not reset confirmed invoice - this is not working because 'isInvoiceConfirmed' is cashed and its always false
       if (!isInvoiceConfirmed) {
         // dispatch(clearImmediateInvoice());
@@ -199,7 +200,12 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
   const downloadInvoiceUrl = `${getConfig(['env','serverApiUrl'], '')}/api/accountinvoices?action=download&aid=${aid}&iid=${invoiceId}`;
 
   const actions = [
-    { type: 'remove', showIcon: true, enable: !lines.isEmpty() && !isInvoiceConfirmed, onClick: onRemoveClick },
+    {
+      type: 'remove',
+      showIcon: true,
+      enable: !lines.isEmpty() && !isInvoiceConfirmed,
+      onClick: onRemoveClick,
+    },
   ];
 
   const header = (
@@ -223,7 +229,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
       onRemove={onRemoveLine}
     />
   ), (
-    <Col key={`${line.get('id', uuid.v4())}_hr`} xsHidden={false} smHidden mdHidden lgHidden>
+    <Col key={`${line.get('id', uuid.v4())}_hr`} className="d-sm-none">
       <hr className="mt0 mb5"/>
     </Col>
   )]);
@@ -232,7 +238,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     <div className="charge-invoice-setup">
       <Col sm={12}>
         <FormGroup className="form-inner-edit-row">
-          <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+          <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
             {getFieldName('select_customer', 'immediate_invoice')}:
           </Col>
           <Col sm={6} lg={7}>
@@ -246,7 +252,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
             />
           </Col>
           <Col sm={2} lg={2} className="text-right">
-            <Button disabled={expectedInvoiceInProgress} type="submit" onClick={onResetFormClick} bsStyle="danger" className="ml10">
+            <Button disabled={expectedInvoiceInProgress} type="submit" onClick={onResetFormClick} variant="danger" className="ml10">
               <i className="danger-red fa fa-fw fa-trash-o" /> {getFieldName('reset_form', 'immediate_invoice')}
             </Button>
           </Col>
@@ -257,25 +263,25 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
           { !lines.isEmpty() && (
             <Col sm={12} className="form-inner-edit-rows">
               <FormGroup className="form-inner-edit-row header">
-                <Col sm={3} xsHidden>
+                <Col sm={3} className="hidden-xs">
                   <label htmlFor="subscriber">{getFieldName('subscriber', 'immediate_invoice')}</label>
                   <span className="danger-red"> *</span>
                   <Help contents={getFieldName('subscriber_input_help', 'immediate_invoice')} />
                 </Col>
-                <Col sm={3} xsHidden>
+                <Col sm={3} className="hidden-xs">
                   <label htmlFor="product">{getFieldName('product', 'immediate_invoice')}</label>
                   <span className="danger-red"> *</span>
                   <Help contents={getFieldName('rate_input_help', 'immediate_invoice')} />
                 </Col>
-                <Col sm={2} xsHidden>
+                <Col sm={2} className="hidden-xs">
                   <label htmlFor="date">{getFieldName('date', 'immediate_invoice')}</label>
                   <span className="danger-red"> *</span>  
                 </Col>
-                <Col sm={1} xsHidden>
+                <Col sm={1} className="hidden-xs">
                   <label htmlFor="volume">{getFieldName('volume', 'immediate_invoice')}</label>
                   <span className="danger-red"> *</span>
                 </Col>
-                <Col sm={2} xsHidden>
+                <Col sm={2} className="hidden-xs">
                   <label htmlFor="price">{getFieldName('price', 'immediate_invoice')}</label>
                   <Help contents={getFieldName('price_input_help', 'immediate_invoice')} />
                 </Col>
@@ -309,7 +315,7 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
         )}
         {isInvoiceConfirmed && (
           <form method="post" action={downloadInvoiceUrl} target="_blank" className="inline">
-            <Button type="submit" bsStyle="primary">
+            <Button type="submit" variant="primary">
               <i className="fa fa-download" /> {getFieldName('btn_download_invoice', 'immediate_invoice')}
             </Button>
           </form>
@@ -318,12 +324,6 @@ const ImmediateInvoiceSetup = ({ accountsOptions, currency, immediateInvoice, di
     </div>
   );
 }
-
-ImmediateInvoiceSetup.defaultProps = {
-  currency: '',
-  accountsOptions: [],
-  immediateInvoice: Immutable.Map(),
-};
 
 ImmediateInvoiceSetup.propTypes = {
   dispatch: PropTypes.func.isRequired,

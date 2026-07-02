@@ -1547,6 +1547,7 @@ class Billrun_DiscountManager {
 			if(!$discountEndProrated && $toByCycles < $this->cycle->end()){
 				$toByCycles = $this->cycle->start();
 			}
+			Billrun_Factory::dispatcher()->trigger('afterCalculateToByCycles', array($discount, $startTime, $cycles, $discountStartProrated, $discountEndProrated, $this->cycle, $from, $to, $discountEligibilityFrom, $discountEligibilityTo, &$toByCycles));
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
 		if(!$isSequential){

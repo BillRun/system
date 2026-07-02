@@ -130,7 +130,7 @@ class Range extends PureComponent {
     return (
       <InputGroup style={{ width: '100%' }}>
         {!compact && (
-          <InputGroup.Addon><small>From</small></InputGroup.Addon>
+          <InputGroup.Text><small>From</small></InputGroup.Text>
         )}
         <Field
           {...otherProps}
@@ -141,10 +141,10 @@ class Range extends PureComponent {
           placeholder={placeholderFrom}
         />
         {!compact && (
-          <InputGroup.Addon><small>To</small></InputGroup.Addon>
+          <InputGroup.Text><small>To</small></InputGroup.Text>
         )}
         {compact && (
-          <InputGroup.Addon><small>-</small></InputGroup.Addon>
+          <InputGroup.Text><small>-</small></InputGroup.Text>
         )}
         <Field
           {...otherProps}

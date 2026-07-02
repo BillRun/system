@@ -22,10 +22,11 @@ class All extends \Codeception\Module
             'billsCollection',
             'operationsCollection',
             'balancesCollection',
-	    'logCollection',
-	    'archiveCollection',
+	        'logCollection',
+	        'archiveCollection',
             'chargesCollection',
             'collection_stepsCollection',
+            'logCollection'
         ];
 
         foreach ($collections as $collectionMethod) {

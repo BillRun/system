@@ -1,6 +1,5 @@
 import { connect } from 'react-redux';
 import { List, Map } from 'immutable';
-import { SortableElement } from 'react-sortable-hoc';
 import CustomFieldsListRow from './CustomFieldsListRow';
 import {
   isFieldSortable,
@@ -58,4 +57,4 @@ export default connect(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
-)(SortableElement(CustomFieldsListRow));
+)(CustomFieldsListRow);

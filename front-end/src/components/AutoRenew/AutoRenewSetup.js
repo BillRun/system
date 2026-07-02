@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel, Col, Form, FormGroup, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { ActionButtons } from '@/components/Elements';
 import {
@@ -57,21 +58,22 @@ class AutoRenewSetup extends Component {
     bucketGroups: Immutable.List(),
   };
 
-  componentWillMount() {
-    this.props.dispatch(getList('bucket_groups', getBucketGroupsQuery()));
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.props.dispatch(getList('bucket_groups', getBucketGroupsQuery()));
+        this.fetchItem();
+    
     const { mode } = this.props;
     this.initDefaultValues();
     const pageTitle = buildPageTitle(mode, 'auto_renew');
     this.props.dispatch(setPageTitle(pageTitle));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { itemId } = nextProps;
-    const { itemId: oldItemId } = this.props;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { itemId } = this.props;
+    const { itemId: oldItemId } = prevProps;
     if (itemId !== oldItemId) {
       this.fetchItem(itemId);
     }
@@ -79,6 +81,7 @@ class AutoRenewSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clearAutoRenew());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -169,10 +172,10 @@ class AutoRenewSetup extends Component {
     return (
       <div className="AutoRenewSetup">
         <Panel>
-          <Form horizontal>
+          <Form className="form-horizontal">
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('aid', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('aid', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   id="aid"
@@ -184,7 +187,7 @@ class AutoRenewSetup extends Component {
             </FormGroup>
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('sid', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('sid', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   id="sid"
@@ -196,7 +199,7 @@ class AutoRenewSetup extends Component {
             </FormGroup>
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('bucket_group', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('bucket_group', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   fieldType="select"
@@ -208,7 +211,7 @@ class AutoRenewSetup extends Component {
             </FormGroup>
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('cycles', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('cycles', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   id="cycles"
@@ -221,7 +224,7 @@ class AutoRenewSetup extends Component {
             </FormGroup>
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('cycles_remaining', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('cycles_remaining', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   id="cycles_remaining"
@@ -236,7 +239,7 @@ class AutoRenewSetup extends Component {
             {
               isNew &&
               (<FormGroup>
-                <Col lg={2} md={2} componentClass={ControlLabel}>Immediate Charge</Col>
+                <Col lg={2} md={2} as={ControlLabel}>Immediate Charge</Col>
                 <Col lg={7} md={7} style={checkboxStyle}>
                   <Field
                     id="immediate"
@@ -255,7 +258,7 @@ class AutoRenewSetup extends Component {
             }
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('next_renew', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('next_renew', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   id="next_renew"
@@ -271,7 +274,7 @@ class AutoRenewSetup extends Component {
             {
               !isNew &&
               (<FormGroup>
-                <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('last_renew', 'autorenew')}</Col>
+                <Col lg={2} md={2} as={ControlLabel}>{getFieldName('last_renew', 'autorenew')}</Col>
                 <Col lg={7} md={7}>
                   <Field
                     id="last_renew"
@@ -283,7 +286,7 @@ class AutoRenewSetup extends Component {
             }
 
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>{getFieldName('interval', 'autorenew')}</Col>
+              <Col lg={2} md={2} as={ControlLabel}>{getFieldName('interval', 'autorenew')}</Col>
               <Col lg={7} md={7}>
                 <Field
                   fieldType="select"
