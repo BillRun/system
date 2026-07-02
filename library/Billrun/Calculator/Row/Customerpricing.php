@@ -204,10 +204,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
-		$enableMultiRetries =  true;
-		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this, &$enableMultiRetries));
+		$allowMultiRetries =  true;
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this, &$allowMultiRetries));
 		$pricingData = $this->updateBalance($this->rate, $this->plan, $this->usaget, $this->usagev);
-		if ($pricingData === false && $enableMultiRetries) {
+		if ($pricingData === false && $allowMultiRetries) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
 			if (++$this->countConcurrentRetries >= $this->concurrentMaxRetries) {
@@ -1136,7 +1136,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usageType = $this->row['usaget'];
 		$prepricedMapping = Billrun_Factory::config()->getLineTypeConfigByName($this->row['type'], true, $this->row['linet'] ?? null)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
-		$aprice = $apriceBeforeTrigger = Billrun_util::getIn($userFields, $apriceField);
+		$aprice = $apriceBeforeTrigger = Billrun_util::getIn($userFields, $apriceField, null);
         Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;

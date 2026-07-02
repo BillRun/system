@@ -1493,17 +1493,20 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         return;
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
-      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
+      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : false;
   }
 
-	public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$enableMultiRetries){
+  public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$allowMultiRetries){
       $matchingPaths = $this->matchingPathsByType[$row['type']] ?? null;
+      if(empty($matchingPaths)){
+        return;
+      }
       $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
       $duration = Billrun_Util::getIn($row, $durationPath);
-     if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false && empty($duration)){
-            $enableMultiRetries = false;
-        }
-    }
+      if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false && empty($duration)){
+        $allowMultiRetries = false;
+      }
+  }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
