@@ -68,33 +68,34 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		Billrun_Factory::log("Parsing data...", Zend_Log::DEBUG);
 		$parser = $this->getParser();
 		$parser->resetData();
+		$this->resetInformationArray();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
-                try{
-		$parser->parse($this->fileHandler);
-		} catch(Exception $ex) {
-                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-			Billrun_Factory::log()->log('Something went wrong while processing the file', Zend_Log::ALERT);
-                    return false;
-                } 
-		Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
-		$this->headerRows = $parser->getHeaderRows();
-		$this->trailerRows = $parser->getTrailerRows();
-		$parsedData = $parser->getDataRows();
-		$rowCount = 0;
-		Billrun_Factory::log("Formating parsed data, and adding stamp field", Zend_Log::DEBUG);
-		foreach ($parsedData as $index => $line) {
-            $line = $this->formatLine($line,$dataStructure);
-			$row = $this->getBillRunLine($line, $index);
-			if (!$row){
-				return false;
+        try{
+			$parser->parse($this->fileHandler);
+			Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
+			$this->headerRows = $parser->getHeaderRows();
+			$this->trailerRows = $parser->getTrailerRows();
+			$parsedData = $parser->getDataRows();
+			$rowCount = 0;
+			Billrun_Factory::log("Formating parsed data, and adding stamp field", Zend_Log::DEBUG);
+			foreach ($parsedData as $index => $line) {
+				$line = $this->formatLine($line,$dataStructure);
+				$row = $this->getBillRunLine($line, $index);
+				if (!$row){
+					return false;
+				}
+				$row['row_number'] = ++$rowCount;
+				$this->addDataRow($row);
 			}
-			$row['row_number'] = ++$rowCount;
-			$this->addDataRow($row);
-		}
+		} catch(Exception $ex) {
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log('Something went wrong while processing/parsing the file', Zend_Log::ALERT);
+			$this->updateLogFile();
+            return false;
+        }
 		$this->data['header'] = array('header' => TRUE); //TODO
         $this->data['trailer'] = array('trailer' => TRUE); //TODO
-		$this->resetInformationArray();
 		return true;
 	}
         
@@ -128,7 +129,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$this->informationArray['warnings'][] = $message;
 				$paramObj['format'] = Billrun_Base::base_datetimeformat;
 			}
-			$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+			$datetime = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format']);
+			if (!($datetime instanceof DateTime)) {
+				$message = $paramObj['name'] . ' field could not be parsed as a date using format ' . $paramObj['format'];
+				$this->informationArray['errors'][] = $message;
+				throw new Exception($message);
+			}
+			$row[$paramObj['name']] = $datetime->format(Billrun_Base::base_datetimeformat);
 		}
 		if (isset($paramObj['substring'])) {
 			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
