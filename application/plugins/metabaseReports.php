@@ -618,7 +618,7 @@ class Report {
 				switch ($param['type']) :
 					case "date" :
 						$date = "";
-						if (preg_match('/^\[\[/', $param['value'])) {
+						if (is_string($param['value']) && preg_match('/^\[\[/', $param['value'])) {
 							$date = $this->getPlaceHolderValue($param, $manager_params);
 						} elseif (isset($param['value']) && is_array($param['value'])) {
 							$date = Billrun_Util::calcRelativeTime($param['value'],time());
@@ -756,7 +756,7 @@ class Report {
         switch ($paramObj['type']) {
             case 'date':
                 $dateFormat = isset($paramObj['format']) ? $paramObj['format'] : Billrun_Base::base_datetimeformat;
-				if (preg_match('/^\[\[/', $paramObj['value'])) {
+				if (is_string($paramObj['value']) && preg_match('/^\[\[/', $paramObj['value'])) {
 					$dateValue = $this->getPlaceHolderValue($paramObj, $manager_params);
 				} elseif (is_numeric($paramObj['value'])) {
 					$dateValue = $paramObj['value'];
@@ -799,7 +799,7 @@ class Report {
 
 	protected function getNumberOrStringTranslationValue($param, $manager_params = []) {
 		$value = isset($param['value']) ? $param['value'] : "";
-		if (preg_match('/^\[\[/', $param['value'])) {
+		if (is_string($param['value']) && preg_match('/^\[\[/', $param['value'])) {
 			$value = $this->getPlaceHolderValue($param, $manager_params);
 		} else {
 			if ($param['type'] == 'string' && isset($param['format']) && $param['format'] == 'billrun_key') {

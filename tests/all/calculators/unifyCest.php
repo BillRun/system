@@ -14,7 +14,6 @@ class unifyCest
             // $this->createServices($I);
         }
         $I->cleanDB();
-        $I->resetBillrunInstances();
 
     }
 

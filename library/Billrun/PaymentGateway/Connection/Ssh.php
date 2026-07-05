@@ -217,7 +217,7 @@ class Billrun_PaymentGateway_Connection_Ssh extends Billrun_PaymentGateway_Conne
 	 * Verify that the file is a valid file. 
 	 * @return boolean false if the file name should not be received true if it should.
 	 */
-	protected function isFileValid($filename) {
+	protected function isFileValid($filename, $path = null) {
 		return preg_match($this->filenameRegex, $filename);
 	}
 
