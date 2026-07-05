@@ -6,8 +6,9 @@ namespace Helper;
  * (teldasFullProcessCest + teldasRealtimeFullProcessCest). All generic teldas
  * test logic lives here so it is not duplicated across the Cests.
  *
- * Extends BillRunAPI (like RealTimeApiHelper) so it can reuse the generate /
- * create entity helpers and getLastEntity directly.
+ * Delegates to the BillRunAPI module (via api()) to reuse the generate / create
+ * entity helpers and getLastEntity. It can't extend BillRunAPI: both are enabled
+ * modules and the actor would then see each action twice (module conflict).
  */
 class Teldas extends \Codeception\Module
 {
@@ -25,6 +26,20 @@ class Teldas extends \Codeception\Module
         'plugin_teldas_tariff_switching_classes',
         'plugin_teldas_non_working_days',
     ];
+
+    /**
+     * The BillRunAPI module (entity generators + getLastEntity + setPluginSettings).
+     * Teldas can't extend BillRunAPI: both are enabled modules, so inheriting its
+     * public methods would make the actor see each action defined twice and fail
+     * with a module-conflict. Delegate through getModule() instead (same pattern
+     * as the MongoDb module use below).
+     *
+     * @return \Helper\BillRunAPI
+     */
+    protected function api()
+    {
+        return $this->getModule('\Helper\BillRunAPI');
+    }
 
     public function cleanTeldasCollections()
     {
@@ -137,7 +152,7 @@ class Teldas extends \Codeception\Module
      */
     public function enableTeldasPluginInConfig($options)
     {
-        $this->setPluginSettings([
+        $this->api()->setPluginSettings([
             'name'          => 'teldasPlugin',
             'enabled'       => true,
             'system'        => true,
@@ -150,7 +165,7 @@ class Teldas extends \Codeception\Module
     /** Disable the teldas plugin in config so it does not leak into other tests. */
     public function disableTeldasPluginInConfig()
     {
-        $this->setPluginSettings([
+        $this->api()->setPluginSettings([
             'name'         => 'teldasPlugin',
             'enabled'      => false,
             'system'       => true,
@@ -186,11 +201,11 @@ class Teldas extends \Codeception\Module
      */
     public function createTeldasFixtures($subscriberFirstname = '0700000001', $planPrefix = 'TELDAS_TEST_PLAN_')
     {
-        $this->generatePlan(['name' => $planPrefix . (int) (microtime(true) * 10000), 'from' => '2025-01-01']);
-        $plan = $this->getLastEntity();
+        $this->api()->generatePlan(['name' => $planPrefix . (int) (microtime(true) * 10000), 'from' => '2025-01-01']);
+        $plan = $this->api()->getLastEntity();
 
         // Teldas rate - the INA (ina_vas_call) line must resolve to this one.
-        $this->generateRate([
+        $this->api()->generateRate([
             'tariff_category' => 'retail',
             'key'             => self::TELDAS_RATE_KEY,
             'from'            => '2025-01-01',
@@ -207,7 +222,7 @@ class Teldas extends \Codeception\Module
         ]);
 
         // Generic (non-teldas) rate - must NOT be picked for an INA call.
-        $this->generateRate([
+        $this->api()->generateRate([
             'tariff_category' => 'retail',
             'key'             => self::GENERIC_RATE_KEY,
             'from'            => '2025-01-01',
@@ -223,16 +238,16 @@ class Teldas extends \Codeception\Module
             ],
         ]);
 
-        $this->createAccountWithAllMandatoryCustomFields(['firstname' => 'teldas_test_account']);
-        $account = $this->getLastEntity();
+        $this->api()->createAccountWithAllMandatoryCustomFields(['firstname' => 'teldas_test_account']);
+        $account = $this->api()->getLastEntity();
 
-        $this->generateSubscriber([
+        $this->api()->generateSubscriber([
             'from'      => '2025-01-01',
             'firstname' => $subscriberFirstname,
             'aid'       => $account['aid'],
             'plan'      => $plan['name'],
         ]);
-        $subscriber = $this->getLastEntity();
+        $subscriber = $this->api()->getLastEntity();
 
         return ['account' => $account, 'subscriber' => $subscriber, 'plan' => $plan];
     }
