@@ -19,7 +19,7 @@ class PricingMappings extends Component {
     const { settings } = this.props;
     const pricingMappings = settings.get('pricing', Immutable.Map());
     return (
-      <Form horizontal className="pricingMappings">
+      <Form className="form-horizontal pricingMappings">
         <div className="form-group">
           <div className="col-lg-12">
             <h4>

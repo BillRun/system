@@ -263,4 +263,17 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 			]
 		];
 	}
+
+    public function beforeUpdatePayments($processor, $row, $bill) {
+        $current_fields = $processor->getBillSavedFieldsData();
+        if (isset($current_fields['Voucher number'])) {
+            $voucher = $current_fields['Voucher number'];
+            $file_number = substr($voucher, 0, 2);
+            $slave_number_and_sequence = substr($voucher, 2);
+            $current_fields['Voucher number'] = $slave_number_and_sequence;
+            $current_fields['File number'] = $file_number;
+            $processor->setBillSavedFields($current_fields);
+        }
+        return true;
+    }
 }

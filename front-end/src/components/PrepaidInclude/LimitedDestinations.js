@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Map, List } from 'immutable';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import LimitedDestination from './LimitedDestination';
 import { PlanSearch } from '@/components/Elements';
 
@@ -37,12 +37,6 @@ const LimitedDestinations = (props) => {
       }
     </div>
   );
-};
-
-LimitedDestinations.defaultProps = {
-  limitedDestinations: Map(),
-  allRates: [],
-  mode: 'create',
 };
 
 LimitedDestinations.propTypes = {

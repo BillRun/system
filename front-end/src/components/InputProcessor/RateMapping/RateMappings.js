@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
 import changeCase from 'change-case';
-import { Form, Tabs, Tab, Row, Col, ControlLabel, Button } from 'react-bootstrap';
+import { Form, Tabs, Tab, Row, Col, Button } from 'react-bootstrap';
+import { ControlLabel } from '@/common/BootstrapCompat';
 import RateMapping from './RateMapping';
 import Field from '@/components/Field';
 import { ConfirmModal } from '@/components/Elements';
@@ -74,7 +75,7 @@ class RateMappings extends Component {
     const { newCategory } = this.state;
     return (
       <Row>
-        <Col sm={2} componentClass={ControlLabel}>Add a new tariff category</Col>
+        <Col sm={2} as={ControlLabel}>Add a new tariff category</Col>
         <Col sm={4}>
           <Field
             fieldType="select"
@@ -84,7 +85,7 @@ class RateMappings extends Component {
           />
         </Col>
         <Col sm={1} style={{ marginTop: 5 }}>
-          <Button bsSize="xsmall" className="btn-primary" onClick={this.onAddNewRateCategory}>
+          <Button size="sm" variant="primary" className="btn-xs" onClick={this.onAddNewRateCategory}>
             <i className="fa fa-plus" />&nbsp;Add
           </Button>
         </Col>
@@ -97,7 +98,7 @@ class RateMappings extends Component {
       { changeCase.sentenceCase(rateCategory) }
       {
         this.getRateCategoriesInUse().size > 1 &&
-        (<Button bsSize="xsmall" bsStyle="link" onClick={this.onClickRateCategoryRemove(rateCategory)} className="close">
+        (<Button size="sm" variant="link" onClick={this.onClickRateCategoryRemove(rateCategory)} className="close">
           <i className="fa fa-times" style={{ color: '#222222', fontSize: 16, marginTop: -5, marginRight: -5 }} />
         </Button>)
       }
@@ -155,7 +156,7 @@ class RateMappings extends Component {
   render() {
     const rateCategoriesInUse = this.getRateCategoriesInUse();
     return (
-      <Form horizontal className="rateMappings">
+      <Form className="form-horizontal rateMappings">
         <div className="form-group">
           <div className="col-lg-12">
             <h4>

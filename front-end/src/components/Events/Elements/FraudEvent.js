@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, Panel, Label } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { FormGroup, Label, Panel } from '@/common/BootstrapCompat';
 import { CreateButton, LoadingItemPlaceholder } from '@/components/Elements';
 import {
   eventPropertyTypesSelector,
@@ -138,9 +139,9 @@ class FraudEvent extends Component {
         <Col sm={12} className="form-inner-edit-rows">
           { !conditionsRows.isEmpty() && (
             <FormGroup className="form-inner-edit-row">
-              <Col sm={4} xsHidden><label htmlFor="field_field">Filter</label></Col>
-              <Col sm={2} xsHidden><label htmlFor="operator_field">Operator</label></Col>
-              <Col sm={4} xsHidden><label htmlFor="value_field">Value</label></Col>
+              <Col sm={4} className="d-none d-sm-block"><label htmlFor="field_field">Filter</label></Col>
+              <Col sm={2} className="d-none d-sm-block"><label htmlFor="operator_field">Operator</label></Col>
+              <Col sm={4} className="d-none d-sm-block"><label htmlFor="value_field">Value</label></Col>
             </FormGroup>
           )}
         </Col>
@@ -151,6 +152,7 @@ class FraudEvent extends Component {
           <CreateButton
             onClick={this.onAddCondition}
             label="Add Condition"
+            buttonClass="btn-xs"
             disabled={disableAdd}
             title={disableCreateNewtitle}
           />
@@ -172,19 +174,19 @@ class FraudEvent extends Component {
     return (
       <Col sm={12}>
         <FormGroup className="form-inner-edit-row">
-          <Col sm={3} xsHidden><label htmlFor="threshold_field">
+          <Col sm={3} className="d-none d-sm-block"><label htmlFor="threshold_field">
             Field
             <span className="danger-red"> *</span></label>
           </Col>
-          <Col sm={3} xsHidden><label htmlFor="threshold_operator">
+          <Col sm={3} className="d-none d-sm-block"><label htmlFor="threshold_operator">
             Operator
             <span className="danger-red"> *</span></label>
           </Col>
-          <Col sm={4} xsHidden><label htmlFor="threshold_value">
+          <Col sm={4} className="d-none d-sm-block"><label htmlFor="threshold_value">
             Value <span className="danger-red"> *</span></label>
           </Col>
           {eventPropertyType.size === 1 && !['aprice', 'final_charge'].includes(threshold.getIn(['field'], '')) && (
-            <Col sm={2} xsHidden><label htmlFor="threshold_uof">
+            <Col sm={2} className="d-none d-sm-block"><label htmlFor="threshold_uof">
               Unit of measure
               <span className="danger-red"> *</span></label>
             </Col>
@@ -211,10 +213,10 @@ class FraudEvent extends Component {
       return (<LoadingItemPlaceholder />);
     }
     if (status === 'error') {
-      return (<Label bsStyle="danger">Oops! Something went wrong, please try again.</Label>);
+      return (<Label variant="danger">Oops! Something went wrong, please try again.</Label>);
     }
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
           <FraudEventDetails
             item={item}

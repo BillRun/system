@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, Row, Col, HelpBlock } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import { CreateButton, SortableFieldsContainer } from '@/components/Elements';
 import Column from './Column';
@@ -135,10 +136,10 @@ class Columns extends Component {
         <Col sm={12}>
           { !columnsRows.isEmpty() ? (
             <FormGroup className="form-inner-edit-row">
-              <Col sm={1} xsHidden>&nbsp;</Col>
-              <Col sm={4} xsHidden><label htmlFor="field_field">Field</label></Col>
-              <Col sm={3} xsHidden><label htmlFor="operator_field">{type !== reportTypes.SIMPLE && 'Function'}</label></Col>
-              <Col sm={3} xsHidden><label htmlFor="value_field">Label</label></Col>
+              <Col sm={1} className="d-none d-sm-block">&nbsp;</Col>
+              <Col sm={4} className="d-none d-sm-block"><label htmlFor="field_field">Field</label></Col>
+              <Col sm={3} className="d-none d-sm-block"><label htmlFor="operator_field">{type !== reportTypes.SIMPLE && 'Function'}</label></Col>
+              <Col sm={3} className="d-none d-sm-block"><label htmlFor="value_field">Label</label></Col>
             </FormGroup>
           ) : (
             <HelpBlock>{ emptyHelpText }</HelpBlock>

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Label, Button, FormGroup, Col, Form, ControlLabel } from 'react-bootstrap';
+import { Button, Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Label } from '@/common/BootstrapCompat';
 import { List, Map } from 'immutable';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import moment from 'moment';
@@ -66,10 +67,12 @@ class CycleData extends Component {
     this.updateInvoicesNum(billrunKey);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { billrunKey } = this.props;
-    if (nextProps.billrunKey !== billrunKey) {
-      this.updateInvoicesNum(nextProps.billrunKey);
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { billrunKey } = prevProps;
+    if (this.props.billrunKey !== billrunKey) {
+      this.updateInvoicesNum(this.props.billrunKey);
     }
   }
 
@@ -191,17 +194,17 @@ class CycleData extends Component {
       onOk: this.onClickConfirmAllConfirm,
       labelOk: 'Yes',
       message: 'Are you sure you want to confirm all the invoices?',
-      children: <Form horizontal>
+      children: <Form className="form-horizontal">
         <FormGroup>
-          <Col sm={6} componentClass={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
+          <Col sm={6} as={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
           <Col sm={6}>{getDateToDisplay(selectedCycle, 'start_date')} - {getDateToDisplay(selectedCycle, 'end_date')}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={6} componentClass={ControlLabel} className="pt5"><strong>Invoices will be confirmed after this action:</strong></Col>
+          <Col sm={6} as={ControlLabel} className="pt5"><strong>Invoices will be confirmed after this action:</strong></Col>
           <Col sm={6}>{invoicesNum}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={6} componentClass={ControlLabel}><Label bsStyle="danger">This action is irreversible</Label></Col>
+          <Col sm={6} as={ControlLabel}><Label variant="danger">This action is irreversible</Label></Col>
           <Col sm={6}></Col>
         </FormGroup>
       </Form>,
@@ -249,26 +252,26 @@ class CycleData extends Component {
       onOk: () => this.onClickInvoiceConfirm(entity),
       labelOk: 'Yes',
       message: 'Are you sure you want to confirm invoice?',
-      children: <Form horizontal>
+      children: <Form className="form-horizontal">
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>Invoice ID:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Invoice ID:</strong></Col>
           <Col sm={6} >{entity.get('invoice_id')}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>Customer Number:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Customer Number:</strong></Col>
           <Col sm={6} >{entity.get('aid')}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>Customer Name:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Customer Name:</strong></Col>
           <Col sm={6} >{this.parseCycleDataFirstName(entity)} {this.parseCycleDataLastName(entity)}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel} className="pt5"><strong>Total Due:</strong></Col>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Total Due:</strong></Col>
           <Col sm={6} >{this.parseCycleDataInvoiceTotal(entity)}{getSymbolFromCurrency(currency)}</Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={5} componentClass={ControlLabel}></Col>
-          <Col sm={6} ><Label bsStyle="danger">This action is irreversible</Label></Col>
+          <Col sm={5} as={ControlLabel}></Col>
+          <Col sm={6} ><Label variant="danger">This action is irreversible</Label></Col>
         </FormGroup>
       </Form>,
     }));
@@ -277,15 +280,15 @@ class CycleData extends Component {
   parseCycleDataConfirm = (entity) => {
     const { confirmingInvoices, confirmingAll } = this.state;
     if (entity.get('billed', false)) {
-      return (<Label bsStyle="success" className="non-editable-field">CONFIRMED</Label>);
+      return (<Label variant="success" className="non-editable-field">CONFIRMED</Label>);
     }
     if (confirmingAll || confirmingInvoices.includes(entity.get('invoice_id'))) {
-      return (<Label bsStyle="info" className="non-editable-field">CONFIRMING...</Label>);
+      return (<Label variant="info" className="non-editable-field">CONFIRMING...</Label>);
     }
     const onClickConfirm = () => {
       this.onClickConfirmInvoice(entity);
     }
-    return (<Button bsStyle="primary" bsSize="xsmall" onClick={onClickConfirm}>Confirm</Button>);
+    return (<Button variant="primary" size="sm" onClick={onClickConfirm}>Confirm</Button>);
   };
 
   parseCycleDataEmailSent = (entity) => {
@@ -304,7 +307,7 @@ class CycleData extends Component {
     const downloadUrl = this.downloadTaxURL( billrunKey );
     return (
       <form method="post" action={downloadUrl} target="_blank">
-        <Button className={entity.actionClass} bsStyle={entity.actionStyle} bsSize={entity.actionSize} type="submit">
+        <Button className={entity.actionClass} variant={entity.actionStyle} size={entity.actionSize} type="submit">
             {entity.label}
         </Button>
       </form>
