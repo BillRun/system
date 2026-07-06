@@ -25,6 +25,10 @@
         },
         "allow-plugins": {
             "php-http/discovery": true
+        },
+        "preferred-install": {
+            "behat/gherkin": "source",
+            "*": "dist"
         }
     },
     "require-dev": {
