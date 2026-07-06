@@ -48,6 +48,7 @@ codecept:
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
     - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans || true
     - docker-compose -f docker-compose-php85-ci.yml up --wait --build --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
