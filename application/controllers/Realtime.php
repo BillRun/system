@@ -33,10 +33,9 @@ class RealtimeController extends ApiController {
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$readPreference = Billrun_Factory::config()->getConfigValue('db.realtime.readPreference', '');
 		if (!empty($readPreference)) {
+			Billrun_Factory::log("Realtime: applying configured read preference: " . $readPreference, Zend_Log::DEBUG);
 			if (Billrun_Factory::db()->setReadPreference($readPreference) === false) {
 				Billrun_Factory::log("Realtime: invalid read preference configured (db.realtime.readPreference): " . $readPreference, Zend_Log::ERR);
-			} else {
-				Billrun_Factory::log("Realtime: applying configured read preference: " . $readPreference, Zend_Log::DEBUG);
 			}
 		}
 		$this->setDataFromRequest();
