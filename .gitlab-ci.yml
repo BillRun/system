@@ -46,16 +46,18 @@ codecept:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php85-tests.yml up --wait --build --detach
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans || true
+    - docker-compose -f docker-compose-php85-ci.yml up --wait --build --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php85-tests.yml down --remove-orphans
   after_script:
@@ -90,17 +92,18 @@ codecept_php74:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans || true
     - docker-compose -f docker-compose-php74-ci.yml up --wait --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans
   after_script:

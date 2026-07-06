@@ -34,7 +34,7 @@ RUN wget -O /tmp/jsignpdf.zip \
 
 WORKDIR /billrun
 # Copy over custom configurations
-# (Assuming php-fpm.conf and php.ini are still in the old directory. If they are also in cicd, change their source paths too!)
+
 COPY docker/billrun-docker/billrun-php85/php-fpm.conf /usr/local/etc/
 COPY docker/billrun-docker/billrun-php85/php.ini /usr/local/etc/php/
 
