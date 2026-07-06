@@ -35,7 +35,7 @@ services:
             timeout: 3s
             retries: 5
             start_period: 180s
-        command: sh -c "rm -f /tmp/composer-install-done; composer install --no-interaction --no-progress && touch /tmp/composer-install-done && php-fpm"
+        command: sh -c "rm -f /tmp/composer-install-done; composer install --no-interaction --no-progress --prefer-dist && touch /tmp/composer-install-done && php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
