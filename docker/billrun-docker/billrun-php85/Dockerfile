@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
                 openjdk-21-jre-headless \
                 python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf-3.3.7 \
-    && pecl install mongodb-2.3.1 \
+    && pecl install mongodb-2.3.3 \
     && pecl install xdebug-3.5.3 \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp \
