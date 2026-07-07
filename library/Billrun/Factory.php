@@ -552,7 +552,7 @@ class Billrun_Factory {
 		if (!isset(self::$auth)) {
 			if (php_sapi_name() === 'cli') {
 				/*
-					Why generateService hangs
+					Why generateService hangs (AggregatorTest:testDiscountOnAnAccountLevelService)
 					Unlike generatePlan/generateSubscriber (which go through the HTTP API, so they run in the app's fpm process), generateService with the default $byApi = false creates the entity in-process inside the codeception CLI run (BillRunAPI.php:513-524):
 
 					Models_Entity::create() → trackChanges() (Entity.php:457)
