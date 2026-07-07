@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Row, Col, FormGroup, ControlLabel, Button } from 'react-bootstrap';
+import { Row, Col, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -54,7 +55,7 @@ const Notification = (props) => {
         </Col>
         <Col lg={1} md={1} sm={1} className="text-right">
           { (!first && last && editable) &&
-            <Button bsSize="small" className="pull-right" onClick={onRemove}>
+            <Button variant="outline-secondary" size="sm" className="pull-right" onClick={onRemove}>
               <i className="fa fa-trash-o danger-red" />&nbsp;Remove
             </Button>
           }

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import withRouter from '@/common/withRouter';
 import { Map } from 'immutable';
 import { showDanger } from '@/actions/alertsActions';
 import { getExportGenerator, clearExportGenerator, saveExportGenerator, setFtpField } from '@/actions/exportGeneratorActions';
@@ -39,7 +40,7 @@ class ExportGenerator extends Component {
   }
 
   goBack() {
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'export_generators',
     });
   }
@@ -214,12 +215,9 @@ class ExportGenerator extends Component {
   }
 }
 
-ExportGenerator.contextTypes = {
-  router: PropTypes.object.isRequired
-};
 
 function mapStateToProps(state, props) {
   return { settings: state.exportGenerator };
 }
 
-export default connect(mapStateToProps)(ExportGenerator);
+export default withRouter(connect(mapStateToProps)(ExportGenerator));

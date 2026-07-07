@@ -206,8 +206,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
-			$row['usagev'] = 0;
-			$row['apr'] = 0;
 			return false;
 		}
 
