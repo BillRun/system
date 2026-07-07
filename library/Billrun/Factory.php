@@ -551,6 +551,18 @@ class Billrun_Factory {
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			if (php_sapi_name() === 'cli') {
+				/*
+					Why generateService hangs
+					Unlike generatePlan/generateSubscriber (which go through the HTTP API, so they run in the app's fpm process), generateService with the default $byApi = false creates the entity in-process inside the codeception CLI run (BillRunAPI.php:513-524):
+
+					Models_Entity::create() → trackChanges() (Entity.php:457)
+					→ Billrun_AuditTrail_Util::getUser() (Util.php:82)
+					→ Billrun_Factory::user() → Billrun_Factory::auth() (Factory.php:554)
+					→ new Zend_Auth_Storage_Yaf → Yaf_session::getInstance() (Yaf.php:8)
+					Step 4 is the exact yaf 3.3.7 / PHP 8.5 breakage we proved with gdb in the BRCD-3318 investigation (corrupted HashTable → zend_hash_find spins at 100% CPU, or segfault at shutdown). It also explains why the earlier hangs "clustered around AggregatorTest" — that suite is full of generateService calls.
+					Why only sometimes: Billrun_Factory::auth() caches self::$auth, so only the first in-process entity-create of the run initializes Yaf_Session — and the yaf bug itself is intermittent (sometimes it corrupts memory, sometimes it survives).
+					now uses Zend_Auth_Storage_NonPersistent when running under CLI, and keeps the original Zend_Auth_Storage_Yaf behavior for web requests. 
+				*/
 				// no HTTP session in CLI (cron/tests); Yaf_Session hangs/segfaults on PHP 8.5 (BRCD-3318)
 				self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
 			} else {
