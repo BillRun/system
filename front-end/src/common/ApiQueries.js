@@ -266,14 +266,20 @@ export const postpaidBalancesListQuery = (query, page, sort, size) => ({
 });
 
 /* Settings API */
-export const savePaymentGatewayQuery = gateway => ({
-  api: 'settings',
-  params: [
-    { category: 'payment_gateways' },
-    { action: 'set' },
-    { data: JSON.stringify(gateway) },
-  ],
-});
+export const savePaymentGatewayQuery = gateway => {
+  const formData = new FormData();
+  formData.append('category', 'payment_gateways');
+  formData.append('action', 'set');
+  formData.append('data', JSON.stringify(gateway));
+
+  return ({
+    api: 'settings',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
 
 /* Settings API */
 export const saveSharedSecretQuery = secret => ({

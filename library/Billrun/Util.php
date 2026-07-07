@@ -1983,7 +1983,7 @@ class Billrun_Util {
 	}
 
 	/**
-	 * check all conditions is met
+	 * check all conditions are met
 	 * 
 	 * @param array $row
 	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"
