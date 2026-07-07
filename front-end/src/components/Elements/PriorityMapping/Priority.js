@@ -1,21 +1,22 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { titleCase } from 'change-case';
 import { List, Map } from 'immutable';
-import { Panel, Col, FormGroup } from 'react-bootstrap';
+import { Col, Collapse } from 'react-bootstrap';
+import { FormGroup } from '@/common/BootstrapCompat';
 import PriorityCondition from './PriorityCondition';
 import { CreateButton, Actions } from '@/components/Elements';
 
 const createBtnStyle = { marginTop: 5 };
 
 const Priority = ({
-  priority,
-  index,
+  priority = Map(),
+  index = 0,
   type,
-  paramsKeyOptions,
-  lineKeyOptions,
-  conditionFieldsOptions,
-  valueWhenOptions,
+  paramsKeyOptions = [],
+  lineKeyOptions = [],
+  conditionFieldsOptions = [],
+  valueWhenOptions = [],
   onUpdate,
   onRemove,
   onAdd,
@@ -46,67 +47,77 @@ const Priority = ({
     actionClass: 'pr0 pl0 pt0',
   }], [onRemove, index]);
 
-  const header = (
-    <div>
-      {`Priority ${index + 2}`}
-      <div className="pull-right">
-        <Actions actions={actions} data={priorityPath} />
-      </div>
-    </div>
-  );
+  const [isExpanded, setIsExpanded] = useState(true);
+  const onToggle = useCallback((e) => {
+    e.preventDefault();
+    setIsExpanded(prev => !prev);
+  }, []);
+
   return (
-    <Panel header={header} collapsible={true} className="collapsible" defaultExpanded={true}>
-      <div className="priority-conditions">
-        <Col sm={12} className="form-inner-edit-rows">
-          {priorityConditions.isEmpty() && (
-            <small>No conditions found</small>
-          )}
-          {!priorityConditions.isEmpty() && (
-            <FormGroup className="form-inner-edit-row">
-              <Col sm={4} xsHidden><label className="ml5 mb0">CDR Field</label></Col>
-              <Col sm={3} xsHidden><label className="mb0">Operator</label></Col>
-              <Col sm={4} xsHidden><label className="mb0">{titleCase(type)} Parameter</label></Col>
-              <Col sm={1} xsHidden></Col>
-            </FormGroup>
-          )}
-          { priorityConditions.map((condition, idx) => (
-            <PriorityCondition
-              key={idx}
-              index={idx}
-              priorityIndex={index}
-              allowRemove={priorityConditions.size > 1}
-              type={type}
-              lineKeyOptions={lineKeyOptions}
-              paramsKeyOptions={paramsKeyOptions}
-              conditionFieldsOptions={conditionFieldsOptions}
-              valueWhenOptions={valueWhenOptions}
-              condition={condition}
-              onUpdate={updateCondition}
-              onRemove={removeCondition}
-            />
-          )) }
-        </Col>
-        <Col sm={12} className="ml5 pl0">
-          <CreateButton
-            onClick={onAdd}
-            data={conditionPath}
-            label="Add Condition"
-            buttonStyle={createBtnStyle}
-          />
-        </Col>
+    <div className="panel panel-default collapsible">
+      <div className="panel-heading">
+        <div className="pull-right">
+          <Actions actions={actions} data={priorityPath} />
+        </div>
+        <h3 className="panel-title">
+          <a
+            href="#"
+            role="button"
+            className={isExpanded ? '' : 'collapsed'}
+            onClick={onToggle}
+          >
+            {`Priority ${index + 2}`}
+          </a>
+        </h3>
       </div>
-    </Panel>
+      <Collapse in={isExpanded}>
+        <div>
+          <div className="panel-body">
+            <div className="priority-conditions">
+              <Col sm={12} className="form-inner-edit-rows">
+                {priorityConditions.isEmpty() && (
+                  <small>No conditions found</small>
+                )}
+                {!priorityConditions.isEmpty() && (
+                  <FormGroup className="form-inner-edit-row">
+                    <Col sm={4} className="hidden-xs"><label className="ml5 mb0">CDR Field</label></Col>
+                    <Col sm={3} className="hidden-xs"><label className="mb0">Operator</label></Col>
+                    <Col sm={4} className="hidden-xs"><label className="mb0">{titleCase(type)} Parameter</label></Col>
+                    <Col sm={1} className="hidden-xs" />
+                  </FormGroup>
+                )}
+                { priorityConditions.map((condition, idx) => (
+                  <PriorityCondition
+                    key={idx}
+                    index={idx}
+                    priorityIndex={index}
+                    allowRemove={priorityConditions.size > 1}
+                    type={type}
+                    lineKeyOptions={lineKeyOptions}
+                    paramsKeyOptions={paramsKeyOptions}
+                    conditionFieldsOptions={conditionFieldsOptions}
+                    valueWhenOptions={valueWhenOptions}
+                    condition={condition}
+                    onUpdate={updateCondition}
+                    onRemove={removeCondition}
+                  />
+                )) }
+              </Col>
+              <Col sm={12} className="ml5 pl0">
+                <CreateButton
+                  onClick={onAdd}
+                  data={conditionPath}
+                  label="Add Condition"
+                  buttonStyle={createBtnStyle}
+                />
+              </Col>
+            </div>
+          </div>
+        </div>
+      </Collapse>
+    </div>
   )
 }
-
-Priority.defaultProps = {
-  priority: Map(),
-  lineKeyOptions: [],
-  paramsKeyOptions: [],
-  conditionFieldsOptions: [],
-  valueWhenOptions: [],
-  index: 0,
-};
 
 Priority.propTypes = {
   priority: PropTypes.instanceOf(Map),

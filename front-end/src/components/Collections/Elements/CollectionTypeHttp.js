@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { TextWithButton } from '@/components/Elements';
 import Field from '@/components/Field';
 import { showWarning } from '@/actions/alertsActions';
@@ -78,7 +79,7 @@ class CollectionTypeHttp extends Component {
     return content.get('custom_parameter', Immutable.Map())
       .map((value, field) => (
         <FormGroup validationState={errors.has(field) ? 'error' : null} key={`custom_parameter_${field}`}>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             {field}
           </Col>
           <Col sm={8} lg={9}>
@@ -104,7 +105,7 @@ class CollectionTypeHttp extends Component {
     return (
       <div>
         <FormGroup validationState={errors.has('url') ? 'error' : null}>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             URL<span className="danger-red"> *</span>
           </Col>
           <Col sm={8} lg={9}>
@@ -112,8 +113,8 @@ class CollectionTypeHttp extends Component {
             { errors.has('url') && <HelpBlock>{errors.get('url', '')}</HelpBlock> }
           </Col>
         </FormGroup>
-        <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <FormGroup validationState={errors.has('decoder') ? 'error' : null}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             HTTP Method
           </Col>
           <Col sm={4}>
@@ -127,7 +128,7 @@ class CollectionTypeHttp extends Component {
           </Col>
         </FormGroup>
         <FormGroup validationState={errors.has('decoder') ? 'error' : null}>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Decoder
           </Col>
           <Col sm={4}>
@@ -143,11 +144,11 @@ class CollectionTypeHttp extends Component {
         </FormGroup>
         { this.renderCustomParameters() }
         <hr />
-        <FormGroup validationState={errors.has('decoder') ? 'error' : null}>
+        <FormGroup>
           <Col sm={3} lg={2}>
             &nbsp;
           </Col>
-          <Col componentClass={ControlLabel} sm={8} lg={9}>
+          <Col as={ControlLabel} sm={8} lg={9}>
             <TextWithButton
               onAction={this.onAddCustomParameter}
               actionLabel="Add custom parameter"

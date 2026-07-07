@@ -186,7 +186,7 @@ class Models_Entity {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
 		$this->originalUpdate = $update;
-		$options = isset($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
+		$options = !empty($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}

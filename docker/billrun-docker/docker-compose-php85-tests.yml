@@ -56,7 +56,7 @@ services:
         container_name: billrun-standalone-chrome
         restart: always
     mockup:
-        #image: php:7.3-fpm
+        image: billrun-mockups-php85
         build:
             context: ./mockup-servers
             dockerfile: Dockerfile-webserver

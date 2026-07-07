@@ -1,14 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Panel, Col, HelpBlock, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
   getConfig,
   formatSelectOptions,
 } from '@/common/Util';
 
-const CollectionSettings = ({ process, index, errors, httpMethods, onChange }) => {
+const CollectionSettings = ({ process = Immutable.Map(), index = 0, errors = Immutable.Map(), httpMethods = getConfig(['collections', 'http', 'methods'], Immutable.List()), onChange }) => {
 
   const onChangeName = (e) => {
     const { value } = e.target;
@@ -41,74 +42,74 @@ const CollectionSettings = ({ process, index, errors, httpMethods, onChange }) =
   const methodOptions = httpMethods.map(formatSelectOptions).toArray();
   return (
     <Col sm={12}>
-      <Panel header="General Process Settings">
+      <Form className="form-horizontal">
+        <Panel header="General Process Settings" className="mb10">
         <FormGroup validationState={errors.has([index, 'label'].join('.')) ? 'error' : null}>
-          <Col sm={2} componentClass={ControlLabel}>
-            Title
-          </Col>
-          <Col sm={6}>
-            <Field value={label} onChange={onChangeLabel} />
-            { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'label'].join('.'), '')}</HelpBlock> }
-          </Col>
-        </FormGroup>
+            <Col sm={2} as={ControlLabel}>
+              Title
+            </Col>
+            <Col sm={6}>
+              <Field value={label} onChange={onChangeLabel} />
+              { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'label'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
         <FormGroup validationState={errors.has([index, 'name'].join('.')) ? 'error' : null}>
-          <Col sm={2} componentClass={ControlLabel}>
-            Key
-          </Col>
-          <Col sm={6}>
-            <Field value={name} onChange={onChangeName} />
-            { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'name'].join('.'), '')}</HelpBlock> }
-          </Col>
-        </FormGroup>
+            <Col sm={2} as={ControlLabel}>
+              Key
+            </Col>
+            <Col sm={6}>
+              <Field value={name} onChange={onChangeName} />
+              { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'name'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
         <FormGroup validationState={errors.has([index, 'settings', 'min_debt'].join('.')) ? 'error' : null}>
-          <Col sm={2} componentClass={ControlLabel}>
-            Minimum debt
-          </Col>
-          <Col sm={6}>
-            <Field value={minDebt} onChange={onChangeMinDeb} fieldType="number" />
-            { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'min_debt'].join('.'), '')}</HelpBlock> }
+            <Col sm={2} as={ControlLabel}>
+              Minimum debt
+            </Col>
+            <Col sm={6}>
+              <Field value={minDebt} onChange={onChangeMinDeb} fieldType="number" />
+              { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'min_debt'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
+        </Panel>
 
-          </Col>
-        </FormGroup>
-      </Panel>
-
-      <Panel header={
-        <h4>Collection State Change<br />
-          <small>
-            HTTP requests will be triggered to this URL when a customer
-            enters / exits from collection
-          </small>
-        </h4>}
-      >
+        <Panel header={
+          <h4>Collection State Change<br />
+            <small>
+              HTTP requests will be triggered to this URL when a customer
+              enters / exits from collection
+            </small>
+          </h4>}
+        >
         <FormGroup validationState={errors.has([index, 'settings', 'change_state_url'].join('.')) ? 'error' : null}>
-          <Col sm={2} componentClass={ControlLabel}>
-            URL
-          </Col>
-          <Col sm={6}>
-            <Field value={changeStateUrl} onChange={onChangeChangeStateUrl} />
-            { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'change_state_url'].join('.'), '')}</HelpBlock> }
-          </Col>
-        </FormGroup>
+            <Col sm={2} as={ControlLabel}>
+              URL
+            </Col>
+            <Col sm={6}>
+              <Field value={changeStateUrl} onChange={onChangeChangeStateUrl} />
+              { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'change_state_url'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
         <FormGroup validationState={errors.has([index, 'settings', 'change_state_method'].join('.')) ? 'error' : null}>
-          <Col sm={2} componentClass={ControlLabel}>
-            HTTP Method
-          </Col>
-          <Col sm={6}>
-            <Field
-              fieldType="select"
-              options={methodOptions}
-              onChange={onChangeChangeStateMethod}
-              value={changeStateMethod}
-              clearable={false}
-            />
-            { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'change_state_method'].join('.'), '')}</HelpBlock> }
-          </Col>
-        </FormGroup>
-      </Panel>
+            <Col sm={2} as={ControlLabel}>
+              HTTP Method
+            </Col>
+            <Col sm={6}>
+              <Field
+                fieldType="select"
+                options={methodOptions}
+                onChange={onChangeChangeStateMethod}
+                value={changeStateMethod}
+                clearable={false}
+              />
+              { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'change_state_method'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
+        </Panel>
+      </Form>
     </Col>
   );
 }
-
 
 CollectionSettings.propTypes = {
   process: PropTypes.instanceOf(Immutable.Map),
@@ -117,12 +118,5 @@ CollectionSettings.propTypes = {
   index: PropTypes.number,
   onChange: PropTypes.func.isRequired,
 }
-
-CollectionSettings.defaultProps = {
-  process: Immutable.Map(),
-  errors: Immutable.Map(),
-  index: 0,
-  httpMethods: getConfig(['collections', 'http', 'methods'], Immutable.List()),
-};
 
 export default CollectionSettings;

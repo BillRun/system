@@ -32,34 +32,32 @@ print-info:
     - 'echo "Job start: $CI_JOB_STARTED_AT"'
     - 'echo "Branch: $CI_COMMIT_BRANCH"'
     - 'echo "Commit Author: $CI_COMMIT_AUTHOR"'
+
 codecept:
-  services:
-    - name: docker:dind
-      alias: dockerhost
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
-    DOCKER_HOST: tcp://dockerhost:2375/
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
+    GIT_DEPTH: "1"
   stage: test
   tags:
-    - new_docker_runner
+    - codecept
   before_script:
     # build and run BillRun app in docker
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php85-tests.yml up --wait --build --detach
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans || true
+    - docker-compose -f docker-compose-php85-ci.yml up --wait --build --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php85-tests.yml down --remove-orphans
   after_script:
@@ -94,22 +92,24 @@ codecept_php74:
     - mkdir logs cache
     - chmod 777 logs/ cache/
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php74-tests.yml up --wait --build --detach
+    - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans || true
+    - docker-compose -f docker-compose-php74-ci.yml up --wait --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php74-tests.yml down --remove-orphans
+    - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans
   after_script:
     - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php74-tests.yml ps
+    - docker-compose -f docker-compose-php74-ci.yml ps
     - docker logs billrun-app
   artifacts:
     when: on_failure

@@ -178,4 +178,18 @@ class TestHelper extends \Codeception\Module {
         return $timezone;
     }
 
+    /**
+     * Drive the file processor over the given path, which may be either a
+     * single file or a directory of files. A directory is iterated in one
+     * processor run so any cached calculators are reused across files (the
+     * production behaviour the receiver -> processor pipeline relies on).
+     *
+     * @param array $options at least 'type' and 'path'
+     */
+    public function processByPath(array $options)
+    {
+        $processor = \Billrun_Processor::getInstance($options);
+        return $processor->processorByPath($options);
+    }
+
 }

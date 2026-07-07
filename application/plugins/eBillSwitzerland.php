@@ -767,6 +767,10 @@ class eBillSwitzerlandPlugin extends Billrun_Plugin_BillrunPluginBase
 
 	protected function shouldGenerateInvoice($accountBillrun)
 	{
+		if (Billrun_Util::getIn($accountBillrun, 'attributes.invoice_type') === 'immediate') {
+			return false;
+		}
+
 		$rules = $this->should_generate_ebill;
 
 		if (empty($rules) || empty($rules['path'])) {
