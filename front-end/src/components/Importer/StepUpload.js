@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col, HelpBlock, Button } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Papa from 'papaparse';
 import filesize from 'file-size';
 import { sentenceCase } from 'change-case';
@@ -65,22 +66,7 @@ class StepUpload extends Component {
     this.setoperation(item.get('entity', ''), item.get('operation', ''));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, typeSelectOptions } = nextProps;
-    if (this.props.item.get('entity', '') !== item.get('entity', '')) {
-      this.setoperation(item.get('entity', ''), item.get('operation', ''));
-    }
-    const importType = item.get('importType', '');
-    if (typeSelectOptions && typeSelectOptions.length === 1 && typeSelectOptions[0].value !== importType) {
-      this.onChangeImportType(typeSelectOptions[0].value);
-    }
-    const oldImportType = this.props.item.get('importType', '');
-    // remove files if mapper was changed
-    if (oldImportType !== '' && oldImportType !== importType) {
-      this.props.onDelete('files');
-    }
-  }
-
+  
   setoperation = (entity, curroperation) => {
     const operationsConfig = getConfig(['import', 'allowed_entities_actions'], Immutable.List());
     const operations = operationsConfig
@@ -242,6 +228,23 @@ class StepUpload extends Component {
     actionClass: "pl0 pr0"
   }];
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, typeSelectOptions } = this.props;
+    if (prevProps.item.get('entity', '') !== item.get('entity', '')) {
+      this.setoperation(item.get('entity', ''), item.get('operation', ''));
+    }
+    const importType = item.get('importType', '');
+    if (typeSelectOptions && typeSelectOptions.length === 1 && typeSelectOptions[0].value !== importType) {
+      this.onChangeImportType(typeSelectOptions[0].value);
+    }
+    const oldImportType = prevProps.item.get('importType', '');
+    // remove files if mapper was changed
+    if (oldImportType !== '' && oldImportType !== importType) {
+      this.props.onDelete('files');
+    }
+  }
+
   render() {
     const { delimiterError, predefinedFileError, fileError, operations } = this.state;
     const { item,
@@ -270,8 +273,8 @@ class StepUpload extends Component {
     return (
       <div className="StepUpload">
         { !isSingleEntity && (
-          <FormGroup>
-            <Col sm={3} componentClass={ControlLabel}>Entity</Col>
+          <FormGroup validationState={predefinedFileError === null ? null : 'error'}>
+            <Col sm={3} as={ControlLabel}>Entity</Col>
             <Col sm={9}>
               <Field
                 fieldType="select"
@@ -285,8 +288,8 @@ class StepUpload extends Component {
           </FormGroup>
         )}
         {(typeSelectOptions.length !== 1) && (
-          <FormGroup>
-            <Col sm={3} componentClass={ControlLabel}>Import option</Col>
+          <FormGroup validationState={delimiterError === null ? null : 'error'}>
+            <Col sm={3} as={ControlLabel}>Import option</Col>
             <Col sm={9}>
               <Field
                 fieldType="select"
@@ -301,8 +304,8 @@ class StepUpload extends Component {
         )}
 
         {(!['manual_mapping'].includes(importType)) && (
-          <FormGroup validationState={predefinedFileError === null ? null : 'error'}>
-            <Col sm={3} componentClass={ControlLabel}>Upload CSV</Col>
+          <FormGroup validationState={fileError === null ? null : 'error'}>
+            <Col sm={3} as={ControlLabel}>Upload CSV</Col>
             <Col sm={9}>
               <dl>
                 <dt>
@@ -324,7 +327,7 @@ class StepUpload extends Component {
 
         {['manual_mapping'].includes(importType) && (
           <FormGroup validationState={delimiterError === null ? null : 'error'}>
-            <Col sm={3} componentClass={ControlLabel}>Delimiter</Col>
+            <Col sm={3} as={ControlLabel}>Delimiter</Col>
             <Col sm={9}>
               <Field
                 fieldType="select"
@@ -343,15 +346,15 @@ class StepUpload extends Component {
           </FormGroup>
         )}
         {['manual_mapping'].includes(importType) && (
-          <FormGroup validationState={fileError === null ? null : 'error'}>
-            <Col sm={3} componentClass={ControlLabel}>Upload CSV</Col>
+          <FormGroup>
+            <Col sm={3} as={ControlLabel}>Upload CSV</Col>
             <Col sm={9}>
               <div style={{ paddingTop: 5 }} >
                 {fileName !== ''
                   ? (<p style={{ margin: 0 }}>
                     {fileName}
                     <Button
-                      bsStyle="link"
+                      variant="link"
                       title="Remove file"
                       onClick={this.onFileReset}
                       style={{ padding: '0 0 0 10px', marginBottom: 1 }}
@@ -367,8 +370,8 @@ class StepUpload extends Component {
           </FormGroup>
         )}
         {operations.size > 1 && isTypePlugin === false && (
-          <FormGroup validationState={delimiterError === null ? null : 'error'}>
-            <Col sm={3} componentClass={ControlLabel}>Import Action</Col>
+          <FormGroup>
+            <Col sm={3} as={ControlLabel}>Import Action</Col>
             <Col sm={9}>
               <Field
                 fieldType="select"
@@ -393,7 +396,7 @@ class StepUpload extends Component {
         )}
         {['manual_mapping'].includes(importType) && mapperOptions.size > 0 && (
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>Saved Mapper</Col>
+          <Col sm={3} as={ControlLabel}>Saved Mapper</Col>
           <Col sm={9}>
             <Field
               fieldType="select"

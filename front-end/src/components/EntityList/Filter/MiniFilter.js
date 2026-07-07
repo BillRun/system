@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { Button, InputGroup } from 'react-bootstrap';
 import Field from '@/components/Field';
 
-
-const MiniFilter = ({ filter, placeholder, onChange, onClear }) => (
+const MiniFilter = ({ filter = '', placeholder = 'Filter...', onChange, onClear }) => (
   <InputGroup className="mini-list-filter">
     <Field
       onChange={onChange}
@@ -12,17 +11,17 @@ const MiniFilter = ({ filter, placeholder, onChange, onClear }) => (
       placeholder={placeholder}
       autoComplete="off"
     />
-    <InputGroup.Addon className="filter-reset">
+    <InputGroup.Text className="filter-reset">
       <Button
-        bsSize="xsmall"
-        bsStyle="link"
+        className="btn-xs"
+        variant="outline-secondary"
         disabled={filter === ''}
         onClick={onClear}
         title="reset filter"
       >
         <i className="fa fa-eraser danger-red" />
       </Button>
-    </InputGroup.Addon>
+    </InputGroup.Text>
   </InputGroup>
 )
 
@@ -34,11 +33,6 @@ MiniFilter.propTypes = {
   placeholder: PropTypes.string,
   onChange: PropTypes.func.isRequired,
   onClear: PropTypes.func,
-};
-
-MiniFilter.defaultProps = {
-  filter: '',
-  placeholder: 'Filter...',
 };
 
 export default MiniFilter;

@@ -53,13 +53,7 @@ class ConditionValue extends Component {
     this.initFieldOptions(config, selectOptions);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { config } = this.props;
-    if (!Immutable.is(config, nextProps.config)) {
-      this.initFieldOptions(nextProps.config, nextProps.selectOptions);
-    }
-  }
-
+  
   shouldComponentUpdate(nextProps) {
     const { field, config, operator, selectOptions, disabled } = this.props;
     return (
@@ -396,13 +390,21 @@ class ConditionValue extends Component {
     return this.renderInputString();
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { config } = prevProps;
+    if (!Immutable.is(config, this.props.config)) {
+      this.initFieldOptions(this.props.config, this.props.selectOptions);
+    }
+  }
+
   render() {
     const { operator } = this.props;
     const input = this.renderInput();
     if (operator.has('prefix')) {
       return (
         <InputGroup>
-          <InputGroup.Addon>{operator.get('prefix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('prefix', '')}</InputGroup.Text>
           {input}
         </InputGroup>
       );
@@ -411,7 +413,7 @@ class ConditionValue extends Component {
       return (
         <InputGroup>
           {input}
-          <InputGroup.Addon>{operator.get('suffix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('suffix', '')}</InputGroup.Text>
         </InputGroup>
       );
     }

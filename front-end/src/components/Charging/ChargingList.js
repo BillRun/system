@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { Actions } from '@/components/Elements';
 import List from '@/components/List';
 import { pageFlagSelector } from '@/selectors/guiSelectors';
@@ -18,12 +19,11 @@ import {
     getChargeStatus,
 } from '@/common/Util';
 
-
 const ChargingList = ({
-    items,
+    items = Immutable.List(),
     scheduleItems,
-    size,
-    listType,
+    size = 20,
+    listType = 'all',
     listSizeOptions,
     listTypeOptions,
     onChangeSize,
@@ -67,14 +67,6 @@ const ChargingList = ({
         </Row>
     );
 }
-
-
-ChargingList.defaultProps = {
-    items: Immutable.List(),
-    allowCreate: false,
-    size: 20,
-    listType: 'all',
-};
 
 ChargingList.propTypes = {
     items: PropTypes.instanceOf(Immutable.List),

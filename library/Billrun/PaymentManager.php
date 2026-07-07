@@ -373,9 +373,10 @@ class Billrun_PaymentManager {
 					$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus['status'], $gateway, $paymentStatus['additional_params']);
 					Billrun_Factory::log("Processed pg response " . print_R($responseFromGateway, 1), Zend_Log::DEBUG);
 				} catch (Exception $e) {
+					$errorCode = $e->getCode();
 					$payment->setGatewayChargeFailure($e->getMessage());
-					$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
-					Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
+					$responseFromGateway = array('status' => $errorCode, 'stage' => "Rejected");
+					Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage() . (isset($errorCode) ? ", http code: $errorCode" : ""), Zend_Log::ALERT);
 				}
 			} else {
 				Billrun_Factory::log("single_payment_gateway parameter is not set", Zend_Log::DEBUG);

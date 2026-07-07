@@ -5,8 +5,7 @@ import classNames from 'classnames';
 import { StateIcon, WithEntityLink } from '@/components/Elements';
 import { getItemDateValue, isItemClosed, isItemReopened, getItemId } from '@/common/Util';
 
-
-const RevisionTimeline = ({ revisions, size, item, start, itemName }) => {
+const RevisionTimeline = ({ revisions = Immutable.List(), size = 5, item = Immutable.Map(), start = null, itemName = '' }) => {
   const revisionsToDisplay = Immutable.List().withMutations((listWithMutations) => {
     let nextRevision = Immutable.Map();
     revisions.forEach((revision) => {
@@ -104,15 +103,6 @@ const RevisionTimeline = ({ revisions, size, item, start, itemName }) => {
       { moreAfter && renderMore('after') }
     </ul>
   );
-};
-
-
-RevisionTimeline.defaultProps = {
-  revisions: Immutable.List(),
-  item: Immutable.Map(),
-  itemName: '',
-  size: 5,
-  start: null,
 };
 
 RevisionTimeline.propTypes = {

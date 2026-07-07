@@ -2,7 +2,8 @@ import React, { useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import ConditionValue from '../../Report/Editor/ConditionValue';
 import { Actions } from '@/components/Elements';
@@ -75,15 +76,12 @@ const FraudEventCondition = (props) => {
       onRemove(index);
     };
     return ([{
-      type: 'remove', onClick: onRemoveCondition, actionStyle: 'default', helpText: 'Remove Condition'
+      type: 'remove', onClick: onRemoveCondition, actionStyle: 'outline-secondary', actionSize: 'small', helpText: 'Remove Condition',
     }])
   }, [onRemove, updateEventUsageType]);
 
   return (
     <FormGroup className="form-inner-edit-row">
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_filter">Filter</label>
-      </Col>
       <Col sm={4} className="pl0">
         <Field
           id="condition_field"
@@ -94,9 +92,6 @@ const FraudEventCondition = (props) => {
         />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_operator">Operator</label>
-      </Col>
       <Col sm={3}>
         <Field
           id="condition_operator"
@@ -108,9 +103,6 @@ const FraudEventCondition = (props) => {
         />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_value">Value</label>
-      </Col>
       <Col sm={4}>
         <ConditionValue
           field={conditionForValue}
@@ -142,15 +134,7 @@ FraudEventCondition.propTypes = {
   getEventRates: PropTypes.func.isRequired,
 };
 
-FraudEventCondition.defaultProps = {
-  condition: Immutable.Map(),
-  eventUsageTypes: Immutable.Map(),
-  effectOnUsagetFields: Immutable.List(),
-  conditionField: Immutable.Map(),
-  conditionsFieldSelectOptions: [],
-  conditionOperator: Immutable.Map(),
-  conditionsOperatorsSelectOptions: [],
-};
+
 
 const mapStateToProps = (state, props) => ({
   conditionField: eventConditionsFilterOptionsSelector(state, { eventType: 'fraud' })

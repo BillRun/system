@@ -1,0 +1,70 @@
+services:
+    web:
+        image: nginx:1.29.8
+        container_name: billrun-nginx
+        ports:
+            - "8074:80"
+        restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        volumes:
+            - ${PWD}/../..:/billrun:ro
+            - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+            - "mongodb"
+        environment:
+        - "APPLICATION_ENV=container"
+    php:
+        image: git.bill.run:5050/sdoc/billrun/billrun-dev-base:1.0.0
+        container_name: billrun-app
+        restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "XDEBUG_MODE=off"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        - "COMPOSER_HOME=/tmp/composer"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ./../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        healthcheck:
+            test: ["CMD-SHELL", "test -f /tmp/composer-install-done || exit 1"]
+            interval: 3s
+            timeout: 3s
+            retries: 5
+            start_period: 180s
+        command: sh -c "rm -f /tmp/composer-install-done; composer install --no-interaction --no-progress --prefer-dist && touch /tmp/composer-install-done && php-fpm"
+    mongodb:
+        image: mongo:3.6
+        container_name: billrun-mongodb
+        restart: always
+        volumes:
+            - ${PWD}/../..:/billrun:ro
+            - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        ports:
+            - 27017:27017
+        healthcheck:
+            test: ["CMD", "mongo", "--host", "billrun-mongodb", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            interval: 3s
+            timeout: 5s
+            retries: 10
+            start_period: 40s
+    chrome:
+        image: selenium/standalone-chrome:4.44.0
+        container_name: billrun-standalone-chrome
+        restart: always
+    mockup:
+        image: git.bill.run:5050/sdoc/billrun/billrun-mockup:1.0.0
+        container_name: billrun-mockups
+        environment:
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 discover_client_host=false mode=develop"
+        volumes:
+            - ${PWD}/mockup-servers:/mockups
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        command: php -S 0.0.0.0:8081 router.php
+        ports:
+        - 8081:8081
+        restart: always

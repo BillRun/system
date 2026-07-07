@@ -10,6 +10,7 @@ modules:
         - \Helper\TestHelper
         - \Helper\LogChecker
         - \Helper\Aggregate
+        - \Helper\BillRun\Mockups\Crm
         - REST:
             depends: PhpBrowser
             part: Json

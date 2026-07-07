@@ -871,5 +871,10 @@ class Billrun_Billingcycle {
 			return false;
 		}
 	}
+
+	public static function getUpfrontCycle($regularCycle) {
+		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
+		return new Billrun_DataTypes_CycleTime($nextCycleKey);
+	}
 	
 }

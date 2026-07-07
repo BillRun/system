@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import DateTime from './DateTime';
 import Currency from './Currency';
 import Invoicing from './Invoicing';
@@ -62,7 +63,9 @@ class Settings extends Component {
     // playsBeforeSave: Immutable.List(),
   };
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const settingsToFetch = [
       'pricing',
       'billrun',
@@ -171,7 +174,7 @@ class Settings extends Component {
 
     return (
       <div>
-        <Tabs activeKey={activeTab} animation={false} id="SettingsTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="SettingsTab" onSelect={this.handleSelectTab}>
           <Tab title="Company" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>
               <Tenant onChange={this.onChangeFieldValue} data={tenant} />

@@ -66,12 +66,7 @@ export default class FieldsMapping extends Component {
     };
   }
 
-  componentWillMount() {
-    if (this.props.settings.getIn(['processor', 'time_field'])) {
-      this.setState({ separateTime: true });
-    }
-  }
-
+  
   onChangePattern(index, e) {
     const { conditions } = this.state;
     const { value } = e.target;
@@ -301,10 +296,16 @@ export default class FieldsMapping extends Component {
     this.setState({ pattern: e, conditions });
   };
 
+  
+  componentDidMount() {
+    if (this.props.settings.getIn(['processor', 'time_field'])) {
+      this.setState({ separateTime: true });
+    }
+  }
+
   render() {
     const {
       separateTime,
-      separateTimeZone,
       usaget,
       unit,
       volumeType,

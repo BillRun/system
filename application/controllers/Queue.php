@@ -123,7 +123,7 @@ class QueueController extends ApiController {
 			];
 			$this->setOutput([$ret]);
 		}
-		$includeChildJobs = (int) $request->get('include_childs', 1);
+		$includeChildJobs = (int) $request->get('include_childs', true);
 		$model = new JobsqueueModel();
 		$cancelJobStatus = $model->cancelJob($job_md5, $includeChildJobs);
 		if ($cancelJobStatus['ok'] == 1 && $cancelJobStatus['nModified'] >= 1) {

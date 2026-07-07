@@ -514,7 +514,7 @@ class Billrun_EventsManager {
 	protected function sendEmailNotification($emailNotifications) {
 		foreach ($emailNotifications as $eventType => $eventTypeEmailNotification) {
 			$emailTemplateName = "{$eventType}_notification";
-			$emailTemplateConfig = Billrun_Factory::config()->getConfigValue('email_templates.' . $emailTemplateName, []);
+			$emailTemplateConfig = Billrun_Util::findMatchingEmailTemplate($emailTemplateName);
 			$subject = Billrun_Util::getIn($emailTemplateConfig, 'subject', '');
 			$body = Billrun_Util::getIn($emailTemplateConfig, 'content', '');
 			foreach ($eventTypeEmailNotification as $eventCode => $eventCodeEmailNotification) {

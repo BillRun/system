@@ -262,6 +262,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if ($numberOfRecordsToTreat == $maxRecords) {
 			Billrun_Factory::log()->log("Transactions request number of records to treat in file got to the limit of max records: $maxRecords" , Zend_Log::DEBUG);
 		}
+		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);

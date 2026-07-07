@@ -26,6 +26,7 @@ class ArrearsTest extends \Codeception\Test\Unit
 
     protected function _after()
     {
+        $this->tester->enableDBModeSettings();
     }
 
 
@@ -223,6 +224,36 @@ class ArrearsTest extends \Codeception\Test\Unit
        
     }
 
+     public function testDiscountsArrearsWithCycles_6()
+    {
+        /*
+        BRCD-5102: cycles not work when service with prorated=false
+        */
+        $aid = 12248;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'PLAN_5102_1';
+        $this->tester->generatePlan(['name' => $planName]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->generateService(['name' => 'SERVICE_1', 'prorated' => false]);
+        $this->defaultOptions['stamp'] = '202510';
+        $this->tester->runCycle($this->defaultOptions);
+        
+        $this->tester->seeInCollection('lines', ["usaget" => "discount", 'billrun' => $this->defaultOptions['stamp'], 'aid' => $aid, "key" => "SUBSCRIBER_DISCOUNT_1", "aprice" => -2.09]);
+
+        $this->defaultOptions['stamp'] = '202511';
+        $this->tester->runCycle($this->defaultOptions);
+
+        $this->tester->seeInCollection('lines', ["usaget" => "discount", 'billrun' => $this->defaultOptions['stamp'], 'aid' => $aid, "key" => "SUBSCRIBER_DISCOUNT_1", "aprice" => -2.09]);
+;
+
+        $this->defaultOptions['stamp'] = '202512';
+        $this->tester->runCycle($this->defaultOptions);
+
+        $this->tester->dontSeeInCollection('lines', ["usaget" => "discount", 'billrun' => $this->defaultOptions['stamp'], 'aid' => $aid, "key" => "SUBSCRIBER_DISCOUNT_1", "aprice" => -2.09]);
+
+
+       
+    }
 
 
     // BRCD-5156 Discount elgibilty is empty for subscribers with revisions out side of the discount span

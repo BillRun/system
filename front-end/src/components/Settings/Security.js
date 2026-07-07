@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import moment from 'moment';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import List from '@/components/List';
 import { getItemDateValue, getConfig } from '@/common/Util';
 import { StateIcon, ConfirmModal, CreateButton } from '@/components/Elements';

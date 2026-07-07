@@ -167,6 +167,22 @@ class Mongodloid_Collection {
 	}
 
 	/**
+	 * Drop an index by name only if it currently exists. No-op otherwise.
+	 *
+	 * @param string $indexName
+	 * @return bool true if the index was dropped, false if it didn't exist
+	 */
+	public function dropIndexIfExists($indexName) {
+		foreach ($this->getIndexes() as $idx) {
+			if (isset($idx['name']) && $idx['name'] === $indexName) {
+				$this->dropIndex($indexName);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Create an unique index for the collection
 	 * @param array $fields
 	 * @return mongodloid createIndex result

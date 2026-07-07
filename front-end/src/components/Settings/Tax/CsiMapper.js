@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
-import { FormGroup, Col, ControlLabel, Panel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getFieldName } from '@/common/Util';
 
@@ -57,7 +58,7 @@ class CsiMapper extends Component {
     return (
       <Panel header={`${fileType} - ${usageType}`}>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Origin Number
           </Col>
           <Col sm={8} lg={9}>
@@ -71,7 +72,7 @@ class CsiMapper extends Component {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Term Number
           </Col>
           <Col sm={8} lg={9}>

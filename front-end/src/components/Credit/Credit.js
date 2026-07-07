@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import moment from 'moment';
 import { Map, List } from 'immutable';
-import { Col, FormGroup, HelpBlock, Form, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { ModalWrapper } from '@/components/Elements';
 import Field from '@/components/Field';
@@ -256,9 +257,9 @@ class Credit extends Component {
         onOk={this.onCreditCharge}
         onCancel={this.props.onClose}
       >
-        <Form horizontal>
-          <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>Rate By</Col>
+        <Form className="form-horizontal">
+          <FormGroup validationState={validationErrors.get('subscriber', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Rate By</Col>
             <Col sm={10}>
               <Col sm={3}>
                 <Field
@@ -285,8 +286,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('subscriber', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Subscriber<span className="danger-red"> *</span></Col>
+          <FormGroup validationState={validationErrors.get('aprice', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Subscriber<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 fieldType="select"
@@ -298,8 +299,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('aprice', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Charge<span className="danger-red"> *</span></Col>
+          <FormGroup validationState={validationErrors.get('usagev', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Charge<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 onChange={this.onChangeCreditApriceValue}
@@ -315,8 +316,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('usagev', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>{rateBy === 'usagev' ? `Volume ${this.getRateUnitLabel(rate)}` : 'Quantity'} <span className="danger-red"> *</span></Col>
+          <FormGroup validationState={validationErrors.get('rate', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>{rateBy === 'usagev' ? `Volume ${this.getRateUnitLabel(rate)}` : 'Quantity'} <span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 onChange={this.onChangeCreditUsagevValue}
@@ -328,7 +329,7 @@ class Credit extends Component {
           </FormGroup>
 
           <FormGroup validationState={validationErrors.get('rate', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Product<span className="danger-red"> *</span></Col>
+            <Col sm={2} as={ControlLabel}>Product<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 fieldType="select"
@@ -340,8 +341,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('rate', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Date<span className="danger-red"> *</span></Col>
+          <FormGroup>
+            <Col sm={2} as={ControlLabel}>Date<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 fieldType="datetime"

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Form, FormGroup, FormControl, InputGroup, Button, Alert, Panel, Col, Row } from 'react-bootstrap';
+import { Form, FormControl, InputGroup, Button, Alert, Col, Row } from 'react-bootstrap';
+import { Panel, FormGroup } from '@/common/BootstrapCompat';
 import { Conflict409 } from '../StaticPages';
 import { userDoLogin, sendResetMail, getAuthOptions} from '@/actions/userActions';
 import ResetPassword from './ResetPassword';
@@ -42,9 +43,11 @@ class LoginForm extends Component {
       });
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.state.error !== nextProps.error) {
-      this.setState({ error: nextProps.error });
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (this.state.error !== this.props.error) {
+      this.setState({ error: this.props.error });
     }
   }
 
@@ -104,13 +107,13 @@ class LoginForm extends Component {
     const { error, progress, resetPassword, sending, authOptions } = this.state;
     const externalOptions = authOptions.filter(opt => opt.type && opt.type.toLowerCase() !== 'internal');
     return (
-      <Col md={4} mdOffset={4}>
+      <Col md={4} className="col-md-offset-4" >
         <Panel header="Please Sign In" className="login-panel">
           <Form onSubmit={this.clickLogin}>
             <fieldset>
               <FormGroup validationState={error.length > 0 ? 'error' : null}>
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-user fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-user fa-fw" /></InputGroup.Text>
                   <FormControl
                     autoFocus
                     type="text"
@@ -123,7 +126,7 @@ class LoginForm extends Component {
 
               <FormGroup validationState={error.length > 0 ? 'error' : null}>
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-key fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-key fa-fw" /></InputGroup.Text>
                   <FormControl
                     type="password"
                     placeholder="Password"
@@ -132,7 +135,7 @@ class LoginForm extends Component {
                   />
                 </InputGroup>
               </FormGroup>
-              <Button type="submit" bsStyle="success" bsSize="large" block onClick={this.clickLogin} disabled={progress}>
+              <Button type="submit" variant="success" size="lg" className="btn-block" disabled={progress}>
                 { progress && (<span><i className="fa fa-spinner fa-pulse" /> &nbsp;&nbsp;&nbsp;</span>) }
                 Login
               </Button>
@@ -156,9 +159,9 @@ class LoginForm extends Component {
                 <div style={{ marginBottom: '10px' }}>
                   <Button
                     type="button"
-                    bsStyle="primary"
-                    bsSize="large"
-                    block
+                    variant="primary"
+                    size="lg"
+                    className="btn-block"
                     onClick={() => this.clickExternalProtocol(option.type, option.name)}
                     disabled={progress}
                   >
@@ -168,9 +171,9 @@ class LoginForm extends Component {
               </div>
             );
           })}
-          {(error.length > 0) && <Alert bsStyle="danger" style={{ marginTop: 15 }} className="mb0">{error}</Alert>}
+          {(error.length > 0) && <Alert variant="danger" style={{ marginTop: 15 }} className="mb0">{error}</Alert>}
           <div style={{ borderTop: '1px solid #eee', marginTop: '15px' }}></div>
-          <Button type="button" bsStyle="link" bsSize="small" block onClick={this.clickResetPassword} disabled={progress}>
+          <Button type="button" variant="link" size="sm" className="btn-block" onClick={this.clickResetPassword} disabled={progress}>
             Forgot Your Password?
           </Button>
         </Panel>

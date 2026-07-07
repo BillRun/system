@@ -417,7 +417,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			// @todo: make it pluginable with chain of responsibility
 			if ($field == 'classMethod') {
 				$matched &= call_user_func_array(array($this, $regex), array($line));
-			} elseif (!preg_match($regex, $line[$field])) {
+			} elseif (!preg_match($regex, Billrun_Util::getIn($line, $field, ''))) {
 				$matched &= false;
 			}
 		}
