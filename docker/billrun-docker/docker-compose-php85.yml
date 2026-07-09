@@ -27,6 +27,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ./../..:/billrun
+            - ./enable_client_plugin.sh:/enable_client_plugin.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:

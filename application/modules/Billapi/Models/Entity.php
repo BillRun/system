@@ -317,7 +317,7 @@ class Models_Entity {
 			if (!is_null($selectOptionsFields[$field])) {
 				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
 				$isMultiple = $multipleFields[$field];
-				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val ?? [], $selectOptions))) {
 					if(!$mandatoryFields[$field] && empty($val)){
 						$val = null;
 					}else{
