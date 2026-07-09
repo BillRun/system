@@ -995,7 +995,8 @@ function handlePaymentGatewayRelay($xml)
  */
 function handleIframe()
 {
-    ob_clean();
+    // ob_clean() with no active buffer raises a notice on PHP >= 8 (E_ALL default),
+    // which starts output and breaks the Location redirect below
     ob_start();
     $paymentType = manageTemporaryFiles('read', 'payment_type.txt') ?: 'SinglePayment';
     manageTemporaryFiles('write', 'temp_userData1.txt', $_GET['aid']);
