@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
-import { MenuItem, DropdownButton, InputGroup, Panel } from 'react-bootstrap';
+import { DropdownButton, Dropdown } from 'react-bootstrap';
+import { InputGroupButton, Panel } from '@/common/BootstrapCompat';
 import classNames from 'classnames';
 import { titleCase } from 'change-case';
 import { EntityField } from './index';
@@ -191,15 +192,17 @@ class EntityFields extends Component {
       });
       const onSelect = () => { this.onAddParam(option.value); };
       return (
-        <MenuItem key={option.value} eventKey={option.value} onSelect={onSelect}>
+        <Dropdown.Item key={option.value} eventKey={option.value} onSelect={onSelect}>
           <span className={menuItemClass}>{option.label}</span>
-        </MenuItem>
+        </Dropdown.Item>
       );
     });
     return (
-      <DropdownButton id="add-param-input" componentClass={InputGroup.Button} className="btn-primary btn btn-xs btn-default" title="Add parameter" >
-        { menuItems }
-      </DropdownButton>
+      <InputGroupButton>
+        <DropdownButton id="add-param-input" title="Add parameter" className="btn-xs">
+          { menuItems }
+        </DropdownButton>
+      </InputGroupButton>
     );
   }
 

@@ -1,41 +1,70 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Button, MenuItem } from 'react-bootstrap';
+import { Button, Dropdown } from 'react-bootstrap';
 import classNames from 'classnames';
 import { WithTooltip } from '@/components/Elements';
 
 
+// Map Bootstrap 3 size names to Bootstrap 5 equivalents
+const mapActionSize = size => {
+  if (size === 'small') return 'sm';
+  if (size === 'large') return 'lg';
+  if (size === 'xsmall') return undefined;
+  return size;
+};
+
 const Action = (props) => {
   const {
-    type,
-    label,
-    data,
-    actionStyle,
-    showIcon,
+    type = '',
+    label = '',
+    data = null,
+    actionStyle = 'link',
+    showIcon = true,
     actionSize,
-    actionClass,
-    show,
-    enable,
-    helpText,
-    renderFunc,
-    onClick,
-    index,
-    isDropdown,
+    actionClass = '',
+    show = true,
+    enable = true,
+    helpText = '',
+    renderFunc = null,
+    onClick = () => {},
+    index = '',
+    isDropdown = false,
     ...otherProps
   } = props;
+  const actionLabel = typeof label === 'string' ? label : '';
+  const effectiveActionStyle = actionStyle;
+  const effectiveActionSize = actionSize;
+  const mappedVariant = effectiveActionStyle === 'default' ? 'outline-secondary' : effectiveActionStyle;
 
-  const showAction = useMemo(() => (
-    (typeof show === 'boolean' && show)
-    || (typeof show === 'function' && show(data, type))
-  ), [show, data, type]);
+  const showAction = useMemo(() => {
+    if (typeof show === 'undefined') {
+      return true;
+    }
+    if (typeof show === 'boolean') {
+      return show;
+    }
+    if (typeof show === 'function') {
+      return show(data, type);
+    }
+    return false;
+  }, [show, data, type]);
 
-  const isEnable = useMemo(() => (
-    typeof enable === 'function' ? enable(data, type) : enable
-  ), [enable, data, type]);
+  const isEnable = useMemo(() => {
+    if (typeof enable === 'undefined') {
+      return true;
+    }
+    return typeof enable === 'function' ? enable(data, type) : enable;
+  }, [enable, data, type]);
 
-  const isHelpText = useMemo(() => (
-    (typeof helpText === 'string') ? helpText : helpText(data, type)
-  ), [helpText, data, type]);
+  const isHelpText = useMemo(() => {
+    if (typeof helpText === 'string') {
+      return helpText;
+    }
+    if (typeof helpText === 'function') {
+      return helpText(data, type);
+    }
+    return '';
+  }, [helpText, data, type]);
 
   const isCustomRender = useMemo(() => (
     renderFunc !== null && typeof renderFunc === 'function'
@@ -70,6 +99,9 @@ const Action = (props) => {
     'fa-forward': type === 're-start',
     'fa-retweet': type === 'reset',
   }), [type]);
+  const actionClassName = useMemo(() => classNames(actionClass, {
+    'btn-xs': effectiveActionSize === 'xsmall',
+  }), [actionClass, effectiveActionSize]);
 
   if (!showAction) {
     return null;
@@ -78,20 +110,20 @@ const Action = (props) => {
   if (isDropdown) {
     const {onKeyDown, onSelect} = otherProps;
     return (
-      <MenuItem
+      <Dropdown.Item
         eventKey={index}
         onKeyDown={onKeyDown}
         onSelect={onSelect}
         onClick={onClickAction}
         disabled={!isEnable}
-        bsStyle={actionStyle === 'default' ? undefined : actionStyle}
-        bsSize={actionSize}
-        className={actionClass}
+        variant={mappedVariant}
+        size={mapActionSize(effectiveActionSize)}
+        className={actionClassName}
       >
         { showIcon && <i className={iconClass} /> }
-        { showIcon && label.length > 0 && <span>&nbsp;</span> }
-        { label.length > 0 && label}
-      </MenuItem>
+        { showIcon && actionLabel.length > 0 && <span>&nbsp;</span> }
+        { actionLabel.length > 0 && actionLabel}
+      </Dropdown.Item>
     );
   }
 
@@ -103,37 +135,20 @@ const Action = (props) => {
           : (
             <Button
               onClick={onClickAction}
-              bsStyle={actionStyle === 'default' ? undefined : actionStyle}
-              bsSize={actionSize}
-              className={actionClass}
+              variant={mappedVariant}
+              size={mapActionSize(effectiveActionSize)}
+              className={actionClassName}
               disabled={!isEnable}
             >
               { showIcon && <i className={iconClass} /> }
-              { showIcon && label.length > 0 && <span>&nbsp;</span> }
-              { label.length > 0 && label}
+              { showIcon && actionLabel.length > 0 && <span>&nbsp;</span> }
+              { actionLabel.length > 0 && actionLabel}
             </Button>
           )
         }
       </WithTooltip>
     </span>
   );
-};
-
-Action.defaultProps = {
-  type: '',
-  data: null,
-  index: '',
-  label: '',
-  helpText: '',
-  actionStyle: 'link',
-  actionSize: undefined,
-  actionClass: '',
-  showIcon: true,
-  enable: true,
-  show: true,
-  isDropdown: false,
-  renderFunc: null,
-  onClick: () => {},
 };
 
 Action.propTypes = {

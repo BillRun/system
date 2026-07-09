@@ -11,10 +11,15 @@ import {
 } from '@/common/Util';
 import { entitySearchByQuery } from '@/actions/entityActions';
 
-
 const SubscriberAsyncSearch = ({
-   sid, aid, label, editable, searchPlaceholder, noResultsPlaceholder,
-   onChange, dispatch
+  sid = '',
+  aid = '',
+  label = '',
+  editable = true,
+  searchPlaceholder = 'Type a subscriber ID',
+  noResultsPlaceholder = 'No subscriber were found. Try searching by another ID or name.',
+  onChange,
+  dispatch,
 }) => {
 
   const defaultOptions = {
@@ -94,17 +99,6 @@ const SubscriberAsyncSearch = ({
     />
   );
 }
-
-SubscriberAsyncSearch.defaultProps = {
-  sid: '',
-  aid: '',
-  label: '',
-  currency: '',
-  editable: true,
-  accountsOptions: [],
-  searchPlaceholder: "Type a subscriber ID, first, or last name to search.",
-  noResultsPlaceholder: "No subscriber were found. Try searching by another ID or name.",
-};
 
 SubscriberAsyncSearch.propTypes = {
   sid: PropTypes.oneOfType([

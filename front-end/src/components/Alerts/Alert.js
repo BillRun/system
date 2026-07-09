@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Alert as BootstrapAlert } from 'react-bootstrap';
+import { Alert as BsAlert } from 'react-bootstrap';
 import { SUCCESS, DANGER, INFO, WARNING } from '@/actions/alertsActions';
 
 
@@ -50,9 +50,12 @@ export default class Alert extends Component {
     const { alert: { type, message } } = this.props;
     const alertType = [SUCCESS, DANGER, INFO, WARNING].includes(type) ? type : INFO;
     return (
-      <BootstrapAlert bsStyle={alertType} onDismiss={this.handleAlertDismiss}>
+      <BsAlert variant={alertType} className="alert-dismissible">
+        <button type="button" className="close" onClick={this.handleAlertDismiss} aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
         <div>{message}</div>
-      </BootstrapAlert>
+      </BsAlert>
     );
   }
 }

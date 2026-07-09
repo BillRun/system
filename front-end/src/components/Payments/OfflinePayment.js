@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { List, Map } from 'immutable'; // eslint-disable-line no-unused-vars
-import { Col, FormGroup, Form, ControlLabel, HelpBlock, InputGroup } from 'react-bootstrap';
+import { Col, Form, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import Field from '@/components/Field';
 import { ModalWrapper } from '@/components/Elements'
@@ -134,7 +135,7 @@ class OfflinePayment extends Component {
       <div>
     {uf.map((userField, idx) => {
       return (<FormGroup key={idx}>
-        <Col sm={2} componentClass={ControlLabel}>{userField.get('title', '')}</Col>
+        <Col sm={2} as={ControlLabel}>{userField.get('title', '')}</Col>
           <Col sm={8}>
             <Field
               id={userField.get('field_name', '')}
@@ -159,10 +160,10 @@ class OfflinePayment extends Component {
         onCancel={this.props.onClose}
         progress={progress}
       >
-        <Form horizontal>
+        <Form className="form-horizontal">
 
           <FormGroup validationState={validationErrors.get('method', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Method</Col>
+            <Col sm={2} as={ControlLabel}>Method</Col>
             <Col sm={8}>
               <Field
                 fieldType="select"
@@ -175,7 +176,7 @@ class OfflinePayment extends Component {
           </FormGroup>
 
           <FormGroup validationState={validationErrors.get('monetaryValue', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Monetary Value</Col>
+            <Col sm={2} as={ControlLabel}>Monetary Value</Col>
             <Col sm={8}>
               <InputGroup>
                 <Field
@@ -184,9 +185,9 @@ class OfflinePayment extends Component {
                   value={monetaryValue}
                   fieldType="number"
                 />
-                <InputGroup.Addon>
+                <InputGroup.Text>
                   {getSymbolFromCurrency(currency)}
-                </InputGroup.Addon>
+                </InputGroup.Text>
               </InputGroup>
               { validationErrors.get('monetaryValue', '').length > 0 ? <HelpBlock>{validationErrors.get('monetaryValue', '')}</HelpBlock> : ''}
             </Col>
@@ -194,7 +195,7 @@ class OfflinePayment extends Component {
 
           {method === 'cheque' &&
             (<FormGroup>
-              <Col sm={2} componentClass={ControlLabel}>Cheque Number</Col>
+              <Col sm={2} as={ControlLabel}>Cheque Number</Col>
               <Col sm={8}>
                 <Field
                   id="chequeNum"
@@ -207,7 +208,7 @@ class OfflinePayment extends Component {
           }
 
           <FormGroup>
-              <Col sm={2} componentClass={ControlLabel}>Payment direction</Col>
+              <Col sm={2} as={ControlLabel}>Payment direction</Col>
               <Col sm={8}>
               <span className="inline mr10">
               <Field
@@ -240,7 +241,7 @@ class OfflinePayment extends Component {
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col sm={2} componentClass={ControlLabel}>Note</Col>
+              <Col sm={2} as={ControlLabel}>Note</Col>
               <Col sm={8}>
                 <Field
                   id="note"
@@ -250,7 +251,7 @@ class OfflinePayment extends Component {
               </Col>
             </FormGroup>
 	              <FormGroup>
-              <Col sm={2} componentClass={ControlLabel}>Time</Col>
+              <Col sm={2} as={ControlLabel}>Time</Col>
                 <Col sm={8}>
                   <Field
                     id="urt"

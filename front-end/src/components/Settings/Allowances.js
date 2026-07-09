@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, Panel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
-
-const Allowances = ({ data, onChange }) => {
+const Allowances = ({ data = Immutable.Map(), onChange }) => {
 
   const onChangeValue = (key, value) => {
     onChange('billrun', ['allowances', key], value);
@@ -34,9 +34,9 @@ const Allowances = ({ data, onChange }) => {
 
   return (
     <Panel header="Allowances">
-      <Form horizontal>
+    <Form className="form-horizontal">
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={10}  className="mt10 col-sm-offset-2">
             <Field
               fieldType="checkbox"
               label="Enable allowances"
@@ -46,7 +46,7 @@ const Allowances = ({ data, onChange }) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={10}  className="mt10 col-sm-offset-2">
             <Field
               fieldType="checkbox"
               label="Tax included in allowances"
@@ -57,7 +57,7 @@ const Allowances = ({ data, onChange }) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={10} smOffset={2} className="mt10">
+          <Col sm={10}  className="mt10 col-sm-offset-2">
             <Field
               fieldType="checkbox"
               label="Taxable amounts paid first"
@@ -71,10 +71,6 @@ const Allowances = ({ data, onChange }) => {
     </Panel>
   );
 }
-
-Allowances.defaultProps = {
-  data: Immutable.Map(),
-};
 
 Allowances.propTypes = {
   data: PropTypes.instanceOf(Immutable.Map),

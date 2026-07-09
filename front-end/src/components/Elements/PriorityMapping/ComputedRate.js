@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Map } from 'immutable';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Help from '@/components/Help';
 import Field from '@/components/Field';
 import { MappingRulesDescription } from '@/language/FieldDescriptions';
 import { getConfig, parseConfigSelectOptions } from '@/common/Util';
 import { ModalWrapper } from '@/components/Elements';
 
-
 const ComputedRate = ({
-  item,
-  conditionFieldsOptions,
-  valueWhenOptions,
+  item = Map(),
+  conditionFieldsOptions = [],
+  valueWhenOptions = [],
   onSaveComputedLineKey,
   onHideComputedLineKey,
 }) => {
@@ -99,9 +99,9 @@ const ComputedRate = ({
       labelOk="OK"
       modalSize="large"
     >
-      <Form horizontal>
+      <Form>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>
+          <Col as={ControlLabel} sm={2}>
             Computation Type
           </Col>
           <Col sm={10}>
@@ -133,7 +133,7 @@ const ComputedRate = ({
         </FormGroup>
         <div className="separator" />
         <FormGroup key="computed-field-1">
-          <Col sm={2} componentClass={ControlLabel}>{isTypeRegex ? 'Field' : 'First Field' }</Col>
+          <Col sm={2} as={ControlLabel}>{isTypeRegex ? 'Field' : 'First Field' }</Col>
           <Col sm={5}>
             <Field
               fieldType="select"
@@ -157,7 +157,7 @@ const ComputedRate = ({
         { !isTypeRegex && (
           <>
             <FormGroup key="computed-operator">
-              <Col sm={2} componentClass={ControlLabel}>Operator</Col>
+              <Col sm={2} as={ControlLabel}>Operator</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"
@@ -168,7 +168,7 @@ const ComputedRate = ({
               </Col>
             </FormGroup>
             <FormGroup key="computed-field-2">
-              <Col sm={2} componentClass={ControlLabel}>Second Field</Col>
+              <Col sm={2} as={ControlLabel}>Second Field</Col>
               <Col sm={5}>
                 { localItem.get('operator', '') === '$regex' && (
                   <Field
@@ -198,7 +198,7 @@ const ComputedRate = ({
               </Col>
             </FormGroup>
             <FormGroup key="computed-must-met">
-              <Col componentClass={ControlLabel} sm={2}>
+              <Col as={ControlLabel} sm={2}>
                 Must met?
                 <Help contents={MappingRulesDescription.mustMetHelper} />
               </Col>
@@ -213,7 +213,7 @@ const ComputedRate = ({
               </Col>
             </FormGroup>
             <FormGroup key="computed-cond-project-true">
-              <Col sm={2} componentClass={ControlLabel}>Value when True</Col>
+              <Col sm={2} as={ControlLabel}>Value when True</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"
@@ -244,7 +244,7 @@ const ComputedRate = ({
               )}
             </FormGroup>
             <FormGroup key="computed-cond-project-false">
-              <Col sm={2} componentClass={ControlLabel}>Value when False</Col>
+              <Col sm={2} as={ControlLabel}>Value when False</Col>
               <Col sm={5}>
                 <Field
                   fieldType="select"
@@ -282,7 +282,6 @@ const ComputedRate = ({
   );
 };
 
-
 ComputedRate.propTypes = {
   item: PropTypes.instanceOf(Map),
   conditionFieldsOptions: PropTypes.array,
@@ -290,11 +289,5 @@ ComputedRate.propTypes = {
   onSaveComputedLineKey: PropTypes.func.isRequired,
   onHideComputedLineKey: PropTypes.func.isRequired,
 }
-
-ComputedRate.defaultProps = {
-  item: Map(),
-  conditionFieldsOptions: [],
-  valueWhenOptions: [],
-};
 
 export default ComputedRate;
