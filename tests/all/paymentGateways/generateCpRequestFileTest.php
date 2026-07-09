@@ -71,11 +71,14 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * @param array $account in case whitelist is sent to the command
      * @return Cli cli object
      */
-    protected function sendGenerateRequestFileCommand($account = null, $options = null) {
+    protected function sendGenerateRequestFileCommand($account = null, $options = null, $payMode = null) {
         $options = !is_null($options) ? $options : $this->getPgOptions();
         $command = 'php public/index.php --env container --generate --type transactions_request payment_gateway=' . $options['payment_gateway'] . ' file_type=' . $options['file_type'];
         if (!is_null($account)) {
             $command .= " aids=" . $this->tested_whitelist_account['aid'];
+        }
+        if (!is_null($payMode)) {
+            $command .= " pay_mode=" . $payMode;
         }
         $this->cli->runShellCommand($command);
         return $this->cli;
@@ -251,22 +254,170 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-4676
+     *
+     * With pay_mode=multiple_payments the generator must group the outstanding
+     * bills by their unique_id (invoice_id / txid) rather than by account, so
+     * every debt is charged in its OWN payment. This is the opposite of the
+     * default one_payment mode, where all of an account's debts are aggregated
+     * into a single payment.
+     *
+     * A single account is given THREE separate debts (10, 20, 30). We also set
+     * max_records_per_batch=1 so the loader pulls one bill per batch, which
+     * exercises the multiple_payments pagination in getAlreadyLoadedQuery()
+     * (the `unique_id => ['$lt' => ...]` cursor). The expected result is THREE
+     * distinct fc payments - one covering each debt - and not a single
+     * aggregated payment of 60.
+     */
+    public function testMultiplePaymentsPayModeChargesEachBillSeparately() {
+        // one bill per batch, to also cover the multiple_payments pagination cursor
+        $this->insertMasavRequestFileSettings(['max_records_per_batch' => 1]);
+        $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => 1
+                ]
+            ]
+        ])['entity'];
+
+        // Three separate debts for the SAME account.
+        $amounts = [10, 20, 30];
+        foreach ($amounts as $amount) {
+            $this->tester->payApi(['aid' => $account['aid'], 'amount' => $amount, 'dir' => 'tc']);
+        }
+        $debts = $this->tester->sendBillapiGet(['aid' => $account['aid']], 'bills')['details'];
+        $this->assertCount(count($amounts), $debts, 'expected one debt bill per payApi call');
+
+        $this->sendGenerateRequestFileCommand(null, null, 'multiple_payments');
+
+        // Each debt is fully covered by its own dedicated payment.
+        foreach ($debts as $debt) {
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'txid' => $debt['txid'],
+                'dir' => $debt['dir'],
+                'paid' => "2",
+                'pending_covering_amount' => $debt['amount'],
+            ]);
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pending_covering_amount' => $debt['amount'],
+                'pays.0.id' => intval($debt['txid']),
+                'pays.0.amount' => ['$eq' => $debt['amount']],
+            ]);
+        }
+
+        // The defining behaviour of multiple_payments: one payment per debt bill
+        // (three fc payments), rather than a single aggregated one.
+        $this->tester->verifyCollectionCount('bills', count($amounts), [
+            'aid' => $account['aid'],
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+    }
+
+    /**
+     * BRCD-4676
+     *
+     * Counterpart to testMultiplePaymentsPayModeChargesEachBillSeparately.
+     *
+     * With pay_mode=one_payment (the default) the generator groups the
+     * outstanding bills by account, so ALL of an account's debts are charged
+     * in a SINGLE aggregated payment. A single account is given THREE separate
+     * debts (10, 20, 30). We keep max_records_per_batch=1 - here it exercises
+     * the account (aid) based pagination cursor in getAlreadyLoadedQuery(). The
+     * expected result is exactly ONE fc payment whose 'pays' list covers all
+     * three debts, and not three separate payments.
+     */
+    public function testOnePaymentPayModeAggregatesBillsIntoSinglePayment() {
+        // one entity per batch, to also cover the one_payment (aid based) pagination cursor
+        $this->insertMasavRequestFileSettings(['max_records_per_batch' => 1]);
+        $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => 1
+                ]
+            ]
+        ])['entity'];
+
+        // Three separate debts for the SAME account.
+        $amounts = [10, 20, 30];
+        foreach ($amounts as $amount) {
+            $this->tester->payApi(['aid' => $account['aid'], 'amount' => $amount, 'dir' => 'tc']);
+        }
+        $debts = $this->tester->sendBillapiGet(['aid' => $account['aid']], 'bills')['details'];
+        $this->assertCount(count($amounts), $debts, 'expected one debt bill per payApi call');
+
+        $this->sendGenerateRequestFileCommand(null, null, 'one_payment');
+
+        // Every debt is covered, and all of them by the same single payment.
+        foreach ($debts as $debt) {
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'txid' => $debt['txid'],
+                'dir' => $debt['dir'],
+                'paid' => "2",
+                'pending_covering_amount' => $debt['amount'],
+            ]);
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pays' => ['$elemMatch' => ['id' => intval($debt['txid']), 'amount' => $debt['amount']]],
+            ]);
+        }
+
+        // The defining behaviour of one_payment: all debts merged into a single
+        // fc payment, rather than one payment per bill.
+        $this->tester->verifyCollectionCount('bills', 1, [
+            'aid' => $account['aid'],
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+    }
+
+    /**
      * Function to insert masav data to db
      */
-    public function insertMasavRequestFileSettings() {
-        $test_conf = $this->getSampleConfiguration();
+    public function insertMasavRequestFileSettings($generatorOverrides = []) {
+        $test_conf = $this->getSampleConfiguration($generatorOverrides);
         $test_pg_name = $test_conf['name'];
         Billrun_Config::getInstance()->loadDbConfig();
         $current_conf = $this->configModel->getConfig();
-        if (!in_array($test_pg_name, array_column($current_conf['payment_gateways'], "name"))) {
-            $current_conf['payment_gateways'][] = $test_conf;
-            $this->configModel->setConfig($current_conf);
+        // Upsert the masav gateway: the config collection is NOT cleared by
+        // cleanDB(), so a masav entry from a previous test persists. A plain
+        // "add only if missing" guard would then silently ignore any override
+        // (e.g. max_records_per_batch), so replace the existing entry instead.
+        $existingIndex = null;
+        foreach ($current_conf['payment_gateways'] as $index => $pg) {
+            if (isset($pg['name']) && $pg['name'] === $test_pg_name) {
+                $existingIndex = $index;
+                break;
+            }
         }
+        if (is_null($existingIndex)) {
+            $current_conf['payment_gateways'][] = $test_conf;
+        } else {
+            $current_conf['payment_gateways'][$existingIndex] = $test_conf;
+        }
+        $this->configModel->setConfig($current_conf);
         Billrun_Config::getInstance()->loadDbConfig();
+        // Drop cached singletons so the just-written config is the one used.
+        $this->tester->resetBillrunInstances();
     }
 
-    public function getSampleConfiguration() {
-        return [
+    public function getSampleConfiguration($generatorOverrides = []) {
+        $conf = [
 			"name" => "masav",
 			"custom" => true,
 			"transactions_request" => [
@@ -459,8 +610,10 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
                 ]
 			]
         ];
+        if (!empty($generatorOverrides)) {
+            $conf['transactions_request'][0]['generator'] = array_merge($conf['transactions_request'][0]['generator'], $generatorOverrides);
+        }
+        return $conf;
     }
-
-    
     
 }
