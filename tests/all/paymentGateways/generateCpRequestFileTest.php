@@ -308,7 +308,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
                 'dir' => 'fc',
                 'generated_pg_file_log' => ['$exists' => true],
                 'pending_covering_amount' => $debt['amount'],
-                'pays.0.id' => intval($debt['txid']),
+                'pays.0.id' => $debt['txid'],
                 'pays.0.amount' => ['$eq' => $debt['amount']],
             ]);
         }
@@ -373,7 +373,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
                 'aid' => $account['aid'],
                 'dir' => 'fc',
                 'generated_pg_file_log' => ['$exists' => true],
-                'pays' => ['$elemMatch' => ['id' => intval($debt['txid']), 'amount' => $debt['amount']]],
+                'pays' => ['$elemMatch' => ['id' => $debt['txid'], 'amount' => $debt['amount']]],
             ]);
         }
 
