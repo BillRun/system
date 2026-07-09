@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { InputGroup, Button } from 'react-bootstrap';
+import { InputGroup, Button } from 'react-bootstrap'
+import { InputGroupButton } from '@/common/BootstrapCompat';
 import classNames from 'classnames';
 import Field from '@/components/Field';
 
@@ -90,16 +91,16 @@ class TextWithButton extends PureComponent {
     return (
       <InputGroup>
         <Field {...inputProps} onChange={this.onChangeValue} value={value} />
-        <InputGroup.Button>
+        <InputGroupButton>
           <Button
             onClick={this.onAction}
-            bsStyle={this.getActionStyle()}
+            variant={this.getActionStyle()}
             disabled={this.isButtonDisabled()}
           >
             <i className={iconClass} />
             { this.getActionLabel()}
           </Button>
-        </InputGroup.Button>
+        </InputGroupButton>
       </InputGroup>
     );
   }

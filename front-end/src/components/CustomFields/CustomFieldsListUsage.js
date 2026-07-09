@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { List, Map } from 'immutable';
-import { Col, ControlLabel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel } from '@/common/BootstrapCompat';
 import CustomFieldsListUsageRow from './CustomFieldsListUsageRow';
 import { Actions } from '../Elements';
 
-
-const CustomFieldsListUsage = ({ fields, addAction, rowActions, entitiesFieldsConfig }) => (
+const CustomFieldsListUsage = ({ fields = List(), addAction = [], rowActions = [], entitiesFieldsConfig = Map() }) => (
   <div className="CustomFieldsList">
-    <Col sm={12} xsHidden className="table-row row">
+    <Col sm={12} className="d-none d-sm-block table-row row">
       <Col sm={2}><ControlLabel>Title</ControlLabel></Col>
       <Col sm={2}><ControlLabel>Entity</ControlLabel></Col>
       <Col sm={2}><ControlLabel>Entity Field</ControlLabel></Col>
@@ -16,7 +16,7 @@ const CustomFieldsListUsage = ({ fields, addAction, rowActions, entitiesFieldsCo
       <Col sm={2} className="text-center"><ControlLabel>Condition</ControlLabel></Col>
       <Col sm={2}>&nbsp;</Col>
     </Col>
-    <Col sm={12} xsHidden>
+    <Col sm={12} className="d-none d-sm-block">
       <hr style={{ marginTop: 5, marginBottom: 15 }} />
     </Col>
     {!fields.isEmpty() && fields.map((field, idx) => (
@@ -36,21 +36,11 @@ const CustomFieldsListUsage = ({ fields, addAction, rowActions, entitiesFieldsCo
   </div>
 );
 
-
 CustomFieldsListUsage.propTypes = {
   fields: PropTypes.instanceOf(List),
   entitiesFieldsConfig: PropTypes.instanceOf(Map),
   addAction: PropTypes.array,
   rowActions: PropTypes.array,
 };
-
-
-CustomFieldsListUsage.defaultProps = {
-  fields: List(),
-  entitiesFieldsConfig: Map(),
-  addAction: [],
-  rowActions: [],
-};
-
 
 export default CustomFieldsListUsage;

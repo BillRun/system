@@ -6,7 +6,8 @@ import isNumber from 'is-number';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import moment from 'moment';
 import uuid from 'uuid';
-import { Col, Form, FormGroup, ControlLabel, Panel, Button, HelpBlock } from 'react-bootstrap';
+import { Col, Form, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { ActionButtons } from '@/components/Elements';
 import ViewExpectedInvoice from '@/components/ImmediateInvoice/ViewExpectedInvoice';
@@ -52,10 +53,9 @@ import {
   itemSelector,
 } from '@/selectors/entitySelector';
 
-
 const RefundInvoiceSetup = ({
-  accountsOptions, productsOptions, invoicesOptions,
-  refundInvoice, currency,
+  accountsOptions = [], productsOptions = Immutable.List(), invoicesOptions = [],
+  refundInvoice = Immutable.Map(), currency = '',
   dispatch,
 }) => {
 
@@ -230,7 +230,7 @@ const RefundInvoiceSetup = ({
 
         <Col sm={12}>
           <FormGroup className="form-inner-edit-row">
-            <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+            <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
               {getFieldName('select_customer', 'immediate_invoice')}:
             </Col>
             <Col sm={6} lg={7}>
@@ -245,7 +245,7 @@ const RefundInvoiceSetup = ({
               />
             </Col>
             <Col sm={2} lg={2} className="text-right">
-              <Button disabled={expectedInvoiceInProgress} type="submit" onClick={onResetFormClick} bsStyle="danger" className="ml10">
+              <Button disabled={expectedInvoiceInProgress} type="submit" onClick={onResetFormClick} variant="danger" className="ml10">
                 <i className="danger-red fa fa-fw fa-trash-o" /> {getFieldName('reset_form', 'immediate_invoice')}
               </Button>
             </Col>
@@ -254,11 +254,11 @@ const RefundInvoiceSetup = ({
 
       <Col sm={12} className="mt10">
         <Panel header={getFieldName('refund_details', 'immediate_invoice')}>
-          <Form horizontal>
+          <Form className="form-horizontal">
 
             <Col sm={12}>
               <FormGroup className="form-inner-edit-row">
-                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
                   {getFieldName('product', 'immediate_invoice')}<span className="danger-red"> *</span>
                 </Col>
                 <Col sm={6} lg={7}>
@@ -276,7 +276,7 @@ const RefundInvoiceSetup = ({
 
             <Col sm={12}>
               <FormGroup className="form-inner-edit-row">
-                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
                   {getFieldName('select_invoice_id', 'immediate_invoice')} ({getFieldName('optional')})
                 </Col>
                 <Col sm={6} lg={7}>
@@ -289,15 +289,15 @@ const RefundInvoiceSetup = ({
                     disabled={disableInvoiceSelect}
                   />
                 </Col>
-                <Col smOffset={4} lgOffset={3} sm={6} lg={7}>
+                <div className="col-sm-6 col-sm-offset-4 col-lg-7 col-lg-offset-3">
                   <HelpBlock>{getFieldName('select_invoice_id_help', 'immediate_invoice')}</HelpBlock>
-                </Col>
+                </div>
               </FormGroup>
             </Col>
 
             <Col sm={12}>
               <FormGroup className="form-inner-edit-row">
-                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
                   {getFieldName('immediate_date', 'immediate_invoice')} <span className="danger-red"> *</span>
                 </Col>
                 <Col sm={4} lg={3}>
@@ -315,7 +315,7 @@ const RefundInvoiceSetup = ({
 
             <Col sm={12}>
               <FormGroup className="form-inner-edit-row">
-                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
                   {getFieldName('refund_amount', 'immediate_invoice')}<span className="danger-red"> *</span>
                 </Col>
                 <Col sm={6} lg={7}>
@@ -335,7 +335,7 @@ const RefundInvoiceSetup = ({
 
             <Col sm={12}>
               <FormGroup className="form-inner-edit-row">
-                <Col componentClass={ControlLabel} sm={4} lg={3} className="mt10 text-right">
+                <Col as={ControlLabel} sm={4} lg={3} className="mt10 text-right">
                   {getFieldName('refund_reason', 'immediate_invoice')} ({getFieldName('optional')})
                 </Col>
                 <Col sm={6} lg={7}>
@@ -361,7 +361,7 @@ const RefundInvoiceSetup = ({
         )}
         {isInvoiceConfirmed && (
           <form method="post" action={downloadInvoiceUrl} target="_blank" className="inline">
-            <Button type="submit" bsStyle="primary">
+            <Button type="submit" variant="primary">
               <i className="fa fa-download" /> {getFieldName('btn_download_invoice', 'immediate_invoice')}
             </Button>
           </form>
@@ -370,14 +370,6 @@ const RefundInvoiceSetup = ({
     </div>
   );
 }
-
-RefundInvoiceSetup.defaultProps = {
-  currency: '',
-  accountsOptions: [],
-  invoicesOptions: [],
-  productsOptions: Immutable.List(),
-  refundInvoice: Immutable.Map(),
-};
 
 RefundInvoiceSetup.propTypes = {
   dispatch: PropTypes.func.isRequired,

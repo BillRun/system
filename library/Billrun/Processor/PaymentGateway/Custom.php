@@ -325,7 +325,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					$no_txid_counter++;
 					continue;
 				}
-				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField] , Zend_Log::DEBUG);
+				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField['field']] , Zend_Log::DEBUG);
 				$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
 				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);
@@ -346,6 +346,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				continue;
 			}
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
+			Billrun_Factory::dispatcher()->trigger('beforeUpdatePayments', array($this, $row, $bill));
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
 		if ($no_txid_counter > 0) {
@@ -494,5 +495,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$query = parent::getLogFileQuery($adoptThreshold);
 		$query['pg_file_type'] = $this->fileType;
 		return $query;
+	}
+
+	public function getBillSavedFieldsData() {
+		return $this->billSavedFields;
+	}
+
+	public function setBillSavedFields($fields) {
+		$this->billSavedFields = $fields;
 	}
 }

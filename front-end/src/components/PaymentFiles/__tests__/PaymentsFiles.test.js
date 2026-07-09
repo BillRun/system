@@ -1,10 +1,6 @@
-// FE contract: upload dispatches `sendTransactionsReceiveFile` with the raw
-// `payment_gateway` (so the BE keeps the canonical snake_case key) PLUS an explicit
-// `source` parameter computed on the FE as `pascalCase(payment_gateway) + 'Payments'`.
-// That `source` string is what's persisted on `log.source` and what the list query
-// (`baseFilter.source`) matches against — passing it explicitly avoids the BE having
-// to reconstruct it from `payment_gateway + payments_file_type` (which mishandled
-// snake_case keys like `manual_files` and produced `manualfilesPayments`).
+// Upload forwards the raw `payment_gateway` + an explicit `source` built via
+// `buildPaymentFileSource` (BE-equivalent ucwords+strip), so it matches `log.source`
+// and the list query. Must NOT use `pascalCase` (breaks `ABC`/`AB_…`).
 
 import { Map } from 'immutable';
 
@@ -90,7 +86,7 @@ describe('PaymentsFiles.onUploadTransactionsFileClickOK — upload contract', ()
     sendTransactionsReceiveFile.mockImplementation(() => () => Promise.resolve());
   });
 
-  it('forwards the raw payment_gateway (snake_case preserved) and computes source as PascalCase+"Payments"', async () => {
+  it('forwards the raw payment_gateway (snake_case preserved) and computes source as ucwords+strip+"Payments"', async () => {
     const { instance } = buildInstance('manual_files');
     const fakeFile = { name: 'payments-2026-04-19.csv' };
 
@@ -117,13 +113,30 @@ describe('PaymentsFiles.onUploadTransactionsFileClickOK — upload contract', ()
     expect(call[4]).toBe('CreditCardPayments');
   });
 
+  // Regression: "ABC" gateway — BE stores "ABCPayments", `pascalCase` gave "Abc".
+  it('preserves all-caps gateway keys (ABC → ABCPayments), not pascalCase Abc', async () => {
+    const { instance } = buildInstance('ABC');
+    await instance.onUploadTransactionsFileClickOK(Map({ file: { name: 'abc.csv' } }));
+
+    const call = sendTransactionsReceiveFile.mock.calls[0];
+    expect(call[0]).toBe('ABC');
+    expect(call[4]).toBe('ABCPayments');
+  });
+
+  it('preserves embedded caps in snake keys (AB_data_files → ABDataFilesPayments)', async () => {
+    const { instance } = buildInstance('AB_data_files');
+    await instance.onUploadTransactionsFileClickOK(Map({ file: { name: 'ab.csv' } }));
+
+    expect(sendTransactionsReceiveFile.mock.calls[0][4]).toBe('ABDataFilesPayments');
+  });
+
   it('leaves already-PascalCase gateways unchanged and builds source as <Gateway>Payments', async () => {
-    const { instance } = buildInstance('SaltLi');
+    const { instance } = buildInstance('FooBar');
     await instance.onUploadTransactionsFileClickOK(Map({ file: { name: 'x.csv' } }));
 
     const call = sendTransactionsReceiveFile.mock.calls[0];
-    expect(call[0]).toBe('SaltLi');
-    expect(call[4]).toBe('SaltLiPayments');
+    expect(call[0]).toBe('FooBar');
+    expect(call[4]).toBe('FooBarPayments');
   });
 
   it('always passes the "payments" discriminator (screen contract)', async () => {

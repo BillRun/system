@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
-import { Form, FormGroup, ControlLabel, HelpBlock, Col } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { TaxDescription } from '@/language/FieldDescriptions';
 import Help from '../../Help';
 import EntityFields from '../../Entity/EntityFields';
@@ -60,9 +61,9 @@ class TaxDetails extends Component {
     const { item, mode } = this.props;
     const editable = (mode !== 'view');
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             { getFieldName('description', getFieldNameType('tax'), sentenceCase('title'))}
             <span className="danger-red"> *</span>
             <Help contents={TaxDescription.description} />
@@ -74,7 +75,7 @@ class TaxDetails extends Component {
 
         {['clone', 'create'].includes(mode) &&
           <FormGroup validationState={errors.key.length > 0 ? 'error' : null} >
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('key', getFieldNameType('tax'), sentenceCase('key'))}
               <span className="danger-red"> *</span>
               <Help contents={TaxDescription.key} />

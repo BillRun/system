@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import { EntityRevisionDetails } from '../Entity';
 import ChargeDetails from './ChargeDetails';
@@ -57,11 +57,10 @@ class ChargeSetup extends Component {
     progress: false,
   }
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+    
     const { mode } = this.props;
     if (mode === 'create') {
       const pageTitle = buildPageTitle(mode, 'charge');
@@ -70,9 +69,11 @@ class ChargeSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'charge', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -84,6 +85,7 @@ class ChargeSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clear());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {

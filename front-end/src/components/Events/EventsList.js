@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Panel, Col, Label } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { Panel, Label } from '@/common/BootstrapCompat';
 import { sentenceCase } from 'change-case';
 import pluralize from 'pluralize';
 import { Actions, StateIcon } from '@/components/Elements';

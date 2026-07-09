@@ -54,6 +54,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
+
+	/**
+	 * the drop lines
+	 * @var array
+	 */
+	protected $drop_lines_counter = 0;
 	
 	/**
 	 * Limit iterator
@@ -104,10 +110,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected  $usage_type = null;
 	
 	/**
-	 * filters configuration by file type
+	 * configuration by file type
 	 * @var array
 	 */
-	protected $filters = array();
+	protected $configCache = array();
 
 
 	/**
@@ -246,6 +252,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+			$this->dropLines();
 			$this->filterLines();
 			$this->prepareQueue();
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
@@ -305,6 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$header['linesStats']['queue'] = count($this->queue_data);
 		$header['linesStats']['good'] = count($this->data['data']) - $header['linesStats']['queue'];
+		$header['linesStats']['dropped'] = $this->drop_lines_counter;
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
@@ -763,9 +771,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * "garbage" lines are defined by "filters" configuration of input processor
 	 */
 	public function filterLines() {
+		$type = $this->receiverSource ?? static::$type;
+		$filtersPathExists = $this->checkIfPathExistsInFileTypeProcessor('filters', $type);
+		if(!$filtersPathExists){
+			return;
+		}
 		$data = &$this->getData();
 		foreach ($data['data'] as &$row) {
-			$filters = $this->getFilters($row);
+			$filters = $this->getConfigValue($row, 'filters') ?? [];
 			foreach ($filters as $filter) {
 				if ($this->isFilterConditionsMet($row, $filter)) {
                                         if(isset($row['skip_calc'])) {
@@ -778,26 +791,58 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		}
 	}
+
+	public function dropLines() {
+		$type = $this->receiverSource ?? static::$type;
+		$dropLinesPathExists = $this->checkIfPathExistsInFileTypeProcessor('drop_lines', $type);
+		if(!$dropLinesPathExists){
+			return;
+		}
+		$data = &$this->getData();
+		foreach ($data['data'] as $stamp => &$row) {
+			$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
+			foreach ($dropLinesConfig as $index => $dropLineConf) {
+				if (isset($dropLineConf['conditions'])  && Billrun_Util::areConditionsMet($row, $dropLineConf['conditions'])) {
+					$desc = $dropLineConf['description'] ?? "No description (config index: $index)";
+					Billrun_Factory::log("Line dropped. Reason: " . $desc . ". Line details: " . print_r($row, true), Zend_Log::INFO);
+					$this->drop_lines_counter ++;
+					unset($data['data'][$stamp]);
+					continue 2;
+				}
+			}
+		}
+	}
 	
 	/**
-	 * get filters relevant for a line (by file type)
+	 * get filters/drop_lines relevant for a line (by file type)
 	 * 
 	 * @param array $row
 	 * @return array
 	 */
-	protected function getFilters($row) {
-		if(isset($row['linet'])){
-			if(!isset($this->filters[$row['type']][$row['linet']])){
-				$filters = Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true, $row['linet'])['filters'] ?? 
-				(Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true)['filters'] ?? [] );
-				$this->filters[$row['type']][$row['linet']] = $filters;
-			}
-			return $this->filters[$row['type']][$row['linet']];
-		} else if (!isset($this->filters[$row['type']])) {
-			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
-			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
+	public function getConfigValue($row, $key) {
+		if (!isset($this->configCache)) {
+			$this->configCache = [];
 		}
-		return $this->filters[$row['type']];
+		$fileType = $row['type'];
+		if (isset($row['linet'])) {
+			$lineType = $row['linet'];
+			if (!isset($this->configCache[$key][$fileType][$lineType])) {
+				
+				$specificConfig = Billrun_Factory::config()->getLineTypeConfigByName($fileType, true, $lineType);
+				$genericConfig = Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
+				$value = $specificConfig[$key] ?? ($genericConfig[$key] ?? []);
+				$this->configCache[$key][$fileType][$lineType] = $value;
+			}
+			return $this->configCache[$key][$fileType][$lineType];
+		} 
+		
+		else {
+			if (!isset($this->configCache[$key][$fileType])) {
+				$config = Billrun_Factory::config()->getFileTypeSettings($fileType, true);
+				$this->configCache[$key][$fileType] = $config[$key] ?? [];
+			}
+			return $this->configCache[$key][$fileType];
+		}
 	}
 	
 	/**
@@ -940,6 +985,21 @@ abstract class Billrun_Processor extends Billrun_Base {
 		}
 		$this->setShouldremovefromWorkspace(false);
 		return $this->process_files();
+	}
+
+	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){
+		$inputProcessorConf =  Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
+		$value = $inputProcessorConf[$path] ?? false;
+		if(!$value && isset($inputProcessorConf['line_types']) && !empty($inputProcessorConf['line_types'])){
+			foreach($inputProcessorConf['line_types'] as $lineTypeConf){
+				$value = $lineTypeConf[$path] ?? false;
+				if($value && !empty($value)){
+					return true;
+				}
+			}
+			return false;
+		}
+		return $value;
 	}
 
 }

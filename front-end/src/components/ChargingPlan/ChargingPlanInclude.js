@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Map } from 'immutable';
-import { Panel, Col, FormGroup, Form, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Actions } from '@/components/Elements';
 
@@ -58,11 +59,11 @@ const ChargingPlanInclude = (props) => {
 
   return (
     <div className="ChargingPlanInclude">
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel header={header}>
 
           <FormGroup>
-            <Col componentClass={ControlLabel} md={2}> Operation </Col>
+            <Col as={ControlLabel} md={2}> Operation </Col>
             <Col sm={4}>
               <Field
                 fieldType="select"
@@ -75,14 +76,14 @@ const ChargingPlanInclude = (props) => {
           </FormGroup>
 
           <FormGroup>
-            <Col componentClass={ControlLabel} md={2}>{include.get('unit_label', 'Value')}</Col>
+            <Col as={ControlLabel} md={2}>{include.get('unit_label', 'Value')}</Col>
             <Col md={9}>
               <Field id="usagev" value={include.get('usagev', 0)} onChange={onUpdateField} fieldType="number" editable={props.editable} />
             </Col>
           </FormGroup>
 
           <FormGroup>
-            <Col componentClass={ControlLabel} md={2}> Duration </Col>
+            <Col as={ControlLabel} md={2}> Duration </Col>
             <Col md={9}>
               <Col md={6} style={{ paddingLeft: 0 }}>
                 <Field
@@ -112,12 +113,6 @@ const ChargingPlanInclude = (props) => {
       </Form>
     </div>
   );
-};
-
-ChargingPlanInclude.defaultProps = {
-  include: Map(),
-  index: 0,
-  editable: true,
 };
 
 ChargingPlanInclude.propTypes = {

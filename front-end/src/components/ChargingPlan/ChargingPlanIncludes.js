@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { List } from 'immutable';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import ChargingPlanInclude from './ChargingPlanInclude';
 import Field from '@/components/Field';
 
 const ChargingPlanIncludes = ({
-  includes, mode, prepaidIncludesOptions,
+  includes = List(), mode = 'create', prepaidIncludesOptions = [],
   onSelectPPInclude, onUpdateField, onUpdatePeriodField, onRemoveChargingPlan,
 }) => {
   const editable = mode !== 'view';
@@ -41,12 +41,6 @@ const ChargingPlanIncludes = ({
     </div>
   );
 }
-
-ChargingPlanIncludes.defaultProps = {
-  includes: List(),
-  prepaidIncludesOptions: [],
-  mode: 'create',
-};
 
 ChargingPlanIncludes.propTypes = {
   includes: PropTypes.instanceOf(List),

@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Panel, Col } from "react-bootstrap";
+import { Col } from "react-bootstrap";
+import { Panel } from "@/common/BootstrapCompat";
 import List from '../List';
 import { Actions, StateIcon } from '@/components/Elements';
 import {
@@ -102,10 +103,10 @@ class ExportGeneratorsList extends Component {
   ];
 
   getRowActions = () => [
-    { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickEdit, show: true, onClickColumn: 'name' },
-    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickEnable, show: this.parseShowEnable },
-    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickDisable, show: this.parseShowDisable },
-    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, show: true },
+    { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickEdit, show: true, onClickColumn: 'name', actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickEnable, show: this.parseShowEnable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickDisable, show: this.parseShowDisable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, show: true, actionStyle: 'link', actionSize: 'xsmall' },
   ];
 
   renderPanelHeader = () => (

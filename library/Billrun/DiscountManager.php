@@ -1547,6 +1547,7 @@ class Billrun_DiscountManager {
 			if(!$discountEndProrated && $toByCycles < $this->cycle->end()){
 				$toByCycles = $this->cycle->start();
 			}
+			Billrun_Factory::dispatcher()->trigger('afterCalculateToByCycles', array($discount, $startTime, $cycles, $discountStartProrated, $discountEndProrated, $this->cycle, $from, $to, $discountEligibilityFrom, $discountEligibilityTo, &$toByCycles));
 			$to = min($to, $toByCycles, $this->cycle->end());
 		}
 		if(!$isSequential){
@@ -1574,6 +1575,7 @@ class Billrun_DiscountManager {
 						}else if($to < $this->cycle->end() || $discountTo <= $this->cycle->end()){
 						 	$amount = $this->calculateDiscountAmountForUpfrontLine($discountFrom, $discountTo, $from, $to, $cycleDays, $amount, $flatAmount, $line,  $discountStart, $discountEnd);
 						}else if($from > $this->cycle->start() && isset($line['split']) && !$line['split']){
+							$discountEnd = Billrun_Utils_Time::getTime($line['end']);
 							$amount += $flatAmount;
 						}else{
 							$discountStart = Billrun_Utils_Time::getTime($line['start']);

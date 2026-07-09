@@ -17,11 +17,11 @@ return new class extends Billrun_Migration_Base {
 
 	public function run() {
 		$queue = $this->db->queueCollection();
-		$queue->dropIndexIfExists('hash_1_calc_time_1_type_1');
-		$queue->dropIndexIfExists('urt_1_type_1');
 		$queue->createIndex(['hash' => 1, 'calc_time' => 1, 'urt' => 1], ['unique' => false, 'background' => true]);
 		$queue->createIndex(['calc_name' => 1, 'type' => 1, 'calc_time' => 1, 'urt' => 1], ['unique' => false, 'background' => true]);
 		$queue->createIndex(['calc_name' => 1, 'calc_time' => 1, 'urt' => 1], ['unique' => false, 'background' => true]);
+		$queue->dropIndexIfExists('hash_1_calc_time_1_type_1');
+		$queue->dropIndexIfExists('urt_1_type_1');
 	}
 
 };
