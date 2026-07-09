@@ -276,12 +276,12 @@ class RequestPaymentFiles extends Component {
     if (!errors.isEmpty()) {
       const data = errors.join(', ');
       const maxLen = 25;
-      
+
       if (typeof data === 'string' && maxLen < data.length) {
         return <span title={data}>{data.slice(0, maxLen)}...</span>;
       }
     }
-    return null; 
+    return null;
   };
 
   getDetailsFields = () => [
@@ -402,7 +402,7 @@ class RequestPaymentFiles extends Component {
       }),
       Map({ name: 'pay_mode', title: 'Payment per invoice?', type: 'boolean' }),
     ]);
-    
+
     const fields = paymentFiles
       .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
       .get("transactions_request", List())
@@ -414,6 +414,24 @@ class RequestPaymentFiles extends Component {
 
   getAffectsBills = (data) => {
     return data.get("affects_bills", true);
+  }
+
+  normalizeAids = (data) => {
+    const aids = data.get('aids', '');
+
+    if (typeof aids !== 'string' || aids.trim() === '') {
+      return data;
+    }
+
+    const aidList = aids
+      .split(',')
+      .map(aid => aid.trim())
+      .filter(aid => aid !== '')
+      .map(aid => Number(aid));
+
+    return aidList.every(aid => Number.isFinite(aid))
+      ? data.set('aids', aidList)
+      : data;
   }
 
   getHelpTextForReport = (data) => {
@@ -433,6 +451,9 @@ class RequestPaymentFiles extends Component {
       const payModeValue = data.get('pay_mode') ? 'multiple_payments' : 'one_payment';
       data = data.set('pay_mode', payModeValue);
     }
+
+    data = this.normalizeAids(data);
+
     if (data.has('min_invoice_date')) {
       const minInvoiceDate = data.get('min_invoice_date');
 
