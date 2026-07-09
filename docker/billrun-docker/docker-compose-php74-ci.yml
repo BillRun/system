@@ -30,6 +30,8 @@ services:
             - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ./billrun-php74/composer.json:/billrun/composer.json:ro
+            - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
         healthcheck:
             test: ["CMD-SHELL", "test -f /tmp/composer-install-done || exit 1"]
             interval: 3s
