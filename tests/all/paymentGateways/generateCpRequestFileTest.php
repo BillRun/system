@@ -387,6 +387,67 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-4676
+     *
+     * Same as testMultiplePaymentsPayModeChargesEachBillSeparately, but with
+     * the default batch size (no max_records_per_batch). This proves the
+     * per-bill charging of multiple_payments is driven purely by the grouping
+     * (by unique_id), and holds even when every bill is loaded in one batch -
+     * i.e. it does not depend on the batching/pagination path.
+     */
+    public function testMultiplePaymentsPayModeChargesEachBillSeparatelyDefaultBatch() {
+        $this->insertMasavRequestFileSettings();
+        $account = $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => 1
+                ]
+            ]
+        ])['entity'];
+
+        // Three separate debts for the SAME account.
+        $amounts = [10, 20, 30];
+        foreach ($amounts as $amount) {
+            $this->tester->payApi(['aid' => $account['aid'], 'amount' => $amount, 'dir' => 'tc']);
+        }
+        $debts = $this->tester->sendBillapiGet(['aid' => $account['aid']], 'bills')['details'];
+        $this->assertCount(count($amounts), $debts, 'expected one debt bill per payApi call');
+
+        $this->sendGenerateRequestFileCommand(null, null, 'multiple_payments');
+
+        // Each debt is fully covered by its own dedicated payment.
+        foreach ($debts as $debt) {
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'txid' => $debt['txid'],
+                'dir' => $debt['dir'],
+                'paid' => "2",
+                'pending_covering_amount' => $debt['amount'],
+            ]);
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $account['aid'],
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pending_covering_amount' => $debt['amount'],
+                'pays.0.id' => $debt['txid'],
+                'pays.0.amount' => ['$eq' => $debt['amount']],
+            ]);
+        }
+
+        // The defining behaviour of multiple_payments: one payment per debt bill
+        // (three fc payments), rather than a single aggregated one.
+        $this->tester->verifyCollectionCount('bills', count($amounts), [
+            'aid' => $account['aid'],
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+    }
+
+    /**
      * Function to insert masav data to db
      */
     public function insertMasavRequestFileSettings($generatorOverrides = []) {
