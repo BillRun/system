@@ -172,10 +172,10 @@ class calculateCommandCest
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Whole chain ran: at least one line was priced (customer+rate+pricing).
-        $I->assertGreaterThanOrEqual(1, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
             'a no-type run must price at least one line (the whole chain ran)');
         // A fully-calculated line reached the last calculator and left the queue.
-        $I->assertLessThan($this->csvRows, $this->countQueue(['type' => $this->fileType]),
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
             'a fully-calculated line should be removed from the queue');
     }
 
@@ -193,7 +193,7 @@ class calculateCommandCest
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Customer ran: lines were enriched with a subscriber.
-        $I->assertGreaterThanOrEqual(1, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'the customer calculator should enrich lines with a subscriber');
         // Nothing downstream ran: no pricing, nothing removed from the queue.
         $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
@@ -208,7 +208,8 @@ class calculateCommandCest
     /**
      * file_types restricts the run to the given line type: filtering by a type
      * that is not in the queue processes nothing; filtering by the real type
-     * processes the lines.
+     * runs the whole chain (no --type is given), so the lines are priced and
+     * leave the queue.
      */
     public function testCalculateFiltersByFileTypes(ApiTester $I): void
     {
@@ -227,8 +228,13 @@ class calculateCommandCest
         // Filter by the real type -> the lines are calculated.
         list($code) = $this->runCalculate(null, $this->fileType);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
-        $I->assertGreaterThanOrEqual(1, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'lines of the filtered type should be calculated');
+        // No --type was given, so the whole chain ran: lines are priced and leave the queue.
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'a no-type run must price at least one line (the whole chain ran)');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'a fully-calculated line should be removed from the queue');
     }
 
     /**

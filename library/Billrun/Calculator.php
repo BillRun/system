@@ -580,7 +580,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				if (Mongodloid_Date::equals($last['calc_time'], $first['calc_time'])) {
 					$query['$and'][] = ['calc_time' => $last['calc_time']];
 					$query['$and'][] = [
-						'urt' => ['$gte' => $first['urt'], '$lt' => $last['urt']]
+						'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
 					];
 				} else {
 					if($first['calc_time'] ==  false){
