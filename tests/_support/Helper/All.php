@@ -22,6 +22,8 @@ class All extends \Codeception\Module
             'billsCollection',
             'operationsCollection',
             'balancesCollection',
+	        'logCollection',
+	        'archiveCollection',
             'chargesCollection',
             'collection_stepsCollection',
             'logCollection'

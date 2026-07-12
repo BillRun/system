@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d2b9a0342449acd87158825926aafc66",
+    "content-hash": "173604157f4c9f29364a4c8b4eddb091",
     "packages": [
         {
             "name": "alexandr-mironov/php-smpp",
@@ -2685,31 +2685,25 @@
     "packages-dev": [
         {
             "name": "behat/gherkin",
-            "version": "v4.17.0",
+            "version": "v4.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Behat/Gherkin.git",
-                "reference": "5c8b3149fac39b5a79942b64eeec59a5ee4001c0"
+                "reference": "cbb83c4c435dd8d05a161f2a5ae322e61b2f4db6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Behat/Gherkin/zipball/5c8b3149fac39b5a79942b64eeec59a5ee4001c0",
-                "reference": "5c8b3149fac39b5a79942b64eeec59a5ee4001c0",
+                "url": "https://api.github.com/repos/Behat/Gherkin/zipball/cbb83c4c435dd8d05a161f2a5ae322e61b2f4db6",
+                "reference": "cbb83c4c435dd8d05a161f2a5ae322e61b2f4db6",
                 "shasum": ""
             },
             "require": {
-                "composer-runtime-api": "^2.2",
-                "php": ">=8.1 <8.6"
+                "php": "~7.2|~8.0"
             },
             "require-dev": {
-                "cucumber/gherkin-monorepo": "dev-gherkin-v39.1.0",
-                "friendsofphp/php-cs-fixer": "^3.77",
-                "mikey179/vfsstream": "^1.6",
-                "phpstan/extension-installer": "^1",
-                "phpstan/phpstan": "^2",
-                "phpstan/phpstan-phpunit": "^2",
-                "phpunit/phpunit": "^10.5",
-                "symfony/yaml": "^5.4 || ^6.4 || ^7.0"
+                "cucumber/cucumber": "dev-gherkin-24.1.0",
+                "phpunit/phpunit": "~8|~9",
+                "symfony/yaml": "~3|~4|~5|~6|~7"
             },
             "suggest": {
                 "symfony/yaml": "If you want to parse features, represented in YAML files"
@@ -2721,8 +2715,8 @@
                 }
             },
             "autoload": {
-                "psr-4": {
-                    "Behat\\Gherkin\\": "src/"
+                "psr-0": {
+                    "Behat\\Gherkin": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -2733,11 +2727,11 @@
                 {
                     "name": "Konstantin Kudryashov",
                     "email": "ever.zet@gmail.com",
-                    "homepage": "https://everzet.com"
+                    "homepage": "http://everzet.com"
                 }
             ],
             "description": "Gherkin DSL parser for PHP",
-            "homepage": "https://behat.org/",
+            "homepage": "http://behat.org/",
             "keywords": [
                 "BDD",
                 "Behat",
@@ -2748,23 +2742,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Behat/Gherkin/issues",
-                "source": "https://github.com/Behat/Gherkin/tree/v4.17.0"
+                "source": "https://github.com/Behat/Gherkin/tree/v4.10.0"
             },
-            "funding": [
-                {
-                    "url": "https://github.com/acoulton",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/carlos-granados",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/stof",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-05-18T09:33:47+00:00"
+            "time": "2024-10-19T14:46:06+00:00"
         },
         {
             "name": "codeception/codeception",

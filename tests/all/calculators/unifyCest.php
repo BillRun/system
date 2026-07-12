@@ -14,7 +14,13 @@ class unifyCest
             // $this->createServices($I);
         }
         $I->cleanDB();
+        $this->clearBillrunCalculatorInstance();
+    }
 
+    protected function clearBillrunCalculatorInstance(){
+        $instances = new ReflectionProperty('Billrun_Calculator', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     protected function setUP(ApiTester $I, $inputProcessor = null)
