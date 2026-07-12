@@ -144,6 +144,82 @@ class calculateCommandCest
         return Billrun_Factory::db()->linesCollection()->query($query)->count();
     }
 
+    /** Distinct stamps of the queue lines matching $query (as strings, for set comparisons). */
+    private function queueStamps(array $query = [])
+    {
+        $stamps = [];
+        foreach (Billrun_Factory::db()->queueCollection()->query($query)->cursor() as $doc) {
+            $stamps[] = (string) $doc['stamp'];
+        }
+        return $stamps;
+    }
+
+    /** Map of stamp => calc_time key (sec.usec, or 'fresh' when calc_time is false) for the matching queue lines. */
+    private function queueCalcTimes(array $query = [])
+    {
+        $out = [];
+        foreach (Billrun_Factory::db()->queueCollection()->query($query)->cursor() as $doc) {
+            $ct = $doc['calc_time'];
+            $out[(string) $doc['stamp']] = ($ct instanceof Mongodloid_Date) ? ($ct->sec . '.' . $ct->usec) : 'fresh';
+        }
+        return $out;
+    }
+
+    /** Current customer-stage queue batch size (customer.calculator.limit), or the ini default. */
+    private function getCustomerBatchLimit()
+    {
+        return Billrun_Factory::config()->getConfigValue('customer.calculator.limit', 5000);
+    }
+
+    private function setCustomerBatchLimit($limit)
+    {
+        $this->writeDbConfigValue(['customer', 'calculator', 'limit'], $limit);
+    }
+
+    /** How long a pulled-but-failed queue line waits before it may be re-pulled. */
+    private function getOrphanWait()
+    {
+        return Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', '6 hours');
+    }
+
+    private function setOrphanWait($value)
+    {
+        $this->writeDbConfigValue(['queue', 'calculator', 'orphan_wait_time'], $value);
+    }
+
+    /**
+     * Write one nested config value as a new DB config revision. --calculate runs
+     * as a subprocess, so overrides must live in DB config for it to pick them up.
+     * The settings API rejects these low-level paths ("Category not found ..."), so
+     * we write the revision directly (the teldas-plugin pattern); mergeConfigs
+     * deep-merges it over the ini defaults, changing only the given leaf. Callers
+     * MUST restore the original value.
+     */
+    private function writeDbConfigValue(array $path, $value)
+    {
+        $model = new ConfigModel();
+        $data = $model->getConfig();
+        unset($data['_id']);
+        $data['urt'] = new Mongodloid_Date();
+
+        $ref = &$data;
+        $leaf = array_pop($path);
+        foreach ($path as $key) {
+            if (!isset($ref[$key]) || !is_array($ref[$key])) {
+                $ref[$key] = [];
+            }
+            $ref = &$ref[$key];
+        }
+        $ref[$leaf] = $value;
+        unset($ref);
+
+        Billrun_Factory::db()->configCollection(['force' => true])->insert($data);
+        if (Billrun_Config::getInstance()->isConfigCacheEnabled() && ($cache = Billrun_Factory::cache())) {
+            $cache->remove('db_config', 'config');
+        }
+        Billrun_Config::getInstance()->refresh();
+    }
+
     /**
      * Precondition check: processing (before any subscriber exists) should have
      * put every CSV row in the queue, fresh and uncalculated.
@@ -254,5 +330,138 @@ class calculateCommandCest
             'lines with no matching subscriber must not be enriched');
         $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => false]),
             'unmatched lines must stay in the queue, still uncalculated (calc_name = false), for a later retry');
+    }
+
+    /**
+     * Circulation of the SUCCESS path over many passes: with a subscriber the
+     * customer stage succeeds and advances each line, and the queue must keep
+     * handing every line its turn over repeated go-rounds - none may starve. The
+     * batch is shrunk so each run advances only a few lines; after a line advances
+     * we re-queue it at the BACK of the line (calc_name reset to false, calc_time
+     * stamped to now) - a stand-in for whatever would put a processed line back in
+     * the queue - and set the orphan window to zero so it is eligible again next
+     * run. We keep running until every line has been circulated at least three times.
+     *
+     * (Unlike the stuck case a succeeding line does NOT re-circulate on its own -
+     * success clears it from the calc_name = false pool - hence the explicit
+     * re-queue. Fresh, never-advanced lines keep calc_time = false and so sort ahead
+     * of the re-queued ones, which is what keeps the rotation fair.)
+     *
+     * The batch limit and orphan window are global settings, restored at the end.
+     */
+    public function testCalculateCirculatesEverySucceedingLineAtLeastThreeTimes(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I); // subscriber exists, so the customer stage succeeds and advances lines
+
+        $rounds = 3;
+        $originalLimit = $this->getCustomerBatchLimit();
+        $originalOrphan = $this->getOrphanWait();
+        $this->setCustomerBatchLimit(1);   // small batch so each run advances only a few lines
+        $this->setOrphanWait('0 seconds'); // a re-queued line is eligible again on the next run
+
+        try {
+            $stamps = $this->queueStamps(['type' => $this->fileType]);
+            $advances = array_fill_keys($stamps, 0);
+            $runs = 0;
+            $maxRuns = $this->csvRows * $rounds + 10; // generous cap; the loop stops once every line hits the target
+            while (min($advances) < $rounds && $runs < $maxRuns) {
+                $runs++;
+                list($code) = $this->runCalculate('customer');
+                $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
+
+                // The lines the customer stage advanced this run are now at calc_name = 'customer'.
+                $advanced = $this->queueStamps(['type' => $this->fileType, 'calc_name' => 'customer']);
+                foreach ($advanced as $stamp) {
+                    $advances[$stamp]++;
+                }
+                // Re-queue them at the back of the line so they circulate again, fairly.
+                if (!empty($advanced)) {
+                    Billrun_Factory::db()->queueCollection()->update(
+                        ['type' => $this->fileType, 'calc_name' => 'customer'],
+                        ['$set' => ['calc_name' => false, 'calc_time' => new Mongodloid_Date()]],
+                        ['multiple' => true]
+                    );
+                }
+            }
+
+            // Every single line advanced at least $rounds times - the success path keeps
+            // circulating each line and none starves over repeated go-rounds.
+            $I->assertCount($this->csvRows, $advances, 'every line must be accounted for');
+            $I->assertGreaterThanOrEqual($rounds, min($advances),
+                "every line must be circulated at least $rounds times (took $runs runs)");
+        } finally {
+            // Restore the global settings so later tests use the real configuration.
+            $this->setCustomerBatchLimit($originalLimit);
+            $this->setOrphanWait($originalOrphan);
+        }
+    }
+
+    /**
+     * Circulation over MANY passes: the queue must keep giving EVERY line its turn,
+     * pass after pass, not just once - no line may starve however many times we go
+     * around. The lines are stuck at the customer stage (no subscriber) so they
+     * never leave the queue, the batch is shrunk so each run handles only a few, and
+     * the orphan window is set to zero so a pulled-but-failed line becomes eligible
+     * to be re-pulled on the next run. We then keep running the command until every
+     * line has been circulated at least three times.
+     *
+     * Each pull stamps a fresh calc_time on the lines it takes, so a line's attempt
+     * count is how many distinct calc_time values it has carried. For N lines, a
+     * batch of B and a target of R rounds this takes roughly ceil(N * R / B) runs
+     * (e.g. 6 lines / batch 1 -> 18, / batch 4 -> 5) - but the exact count depends
+     * on the batch and how evenly the pull distributes, so we loop until the target
+     * is met rather than hard-coding it.
+     *
+     * The batch limit and orphan window are global settings, restored at the end.
+     */
+    public function testCalculateCirculatesEveryLineAtLeastThreeTimes(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        // NOTE: no seedCustomer() - there is no subscriber, so every line fails the customer stage.
+
+        $rounds = 3;
+        $originalLimit = $this->getCustomerBatchLimit();
+        $originalOrphan = $this->getOrphanWait();
+        $this->setCustomerBatchLimit(4);   // small batch so each run handles only a few lines
+        $this->setOrphanWait('0 seconds'); // a failed line is eligible to re-circulate on the next run
+
+        try {
+            $stamps = $this->queueStamps(['type' => $this->fileType]);
+            $attempts = array_fill_keys($stamps, 0);
+            $lastCalcTime = array_fill_keys($stamps, 'fresh');
+            $runs = 0;
+            $maxRuns = $this->csvRows * $rounds + 10; // generous cap; the loop stops once every line hits the target
+            while (min($attempts) < $rounds && $runs < $maxRuns) {
+                $runs++;
+                list($code) = $this->runCalculate('customer');
+                $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
+
+                // A line was (re-)attempted this run iff its calc_time changed to a new value.
+                foreach ($this->queueCalcTimes(['type' => $this->fileType, 'calc_name' => false]) as $stamp => $calcTime) {
+                    if ($calcTime !== 'fresh' && $calcTime !== $lastCalcTime[$stamp]) {
+                        $attempts[$stamp]++;
+                        $lastCalcTime[$stamp] = $calcTime;
+                    }
+                }
+            }
+
+            // Every single line was circulated at least $rounds times - the queue keeps
+            // handing each line its turn and none starves over repeated circulation.
+            $I->assertCount($this->csvRows, $attempts, 'every line must be accounted for');
+            $I->assertGreaterThanOrEqual($rounds, min($attempts),
+                "every line must be circulated at least $rounds times (took $runs runs)");
+            // The lines really are stuck: none advanced and none was enriched.
+            $I->assertEquals(0, $this->countQueue(['type' => $this->fileType, 'calc_name' => ['$ne' => false]]),
+                'no line may advance past the customer stage - there is no subscriber to match');
+            $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
+                'no line may be enriched with a subscriber');
+        } finally {
+            // Restore the global settings so later tests use the real configuration.
+            $this->setCustomerBatchLimit($originalLimit);
+            $this->setOrphanWait($originalOrphan);
+        }
     }
 }
