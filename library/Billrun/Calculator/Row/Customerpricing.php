@@ -324,6 +324,19 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	public function updateBalance($rate, $plan, $usage_type, $volume) {
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan);
+
+		$aprice = $pricingData[$this->pricingField] ?? null;
+		if (is_numeric($aprice)) {
+			$taxCalc = $this->calculator->getTaxCalculator();
+			if ($taxCalc && method_exists($taxCalc, 'getRowTaxData')) {
+				$lineForTax = array_merge($this->row->getRawData(), $pricingData);
+				$taxData = $taxCalc->getRowTaxData($lineForTax);
+				if ($taxData !== false) {
+					$pricingData['final_charge'] = $aprice + ($taxData['total_amount'] ?? 0);
+				}
+			}
+		}
+
 		if (isset($this->row['billrun_pretend']) && $this->row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
