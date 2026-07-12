@@ -26,7 +26,10 @@ class CalculateAction extends Action_Base {
 			return;
 		}
 
-		$possibleOptions = array('type' => false);
+		// BRCD-3562: the calculator name (type) is optional. When omitted, every
+		// queue calculator runs so a line flows through the whole chain; when
+		// given, only that calculator runs.
+		$possibleOptions = array('type' => true);
 
 		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
@@ -35,6 +38,29 @@ class CalculateAction extends Action_Base {
 		if(isset($params['file_types'])){
 			$options['file_types'] = $params['file_types'];
 		}
+
+		$requestedType = isset($options['type']) ? $options['type'] : null;
+		$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
+		if (empty($calculatorNames)) {
+			$this->getController()->addOutput("No calculators to run");
+			return;
+		}
+
+		// Map each queue calculator name to its concrete instantiation options
+		// (e.g. 'rate' -> rate_Usage, 'pricing' -> customerPricing) so a no-type
+		// run drives the whole chain.
+		foreach ($calculatorNames as $calculatorName) {
+			$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorName, $options));
+			$this->runCalculator($calcOptions);
+		}
+	}
+
+	/**
+	 * Load and run a single calculator over the queue.
+	 *
+	 * @param array $options calculator options (must include 'type')
+	 */
+	protected function runCalculator($options) {
 		$this->getController()->addOutput("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);
 		$this->getController()->addOutput("Calculator loaded");
@@ -42,7 +68,7 @@ class CalculateAction extends Action_Base {
 		if (!$calculator) {
 			$this->getController()->addOutput("Calculator cannot be loaded");
 		} else if (!$calculator->isEnabled()) {
-			$this->_controller->addOutput("Calculator type " . $calculator->getCalculatorQueueType() . " is disabled");
+			$this->getController()->addOutput("Calculator type " . $calculator->getCalculatorQueueType() . " is disabled");
 		} else {
 			$this->getController()->addOutput("Starting to calculate. This action can take a while...");
 			$calculator->calc();

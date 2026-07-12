@@ -141,10 +141,24 @@ class Billrun_Helpers_QueueCalculators {
 	}
 	
 	protected function getCalcOptions($calc_name) {
+		return self::getCalculatorOptions($calc_name, $this->options);
+	}
+
+	/**
+	 * Map a queue calculator name (as configured in queue.calculators) to the
+	 * options needed to instantiate the concrete calculator for that stage.
+	 * The logical stage names 'rate' and 'pricing' resolve to the concrete
+	 * calculator types (rate_Usage/rate_Credit, customerPricing).
+	 *
+	 * @param string $calc_name the queue calculator name
+	 * @param array  $options   run options (e.g. 'credit' selects the rate calculator variant)
+	 * @return array calculator instantiation options, including 'type'
+	 */
+	public static function getCalculatorOptions($calc_name, $options = array()) {
 		$calc_options = array();
 		switch ($calc_name) {
 			case 'rate':
-				$type = (isset($this->options['credit']) && $this->options['credit'] ? 'rate_Credit' : 'rate_Usage');
+				$type = (isset($options['credit']) && $options['credit'] ? 'rate_Credit' : 'rate_Usage');
 				$calc_options = array('type' => $type);
 				break;
 

@@ -705,6 +705,26 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 	
 	/**
+	 * Get the ordered list of queue calculator types the --calculate command
+	 * should run.
+	 *
+	 * With an explicit calculator name only that calculator runs. Without one
+	 * (BRCD-3562) every configured queue calculator runs, in chain order, so a
+	 * line flows through the whole chain in a single --calculate invocation and
+	 * a line that fails at some calculator is left in the queue with the
+	 * relevant calc_name to be retried from that stage.
+	 *
+	 * @param string|null $requestedType a specific calculator to run, or null/empty for all
+	 * @return array ordered calculator type names
+	 */
+	public static function getQueueCalculatorTypes($requestedType = null) {
+		if (!empty($requestedType)) {
+			return array($requestedType);
+		}
+		return array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
+	}
+
+	/**
 	 * is the calculator type in queue.calculators
 	 *
 	 * @return boolean
