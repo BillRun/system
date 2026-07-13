@@ -159,7 +159,10 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected function setDateParameters($dateParameters, &$query) {
 		// Go through the date parameters.
 		foreach ($dateParameters as $fieldName => $fieldValue) {
-			list($condition, $value) = each($fieldValue);
+//			list($condition, $value) = each($fieldValue); // remove PHP 8 compat
+			$condition = key($fieldValue);
+			$value = current($fieldValue);
+			next($fieldValue);
 			$query[$fieldName] = array($condition => $value);
 		}
 	}

@@ -186,14 +186,16 @@ class Models_Entity {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
 		$this->originalUpdate = $update;
-		$options = isset($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
+		$options = !empty($params['request']['options']) ? @json_decode($params['request']['options'], TRUE) : array();
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
 		$customFields = $this->getCustomFields($update);
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
-		$config = array_merge(array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), [])), $this->config[$this->action]);
+		$fieldConfig = array('fields' => Billrun_Factory::config()->getConfigValue($this->getCustomFieldsPath(), []));
+		$actionConfig = $this->config[$this->action];
+		$config = array_merge($fieldConfig, is_array($actionConfig) ? $actionConfig : []);
 		list($translatedQuery, $translatedUpdate, $translatedQueryOptions) = $this->validateRequest($query, $update, $this->action, $config, 999999, true, $options, $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
@@ -293,9 +295,13 @@ class Models_Entity {
 			$multipleFields[$fieldName] = Billrun_Util::getFieldVal($customField['multiple'], false);
 		}
 
-		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
-		if (is_null($defaultFields)) {
+		if (!isset($this->config[$this->action]['update_parameters'])) {
 			$defaultFields = array();
+		} else {
+			$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+			if (is_null($defaultFields)) {
+				$defaultFields = array();
+			}
 		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -311,7 +317,7 @@ class Models_Entity {
 			if (!is_null($selectOptionsFields[$field])) {
 				$selectOptions = is_string($selectOptionsFields[$field]) ? explode(",", $selectOptionsFields[$field]) : $selectOptionsFields[$field];
 				$isMultiple = $multipleFields[$field];
-				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val, $selectOptions))) {
+				if ((!$isMultiple && !in_array($val, $selectOptions)) || ($isMultiple && array_diff($val ?? [], $selectOptions))) {
 					if(!$mandatoryFields[$field] && empty($val)){
 						$val = null;
 					}else{
@@ -319,13 +325,34 @@ class Models_Entity {
 					}
 				}
 			}
+			$isEncrypted = ($fieldTypes[$field] === 'encrypted');
 			if (!is_null($val)) {
-				Billrun_Util::setIn($this->update, $field, $val);
+				$this->setUpdateFieldValue($field, $val, $isEncrypted);
 			} else if ($this->action === 'create' && !is_null($defaultFieldsValues[$field])) {
-				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
+				$this->setUpdateFieldValue($field, $defaultFieldsValues[$field], $isEncrypted);
 			}
 		}
 //		print_R($this->update);die;
+	}
+
+	/**
+	 * set a CUSTOM field value on the update document, encrypting it when the
+	 * field is of type=encrypted.
+	 *
+	 * Encryption ownership: custom fields (config.<collection>.fields) are the
+	 * ONLY fields routed here - they bypass the translator pipeline. Fields
+	 * declared in update_parameters are encrypted by Api_Translator_EncryptedModel
+	 * instead, and the two sets are mutually exclusive (addCustomFields() computes
+	 * custom fields as array_diff(custom, update_parameters)). So a field is
+	 * encrypted by exactly one path; encryptValue() is idempotent (isEncrypted
+	 * guard) regardless, so even an overlap could not double-encrypt.
+	 *
+	 * @param string $field
+	 * @param mixed $value plaintext value
+	 * @param boolean $isEncrypted
+	 */
+	protected function setUpdateFieldValue($field, $value, $isEncrypted) {
+		Billrun_Util::setIn($this->update, $field, $isEncrypted ? Billrun_Utils_Encryption::encryptValue($value) : $value);
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val, $fieldType = 'string') {
@@ -334,9 +361,12 @@ class Models_Entity {
 		if ($fieldType == 'ranges') {
 			$uniqueQuery = Api_Translator_RangesModel::getOverlapQuery($field, $val);
 		} else if (is_array($val)) {
-			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
+			// encryption is deterministic, so the stored ciphertext can be matched by encrypting each value
+			$matchVals = $fieldType === 'encrypted' ? array_map(array('Billrun_Utils_Encryption', 'encryptValue'), $val) : $val;
+			$uniqueQuery = array($field => array('$in' => $matchVals)); // not revisions of same entity, but has same unique value
 		} else {
-			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+			$matchVal = $fieldType === 'encrypted' ? Billrun_Utils_Encryption::encryptValue($val) : $val;
+			$uniqueQuery = array($field => $matchVal); // not revisions of same entity, but has same unique value
 		}
 		$startTime = strtotime(isset($data['from'])? $data['from'] : $this->getDefaultFrom());
 		$endTime = strtotime(isset($data['to'])? $data['to'] : $this->getDefaultTo());
@@ -424,7 +454,7 @@ class Models_Entity {
 			$status = $this->insert($this->update);
             $this->after = $this->update;
 			$this->fixEntityFields($this->before);
-			$this->trackChanges($this->update['_id']);
+			$this->trackChanges($this->update['_id'] ?? null);
 			$res = isset($status['ok']) && $status['ok'];
 			if($res == 1){
 				$this->applyCacheChange();
@@ -652,7 +682,7 @@ class Models_Entity {
 //		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
-		$newId = $this->update['_id'];
+		$newId = $this->update['_id'] ?? null;
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		$this->applyCacheChange();
@@ -689,7 +719,7 @@ class Models_Entity {
 	 * @return unix timestamp
 	 */
 	public static function getMinimumUpdateDate($invoicing_day = null) {	
-		if (empty(self::$minUpdateDatetime)) {
+		if (empty(self::$minUpdateDatetime) || (!is_null($invoicing_day) && empty(self::$minUpdateDatetime[$invoicing_day]))) {
 			if (!Billrun_Factory::config()->isMultiDayCycle() && is_null($invoicing_day)) {
 				self::$minUpdateDatetime[0] = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 			} else {

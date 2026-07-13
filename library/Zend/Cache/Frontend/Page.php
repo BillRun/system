@@ -123,7 +123,8 @@ class Zend_Cache_Frontend_Page extends Zend_Cache_Core
      */
     public function __construct(array $options = array())
     {
-        while (list($name, $value) = each($options)) {
+//        while (list($name, $value) = each($options)) {
+        foreach ($options as $name => $value) { // PHP 8 compat
             $name = strtolower($name);
             switch ($name) {
                 case 'regexps':

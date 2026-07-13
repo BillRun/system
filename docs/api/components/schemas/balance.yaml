@@ -1,0 +1,44 @@
+Balance:
+  type: object
+  description: |
+    Per-subscriber balance bucket for a given billing cycle. Tracks
+    inclusive units used and over-usage charges.
+  properties:
+    _id:        { type: string }
+    sid:        { type: integer }
+    aid:        { type: integer }
+    plan:       { type: string }
+    billrun_month:
+      type: string
+      description: Billing cycle key (YYYYMM).
+    period:
+      type: string
+      enum: [default, custom]
+    from:       { type: string, format: date-time }
+    to:         { type: string, format: date-time }
+    balance:
+      type: object
+      description: Per-usage-type totals (currency + units).
+      additionalProperties:
+        type: object
+        properties:
+          cost:   { type: number }
+          usagev: { type: number }
+          count:  { type: integer }
+    totals:
+      type: object
+      additionalProperties: true
+    pp_includes_external_ids:
+      type: array
+      items: { type: string }
+    pp_includes_name:
+      type: array
+      items: { type: string }
+    priority: { type: integer }
+    creation_time: { type: string, format: date-time }
+    notifications:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+  additionalProperties: true

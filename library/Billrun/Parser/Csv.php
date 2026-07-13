@@ -185,14 +185,14 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
                 return $line;
             }
             
-            $lineConverted = mb_convert_encoding($line, $this->encodingTarget, $this->encodingSource);
+            $lineConverted = mb_convert_encoding($line, $encodingTarget, $this->encodingSource);
             
             if ($lineConverted === false) {
                 Billrun_Factory::log(
                     sprintf(
                         "Parser %s encoding convert failed. Source encoding: %s, Target encoding: %s, Line: %s",
                         __CLASS__,
-                        $this->encodingSource,
+                        $encodingSource,
                         $this->encodingTarget,
                         $line
                     ),

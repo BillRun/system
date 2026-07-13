@@ -49,9 +49,15 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * @see Billrun_Calculator_Rate::getLineRate
+	 * Get the associate rate object for a given CDR line.
+	 * @param $row the CDR line to get the for.
+	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @param $type CDR type
+	 * @param $tariffCategory rate category
+	 * @param $filters array of filters used to find the rate
+	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	protected function getLineRate($row) {
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
 		$aplha3 = $row['alpha3'];
 		$line_time = $row['urt'];
 		$number_to_rate = $this->number_to_rate($row);

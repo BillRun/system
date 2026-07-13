@@ -28,13 +28,16 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+            - ./enable_client_plugin.sh:/enable_client_plugin.sh
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
+        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
         volumes:
+            - ./data/mongodb36:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin

@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+    web:
+        image: nginx:latest
+        container_name: billrun-nginx
+        ports:
+            - "8074:80"
+        restart: always
+        volumes:
+            - ./../..:/billrun:ro
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+            - "mongodb"
+        environment:
+        - "APPLICATION_ENV=container"    
+    php:
+        build: 
+            context: ./billrun-php84
+            dockerfile: Dockerfile
+        image: billrun-php84
+        container_name: billrun-app
+        restart: always
+        environment:
+        - "APPLICATION_ENV=container"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
+        volumes:
+            - ./../..:/billrun
+            - ./enable_client_plugin.sh:/enable_client_plugin.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
+    mongodb:
+        image: mongo:7.0
+        container_name: billrun-mongodb
+        restart: always
+        volumes:
+            - ./data/mongodb7:/data/db/
+            - ./../..:/billrun:ro
+            - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        ports:
+            - 27017:27017
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.103.0.0/16

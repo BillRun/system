@@ -685,7 +685,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function getGatewayExport() {
 		$gatewayDetails = $this->getGateway();
-		return $gatewayDetails['export'];
+		return $gatewayDetails['export'] ?? false;
 	}
 	
 		/**
@@ -756,7 +756,7 @@ abstract class Billrun_PaymentGateway {
 		return false;
 	}
 	
-	protected function checkIfCustomerExists () {
+	protected function checkIfCustomerExists ($aid) {
 		return false;
 	}
 	

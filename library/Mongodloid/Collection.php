@@ -263,10 +263,12 @@ class Mongodloid_Collection {
 	 * @param type $w
 	 * @return mongodloid save result.
 	 */
-	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options = array(
-			'w' => $w
-		);
+	public function save(Mongodloid_Entity $entity, $w = null, array $options = []) {
+		if (empty($options)) {
+			$options = array(
+				'w' => $w
+			);
+		}
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
 		$id = $entity->getId();
@@ -486,8 +488,11 @@ class Mongodloid_Collection {
 	 * @return boolean TRUE on success, or FALSE otherwise.
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
+		$strippedReadPreference = preg_replace('/^RP_/', '', $readPreference);
 		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
 			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		} else if (defined('MongoDB\Driver\ReadPreference::' . $strippedReadPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $strippedReadPreference);
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 			$mode = $readPreference;
 		} else {

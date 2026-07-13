@@ -345,9 +345,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 		$aggregatableRecords = array();
 		$accountRevisions = $subscribers[0] ?? [];
-		usort($accountRevisions,function($a,$b){ return  $b['from'] - $a['from'];});
+		usort($accountRevisions,function($a,$b){ return  $b['from']->sec - $a['from']->sec;});
 		foreach ($subscribers as $sid => $subscriberList) {
-			usort($subscriberList,function($a,$b){ return  $a['from'] - $b['from'];});
+			usort($subscriberList,function($a,$b){ return  $a['from']->sec - $b['from']->sec;});
 			Billrun_Factory::log("Constructing records for sid " . $sid);
 			Billrun_Factory::dispatcher()->trigger('beforeConstructSubscriber',[&$data, &$subscriberList, &$invoiceData, $subsCount, $this]);
 			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData, $subsCount, reset($accountRevisions));

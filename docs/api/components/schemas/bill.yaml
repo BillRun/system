@@ -1,0 +1,55 @@
+Bill:
+  type: object
+  description: |
+    Bill document - covers invoices (`type=inv`), payment receipts
+    (`type=rec`), and refunds (`type=ref`). Stored in the `bills`
+    collection.
+  properties:
+    _id:        { type: string }
+    type:       { type: string, enum: [inv, rec, ref] }
+    aid:        { type: integer }
+    invoice_id: { type: integer, description: "Invoice number (type=inv only)" }
+    txid:       { type: string,  description: "Transaction ID (type=rec/ref)" }
+    billrun_key:
+      type: string
+      description: Billing cycle (YYYYMM).
+    method:
+      type: string
+      description: Payment method (`credit`, `cash`, `cheque`, `direct_debit`, ...).
+    amount:     { type: number, description: "Gross amount" }
+    total:      { type: number, description: "Total after tax / discounts" }
+    paid:
+      type: boolean
+      description: Whether the bill has been fully paid.
+    paid_amount: { type: number }
+    due:        { type: string, format: date-time }
+    due_date:   { type: string, format: date-time }
+    paid_date:  { type: string, format: date-time }
+    issue_date: { type: string, format: date-time }
+    urt:
+      type: string
+      format: date-time
+      description: Unified record time.
+    currency:   { type: string }
+    invoice_file: { type: string, description: "Path to the generated PDF, if any." }
+    payment_gateway:
+      type: object
+      additionalProperties: true
+    left_to_pay: { type: number }
+    pays:
+      type: array
+      description: For receipts, the invoice(s) being paid.
+      items:
+        type: object
+        properties:
+          inv: { type: integer }
+          amount: { type: number }
+    left:
+      type: object
+      additionalProperties: true
+    cancel:
+      type: object
+      description: Cancellation metadata.
+      additionalProperties: true
+    creation_time: { type: string, format: date-time }
+  additionalProperties: true
