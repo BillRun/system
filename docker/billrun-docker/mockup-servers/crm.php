@@ -7,6 +7,10 @@
  * The endpoints read CRM fixtures from crm_data/<aid>.json and shape the payload
  * to mimic the original CRM behavior for tests and local development.
  */
+
+// Fixtures are json_decoded whole into memory per request; large ones (e.g. 300K
+// subscribers) exhaust the default 128M limit, so lift the cap for this mock server.
+ini_set('memory_limit', '-1');
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
 
