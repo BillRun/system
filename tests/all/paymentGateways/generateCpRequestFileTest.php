@@ -265,7 +265,8 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * A single account is given THREE separate debts (10, 20, 30). We also set
      * max_records_per_batch=1 so the loader pulls one bill per batch, which
      * exercises the multiple_payments pagination in getAlreadyLoadedQuery()
-     * (the `unique_id => ['$lt' => ...]` cursor). The expected result is THREE
+     * (the keyset cursor that seeks past the last loaded unique_id_str).
+     * The expected result is THREE
      * distinct fc payments - one covering each debt - and not a single
      * aggregated payment of 60.
      */
@@ -331,7 +332,8 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * outstanding bills by account, so ALL of an account's debts are charged
      * in a SINGLE aggregated payment. A single account is given THREE separate
      * debts (10, 20, 30). We keep max_records_per_batch=1 - here it exercises
-     * the account (aid) based pagination cursor in getAlreadyLoadedQuery(). The
+     * the one_payment pagination in getAlreadyLoadedQuery() (the keyset cursor
+     * that seeks past the last loaded account, aid as the tie breaker). The
      * expected result is exactly ONE fc payment whose 'pays' list covers all
      * three debts, and not three separate payments.
      */
@@ -445,6 +447,198 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
             'dir' => 'fc',
             'generated_pg_file_log' => ['$exists' => true],
         ]);
+    }
+
+    /**
+     * BRCD-4676
+     *
+     * Complex batching guard for multiple_payments across THREE batches with a
+     * mix of invoice (inv) and receipt (rec) debts.
+     *
+     * One account is given 6 outstanding debts - 3 invoices (unpadded invoice_id,
+     * so '9...' unique_id strings) and 3 receipts (zero-padded txid, so '0...'
+     * strings) - and max_records_per_batch = 2, so the loader runs 3 full batches.
+     * With multiple_payments each debt is charged in its own payment, so the run
+     * must:
+     *   (a) charge every debt exactly once - none skipped, none charged twice in a
+     *       later batch (the keyset pagination guarantee);
+     *   (b) process debts newest-unique_id-first, which - because invoice_id
+     *       strings sort above zero-padded txid strings - also charges all inv
+     *       before all rec.
+     */
+    public function testMixedInvRecMultiplePaymentsOrderAndNoDuplicatesAcrossBatches() {
+        $this->insertMasavRequestFileSettings(['max_records_per_batch' => 2]);
+        $account = $this->createMasavAccount(1);
+        $aid = $account['aid'];
+
+        // 3 invoice debts (invoice_id -> '9...' unique_id strings) ...
+        foreach ([900001 => 11, 900002 => 22, 900003 => 33] as $invoiceId => $amount) {
+            $this->insertInvoiceDebt($aid, $invoiceId, $amount);
+        }
+        // ... and 3 receipt debts (createTxid zero-pads to 13 -> '0...' strings).
+        foreach ([10, 20, 30] as $amount) {
+            $this->tester->payApi(['aid' => $aid, 'amount' => $amount, 'dir' => 'tc']);
+        }
+
+        $this->sendGenerateRequestFileCommand(null, null, 'multiple_payments');
+
+        // (a) exactly one fc per debt (6) - proves no debt was skipped and none was
+        // charged in more than one of the 3 batches.
+        $this->tester->verifyCollectionCount('bills', 6, [
+            'aid' => $aid,
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+
+        // (b) the fc payments, read in creation order (their own ascending txid ==
+        // the order they were processed across all batches), must cover debts by
+        // strictly descending unique_id string. Descending order simultaneously
+        // proves "newest first" and "inv ('9...') before rec ('0...')".
+        $coveredIds = array_map(function ($fc) {
+            return (string) $fc['pays'][0]['id'];
+        }, $this->getGeneratedFcBillsSortedByTxid($aid));
+        $this->assertCount(6, $coveredIds, 'expected one covered debt per fc payment');
+        $this->assertSame(6, count(array_unique($coveredIds)), 'a debt was covered by more than one batch');
+        $expectedOrder = $coveredIds;
+        rsort($expectedOrder, SORT_STRING);
+        $this->assertSame($expectedOrder, $coveredIds, 'debts were not charged newest-unique_id-first / inv-before-rec across batches');
+    }
+
+    /**
+     * BRCD-4676
+     *
+     * Complex batching guard for one_payment across THREE batches with a mix of
+     * invoice (inv) and receipt (rec) debts.
+     *
+     * Three accounts each get one invoice + two receipt debts (3 debts each), and
+     * max_records_per_batch = 1, so each account is pulled in its own batch. With
+     * one_payment all of an account's debts are aggregated into a single payment,
+     * so the run must:
+     *   (a) produce exactly one fc per account (3) - an account is never split or
+     *       re-charged across batches (whole-account atomicity of the cursor);
+     *   (b) each fc aggregates ALL THREE of its account's debts;
+     *   (c) process the accounts newest-first by their MAX unique_id, which is each
+     *       account's invoice_id, so descending invoice_id => the account order.
+     */
+    public function testMixedInvRecOnePaymentOrderAndNoDuplicatesAcrossBatches() {
+        $this->insertMasavRequestFileSettings(['max_records_per_batch' => 1]);
+
+        // invoice_id drives the account order (it is each account's max unique_id:
+        // an unpadded '9...' string always sorts above the zero-padded '0...' txids
+        // of the receipt debts).
+        $invoiceIds = [900010, 900020, 900030];
+        $aidByInvoice = [];
+        foreach ($invoiceIds as $i => $invoiceId) {
+            $acc = $this->createMasavAccount($i + 1);
+            $this->insertInvoiceDebt($acc['aid'], $invoiceId, 10 * ($i + 1));
+            // two receipt debts per account, to also cover aggregation of several
+            // rec bills (plus the invoice) into the single one_payment charge.
+            $this->tester->payApi(['aid' => $acc['aid'], 'amount' => 5, 'dir' => 'tc']);
+            $this->tester->payApi(['aid' => $acc['aid'], 'amount' => 7, 'dir' => 'tc']);
+            $aidByInvoice[$invoiceId] = $acc['aid'];
+        }
+
+        $this->sendGenerateRequestFileCommand(null, null, 'one_payment');
+
+        // (a) exactly one fc per account (3) - no account skipped or re-charged in a
+        // later batch.
+        $this->tester->verifyCollectionCount('bills', 3, [
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+
+        // (b) each account's single fc aggregates all three of its debts (invoice +
+        // two receipts).
+        foreach ($aidByInvoice as $invoiceId => $accAid) {
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $accAid,
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pays' => ['$size' => 3],
+            ]);
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $accAid,
+                'dir' => 'fc',
+                'pays' => ['$elemMatch' => ['id' => $invoiceId]],
+            ]);
+        }
+
+        // (c) accounts processed newest-invoice-first: fc creation order (ascending
+        // own txid) must be invoice 900030, 900020, 900010.
+        $actualAids = array_map(function ($fc) {
+            return (int) $fc['aid'];
+        }, $this->getGeneratedFcBillsSortedByTxid());
+        $expectedAids = [$aidByInvoice[900030], $aidByInvoice[900020], $aidByInvoice[900010]];
+        $this->assertSame($expectedAids, $actualAids, 'accounts not processed newest-invoice-first across batches, or an account was duplicated');
+    }
+
+    /**
+     * Create a masav-gateway account (the gateway the request file filters on).
+     *
+     * @param int $customerId the gateway customer id
+     * @return array the created account entity
+     */
+    protected function createMasavAccount($customerId) {
+        return $this->tester->createAccountWithAllMandatoryCustomFields([
+            "payment_gateway" => [
+                "active" => [
+                    "name" => "masav",
+                    "bank_code" => 1,
+                    "bank_branch_num" => 1,
+                    "account_num" => 1,
+                    "customer_id" => $customerId,
+                ]
+            ]
+        ])['entity'];
+    }
+
+    /**
+     * Insert an outstanding invoice (type 'inv') debt straight into the bills
+     * collection. Real invoices are produced by a billing cycle; for the batching
+     * tests we only need a chargeable invoice with a controlled invoice_id (to
+     * drive the unique_id ordering) and a positive left_to_pay.
+     *
+     * @param int $aid
+     * @param int $invoiceId
+     * @param float $amount
+     */
+    protected function insertInvoiceDebt($aid, $invoiceId, $amount) {
+        $doc = [
+            'aid' => (int) $aid,
+            'type' => 'inv',
+            'invoice_id' => (int) $invoiceId,
+            'amount' => (float) $amount,
+            'due' => (float) $amount,
+            'due_before_vat' => (float) $amount,
+            'left_to_pay' => (float) $amount,
+            'vatable_left_to_pay' => (float) $amount,
+            'billrun_key' => '202007',
+            'urt' => new Mongodloid_Date(),
+            'invoice_date' => new Mongodloid_Date(),
+            'due_date' => new Mongodloid_Date(),
+        ];
+        Billrun_Factory::db()->billsCollection()->insert($doc);
+    }
+
+    /**
+     * The generated fc payments, in creation order. Each fc gets its own
+     * createTxid() value, which increases with creation, so sorting by txid
+     * reproduces the exact order the entities were processed across all batches.
+     *
+     * @param int|null $aid optionally restrict to one account
+     * @return array raw fc bill documents
+     */
+    protected function getGeneratedFcBillsSortedByTxid($aid = null) {
+        $query = ['dir' => 'fc', 'generated_pg_file_log' => ['$exists' => true]];
+        if (!is_null($aid)) {
+            $query['aid'] = (int) $aid;
+        }
+        $cursor = Billrun_Factory::db()->billsCollection()->query($query)->cursor()->sort(['txid' => 1]);
+        $bills = [];
+        foreach ($cursor as $bill) {
+            $bills[] = $bill->getRawData();
+        }
+        return $bills;
     }
 
     /**

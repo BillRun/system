@@ -203,7 +203,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (!$payment->getId()) {
 					$payment->setTxid();
 				}
-				$rawPayments[] = $payment->getRawData();
+				$rawPayments[] = Billrun_Bill::zeroVoidedBalance($payment->getRawData());
 			}
 			$options = array(
 				'w' => 1,

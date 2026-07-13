@@ -153,7 +153,51 @@ abstract class Billrun_Bill {
 		return NULL;
 	}
 
+	/**
+	 * Whether the given raw bill data represents a voided bill - rejected,
+	 * cancelled or denied. This is the logical complement of
+	 * getNotRejectedOrCancelledQuery() and is kept in sync with the bills
+	 * collection validator installed by BRCD-4676.
+	 *
+	 * @param array $rawData
+	 * @return bool
+	 */
+	public static function isVoidedBill(array $rawData) {
+		return (($rawData['rejected'] ?? null) === true)
+			|| (($rawData['rejection'] ?? null) === true)
+			|| (($rawData['cancelled'] ?? null) === true)
+			|| array_key_exists('cancel', $rawData)
+			|| (($rawData['is_denial'] ?? null) === true)
+			|| array_key_exists('denied_by', $rawData);
+	}
+
+	/**
+	 * A voided bill must not carry a positive remaining balance, otherwise the
+	 * bills collection validator (BRCD-4676) rejects the write. Zero whichever of
+	 * left / left_to_pay is present and positive, leaving the absent field
+	 * untouched (a bill holds only one of the two). No-op for non-voided bills.
+	 *
+	 * @param array $rawData
+	 * @return array the (possibly) adjusted raw data
+	 */
+	public static function zeroVoidedBalance(array $rawData) {
+		if (self::isVoidedBill($rawData)) {
+			foreach (array('left', 'left_to_pay') as $field) {
+				if (array_key_exists($field, $rawData) && $rawData[$field] > 0) {
+					$rawData[$field] = 0;
+				}
+			}
+		}
+		return $rawData;
+	}
+
 	public function save() {
+		$rawData = $this->getRawData();
+		if (self::isVoidedBill($rawData)) {
+			// A voided bill must never keep a positive left / left_to_pay, or the
+			// bills collection validator (BRCD-4676) rejects the write.
+			$this->data->setRawData(self::zeroVoidedBalance($rawData));
+		}
 		try{
 			$res = $this->data->save(1);
 			if(!$res){
@@ -1215,15 +1259,10 @@ abstract class Billrun_Bill {
 		return (isset($this->data['pending']) && $this->data['pending']);
 	}
 	
-	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null) {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null, $afterGroupMatch = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$filters = array_merge($filters, $nonRejectedOrCanceled);
-		$uniqueIdBatchFilter = null;
-		if (isset($filters['unique_id'])) {
-			$uniqueIdBatchFilter = $filters['unique_id'];
-			unset($filters['unique_id']);
-		}
 		if (!empty($filters)) {
 			$match = array(
 				'$match' => $filters
@@ -1257,19 +1296,24 @@ abstract class Billrun_Bill {
 				),
 			),
 		);
-		if (!is_null($uniqueIdBatchFilter)) {
-			$pipelines[] = array(
-				'$match' => array('unique_id_str' => $uniqueIdBatchFilter)
-			);
-		}
-		
+
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
 
-		$primarySort = ($payMode === 'multiple_payments') ? ['unique_id_str' => -1] : ['aid' => -1];
+		// Keyset pagination: resume strictly after the previous batch. See TransactionsRequest::getAlreadyLoadedQuery.
+		if (!is_null($afterGroupMatch)) {
+			$pipelines[] = array('$match' => $afterGroupMatch);
+		}
+
+		// Order by the max invoice_id / txid (unique_id_str) of the group, newest
+		// first. txid is left zero-padded (leading '0') while invoice_id is an
+		// unpadded number (leading '1'-'9'), so this also keeps invoice groups
+		// ahead of txid groups without an explicit 'type' key. invoice_id and txid
+		// are each unique auto-increment sequences, so unique_id_str is a total
+		// order on its own - which the keyset pagination above relies on.
 		$pipelines[] = [
-			'$sort' => array_merge($primarySort, array('type' => 1, 'charge.not_before' => -1))
+			'$sort' => array('unique_id_str' => -1)
 		];
 		if(!is_null($limit)){
 			$pipelines[] = array(
@@ -1300,6 +1344,7 @@ abstract class Billrun_Bill {
 				'invoice_id' => 1,
 				'txid' => 1,
 				'unique_id' => 1,
+				'unique_id_str' => 1,
 			),
 		);
 		
@@ -1375,11 +1420,15 @@ abstract class Billrun_Bill {
                                                 'urt' => '$urt'
 					)
 				),
-			);	
+				// max invoice_id / txid (as string) of the grouped bills - used to
+				// order the aggregate result for both pay modes.
+				'unique_id_str' => array(
+					'$max' => '$unique_id_str',
+				),
+			);
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
 			$group['unique_id'] = array('$first' => '$unique_id');
-			$group['unique_id_str'] = array('$first' => '$unique_id_str');
 		}
 			
 		return $group;

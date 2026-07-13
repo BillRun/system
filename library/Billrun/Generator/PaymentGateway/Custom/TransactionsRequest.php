@@ -109,12 +109,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$maxRecordsPerTransaction = !empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH;
 		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
 		$loadedEntities = 0;
-		$allreadyLoadedQuery = [];
+		$afterGroupCursor = null;
 		$this->data = array();
 		do{
 			$customersAidsPerTransaction = [];
-			$batchFiltersQuery =  array_merge_recursive($filtersQuery, $allreadyLoadedQuery);
-			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($batchFiltersQuery, $payMode, $maxRecordsPerTransaction));
+			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode, $maxRecordsPerTransaction, $afterGroupCursor));
 			$loadedEntities = count($this->customers);
 			$message = 'generator entities loaded: ' . $loadedEntities;
 			Billrun_Factory::log()->log($message, Zend_Log::INFO);
@@ -127,7 +126,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				return $ele['aid'];
 			}, $this->customers));
 			$lastBllAggregateValue = end($this->customers);
-			$allreadyLoadedQuery = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
+			$afterGroupCursor = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
 			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
 			$account = Billrun_Factory::account();
 			$accountQuery = array('aid' => array('$in' => $customersAids));
@@ -273,14 +272,30 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
 	}
 
+	/**
+	 * Build the keyset (seek) cursor that resumes the aggregate right after the
+	 * last entity of the previous batch. It mirrors the aggregate ordering
+	 * (['unique_id_str' => -1], see Billrun_Bill::getBillsAggregateValues): a group
+	 * belongs to the next batch when its max invoice_id / txid (unique_id_str) is
+	 * lower than the last one loaded. unique_id_str is unique per group - invoice_id
+	 * and txid are each unique auto-increment sequences, and internal txids are
+	 * zero-padded so they never collide with invoice_ids - so a strict '<' is a
+	 * total order with no skipped or duplicated group.
+	 *
+	 * Returned as a post-$group $match (it references the grouped fields), which
+	 * keeps whole account atomicity for one_payment and, being a seek rather than
+	 * an accumulated exclusion list, keeps memory and query size constant across
+	 * batches.
+	 *
+	 * @param string $payMode
+	 * @param array $lastBllAggregateValue the last (lowest ordered) entity loaded
+	 * @return array|null a $match query, or null when there is nothing to resume from
+	 */
 	protected function getAlreadyLoadedQuery($payMode, $lastBllAggregateValue){
-		$query = [];
-		if ($payMode == 'multiple_payments' && !empty($lastBllAggregateValue['unique_id'])){
-			$query = ['unique_id' => array('$lt' => (string)$lastBllAggregateValue['unique_id'])];
-		}else if(!empty($lastBllAggregateValue['aid'])){
-			$query = array('aid' => array('$lt' => $lastBllAggregateValue['aid']));
+		if (empty($lastBllAggregateValue) || !isset($lastBllAggregateValue['unique_id_str'])) {
+			return null;
 		}
-		return $query;
+		return array('unique_id_str' => array('$lt' => (string)$lastBllAggregateValue['unique_id_str']));
 	}
 
 	/**
