@@ -1261,8 +1261,6 @@ abstract class Billrun_Bill {
 	
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null, $afterGroupMatch = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
-		$filters = array_merge($filters, $nonRejectedOrCanceled);
 		if (!empty($filters)) {
 			$match = array(
 				'$match' => $filters
