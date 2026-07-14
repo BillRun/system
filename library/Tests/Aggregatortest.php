@@ -319,7 +319,8 @@
      public function sumSids($key, $returnBillrun, $row) {
         $this->message .= "<b> sum sid's :</b> <br>";
         $subscount  = count($this->getBillrunSubs($key, $returnBillrun, $row));
-         if (count($row['test']['sid']) == $subscount - 1) {
+        $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         if (count($sids) == $subscount - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {
