@@ -73,6 +73,21 @@ class MongodloidReadPreferenceTest extends \Codeception\Test\Unit
         $this->assertEquals('secondary', $this->dbMode(), 'invalid value should leave the preference unchanged');
     }
 
+    public function testDbSetReadPreferenceWithTags()
+    {
+        $db = Billrun_Factory::db();
+        $tags = [['dc' => 'ny']];
+
+        $ret = $db->setReadPreference('RP_NEAREST', $tags);
+        $this->assertInstanceOf('Mongodloid_Db', $ret, 'setReadPreference with tags should return self for chaining');
+        $this->assertEquals('nearest', $this->dbMode(), 'db read preference mode should be nearest');
+        $this->assertEquals($tags, $db->getDb()->getReadPreference()->getTagSets(), 'tag sets should be applied on the connection');
+
+        // invalid tags (flat assoc array instead of a list of tag sets) are a no-op and return false
+        $this->assertFalse($db->setReadPreference('RP_NEAREST', ['dc' => 'ny']), 'invalid tags should return false');
+        $this->assertEquals($tags, $db->getDb()->getReadPreference()->getTagSets(), 'invalid tags should leave the preference unchanged');
+    }
+
     public function testCollectionSetReadPreference()
     {
         $collection = Billrun_Factory::db()->linesCollection();

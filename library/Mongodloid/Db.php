@@ -48,8 +48,13 @@ class Mongodloid_Db {
 		} else {
 			return false;
 		}
+		try {
+			$readPref = new \MongoDB\Driver\ReadPreference($mode, $tags);
+		} catch (\InvalidArgumentException $e) {
+			return false;
+		}
 		$this->_db = $this->_db->withOptions([
-			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
+			'readPreference' => $readPref,
 		]);
 		$this->_collections = [];
 		return $this;

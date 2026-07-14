@@ -31,17 +31,27 @@ class RealtimeController extends ApiController {
 	public function execute() {
 		$this->allowed();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
+		$this->setRealtimeReadPreference();
+		$this->setDataFromRequest();
+		$this->setEventData();
+		$data = $this->process();
+		return $this->respond($data);
+	}
+
+	protected function setRealtimeReadPreference() {
 		$readPreference = Billrun_Factory::config()->getConfigValue('db.realtime.readPreference', '');
+		$readPreferenceTags = Billrun_Factory::config()->getConfigValue('db.realtime.readPreferenceTags', []);
 		if (!empty($readPreference)) {
 			Billrun_Factory::log("Realtime: applying configured read preference: " . $readPreference, Zend_Log::DEBUG);
 			if (Billrun_Factory::db()->setReadPreference($readPreference) === false) {
 				Billrun_Factory::log("Realtime: invalid read preference configured (db.realtime.readPreference): " . $readPreference, Zend_Log::ERR);
 			}
+		} else if (!empty($readPreferenceTags)) {
+			Billrun_Factory::log("Realtime: applying nearest read preference with tags: " . json_encode($readPreferenceTags), Zend_Log::DEBUG);
+			if (Billrun_Factory::db()->setReadPreference('RP_NEAREST', $readPreferenceTags) === false) {
+				Billrun_Factory::log("Realtime: invalid read preference tags configured (db.realtime.readPreferenceTags): " . json_encode($readPreferenceTags), Zend_Log::ERR);
+			}
 		}
-		$this->setDataFromRequest();
-		$this->setEventData();
-		$data = $this->process();
-		return $this->respond($data);
 	}
 
 	/**
