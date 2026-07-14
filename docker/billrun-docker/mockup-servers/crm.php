@@ -9,8 +9,9 @@
  */
 
 // Fixtures are json_decoded whole into memory per request; large ones (e.g. 300K
-// subscribers) exhaust the default 128M limit, so lift the cap for this mock server.
-ini_set('memory_limit', '-1');
+// subscribers) exhaust the default 128M limit, so raise the cap to 16G for this
+// mock server (a fixed ceiling rather than unlimited, to still bound runaway loads).
+ini_set('memory_limit', '16384M');
 $rawBody = file_get_contents('php://input');
 $payload = json_decode($rawBody, true);
 
