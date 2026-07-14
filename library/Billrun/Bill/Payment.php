@@ -38,7 +38,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Optional fields to be saved to the payment. For some payment methods they are mandatory.
 	 * @var array
 	 */
-	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response', 'payment_method');
+	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response', 'payment_method', 'legacy_migration');
 	protected $known_sources;
 	protected static $aids;
         
