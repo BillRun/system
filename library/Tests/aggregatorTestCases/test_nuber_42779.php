@@ -96,6 +96,8 @@ class Test_Case_42779
                 'line' => ['types' => ['flat', 'credit']]
             ],
 
+            'preRun' => ['aggregatePreviousCycle'],
+
             'postRun' => [
             ]
         ];

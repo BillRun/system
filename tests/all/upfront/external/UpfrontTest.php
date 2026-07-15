@@ -30,6 +30,18 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->restoreTimezone();
         $this->tester->enableDBModeSettings();
     }
+
+    /**
+     * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
+     * previous cycle runs first to create them (as it would in production).
+     */
+    protected function runCycleWithPrevious($options)
+    {
+        $previousOptions = $options;
+        $previousOptions['stamp'] = \Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
+        $this->tester->runCycle($previousOptions);
+        $this->tester->runCycle($options);
+    }
     
 
     public function testDiscountFinishPreviousMonthOnUpfronInheritedPlan_1()
@@ -44,7 +56,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
@@ -69,7 +81,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
@@ -96,7 +108,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
@@ -120,7 +132,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
         $this->tester->generatePlan(['name' => "UPFRONT_PLAN_PORATED_TERMINATION_FALSE", "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         //flat-(plan prorated_termination =false not need to be credit) + discount("proration": "inherited"  + prorated_termination =false not need to be credit) 
         $this->assertEquals($billrun, null);
@@ -138,7 +150,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -163,7 +175,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -197,7 +209,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = 'UPFRONT_PLAN_PORATED_START_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -229,7 +241,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = 'UPFRONT_PLAN_PORATED_START_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -260,7 +272,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -291,7 +303,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'UPFRONT_PLAN_PORATED_START_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -323,7 +335,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate  = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -347,7 +359,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'UPFRONT_PLAN_PORATED_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false , "prorated_termination" =>false]);//Prorate  = false 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -371,7 +383,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = 'UPFRONT_PLAN_PORATED_FALSE';
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false , "prorated_termination" =>false]);//Prorate  = false 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -397,7 +409,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -421,7 +433,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -446,7 +458,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -471,7 +483,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planNameArrears= 'B2C_ARREARS';
         $this->tester->generatePlan(['name' => $planNameArrears]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $planLineArrears = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planNameArrears, 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
@@ -517,7 +529,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName = "UPFRONT_PLAN_PORATED_TERMINATION_FALSE";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
       
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
         //5/30*33.605
         $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
@@ -536,7 +548,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName2= 'B2C_UPFRONT_2';
         $this->tester->generatePlan(['name' => $planName1, "upfront" => 1]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName2, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         //B2C_UPFRONT_1: 
         $this->assertEqualsWithDelta(12.091599999999996, $billrun['totals']['before_vat'],$this->epsilon);
@@ -557,7 +569,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planName2= 'B2C_UPFRONT_2_BRCD_5093';
         $this->tester->generatePlan(['name' => $planName1, "upfront" => 1]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName2, "upfront" => 1]);// charge on termination = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $this->assertEqualsWithDelta(5.250967741935486, $billrun['totals']['before_vat'],$this->epsilon);
 
@@ -581,7 +593,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -611,7 +623,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -641,7 +653,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -671,7 +683,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -701,7 +713,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->tester->generateService(['name' => 'SERVICE', "prorated" => true]);//Prorate charge on termination = true
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
@@ -726,7 +738,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
@@ -738,5 +750,408 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['discount_start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
+    }
+
+    /*
+     * ==================== BRCD-5421 - Knowing upfront changes in advance ====================
+     *
+     * Covers:
+     * 1. The upfront (next cycle) price is prorated by a plan deactivation that is already known.
+     * 2. Refund reconciliation - old and new upfront lines exist: the difference is credited/charged.
+     * 3. Refund reconciliation - a plan with no subscriber record at all is not reconciled (boundary).
+     * 4. Refund reconciliation - only a new upfront charge exists (previous run missed it): charged as is.
+     * 5. Discounts (b) - the upfront discount is calculated like an arrears discount of the next cycle,
+     *    taking the discount end date into account.
+     * 6. Discounts (a) - the upfront discount of the previous cycle is reconciled with the discount
+     *    that should have been given.
+     * 7. The upfront charge amounts - the regular (arrears) charge of the next cycle, paid in
+     *    advance - examined directly on the charge class.
+     * 8. Refund reconciliation - the plan was (retroactively) deactivated before the cycle started and
+     *    re-activated in its middle: the old charge is credited fully and the actual period is charged
+     *    by the regular (split) flow.
+     */
+
+    protected function mongoDate($str)
+    {
+        return new \MongoDB\BSON\UTCDateTime(strtotime($str) * 1000);
+    }
+
+    /**
+     * The reconciliation only runs when the previous billing cycle has ended
+     */
+    protected function seedPreviousBillrun($aid)
+    {
+        // Billrun_Billingcycle::hasCycleEnded requires zero_pages_limit finished empty pages
+        $zeroPages = max(1, (int) \Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 1));
+        for ($page = 0; $page < $zeroPages; $page++) {
+            $cycleDoc = array(
+                'billrun_key' => '202512',
+                'page_number' => $page,
+                'page_size' => (int) \Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100),
+                'count' => 0,
+                'start_time' => $this->mongoDate('2025-12-01 00:10:00'),
+                'end_time' => $this->mongoDate('2025-12-01 00:20:00'),
+            );
+            if (\Billrun_Factory::config()->isMultiDayCycle()) {
+                $cycleDoc['invoicing_day'] = \Billrun_Factory::config()->getConfigChargingDay();
+            }
+            $this->tester->haveInCollection('billing_cycle', $cycleDoc);
+        }
+    }
+
+    /**
+     * An upfront plan line as created by the 202512 cycle run - covering the 202601 cycle (December)
+     */
+    protected function seedPreviousUpfrontLine($aid, $sid, $plan, $aprice)
+    {
+        $this->tester->haveInCollection('lines', array(
+            'stamp' => md5('test_old_upfront_' . $aid . '_' . $plan),
+            'aid' => $aid,
+            'sid' => $sid,
+            'billrun' => '202512',
+            'type' => 'flat',
+            'usaget' => 'flat',
+            'plan' => $plan,
+            'name' => $plan,
+            'charge_op' => 'charge',
+            'is_upfront' => true,
+            'aprice' => $aprice,
+            'full_price' => $aprice,
+            'usagev' => 1,
+            'source' => 'billrun',
+            'urt' => $this->mongoDate('2025-11-30 23:59:59'),
+            'start' => $this->mongoDate('2025-12-01 00:00:00'),
+            'end' => $this->mongoDate('2026-01-01 00:00:00'),
+        ));
+    }
+
+    /**
+     * An upfront discount line as created by the 202512 cycle run - relating to the 202601 cycle (December)
+     */
+    protected function seedPreviousUpfrontDiscountLine($aid, $sid, $key, $aprice)
+    {
+        $this->tester->haveInCollection('lines', array(
+            'stamp' => md5('test_old_upfront_discount_' . $aid . '_' . $key),
+            'aid' => $aid,
+            'sid' => $sid,
+            'billrun' => '202512',
+            'type' => 'credit',
+            'usaget' => 'discount',
+            'key' => $key,
+            'name' => $key,
+            'is_upfront' => true,
+            'aprice' => $aprice,
+            'usagev' => 1,
+            'source' => 'billrun',
+            'urt' => $this->mongoDate('2025-11-30 23:59:59'),
+        ));
+    }
+
+    /**
+     * 1. plan_deactivation (2026-01-16) is known while running the 202601 cycle -
+     *    the upfront charge for January is prorated instead of a full month.
+     */
+    public function testUpfrontChargeIsProratedByKnownDeactivation()
+    {
+        $aid = 41001;
+        $sid = 51001;
+        $planName = 'UPFRONT_ADV_PLAN1';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        // December was correctly charged by the previous cycle run - nothing to reconcile
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge', 'billrun' => '202601'));
+        $this->assertNotEmpty($planLine, 'upfront plan line was not created');
+        // 15 days (the arrears convention - the deactivation day is not charged) out of 31
+        $this->assertEqualsWithDelta(100 * 15 / 31, $planLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+        // the arrears convention - the charge period ends a second before the deactivation
+        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $planLine['end_date']->toDateTime()->getTimestamp());
+
+        // the December charge did not change - no reconciliation line
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertEmpty($reconcileLine, 'the previous charge did not change - no reconciliation line was expected');
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 * 15 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 2. The previous run charged a full month upfront, and now a deactivation in the middle of
+     *    that month (2025-12-16) is known - the difference is credited.
+     */
+    public function testReconciliationCreditsTheDifferenceOnDeactivation()
+    {
+        $aid = 41002;
+        $sid = 51002;
+        $planName = 'UPFRONT_ADV_PLAN2';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
+        $this->assertEquals('refund', $reconcileLine['charge_op']);
+        $this->assertEquals('202601', $reconcileLine['billrun']);
+        // expected 15/31 of the month (the arrears convention), charged a full month -> credit the difference
+        $this->assertEqualsWithDelta(100 * 15 / 31 - 100, $reconcileLine['aprice'], $this->epsilon);
+        // the line carries the corrected (expected) charge period
+        $this->assertEquals(strtotime('2025-12-01 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2025-12-16 00:00:00') - 1, $reconcileLine['end_date']->toDateTime()->getTimestamp());
+
+        // the plan deactivates before the next cycle starts - no new upfront charge
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601'));
+        $this->assertEmpty($upfrontLine, 'no upfront charge was expected for the next cycle');
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 * 15 / 31 - 100, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 3. A plan that no longer exists in the subscriber records is not reconciled - the
+     *    reconciliation is driven by the plan charge flow, so a record must exist (e.g. via
+     *    plan_deactivation). A fully removed plan keeps its previous charge untouched.
+     */
+    public function testRemovedPlanIsNotReconciled()
+    {
+        $aid = 41003;
+        $sid = 51003;
+        $removedPlan = 'UPFRONT_ADV_PLAN3';
+        $arrearsPlan = 'SIMPLE_ADV_PLAN3';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $removedPlan, 'upfront' => 1]);
+        $this->tester->generatePlan(['name' => $arrearsPlan, 'price' => [['price' => 50, 'from' => 0, 'to' => 'UNLIMITED']]]);
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $removedPlan, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        // no record of the removed plan - nothing reconciles it
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertEmpty($reconcileLine, 'a plan without a subscriber record is not reconciled');
+
+        // the arrears plan of December is charged regularly
+        $arrearsLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $arrearsPlan, 'aid' => $aid));
+        $this->assertEqualsWithDelta(50, $arrearsLine['aprice'], $this->epsilon);
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(50, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 4. The previous run did not charge the (retroactively added) upfront plan - it is charged as is,
+     *    in addition to the regular upfront charge of the next cycle.
+     */
+    public function testReconciliationChargesMissedUpfrontAsIs()
+    {
+        $aid = 41004;
+        $sid = 51004;
+        $planName = 'UPFRONT_ADV_PLAN4';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
+        $this->assertEquals('refund', $reconcileLine['charge_op']);
+        $this->assertEqualsWithDelta(100, $reconcileLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2025-12-01 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+        // the regular upfront charge of January
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100, $upfrontLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $upfrontLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(200, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 5. A discount that ends in the middle of the next (upfront paid) cycle (2026-01-16) -
+     *    the upfront discount is calculated like an arrears discount of the next cycle.
+     */
+    public function testUpfrontDiscountIsProratedByKnownDiscountEnd()
+    {
+        $aid = 41005;
+        $sid = 51005;
+        $planName = 'UPFRONT_ADV_PLAN5';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        // December was correctly charged and discounted by the previous cycle run - nothing to reconcile
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->seedPreviousUpfrontDiscountLine($aid, $sid, 'SUBSCRIBER_DISCOUNT_1', -10);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge', 'billrun' => '202601'));
+        $this->assertEqualsWithDelta(100, $planLine['aprice'], $this->epsilon);
+
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'discount_from' => $this->mongoDate('2026-01-01 00:00:00')));
+        $this->assertNotEmpty($discountLine, 'upfront discount line was not created');
+        // 15 days out of the 31 days of January
+        $this->assertEqualsWithDelta(-10 * 15 / 31, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $discountLine['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-01-16 00:00:00'), $discountLine['discount_end']->toDateTime()->getTimestamp());
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 - 10 * 15 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 6. The previous run gave a full month upfront discount, but the discount ended in the middle
+     *    of that month (2025-12-16) - the difference is charged back.
+     */
+    public function testUpfrontDiscountReconciliation()
+    {
+        $aid = 41006;
+        $sid = 51006;
+        $planName = 'UPFRONT_ADV_PLAN6';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->seedPreviousUpfrontDiscountLine($aid, $sid, 'SUBSCRIBER_DISCOUNT_1', -10);
+        $this->tester->runCycle($this->defaultOptions);
+
+        // the plan charge did not change - no plan reconciliation line
+        $planReconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertEmpty($planReconcileLine, 'the plan charge did not change - no reconciliation line was expected');
+
+        // the discount ended within December - no upfront discount for January
+        $upfrontDiscountLine = $this->tester->grabFromCollection('lines', array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'billrun' => '202601', 'discount_from' => $this->mongoDate('2026-01-01 00:00:00')));
+        $this->assertEmpty($upfrontDiscountLine, 'the discount already ended - no upfront discount was expected');
+
+        // the previous run gave -10 but only -10*15/31 was deserved -> charge back the difference.
+        // the reconciliation may be split to several CDRs (e.g. when a plugin renames discount keys),
+        // so the total reconciled amount is asserted
+        $reconcileCdrs = \Billrun_Factory::db()->linesCollection()
+                ->query(array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'billrun' => '202601'))
+                ->cursor();
+        $reconciledAmount = 0;
+        $reconcileCdrsCount = 0;
+        foreach ($reconcileCdrs as $reconcileCdr) {
+            $reconciledAmount += $reconcileCdr['aprice'];
+            $reconcileCdrsCount++;
+        }
+        $this->assertGreaterThan(0, $reconcileCdrsCount, 'discount reconciliation CDR was not created');
+        $this->assertEqualsWithDelta(-10 * 15 / 31 + 10, $reconciledAmount, $this->epsilon);
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 - 10 * 15 / 31 + 10, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 8. The previous run charged December fully, and now it is known that the plan was deactivated
+     *    before December started (2025-11-25, recorded after that run) and re-activated in the middle
+     *    of December (2025-12-16) - the old charge is credited fully, the actual period is charged by
+     *    the regular (split) flow, and January is paid upfront.
+     */
+    public function testReactivatedPlanReconcilesThePreviousCharge()
+    {
+        $aid = 41007;
+        $sid = 51007;
+        $planName = 'UPFRONT_ADV_PLAN7';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        // the plan was not active when December started - the previous run charge is credited fully
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
+        $this->assertEqualsWithDelta(-100, $reconcileLine['aprice'], $this->epsilon);
+
+        // the actual December period, from the re-activation, is charged by the regular (split) flow
+        $splitLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'prorated_start_date' => $this->mongoDate('2025-12-16 00:00:00')));
+        $this->assertNotEmpty($splitLine, 'the re-activated period line was not created');
+        $this->assertEqualsWithDelta(100 * 16 / 31, $splitLine['aprice'], $this->epsilon);
+        $this->assertTrue(!empty($splitLine['split']));
+
+        // January is paid upfront as usual
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'prorated_start_date' => $this->mongoDate('2026-01-01 00:00:00')));
+        $this->assertNotEmpty($upfrontLine, 'upfront plan line was not created');
+        $this->assertEqualsWithDelta(100, $upfrontLine['aprice'], $this->epsilon);
+        $this->assertTrue(!empty($upfrontLine['is_upfront']));
+
+        // -100 (credit) + 16/31*100 (the actual period) + 100 (January upfront)
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 7. The upfront charge amounts - the regular (arrears) charge of the next cycle, paid in
+     *    advance, taking the deactivation that is already known into account.
+     *    Examined directly on the charge class (cycle 202601 = December 2025, paying January upfront).
+     */
+    public function testUpfrontChargeFractionsByKnownDeactivation()
+    {
+        $base = array(
+            'cycle' => new \Billrun_DataTypes_CycleTime('202601'),
+            'plan' => 'FRACTIONS_TEST',
+            'name' => 'FRACTIONS_TEST',
+            'price' => array(array('price' => 100, 'from' => 0, 'to' => 'UNLIMITED')),
+            'start' => strtotime('2025-10-23 00:00:00'),
+        );
+
+        // ongoing plan - the full next month is charged
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array('end' => strtotime('2200-01-01 00:00:00'))));
+        $rows = $charge->getPrice();
+        $this->assertCount(1, $rows);
+        $this->assertEqualsWithDelta(100, $rows[0]['value'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $rows[0]['prorated_start_date']->sec);
+        $this->assertEquals(strtotime('2026-02-01 00:00:00'), $rows[0]['prorated_end_date']->sec);
+
+        // the deactivation is already known within the upfront cycle - a prorated charge
+        // (the arrears convention - the deactivation day is not charged)
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array('end' => strtotime('2026-01-16 00:00:00'))));
+        $rows = $charge->getPrice();
+        $this->assertCount(1, $rows);
+        $this->assertEqualsWithDelta(100 * 15 / 31, $rows[0]['value'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $rows[0]['prorated_start_date']->sec);
+        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $rows[0]['prorated_end_date']->sec);
+
+        // the deactivation is exactly when the upfront cycle starts - nothing to charge
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array('end' => strtotime('2026-01-01 00:00:00'))));
+        $this->assertNull($charge->getPrice());
+
+        // the deactivation is within the current (already upfront paid) cycle - nothing to charge,
+        // the reconciliation (getRefund) credits the unused period
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array('end' => strtotime('2025-12-16 00:00:00'))));
+        $this->assertNull($charge->getPrice());
+
+        // activation in the middle of the current cycle - a partial month + a full upfront month
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array(
+            'start' => strtotime('2025-12-16 00:00:00'),
+            'end' => strtotime('2200-01-01 00:00:00'),
+        )));
+        $rows = $charge->getPrice();
+        $this->assertCount(2, $rows);
+        $this->assertEqualsWithDelta(100 * 16 / 31, $rows[0]['value'], $this->epsilon);
+        $this->assertEqualsWithDelta(100, $rows[1]['value'], $this->epsilon);
+
+        // activation in the middle of the current cycle and a known deactivation within the next
+        // one - a partial month + a prorated upfront month
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array(
+            'start' => strtotime('2025-12-16 00:00:00'),
+            'end' => strtotime('2026-01-16 00:00:00'),
+        )));
+        $rows = $charge->getPrice();
+        $this->assertCount(2, $rows);
+        $this->assertEqualsWithDelta(100 * 16 / 31, $rows[0]['value'], $this->epsilon);
+        $this->assertEqualsWithDelta(100 * 15 / 31, $rows[1]['value'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $rows[1]['prorated_end_date']->sec);
     }
 }

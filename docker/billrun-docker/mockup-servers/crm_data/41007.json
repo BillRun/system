@@ -1,0 +1,100 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "aid": 41007,
+      "crm_account_id": null,
+      "type": "account",
+      "from": "2025-10-23 13:02:37",
+      "to": "2200-01-01 02:00:00",
+      "firstname": "adv",
+      "lastname": "test",
+      "title": null,
+      "email": null,
+      "invoice_shipping_method": "post",
+      "category": "RES",
+      "sub_category": "RESIDENTIAL",
+      "invoice_message": null,
+      "invoice_language": "gr_CY",
+      "invoice_detailed": false,
+      "street": "",
+      "house_number": "",
+      "apartment": "",
+      "province": "",
+      "city": "",
+      "country": "",
+      "zip_code": "",
+      "po_box": "",
+      "creation_time": "2025-10-23 13:02:37",
+      "activation_date": "2025-10-23 13:04:25",
+      "deactivation_date": "2200-01-01 02:00:00"
+    },
+    {
+      "sid": 51007,
+      "aid": 41007,
+      "type": "subscriber",
+      "from": "2025-10-23 13:04:25",
+      "to": "2025-11-25 00:00:00",
+      "plan": "UPFRONT_ADV_PLAN7",
+      "play": "MOBILE",
+      "firstname": "adv",
+      "lastname": "test",
+      "activation_date": "2025-10-23 13:04:25",
+      "deactivation_date": "2025-11-25 00:00:00",
+      "plan_activation": "2025-10-23 13:04:25",
+      "plan_deactivation": "2025-11-25 00:00:00",
+      "creation_time": null,
+      "former_plan": null,
+      "services": [],
+      "imsi": [],
+      "sub_number": "",
+      "portability_code": "",
+      "discounts": [],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "UPFRONT_ADV_PLAN7",
+          "value": {
+            "prorata_in": "PRORATE_PERIOD",
+            "prorata_out": "PRORATE_PERIOD"
+          }
+        }
+      ]
+    },
+    {
+      "sid": 51007,
+      "aid": 41007,
+      "type": "subscriber",
+      "from": "2025-12-16 00:00:00",
+      "to": "2200-01-01 02:00:00",
+      "plan": "UPFRONT_ADV_PLAN7",
+      "play": "MOBILE",
+      "firstname": "adv",
+      "lastname": "test",
+      "activation_date": "2025-12-16 00:00:00",
+      "deactivation_date": "2200-01-01 02:00:00",
+      "plan_activation": "2025-12-16 00:00:00",
+      "creation_time": null,
+      "former_plan": null,
+      "services": [],
+      "imsi": [],
+      "sub_number": "",
+      "portability_code": "",
+      "discounts": [],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "UPFRONT_ADV_PLAN7",
+          "value": {
+            "prorata_in": "PRORATE_PERIOD",
+            "prorata_out": "PRORATE_PERIOD"
+          }
+        }
+      ]
+    }
+  ],
+  "options": null,
+  "billableAccounts": {}
+}

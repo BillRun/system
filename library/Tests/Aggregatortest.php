@@ -97,7 +97,22 @@
      }
 
      /**
-      * 
+      * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
+      * previous cycle runs first to create them (as it would in production).
+      * to be used as a test case preRun.
+      */
+     public function aggregatePreviousCycle($key, $row) {
+         $options = array_merge($this->defaultOptions, $row['test']['options']);
+         $options['stamp'] = Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
+         $aggregator = Billrun_Aggregator::getInstance($options);
+         if (property_exists($aggregator, "aggregationLogic")) {
+             $aggregator->load();
+             $aggregator->aggregate();
+         }
+     }
+
+     /**
+      *
       * @param $query
       * @return billrun objects by query or all if query is null
       */

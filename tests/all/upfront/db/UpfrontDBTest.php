@@ -29,7 +29,19 @@ class UpfrontDBTest extends \Codeception\Test\Unit
     {
        $this->tester->restoreTimezone();
     }
-    
+
+    /**
+     * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
+     * previous cycle runs first to create them (as it would in production).
+     */
+    protected function runCycleWithPrevious($options)
+    {
+        $previousOptions = $options;
+        $previousOptions['stamp'] = \Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
+        $this->tester->runCycle($previousOptions);
+        $this->tester->runCycle($options);
+    }
+
 
     public function testDiscountFinishPreviousMonthOnUpfronInheritedPlan_DB_1()
     {
@@ -84,7 +96,7 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $subscriber = json_decode($this->tester->grabResponse(), true)['entity'];
 
 
-        $this->tester->runCycle($this->defaultOptions);
+        $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
