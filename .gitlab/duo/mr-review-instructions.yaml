@@ -1,0 +1,69 @@
+instructions:
+  - name: General code quality
+    instructions: |
+      - Flag any hardcoded secrets, API keys, tokens, or credentials. BillRun stores configuration in conf/ and environment variables.
+      - Flag log statements that may leak PII, payment data, full credit card numbers, CVVs, or auth tokens. Logs are written to logs/ and should mask sensitive fields.
+      - Flag commented-out code blocks and TODO/FIXME comments left without a Jira ticket reference (BRCD-* or similar).
+      - Prose in user-facing strings, comments, and docs should use plain ASCII "-" instead of em-dash "—".
+
+  - name: Money and billing correctness
+    instructions: |
+      - Flag any use of PHP float or JS Number for monetary amounts, tax calculations, or balances. Currency math must use integer minor units or a decimal library; floating-point arithmetic is forbidden in billing logic.
+      - Flag price/charge/balance/tax fields that are compared or rounded without explicit precision handling.
+      - Flag changes that affect invoice generation, rating, or payment flows without an accompanying test under tests/ or a Codeception scenario.
+      - Flag payment gateway calls (Stripe, Omnipay, Payrexx, custom gateways) that lack idempotency keys or retry-safe handling.
+      - Flag billing-period boundary logic (cycle start/end, proration, backdating) that does not use Billrun_Util/Billrun_DataTypes_CycleTime helpers.
+    glob: "application/**/*.php,library/Billrun/**/*.php"
+
+  - name: PHP backend (Yaf + library/Billrun)
+    instructions: |
+      - The codebase targets PHP 7.4. Flag syntax that requires PHP 8+ (named args, match, enums, readonly, constructor property promotion, nullsafe operator, str_contains/str_starts_with without polyfill).
+      - Flag direct use of $_GET / $_POST / $_REQUEST / $_SERVER inside controllers. Use the Yaf request abstraction or Billrun_Util input helpers.
+      - Flag any string concatenation that builds shell commands, file paths, or external URLs from request input without escaping (escapeshellarg, realpath checks, allowlist).
+      - Flag broad catch (Exception $e) blocks that swallow errors without logging or rethrowing.
+      - Flag new classes added under library/Billrun/ that do not follow the existing Billrun_Foo_Bar PSR-0 naming convention.
+      - Flag controllers that perform business logic directly instead of delegating to a model under application/models/ or library/Billrun/.
+    glob: "application/**/*.php,library/Billrun/**/*.php,public/**/*.php"
+
+  - name: MongoDB access
+    instructions: |
+      - Flag queries that pass user-controlled input directly into a Mongo filter, $where, $expr, or $function without type-casting via Billrun_Util::filterArrayByKeys or Mongodloid helpers. Treat NoSQL injection seriously.
+      - Flag use of $where, mapReduce, or server-side JS - they are deprecated and unsafe.
+      - Flag queries on large collections (lines, billrun, log, audit, queue, balances, subscribers) that lack a filter on an indexed field (aid, sid, billrun_key, urt, stamp). Suggest the matching index.
+      - Flag aggregation pipelines that load full documents into memory without $project / $match early in the pipeline.
+      - Flag direct use of MongoClient or MongoDB\Client when Billrun_Factory::db() / Mongodloid_Collection is available.
+      - Flag schema changes (new required fields, renamed fields, type changes) on existing collections that lack a migration under application/migrations/.
+    glob: "application/**/*.php,library/Billrun/**/*.php,library/Mongodloid/**/*.php"
+
+  - name: Authentication, multi-tenancy, and authorization
+    instructions: |
+      - Flag new API endpoints, controller actions, or cron entry points that do not enforce authentication (Billrun_Factory::user() / OAuth2 / API key) and an authorization check.
+      - Flag any code path that reads or writes data scoped by account (aid) or tenant without filtering on the current account. Multi-tenant mode (APPLICATION_MULTITENANT=1) requires strict tenant isolation - cross-tenant reads are a security bug.
+      - Flag changes to OAuth2, OpenID Connect, or session handling without a test in tests/ and without a comment explaining the security implication.
+    glob: "application/controllers/**/*.php,application/models/Api/**/*.php,library/Billrun/**/*.php"
+
+  - name: React frontend
+    instructions: |
+      - The frontend uses React 16.8 with Redux 4 and Immutable.js 4. Flag mutation of state objects/arrays - always return new Immutable structures or use immutable update patterns.
+      - Flag missing or non-stable key props in list rendering (key={index} is not stable when items can be added/removed/reordered).
+      - Flag direct DOM access (document.querySelector, refs without forwardRef) where a React pattern would work.
+      - Flag uncontrolled form inputs and missing onChange handlers in controlled inputs.
+      - Flag dispatching actions inside render or in component body without useEffect / componentDidMount.
+      - Flag inline arrow functions or new object literals passed as props to PureComponent / memoized children where it would defeat memoization in hot paths (tables, lists).
+      - Flag dangerouslySetInnerHTML usage that includes any value not sanitized server-side.
+      - Flag console.log / console.debug left in committed code.
+    glob: "front-end/src/**/*.js,front-end/src/**/*.jsx"
+
+  - name: Tests
+    instructions: |
+      - New PHP business logic in library/Billrun/ or application/models/ should have a corresponding test under tests/. Flag MRs that add billing/rating/invoicing logic with no test.
+      - Flag tests that hit external services (Stripe, payment gateways, SMTP, SMS) without mocking.
+      - Flag tests that rely on a specific current date/time without freezing the clock.
+    glob: "tests/**/*,application/**/*.php,library/Billrun/**/*.php,front-end/src/**/*.js"
+
+  - name: Config and migrations
+    instructions: |
+      - Flag new configuration keys added without a default value and without an entry in CONFIGURATION_VARIABLES.md.
+      - Flag DB migrations under application/migrations/ that are not idempotent (re-runnable safely) or that do destructive operations (drop, removeField) without a guard.
+      - Flag changes to docker/, Dockerfile, or nginx.conf templates without verifying APPLICATION_MULTITENANT default behavior is preserved.
+    glob: "application/migrations/**/*,docker/**/*,conf/**/*,CONFIGURATION_VARIABLES.md"

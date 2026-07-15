@@ -4,13 +4,6 @@ use function PHPUnit\Framework\assertCount;
 
 class unifyCest
 {
-
-    public $accountDetails;
-    public $planDetails;
-    public $serviceDetails;
-    public $subscriberDetails;
-    public $rateDetails;
-
     public static $isIPSet = false;
     public function _before(ApiTester $I)
     {
@@ -18,9 +11,13 @@ class unifyCest
             $this->setUP($I);
             self::$isIPSet = true;
             Billrun_Config::getInstance()->loadDbConfig();
-            $this->createServices($I);
+            // $this->createServices($I);
         }
+        $I->cleanDB();
+        $I->resetBillrunInstances();
+
     }
+
     protected function setUP(ApiTester $I, $inputProcessor = null)
     {
         $inputProcessor = $inputProcessor ?: $this->inputProcessor;
@@ -36,62 +33,83 @@ class unifyCest
             ]
         ];
         $I->setSettings('usage_types', $type);
+        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+    }
+
+    /**
+     * Apply a custom file_type config from within a test.
+     *
+     * Billrun_Helpers_QueueCalculators fetches the Unify calculator via
+     * Billrun_Calculator::getInstance(['type' => 'unify', 'autoload' => false]),
+     * which Billrun_Base caches in a process-wide singleton keyed only by
+     * those args. The calc snapshots file_types at construction, so adding a
+     * file_type after the first process() call leaves the cached calc stale —
+     * loadDbConfig alone is not enough. Clearing Billrun_Base::$instance
+     * forces the next process() to rebuild the calc with the fresh config.
+     */
+    protected function applyCustomFileType(ApiTester $I, array $customProcessor)
+    {
+        $I->setSettings('file_types', $customProcessor);
+        Billrun_Config::getInstance()->loadDbConfig();
+        $instances = new ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     //workaround for the issue with service instence (not update the service list in the 2nd process on the same run)
-    protected function createServices(ApiTester $I)
-    {
-        //create all the services for all tests once , before the tests
-        $services = [
-            [
-                'from' => '2025-01-01',
-                "include" => [
-                    "groups" => [
-                        "LOCAL_CALLS_5000" => [
-                            "account_shared" => false,
-                            "account_pool" => false,
-                            "rates" => [
-                                "CALL"
-                            ],
-                            "value" => 300000,
-                            "usage_types" => [
-                                "call" => [
-                                    "unit" => "minutes"
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-            [
-                'from' => '2025-01-01',
-                "include" => [
-                    "groups" => [
-                        "2LOCAL_CALLS_5000" => [
-                            "account_shared" => false,
-                            "account_pool" => false,
-                            "rates" => [
-                                "CALL2"
-                            ],
-                            "value" => 300000,
-                            "usage_types" => [
-                                "call" => [
-                                    "unit" => "minutes"
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ];
-        foreach ($services as $service) {
-            $I->generateService(array_merge(
-                ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
-                $service
-            ));
-            $this->serviceDetails[] = json_decode($I->grabResponse(), true)['entity'];
-        }
-    }
+    // protected function createServices(ApiTester $I)
+    // {
+    //     //create all the services for all tests once , before the tests
+    //     $services = [
+    //         [
+    //             'from' => '2025-01-01',
+    //             "include" => [
+    //                 "groups" => [
+    //                     "LOCAL_CALLS_5000" => [
+    //                         "account_shared" => false,
+    //                         "account_pool" => false,
+    //                         "rates" => [
+    //                             "CALL"
+    //                         ],
+    //                         "value" => 300000,
+    //                         "usage_types" => [
+    //                             "call" => [
+    //                                 "unit" => "minutes"
+    //                             ]
+    //                         ]
+    //                     ]
+    //                 ]
+    //             ]
+    //         ],
+    //         [
+    //             'from' => '2025-01-01',
+    //             "include" => [
+    //                 "groups" => [
+    //                     "2LOCAL_CALLS_5000" => [
+    //                         "account_shared" => false,
+    //                         "account_pool" => false,
+    //                         "rates" => [
+    //                             "CALL2"
+    //                         ],
+    //                         "value" => 300000,
+    //                         "usage_types" => [
+    //                             "call" => [
+    //                                 "unit" => "minutes"
+    //                             ]
+    //                         ]
+    //                     ]
+    //                 ]
+    //             ]
+    //         ]
+    //     ];
+    //     foreach ($services as $service) {
+    //         $I->generateService(array_merge(
+    //             ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
+    //             $service
+    //         ));
+    //         $this->serviceDetails[] = json_decode($I->grabResponse(), true)['entity'];
+    //     }
+    // }
     protected function createData(ApiTester $I, $accountDetails = [], $planDetails = [], $serviceDetails = [], $rateDetails = [])
     {
         if ($accountDetails != []) {
@@ -102,13 +120,13 @@ class unifyCest
             $I->generatePlan(array_merge(['name' => 'TEST_PLAN_2' . microtime(true) * 10000], $planDetails));
             $this->planDetails = json_decode($I->grabResponse(), true)['entity'];
         }
-        // if ($serviceDetails != []) {
-        //     $I->generateService(array_merge(
-        //         ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
-        //         $serviceDetails
-        //     ));
-        //     $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
-        // }
+        if ($serviceDetails != []) {
+            $this->serviceDetails = array_merge(
+                ['name' => 'TEST_SERVICE' . microtime(true) * 10000],
+                $serviceDetails
+            );
+            $I->generateService($this->serviceDetails);
+        }
         if ($rateDetails != []) {
             $I->generateRate(array_merge(['tariff_category' => 'retail', 'key' => microtime(true) * 10000], $rateDetails));
             $this->rateDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -167,7 +185,7 @@ class unifyCest
                 "fields" => [
                     [
                         "match" => [
-                            "type" => "/^abc$/",
+                            "type" => "/^abc/",
                         ],
                         "update" => [
                             [
@@ -223,7 +241,7 @@ class unifyCest
     ];
     protected function process($options)
     {
-        $processor = Billrun_Processor::getInstance($options);
+        // $processor = Billrun_Processor::getInstance($options);
         // if (!$processor->createLogForProcessWithPath($options)) {
         //     return;
         // }
@@ -284,11 +302,10 @@ class unifyCest
                 'firstname' => '0531234567',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[0]['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
         $this->process(
             [
                 'type' => 'abc',
@@ -364,7 +381,7 @@ class unifyCest
                 'firstname' => '0531234561',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
             ]
         );
         $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
@@ -374,11 +391,10 @@ class unifyCest
                 'firstname' => '0531234562',
                 'aid' => $this->accountDetails['aid'],
                 'plan' => $this->planDetails['name'],
-                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails[1]['name']]]
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
             ]
         );
         $subscriber2 = json_decode($I->grabResponse(), true)['entity'];
-        Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
         //die();
         $this->process(
             [
@@ -428,6 +444,271 @@ class unifyCest
         ]));
     }
 
+    public function testUnifyWithRequiredMatch(ApiTester $I): void
+    {
 
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
 
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc3';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["sid" => "/\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
+
+        $this->process(
+            [
+                'type' => 'abc3',
+                'path' => 'tests/all/calculators/test_files/test1.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+    }
+
+    public function testUnifyWithRequiredMatchNestedField(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc2';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^053\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
+
+        $this->process(
+            [
+                'type' => 'abc2',
+                'path' => 'tests/all/calculators/test_files/test1.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+    }
+
+    public function testUnifyWithRequiredNotMatchNestedField(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriberDetails1 = json_decode($I->grabResponse(), true)['entity'];
+
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0541234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $subscriberDetails2 = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc1';
+        $customProcessor['unify']['unification_fields']['required']['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $customProcessor['unify']['unification_fields']['fields'][0]['match'] = ["uf.firstname" => "/^054\\d+/"];
+        $this->applyCustomFileType($I, $customProcessor);
+
+        $this->process(
+            [
+                'type' => 'abc1',
+                'path' => 'tests/all/calculators/test_files/test3.csv'
+            ]
+        );
+
+        $I->assertEquals(3, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails1['sid']
+        ]));
+         $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid'],
+            "lcount" => 3
+        ]));
+
+        $I->assertEquals(0, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails1['sid']
+        ]));
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $subscriberDetails2['sid']
+        ]));
+    }
 }

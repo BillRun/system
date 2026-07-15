@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Panel, Col, Form, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import { ActionButtons } from '@/components/Elements';
 import Field from '@/components/Field';
 import Help from '../Help';
 
-
-const EventSettings = ({ eventsSettings, methodOptions, decoderOptions, ...props }) => {
+const EventSettings = ({ eventsSettings = Immutable.Map(), methodOptions = [{ value: 'post', label: 'POST' }, { value: 'get', label: 'GET' }], decoderOptions = [{ value: 'json', label: 'JSON' }, { value: 'xml', label: 'XML' }], ...props }) => {
   const onChange = eventNotifier => (e) => {
     const { value, id } = e.target;
     props.onEdit(eventNotifier, id, value);
@@ -27,11 +27,11 @@ const EventSettings = ({ eventsSettings, methodOptions, decoderOptions, ...props
   };
 
   return (
-    <Form horizontal>
+    <Form className="form-horizontal">
       <Col sm={12}>
         <Panel header="HTTP" key="http">
           <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>
+            <Col sm={2} as={ControlLabel}>
               Url <Help contents="URL to send the requests to" />
             </Col>
             <Col sm={6}>
@@ -39,7 +39,7 @@ const EventSettings = ({ eventsSettings, methodOptions, decoderOptions, ...props
             </Col>
           </FormGroup>
           <FormGroup >
-            <Col sm={2} componentClass={ControlLabel}>
+            <Col sm={2} as={ControlLabel}>
               Method <Help contents="HTTP method" />
             </Col>
             <Col sm={6}>
@@ -52,7 +52,7 @@ const EventSettings = ({ eventsSettings, methodOptions, decoderOptions, ...props
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>
+            <Col sm={2} as={ControlLabel}>
               Decoder <Help contents="Method to decode HTTP response" />
             </Col>
             <Col sm={6}>
@@ -67,7 +67,7 @@ const EventSettings = ({ eventsSettings, methodOptions, decoderOptions, ...props
         </Panel>
         <Panel header="Mail" key="mail">
           <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>
+            <Col sm={2} as={ControlLabel}>
               Mails <Help contents="Send events to the following email addresses (For supported events)" />
             </Col>
             <Col sm={6}>
@@ -96,12 +96,6 @@ EventSettings.propTypes = {
   onSave: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
-};
-
-EventSettings.defaultProps = {
-  eventsSettings: Immutable.Map(),
-  methodOptions: [{ value: 'post', label: 'POST' }, { value: 'get', label: 'GET' }],
-  decoderOptions: [{ value: 'json', label: 'JSON' }, { value: 'xml', label: 'XML' }],
 };
 
 export default EventSettings;

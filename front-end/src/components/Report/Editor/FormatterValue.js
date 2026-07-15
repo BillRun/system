@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { InputGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+import { InputGroup, DropdownButton, Dropdown } from 'react-bootstrap'
+import { InputGroupButton } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import Field from '@/components/Field';
 import {
@@ -26,18 +27,7 @@ class FormatterValue extends Component {
     onChangeValueType: () => {},
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { field } = this.props;
-    // by default set first value if no value selected
-    if (nextProps.config.has('options', '') && field.get('value', '') === '') {
-      const value = nextProps.config.get('options', Immutable.List()).map(formatSelectOptions).first().value || '';
-      this.props.onChange(value);
-    }
-    if (nextProps.config.has('fixedValue')) {
-      this.props.onChange(nextProps.config.get('fixedValue', ''));
-    }
-  }
-
+  
   shouldComponentUpdate(nextProps) {
     const { field, config, disabled } = this.props;
     return (
@@ -60,6 +50,19 @@ class FormatterValue extends Component {
     this.props.onChangeValueType(type);
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { field } = prevProps;
+    // by default set first value if no value selected
+    if (this.props.config.has('options', '') && field.get('value', '') === '') {
+      const value = this.props.config.get('options', Immutable.List()).map(formatSelectOptions).first().value || '';
+      prevProps.onChange(value);
+    }
+    if (this.props.config.has('fixedValue')) {
+      prevProps.onChange(this.props.config.get('fixedValue', ''));
+    }
+  }
+
   render() {
     const { field, disabled, config } = this.props;
     let disabledInput = disabled || config.isEmpty();
@@ -77,13 +80,13 @@ class FormatterValue extends Component {
       const valueOptions = config
         .get('valueTypes', Immutable.List())
         .map(option => (
-          <MenuItem
+          <Dropdown.Item
             eventKey={option.get('value', '-')}
             key={option.get('value', '-')}
             onSelect={this.onSelectOptionType}
           >
             {option.get('label', '-')}
-          </MenuItem>
+          </Dropdown.Item>
         ))
         .toArray();
       return (
@@ -94,14 +97,15 @@ class FormatterValue extends Component {
             onChange={this.onChangeText}
             disabled={disabledInput}
           />
-          <DropdownButton
+          <InputGroupButton>
+            <DropdownButton
             id="balance-period-unit"
-            componentClass={InputGroup.Button}
             title={selectedUnit}
             disabled={disabledInput}
-          >
+            >
             { valueOptions }
-          </DropdownButton>
+            </DropdownButton>
+          </InputGroupButton>
         </InputGroup>
       );
     }

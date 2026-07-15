@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router';
-import { Col, FormGroup, HelpBlock, InputGroup, Form, Panel, Button, FormControl } from 'react-bootstrap';
+import withRouter from '@/common/withRouter';
+import { Col, InputGroup, Form, Button, FormControl } from 'react-bootstrap';
+import { FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import { savePassword } from '@/actions/userActions';
 import { idSelector, sigSelector, timestampSelector, usernameSelector } from '@/selectors/entitySelector';
 import Field from '@/components/Field';
@@ -37,12 +38,7 @@ class ChangePassword extends Component {
     sending: false,
   }
 
-  componentWillMount() {
-    if (this.props.auth === true) {
-      this.props.router.push('/');
-    }
-  }
-
+  
   validate = () => {
     const { password, password1 } = this.state;
     return (password === password1 && password !== '');
@@ -97,25 +93,32 @@ class ChangePassword extends Component {
     }
   }
 
+  
+  componentDidMount() {
+    if (this.props.auth === true) {
+      this.props.router.push('/');
+    }
+  }
+
   render() {
     const { password, password1, error, sending } = this.state;
     const { username } = this.props;
     const hasError = error.length > 0 || error.length > 0;
 
     return (
-      <Col md={4} mdOffset={4}>
+      <Col md={4} className="col-md-offset-4" >
         <Panel header="Reset Password" className="login-panel">
           <Form>
             <fieldset>
               <FormGroup>
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-user fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-user fa-fw" /></InputGroup.Text>
                   <Field value={username} disabled={true} />
                 </InputGroup>
               </FormGroup>
               <FormGroup validationState={hasError ? 'error' : null} >
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-key fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-key fa-fw" /></InputGroup.Text>
                   <FormControl
                     autoFocus
                     type="password"
@@ -136,7 +139,7 @@ class ChangePassword extends Component {
                 { error.length > 0 && <HelpBlock>{error}</HelpBlock> }
               </FormGroup>
             </fieldset>
-            <Button type="submit" bsStyle="primary" bsSize="lg" block onClick={this.onSavePassword} disabled={sending}>
+            <Button type="submit" variant="primary" size="lg" className="btn-block" onClick={this.onSavePassword} disabled={sending}>
               { sending && (<span><i className="fa fa-spinner fa-pulse" /> &nbsp;</span>) }
               Save
             </Button>

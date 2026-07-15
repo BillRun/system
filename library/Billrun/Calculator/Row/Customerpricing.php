@@ -127,11 +127,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
 			$this->plan = null;
 		} else {
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
 			$planSettings = array(
 				'name' => $this->row['plan'],
 				'time' => $this->row['urt']->sec,
+				'disable_cache_plan' => $isRealtime
 			);
+			Billrun_Factory::log()->log("CustomerPricing - loading plan '{$this->row['plan']}'", Zend_Log::DEBUG);
 			$this->plan = Billrun_Factory::plan($planSettings);
+			Billrun_Factory::log()->log("CustomerPricing - finished loading plan '{$this->row['plan']}'", Zend_Log::DEBUG);
 		}
 		$this->services = [];
 		$this->servicesUsed = array();
@@ -200,10 +204,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
-
-		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this));
+		$allowMultiRetries =  true;
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this, &$allowMultiRetries));
 		$pricingData = $this->updateBalance($this->rate, $this->plan, $this->usaget, $this->usagev);
-		if ($pricingData === false) {
+		if ($pricingData === false && $allowMultiRetries) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
 			if (++$this->countConcurrentRetries >= $this->concurrentMaxRetries) {
@@ -589,6 +593,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @todo remove backward compatibility of service as string (should be only array)
 	 */
 	protected function loadSubscriberServices($services, $time) {
+		Billrun_Factory::log()->log("CustomerPricing - loading all services for subscribers", Zend_Log::DEBUG);
 		$ret = array();
 		$servicesIds = [];
 		foreach ($services as $service) {
@@ -600,7 +605,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				'disableCache' => true,
 				'plan_included' => isset($service['plan_included']) ? $service['plan_included'] : false,
 			);
-			
+
+			$isRealtime = isset($this->row['realtime']) ? $this->row['realtime'] : false;
+			if ($isRealtime) {
+				$serviceSettings['disable_service_cache'] = true;
+			}
+
 			if (isset($service['from']->sec)) {
 				$serviceSettings['service_start_date'] = $service['from']->sec;
 			}
@@ -633,7 +643,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		ksort($ret);
 		ksort($servicesIds);
 		$this->servicesIds = array_values($servicesIds);
-
+		Billrun_Factory::log()->log("CustomerPricing - finished loading all services for subscribers", Zend_Log::DEBUG);
 		return array_values($ret); // array of service objects
 	}
 	
@@ -1126,8 +1136,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usageType = $this->row['usaget'];
 		$prepricedMapping = Billrun_Factory::config()->getLineTypeConfigByName($this->row['type'], true, $this->row['linet'] ?? null)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
-		$aprice = Billrun_util::getIn($userFields, $apriceField);
-                		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
+		$aprice = $apriceBeforeTrigger = Billrun_util::getIn($userFields, $apriceField, null);
+        Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
@@ -1138,8 +1148,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			return $aprice;
 		}
-		
-		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
+		if($aprice === $apriceBeforeTrigger){//If different probably change in trigger so no need this alert
+			Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
+		}
 		return false;
 	}
 	

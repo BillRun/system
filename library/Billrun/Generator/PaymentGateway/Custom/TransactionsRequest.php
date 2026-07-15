@@ -115,13 +115,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$account = Billrun_Factory::account();
 		$accountQuery = array('aid' => array('$in' => $customersAids));
 		$accounts = $account->loadAccountsForQuery($accountQuery);
+		$accountsInArray = [];
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
 				$accountsInArray[$account['aid']] = $account;
 			}
 		}
 		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
-		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
+		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers, $accountsInArray));
 		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
 		$this->setFileMandatoryFields();
 		$current_loop_bills = $this->customers;
@@ -223,6 +224,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$extraFields = $this->getCustomPaymentGatewayFields();
 				$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
 				Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
+				$params['_account'] = is_array($account) ? $account : $account->getRawData();
 				$line = $this->getDataLine($params);
 				if ($this->affects_bills) {
 				$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);

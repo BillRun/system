@@ -16,35 +16,37 @@ $paymentGateways = Billrun_Factory::config()->getConfigValue('payment_gateways')
 $subscribersColl = Billrun_Factory::db()->subscribersCollection();
 
 foreach($paymentGateways as $paymentGateway){
-	if ($paymentGateway['name'] === 'Payrexx'){
-		$gatewayParams = $paymentGateway['params'];
-      	break;
+	if (preg_match('/^Payrexx/', $paymentGateway['name'])){
+		$gatewayParams[$paymentGateway['name']] = $paymentGateway['params'];
 	}
 }
 if(!isset($gatewayParams)){
 	echo '❌ Not found Payrexx parameters.' . PHP_EOL;
 	exit;
 }
-$instance = $gatewayParams['instance_name'];
-$secret = $gatewayParams['instance_api_secret'];
-$apiDomain = $gatewayParams['custom_api_domain'];
-$signature = base64_encode(hash_hmac('sha256', '', $secret, true));
+
 $query = [
 	"type" => "account",
-   "payment_gateway.active.name" => "Payrexx",
-   "payment_gateway.active.card_token" => ['$exists' => 1],
-   "payment_gateway.active.card_brand" => ['$exists' => 0],
+    "payment_gateway.active.name" => "Payrexx",
+    "payment_gateway.active.card_token" => ['$exists' => 1],
+    "payment_gateway.active.card_brand" => ['$exists' => 0],
 ];
 $accounts = $subscribersColl->query($query)->cursor();
 $numberOfRevisions = count($accounts);
 echo 'found ' . $numberOfRevisions .' Payrexx customer revisions.' . PHP_EOL; 
-$params = [
-    'instance' => $instance,
-    'ApiSignature' => $signature
-];
+
 $headers = ['Accept-encoding' => 'deflate'];
 $updateParams = [];
 foreach($accounts as $account){
+	$instance = $account['payment_gateway']['active']['instance_name'];
+	$instanceName = $gatewayParams[$instance]['instance_name'];
+	$secret = $gatewayParams[$instance]['instance_api_secret'];
+	$apiDomain = $gatewayParams[$instance]['custom_api_domain'];
+	$signature = base64_encode(hash_hmac('sha256', '', $secret, true));
+	$params = [
+		'instance' => $instanceName,
+		'ApiSignature' => $signature
+	];
 	$id = $account['_id'];
 	$token = $account["payment_gateway"]["active"]["card_token"];
 	if(isset($updateParams[$token])){
@@ -58,7 +60,7 @@ foreach($accounts as $account){
 	if ($response !== false) {
 		$responseData = json_decode($response, true);
 		if($responseData['status'] !== 'success'){
-			echo "❌ API call failed for id $id,  with massage: ".$responseData['massage'].".\n";	
+			echo "❌ API call failed for id $id,  with message: ".$responseData["message"].".\n";	
 		}else{
 			// print_r($responseData['data']);
 			$brand = $responseData['data'][0]['payment']['brand'];

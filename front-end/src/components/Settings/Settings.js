@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import DateTime from './DateTime';
 import Currency from './Currency';
 import Invoicing from './Invoicing';
@@ -64,7 +65,9 @@ class Settings extends Component {
     // playsBeforeSave: Immutable.List(),
   };
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const settingsToFetch = [
       'subscribers',
       'pricing',

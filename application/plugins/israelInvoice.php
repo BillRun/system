@@ -145,17 +145,13 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
                     'from' => '2025-01-01T00:00:00',
                     'to' => '2026-01-01T00:00:00'
                 ],[
-                    'amount' => 15000,
-                    'from' => '2026-01-01T00:00:00',
-                    'to' => '2027-01-01T00:00:00'
-                ],[
                     'amount' => 10000,
-                    'from' => '2027-01-01T00:00:00',
-                    'to' => '2028-01-01T00:00:00'
+                    'from' => '2026-01-01T00:00:00',
+                    'to' => '2026-06-01T00:00:00'
                 ],[
                     'amount' => 5000,
-                    'from' => '2028-01-01T00:00:00',
-                    'to' => '2029-01-01T00:00:00'
+                    'from' => '2026-06-01T00:00:00',
+                    'to' => '2129-01-01T00:00:00'
                 ]
             );
         }
@@ -301,7 +297,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $postData = array(
             'client_id' => $this->client_key,
             'client_secret' => $this->client_secret,
-            'scope' => "scope",
+            'scope' => "invoices_scope",
             'refresh_token' => $this->refresh_token,
             'grant_type' => "refresh_token"
         );

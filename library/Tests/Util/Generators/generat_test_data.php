@@ -21,8 +21,11 @@ class generat_test_data
      self::$test_number = $test_number;
   }
 
-  
-  
+  public static function uniqueName($prefix = '')
+  {
+    return $prefix . strtoupper(bin2hex(random_bytes(8)));
+  }
+
   public static function getCurrentDateTimeWithMilliseconds() {
     $now = new DateTime();
     $milliseconds = round(microtime(true) * 1000) % 1000; // Get current milliseconds

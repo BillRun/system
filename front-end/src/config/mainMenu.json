@@ -153,13 +153,22 @@
     "order": 3,
     "parent":"cycle"
   },
-  "immediate-invoice": {
-    "title": "Immediate Invoice",
+  "charge-invoice": {
+    "title": "Immediate Charges",
     "icon": "",
-    "route": "immediate-invoice",
+    "route": "immediate-invoice-charge",
     "show": true,
     "roles": [],
     "order": 4,
+    "parent": "cycle"
+  },
+  "refund-invoice": {
+    "title": "Immediate Refunds",
+    "icon": "",
+    "route": "immediate-invoice-refund",
+    "show": true,
+    "roles": [],
+    "order": 5,
     "parent": "cycle"
   },
   "account_receivables": {
@@ -263,7 +272,7 @@
   },
   "reports": {
     "title": "Reports",
-    "icon": "fa-list-alt",
+    "icon": "fa-bar-chart",
     "route": "reports",
     "show": true,
     "roles": [],

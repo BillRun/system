@@ -568,7 +568,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @return type
 	 */
 	protected function getLogoPath($options = array()) {
-		if (!defined('APPLICATION_MULTITENANT') || !APPLICATION_MULTITENANT) {
+		if (!Billrun_Config::isMultitenantEnabled()) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal($options['header_tpl_logo'], "/application/views/invoices/theme/logo.png");
 		}
 		return $this->getTempDir($this->stamp) . DIRECTORY_SEPARATOR . 'logo.png';
@@ -597,7 +597,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	protected function updateInvoicePropertyToBillrun($account, $pdfPath, $htmlPath = false) {
+	protected function updateInvoicePropertyToBillrun(&$account, $pdfPath, $htmlPath = false) {
 		$update = ['invoice_file' => $pdfPath ];
 		if($htmlPath) {
 			$update['invoice_html'] = $htmlPath;
@@ -606,6 +606,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		Billrun_Factory::dispatcher()->trigger('alterGenerationBillrunUpdate',[&$update, $account, $pdfPath, $htmlPath, $this->constructionOptions, $this ]);
 
 		if(!$this->is_fake_generation) {
+			$account['invoice_file'] = $pdfPath;
 			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
 	}

@@ -206,12 +206,4 @@ class Billrun_PaymentGateway_Connection_Relocate extends Billrun_PaymentGateway_
 		
 	}
 
-	public function getCustomPaymentGatewayFields() {
-		return [
-			'cpg_name' => [!empty($this->cpgName) ? $this->cpgName : ""],
-			'cpg_file_type' => [!empty($this->fileType) ? $this->fileType : ""],
-			'pg_file_type' => $this->fileType
-		];
-	}
-
 }

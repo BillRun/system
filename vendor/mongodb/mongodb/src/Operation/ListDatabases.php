@@ -28,14 +28,12 @@ use MongoDB\Model\DatabaseInfoLegacyIterator;
 /**
  * Operation for the ListDatabases command.
  *
- * @api
  * @see \MongoDB\Client::listDatabases()
  * @see https://mongodb.com/docs/manual/reference/command/listDatabases/#mongodb-dbcommand-dbcmd.listDatabases`
  */
 class ListDatabases implements Executable
 {
-    /** @var ListDatabasesCommand */
-    private $listDatabases;
+    private ListDatabasesCommand $listDatabases;
 
     /**
      * Constructs a listDatabases command.

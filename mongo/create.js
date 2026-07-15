@@ -1,4 +1,7 @@
-//Lines collection
+// create base db for BillRun
+// this script is deprecated since version 5.25.0, please use application/controllers/Action/Dbinit.php
+
+////Lines collection
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('lines');
 db.lines.createIndex({'stamp': 1 }, { unique: true });
@@ -122,7 +125,9 @@ db.cards.createIndex({ 'from':1 }, { unique: false, background: true });
 db.cards.createIndex({ 'to':1 }, { unique: false, background: true });
 
 //Subscribers
+db.createCollection('subscribers');
 db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'sid': 1 }, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'from': 1 , 'to': 1}, { unique: false, sparse: true, background: true });
@@ -142,7 +147,10 @@ db.services.createIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 db.services.createIndex({name : 1}, {unique: false});
 db.services.createIndex({ 'description': 1}, { unique: false, background: true });
 
+//Config Collection
 db.createCollection('config', {capped: true, size:104857600});
+db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
+
 db.createCollection('events');
 db.createCollection('carriers');
 
@@ -182,6 +190,9 @@ db.autorenew.createIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, b
 //operations
 db.operations.createIndex({action:1,filtration:1,start_time:1,end_time:1},{ background: true });
 db.operations.createIndex({action:1,end_time:1},{ background: true });
+db.operations.createIndex({ 'action': 1, 'filtration': 1, 'lock_end_time': 1, 'lock_expiry_time': 1 }, { background: true });
+db.operations.createIndex({ 'lock_start_time': 1 }, { expireAfterSeconds: 5256000 });
+db.operations.createIndex({ 'start_time': 1 }, { expireAfterSeconds: 5256000 });
 
 // Taxes Collection
 db.createCollection('taxes');

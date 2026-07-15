@@ -14,7 +14,7 @@ class billapiServiceCest
 
     protected function createData(ApiTester $I , $serviceDetails = [])
     {
-        $I->generateService(array_merge(['name' => 'TEST_SERVICE_'.microtime(true)*10000],$serviceDetails));
+        $I->generateService(array_merge(['name' => 'TEST_SERVICE_'.microtime(true)*10000],$serviceDetails), true);
         $this->serviceDetails = json_decode($I->grabResponse(), true)['entity'];
     }
 

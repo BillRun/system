@@ -9,13 +9,13 @@ class Test_Case_42775
     public function test_case()
     {
         $account = generat_subscribers::generateAccount();
-        generat_test_data::setTestNumber(42774);
+        generat_test_data::setTestNumber(42775);
         $plan1 = generat_plans::generatePlan(
 
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "B2C_42775",
+                "name" => "B2C_42775" . (int) floor(microtime(true) * 1000),
                 "price" => [
                     [
                         "price" => 16.79,
@@ -38,7 +38,7 @@ class Test_Case_42775
             ]
         );
         
-        $discount_name = "DIS_B2C_" . time();
+        $discount_name = "DIS_B2C_" .  (int) floor(microtime(true) * 1000);;
 
         $discount = generat_discounts::generateDiscount([
             "from" => "2025-08-01T21:00:00Z",
@@ -65,6 +65,7 @@ class Test_Case_42775
                   ]
               ],
               'key'=> $discount_name,
+              'proration' => 'yes'
 
           ]);
 

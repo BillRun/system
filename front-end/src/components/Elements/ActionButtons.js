@@ -1,18 +1,37 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'react-bootstrap';
-
-const ActionButtons = (props) => {
-  const { hide, progress, progressLabel, reversed } = props;
-  const { saveLabel, hideSave, disableSave, onClickSave, saveTitle } = props;
-  const { cancelLabel, hideCancel, disableCancel, onClickCancel, cancelTitle } = props;
+const ActionButtons = ({
+  hide = false,
+  progress = false,
+  progressLabel = null,
+  reversed = false,
+  saveLabel = 'Save',
+  hideSave = false,
+  disableSave = false,
+  onClickSave,
+  saveTitle,
+  cancelLabel = 'Cancel',
+  hideCancel = false,
+  disableCancel = false,
+  onClickCancel,
+  cancelTitle,
+  children,
+}) => {
   if (hide) {
     return null;
   }
+  // Determine button variants.
+  // 'default' is Bootstrap 3-only; yeti.css has .btn-default but react-bootstrap v2
+  // also needs btn-secondary / btn-light for proper styling. We map:
+  //   primary action  → 'primary'  (blue, white text)
+  //   secondary/cancel→ 'default'  (white, dark text — defined in yeti.css)
+  const saveVariant = reversed ? 'default' : 'primary';
+  const cancelVariant = reversed ? 'primary' : 'default';
   return (
     <div style={{ marginTop: 12 }}>
       {!hideSave && (
-        <Button onClick={onClickSave} bsStyle={reversed ? 'default' : 'primary'} disabled={progress || disableSave} style={{ minWidth: 90, marginRight: 10 }} title={saveTitle}>
+        <Button onClick={onClickSave} variant={saveVariant} disabled={progress || disableSave} style={{ minWidth: 90, marginRight: 10 }} title={saveTitle}>
           { progress && (<span><i className="fa fa-spinner fa-pulse" />&nbsp;&nbsp;</span>) }
           { progress && progressLabel !== null
             ? progressLabel
@@ -21,31 +40,13 @@ const ActionButtons = (props) => {
         </Button>
       )}
       {!hideCancel && (
-        <Button onClick={onClickCancel} bsStyle={reversed ? 'primary' : 'default'} disabled={disableCancel} style={{ minWidth: 90 }} title={cancelTitle}>
+        <Button onClick={onClickCancel} variant={cancelVariant} disabled={disableCancel} style={{ minWidth: 90 }} title={cancelTitle}>
           {cancelLabel}
         </Button>
       )}
-      { props.children }
+      { children }
     </div>
   );
-};
-
-ActionButtons.defaultProps = {
-  children: null,
-  hide: false,
-  hideCancel: false,
-  hideSave: false,
-  progress: false,
-  disableSave: false,
-  disableCancel: false,
-  cancelLabel: 'Cancel',
-  cancelTitle: '',
-  saveLabel: 'Save',
-  saveTitle: '',
-  progressLabel: null,
-  reversed: false,
-  onClickCancel: () => {},
-  onClickSave: () => {},
 };
 
 ActionButtons.propTypes = {
@@ -65,5 +66,6 @@ ActionButtons.propTypes = {
   onClickSave: PropTypes.func,
   progressLabel: PropTypes.string,
 };
+
 
 export default ActionButtons;

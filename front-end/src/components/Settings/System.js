@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -25,10 +26,10 @@ class System extends Component {
     const { data } = this.props;
     const checkboxStyle = { marginTop: 10 };
     return (
-      <div className="system">
-        <Form horizontal>
+      <div className="DateTime">
+        <Form className="form-horizontal">
           <FormGroup>
-            <Col componentClass={ControlLabel} md={2} />
+            <Col as={ControlLabel} md={2} />
             <Col sm={6} style={checkboxStyle}>
               <Field
                 fieldType="checkbox"
