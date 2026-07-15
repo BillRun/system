@@ -23,6 +23,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->cleanDB();
         $this->tester->setTimezone('UTC');
         $this->tester->enableExternalModeSettings();
+        \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
     }
 
     protected function _after()
@@ -767,8 +768,13 @@ class UpfrontTest extends \Codeception\Test\Unit
      * 7. The upfront charge amounts - the regular (arrears) charge of the next cycle, paid in
      *    advance - examined directly on the charge class.
      * 8. Refund reconciliation - the plan was (retroactively) deactivated before the cycle started and
-     *    re-activated in its middle: the old charge is credited fully and the actual period is charged
-     *    by the regular (split) flow.
+     *    re-activated in its middle: the difference between the re-activated period and the full month
+     *    that was charged is credited.
+     * 9. Upfront services are not reconciled - only subscriber plan records are.
+     * 10. A custom recurrence plan is reconciled only when the previous cycle was one of its
+     *     charging cycles.
+     * 11. No duplicate discount CDRs when the plan has both an upfront and a refund line - one
+     *     next cycle discount + one current cycle correction.
      */
 
     protected function mongoDate($str)
@@ -1054,8 +1060,8 @@ class UpfrontTest extends \Codeception\Test\Unit
     /**
      * 8. The previous run charged December fully, and now it is known that the plan was deactivated
      *    before December started (2025-11-25, recorded after that run) and re-activated in the middle
-     *    of December (2025-12-16) - the old charge is credited fully, the actual period is charged by
-     *    the regular (split) flow, and January is paid upfront.
+     *    of December (2025-12-16) - the reconciliation credits the difference between the re-activated
+     *    period and the full month that was charged, and January is paid upfront.
      */
     public function testReactivatedPlanReconcilesThePreviousCharge()
     {
@@ -1069,16 +1075,12 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
         $this->tester->runCycle($this->defaultOptions);
 
-        // the plan was not active when December started - the previous run charge is credited fully
+        // the plan was active only from the re-activation (16/31), but a full month was charged -
+        // the reconciliation credits the difference
         $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
-        $this->assertEqualsWithDelta(-100, $reconcileLine['aprice'], $this->epsilon);
-
-        // the actual December period, from the re-activation, is charged by the regular (split) flow
-        $splitLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'prorated_start_date' => $this->mongoDate('2025-12-16 00:00:00')));
-        $this->assertNotEmpty($splitLine, 'the re-activated period line was not created');
-        $this->assertEqualsWithDelta(100 * 16 / 31, $splitLine['aprice'], $this->epsilon);
-        $this->assertTrue(!empty($splitLine['split']));
+        $this->assertEqualsWithDelta(100 * 16 / 31 - 100, $reconcileLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2025-12-16 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
 
         // January is paid upfront as usual
         $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'prorated_start_date' => $this->mongoDate('2026-01-01 00:00:00')));
@@ -1086,9 +1088,142 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEqualsWithDelta(100, $upfrontLine['aprice'], $this->epsilon);
         $this->assertTrue(!empty($upfrontLine['is_upfront']));
 
-        // -100 (credit) + 16/31*100 (the actual period) + 100 (January upfront)
+        // 16/31*100 - 100 (reconciliation) + 100 (January upfront)
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
         $this->assertEqualsWithDelta(100 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 9. Upfront services are not reconciled - a service record does not carry plan_activation, and
+     *    its lines are not 'flat' lines, so reconciling it would never find its previous run lines
+     *    and would charge the whole cycle again as a missed charge (double billing) every month.
+     */
+    public function testUpfrontServiceIsNotReconciled()
+    {
+        $cycle = new \Billrun_DataTypes_CycleTime('202601');
+        $base = array(
+            'cycle' => $cycle,
+            'name' => 'ADV_SERVICE9',
+            'price' => array(array('price' => 100, 'from' => 0, 'to' => 'UNLIMITED')),
+            'start' => strtotime('2025-10-23 00:00:00'),
+            'end' => strtotime('2200-01-01 00:00:00'),
+            'line_stump' => array('aid' => 41100, 'sid' => 51100),
+        );
+
+        // a service record (no plan_activation) - no reconciliation
+        $charge = new \Billrun_Plans_Charge_Upfront_Month($base);
+        $this->assertNull($charge->getRefund($cycle));
+
+        // the same record as a subscriber plan record is reconciled - nothing was charged by the
+        // previous run, so the whole cycle is charged as missed
+        $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array(
+            'plan' => 'ADV_SERVICE9',
+            'plan_activation' => new \Mongodloid_Date(strtotime('2025-10-23 00:00:00')),
+        )));
+        $rows = $charge->getRefund($cycle);
+        $this->assertCount(1, $rows);
+        $this->assertEqualsWithDelta(100, $rows[0]['value'], $this->epsilon);
+    }
+
+    /**
+     * 10. A custom recurrence (e.g. quarterly) plan is reconciled only when the previous cycle was
+     *     one of its charging cycles - its upfront lines were created by the last charging run, so
+     *     in any other cycle nothing would be found, and the whole (already paid) period would be
+     *     wrongly charged again as a missed charge.
+     */
+    public function testCustomRecurrencePlanReconcilesOnlyAfterItsChargingCycle()
+    {
+        $cycle = new \Billrun_DataTypes_CycleTime('202601');
+        $base = array(
+            'cycle' => $cycle,
+            'plan' => 'ADV_QUARTERLY10',
+            'name' => 'ADV_QUARTERLY10',
+            'price' => array(array('price' => 100, 'from' => 0, 'to' => 'UNLIMITED')),
+            'recurrence' => array('frequency' => 3, 'periodicity' => 'month'),
+            'end' => strtotime('2200-01-01 00:00:00'),
+        );
+
+        // activated 2025-07-01 - the plan quarters are [Oct 1, Jan 1), ... and the [Oct 1, Jan 1)
+        // quarter was paid upfront by the September cycle run (billrun key 202510). the previous
+        // cycle (202512) is not a charging cycle - without the gate, the quarter would not be found
+        // under 202512 and would be charged again as missed
+        $charge = new \Billrun_Plans_Charge_Upfront_Custom(array_merge($base, array(
+            'start' => strtotime('2025-07-01 00:00:00'),
+            'plan_activation' => new \Mongodloid_Date(strtotime('2025-07-01 00:00:00')),
+            'activation_date' => new \Mongodloid_Date(strtotime('2025-07-01 00:00:00')),
+            'line_stump' => array('aid' => 41101, 'sid' => 51101),
+        )));
+        $this->assertNull($charge->getRefund($cycle));
+
+        // activated 2025-09-01 - the previous cycle (202512) is a charging cycle of the plan, so it
+        // is reconciled against its lines (nothing was charged here - charged as missed)
+        $charge = new \Billrun_Plans_Charge_Upfront_Custom(array_merge($base, array(
+            'start' => strtotime('2025-09-01 00:00:00'),
+            'plan_activation' => new \Mongodloid_Date(strtotime('2025-09-01 00:00:00')),
+            'activation_date' => new \Mongodloid_Date(strtotime('2025-09-01 00:00:00')),
+            'line_stump' => array('aid' => 41102, 'sid' => 51102),
+        )));
+        $this->assertNotEmpty($charge->getRefund($cycle));
+
+        // activated 2025-10-01 - within the current [Oct 1, Jan 1) quarter: a mid cycle activation
+        // is not gated by the alignment - its quarter was never paid and is charged as missed
+        $charge = new \Billrun_Plans_Charge_Upfront_Custom(array_merge($base, array(
+            'start' => strtotime('2025-10-01 00:00:00'),
+            'plan_activation' => new \Mongodloid_Date(strtotime('2025-10-01 00:00:00')),
+            'activation_date' => new \Mongodloid_Date(strtotime('2025-10-01 00:00:00')),
+            'line_stump' => array('aid' => 41103, 'sid' => 51103),
+        )));
+        $this->assertNotEmpty($charge->getRefund($cycle));
+    }
+
+    /**
+     * 11. A plan with both an upfront line and a refund line (re-activated mid cycle, see 8.) and a
+     *     discount - no duplicate discount CDRs: exactly one discount for the next (upfront paid)
+     *     cycle anchored on the upfront line, and one correction of the current cycle discount.
+     *     The refund line itself is not discounted directly.
+     */
+    public function testNoDuplicateDiscountOnUpfrontAndRefundLines()
+    {
+        $aid = 41008;
+        $sid = 51008;
+        $planName = 'UPFRONT_ADV_PLAN8';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        // the previous run charged and discounted December fully
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->seedPreviousUpfrontDiscountLine($aid, $sid, 'SUBSCRIBER_DISCOUNT_2', -10);
+        $this->tester->runCycle($this->defaultOptions);
+
+        // both a refund line (the December reconciliation) and an upfront line (January) exist
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601'));
+        $this->assertNotEmpty($upfrontLine, 'upfront plan line was not created');
+
+        // the discount CDRs of the run - grouped by their cycle window to prove no duplicates
+        $discountCdrs = \Billrun_Factory::db()->linesCollection()
+                ->query(array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'billrun' => '202601'))
+                ->cursor();
+        $nextCycleAmount = 0;
+        $currentCycleAmount = 0;
+        foreach ($discountCdrs as $discountCdr) {
+            if (\Billrun_Utils_Time::getTime($discountCdr['discount_from']) >= strtotime('2026-01-01 00:00:00')) {
+                $nextCycleAmount += $discountCdr['aprice'];
+            } else {
+                $currentCycleAmount += $discountCdr['aprice'];
+            }
+        }
+        // January (the upfront paid cycle) is discounted fully, once
+        $this->assertEqualsWithDelta(-10, $nextCycleAmount, $this->epsilon);
+        // December was discounted fully (-10) by the previous run, but the discount only starts in
+        // its middle (2025-12-16) - the difference is charged back, once
+        $this->assertEqualsWithDelta(10 - 10 * 16 / 31, $currentCycleAmount, $this->epsilon);
+
+        // plan: 16/31*100 - 100 (reconciliation) + 100 (January upfront), discounts as above
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(90 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
 
     /**
@@ -1132,26 +1267,25 @@ class UpfrontTest extends \Codeception\Test\Unit
         $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array('end' => strtotime('2025-12-16 00:00:00'))));
         $this->assertNull($charge->getPrice());
 
-        // activation in the middle of the current cycle - a partial month + a full upfront month
+        // activation in the middle of the current cycle - only the full upfront month is charged;
+        // the current cycle part is settled by the reconciliation (getRefund)
         $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array(
             'start' => strtotime('2025-12-16 00:00:00'),
             'end' => strtotime('2200-01-01 00:00:00'),
         )));
         $rows = $charge->getPrice();
-        $this->assertCount(2, $rows);
-        $this->assertEqualsWithDelta(100 * 16 / 31, $rows[0]['value'], $this->epsilon);
-        $this->assertEqualsWithDelta(100, $rows[1]['value'], $this->epsilon);
+        $this->assertCount(1, $rows);
+        $this->assertEqualsWithDelta(100, $rows[0]['value'], $this->epsilon);
 
         // activation in the middle of the current cycle and a known deactivation within the next
-        // one - a partial month + a prorated upfront month
+        // one - a prorated upfront month
         $charge = new \Billrun_Plans_Charge_Upfront_Month(array_merge($base, array(
             'start' => strtotime('2025-12-16 00:00:00'),
             'end' => strtotime('2026-01-16 00:00:00'),
         )));
         $rows = $charge->getPrice();
-        $this->assertCount(2, $rows);
-        $this->assertEqualsWithDelta(100 * 16 / 31, $rows[0]['value'], $this->epsilon);
-        $this->assertEqualsWithDelta(100 * 15 / 31, $rows[1]['value'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $rows[1]['prorated_end_date']->sec);
+        $this->assertCount(1, $rows);
+        $this->assertEqualsWithDelta(100 * 15 / 31, $rows[0]['value'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $rows[0]['prorated_end_date']->sec);
     }
 }

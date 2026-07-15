@@ -22,7 +22,7 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $this->tester->setTimezone('UTC');
         $this->tester->enableDBModeSettings();
         $this->tester->cleanDB();
-       
+        \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
     }
 
     protected function _after()
