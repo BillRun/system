@@ -446,8 +446,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-8.672258064516129, discount("proration": "no" -no need to credit )
         $this->assertEqualsWithDelta(-8.672258064516129, $billrun['totals']['before_vat'],$this->epsilon);
-        $this->assertEquals(strtotime("2025-12-23 10:04:25"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-24 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals($discountLine, null);
 
     }
@@ -633,15 +632,20 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        // the discount splits to two lines - the next cycle upfront discount and the current
+        // cycle reconciliation (refund)
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLineRefund = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'charge_op' => 'refund'));
         //flat-(33.605) + discount(-14.005 -16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
         $this->assertEquals(strtotime("2024-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
-        $this->assertEqualsWithDelta(-30.811, $discountLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime("2024-11-06 00:00:00"), $discountLine['discount_start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $discountLine['discount_end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(-16.806, $discountLineUpfront['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $discountLineUpfront['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(-14.005, $discountLineRefund['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime("2024-11-06 00:00:00"), $discountLineRefund['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $discountLineRefund['discount_end']->toDateTime()->getTimestamp());
 
     }
 
@@ -737,26 +741,25 @@ class UpfrontTest extends \Codeception\Test\Unit
     {
         /*
         upfront plan  discount with "proration": "inherited" and plan start previous month
-        and discount start in the middle of previous month,  prorate start = true- > 
-        expected proration discount from the start of the discount +  discount on the current cycle (assume still not finish- need to support also finish before case)
+        and discount finish in the middle of next month,  prorate end = true- > 
+        expected proration discount until the end of the discount (upfront knowing in adevance) 
         */
         $aid = 12408;
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
         $planName = "UPFRONT_PLAN_PORATED";
-        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
+        $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate end = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
         $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
-        $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
-        $this->assertEquals(null, $planLine);
+        //nowing in advance so - flat-33.605, discount(-12.468967742)(finish in 2025-12-23 10:04:25) 23/31*16.806
+        $this->assertEqualsWithDelta(21.136032258, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLineUpfront['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLineUpfront['end']->toDateTime()->getTimestamp());
 
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['discount_start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2026-01-01 00:00:00"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-23 10:04:25"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
     }
 
     /*

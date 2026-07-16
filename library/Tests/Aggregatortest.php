@@ -97,18 +97,13 @@
      }
 
      /**
-      * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
-      * previous cycle runs first to create them (as it would in production).
+      * BRCD-5421 - the test runs a single cycle with no previous one - require a previous billing
+      * cycle for the upfront reconciliation, so nothing is reconciled and the cycle is charged as
+      * before (the flag is restored to its default before every test case).
       * to be used as a test case preRun.
       */
-     public function aggregatePreviousCycle($key, $row) {
-         $options = array_merge($this->defaultOptions, $row['test']['options']);
-         $options['stamp'] = Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
-         $aggregator = Billrun_Aggregator::getInstance($options);
-         if (property_exists($aggregator, "aggregationLogic")) {
-             $aggregator->load();
-             $aggregator->aggregate();
-         }
+     public function requirePreviousBillrunForReconcile($key, $row) {
+         Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', true);
      }
 
      /**
@@ -147,6 +142,7 @@
          foreach ($this->tests as $key => $row) {
              $this->shouldRunAggregate = true;
              Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+             Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', false);
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {

@@ -95,7 +95,7 @@ class Test_Case_42777
                 'line' => ['types' => ['flat', 'credit']]
             ],
 
-            'preRun' => ['aggregatePreviousCycle'],
+            'preRun' => ['requirePreviousBillrunForReconcile'],
 
             'postRun' => [
             ]
