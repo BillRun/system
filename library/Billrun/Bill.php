@@ -1558,15 +1558,19 @@ abstract class Billrun_Bill {
 				break;
 			}
 		}
-		if(!empty($account_query)){
-			$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
-		}
+		
 		if($loadFromBills){
+			if(!empty($account_query)){
+				$rejectionQuery = array('$and' => array($account_query, $rejectionQuery));
+			}
 			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
 			$currentAccounts = iterator_to_array($currentAccounts);
 
 		}else{
+			if(!empty($account_query)){
+				$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
+			}
 			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
 			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;

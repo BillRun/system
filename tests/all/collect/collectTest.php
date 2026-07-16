@@ -21,6 +21,17 @@ class collectTest extends \Codeception\Test\Unit
             ]
         ]
     ];
+     public $defaultWithoutRejectionSettings_2 = [
+        'conditions' => [
+            'customers' => [
+                [
+                    'field' => 'aid',
+                    'op' => 'in',
+                    'value' => [-1]
+                ]
+            ]
+        ]
+    ];
     public $defaultWithRejectionSettings = [
         'conditions' => [
             'customers' => [
@@ -142,6 +153,63 @@ class collectTest extends \Codeception\Test\Unit
 
     public function testCollectWithAidAndWithoutRejectionRquiredWithCondition_2()
     {
+        $this->tester->createAccountWithAllMandatoryCustomFields(['country'=> 'ISREAL']);
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid = $account['aid'];
+        $payment = [
+            "amount"=>12,
+            "aid"=>$aid,
+            "dir"=>"tc",
+        ];
+        $options['aids'] = $aid;
+        $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->payApi($payment);
+        $this->sendCollectCommand($options);
+        //in collection
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $payment['dir'] = 'fc';
+        $this->tester->payApi($payment);
+        // $this->sendCollectCommand($options);
+        //out collection
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+    }
+
+    public function testCollectWithAidAndWithoutRejectionRquired_3()
+    {
+        $this->setWithRejectionRquired($this->defaultCollectionProcesses, $this->defaultWithoutRejectionSettings_2);
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid = $account['aid'];
+        $payment = [
+            "amount"=>10,
+            "aid"=>$aid,
+            "dir"=>"tc",
+        ];
+        $options['aids'] = $aid;
+        $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->payApi($payment);
+        $this->sendCollectCommand($options);
+        //in collection
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+        $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $payment['dir'] = 'fc';
+        $this->tester->payApi($payment);
+        // $this->sendCollectCommand($options);
+        //out collection
+        $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $lastAccount = $this->tester->grabFromCollection('subscribers', [
+                'aid' => $aid, 
+                'type' => 'account'
+            ], ['_id' => -1]);
+        $this->tester->seeInCollection('subscribers', ['_id' => $lastAccount['_id'], 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account"]);
+    }
+
+    public function testCollectWithAidAndWithoutRejectionRquiredWithCondition_4()
+    {
+        $this->setWithRejectionRquired($this->defaultCollectionProcesses, $this->defaultWithoutRejectionSettings_2 );
+
         $this->tester->createAccountWithAllMandatoryCustomFields(['country'=> 'ISREAL']);
         $account = json_decode($this->tester->grabResponse(), true)['entity'];
         $aid = $account['aid'];
@@ -318,7 +386,7 @@ public function testCollectInCollectionWithoutAids()
 
     
     
-    protected function setWithRejectionRquired($collectionProcesses){
+    protected function setWithRejectionRquired($collectionProcesses, $defaultWithRejectionSettings = null){
         $model = new \ConfigModel();
         $model->updateConfig('collection', ['processes' => $collectionProcesses, 'settings' => [
             "run_on_holidays" => true,
@@ -332,7 +400,7 @@ public function testCollectInCollectionWithoutAids()
                 true
             ],
             "run_on_hours" => [],
-            "rejection_required" => $this->defaultWithRejectionSettings]]);
+            "rejection_required" => $defaultWithRejectionSettings ?? $this->defaultWithRejectionSettings]]);
         \Billrun_Config::getInstance()->loadDbConfig();
     }
     
