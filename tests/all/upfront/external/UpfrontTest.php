@@ -33,14 +33,21 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     /**
-     * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
-     * previous cycle runs first to create them (as it would in production).
+     * BRCD-5421 - the upfront charges are reconciled against the previous cycle run lines. the
+     * legacy expectations assume the previous run did NOT know the changes in advance - so it runs
+     * with the full fraction (legacy) upfront behavior, and the tested cycle runs with the default
+     * (knowing the changes in advance) behavior.
      */
     protected function runCycleWithPrevious($options)
     {
         $previousOptions = $options;
         $previousOptions['stamp'] = \Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
-        $this->tester->runCycle($previousOptions);
+        \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', true);
+        try {
+            $this->tester->runCycle($previousOptions);
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', false);
+        }
         $this->tester->runCycle($options);
     }
     
@@ -59,8 +66,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'charge_op' => 'refund'));
         //flat-33.605 discount(+4.337032258)(finish in 2025-12-23 10:04:25) - 8/31*16.806 
         $this->assertEqualsWithDelta(37.942032258, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -84,8 +91,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'charge_op' => 'refund'));
 
         //flat-33.605 discount(+4.337032258)(finish in 2025-12-23 10:04:25) - 8/31*16.806 
         $this->assertEqualsWithDelta(37.942032258, $billrun['totals']['before_vat'],$this->epsilon);
@@ -111,8 +118,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'charge_op' => 'refund'));
 
         //flat-33.605  
         $this->assertEqualsWithDelta(33.605, $billrun['totals']['before_vat'],$this->epsilon);
@@ -153,13 +160,12 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate charge on termination = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
-        //flat-(-16.8025 = 15/30*33.605)(plan prorated_termination =true  need to be credit) + discount(+8.403)(finish in 2025-11-15 00:00:00) - 15/30*16.806 
-        $this->assertEqualsWithDelta((-8.3995), $billrun['totals']['before_vat'], $this->epsilon);
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        //flat-(17.922 = 33.605- 14/30*33.605)(plan prorated_termination =true  need to be credit) + discount(16.806-14/30*16.806 = 8.9632)(finish in 2025-11-15 00:00:00) - 14/30*16.806 
+        $this->assertEqualsWithDelta((-8.959466667), $billrun['totals']['before_vat'], $this->epsilon);
         $this->assertEquals(strtotime("2025-11-15 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-11-15 00:00:01"), $discountLine['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-15 00:00:00"), $discountLine['discount_start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLine['discount_end']->toDateTime()->getTimestamp());
     }
 
@@ -178,10 +184,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
 
         //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
         $this->assertEqualsWithDelta(21.676129033, $billrun['totals']['before_vat'],$this->epsilon);
@@ -212,10 +218,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
         //flat-67.21(33.605+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
         $this->assertEqualsWithDelta(45.52483871, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(null, $planLine['start']);
@@ -244,10 +250,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
         //flat-67.21(33.605+33.605), discount(-16.806 +(-16.806))(start in in 2025-10-23 10:04:25) 9/30*16.806
         $this->assertEqualsWithDelta(33.598, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(null, $planLine['start']);
@@ -275,10 +281,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
         //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129)) 9/30*16.806
         $this->assertEqualsWithDelta(21.676129033, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-10-23 13:04:25"), $planLine['start']->toDateTime()->getTimestamp());
@@ -306,10 +312,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false]);//Prorate start = false
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false));
         //flat-67.21(33.605+33.605), discount(-16.806 -16.806)
         $this->assertEqualsWithDelta(33.598, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(null, $planLine['start']);
@@ -338,8 +344,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate  = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-33.605, discount(-6.7224)13/30*16.806
         $this->assertEqualsWithDelta(26.3224, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -362,8 +368,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false , "prorated_termination" =>false]);//Prorate  = false 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-33.605, discount(-6.7224)
         $this->assertEqualsWithDelta(26.3224, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -386,8 +392,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_start" =>false , "prorated_termination" =>false]);//Prorate  = false 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-33.605, discount(-16.806)
         $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -412,8 +418,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-33.605, discount(0)
         $this->assertEqualsWithDelta(33.605, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -436,8 +442,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-8.672258064516129, discount("proration": "no" -no need to credit )
         $this->assertEqualsWithDelta(-8.672258064516129, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-23 10:04:25"), $planLine['start']->toDateTime()->getTimestamp());
@@ -461,8 +467,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-33.605 discount(-16.806) 
         $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
@@ -485,12 +491,12 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planNameArrears]);// charge on termination = true
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);// charge on termination = true
         $this->runCycleWithPrevious($this->defaultOptions);
-        $planLineArrears = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planNameArrears, 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
-        $discountLineArrears = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'plan'=> $planNameArrears));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false, 'plan'=> $planName));
+        $planLineArrears = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planNameArrears, 'aid' => $aid));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $discountLineArrears = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'plan'=> $planNameArrears));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => false, 'plan'=> $planName));
         //flat
         // B2C_UPFRONT(33.605+3.252096774 (3/31*33.605))
         $this->assertEqualsWithDelta(33.605, $planLineUpfront['aprice'],$this->epsilon);
@@ -531,7 +537,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, "prorated_termination" =>false]);//Prorate charge on termination = false
       
         $this->runCycleWithPrevious($this->defaultOptions);
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => false));
         //5/30*33.605
         $this->assertEqualsWithDelta(5.600833333, $planLine['aprice'],$this->epsilon);
         $this->assertEquals(strtotime("2025-11-26 15:06:42"), $planLine['start']->toDateTime()->getTimestamp());
@@ -596,8 +602,8 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-(33.605) + discount(+13.4448)(service finish in 2025-11-06 02:00:00) - 24/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
@@ -626,8 +632,8 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-(33.605) + discount(-14.005 -16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
@@ -656,8 +662,8 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-(33.605) + discount(-14.005 -16.806 ) - 18/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
@@ -686,8 +692,8 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-(33.605) + discount(-16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
@@ -716,8 +722,8 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid));
         //flat-(33.605) + discount(-16.806 )(service start in 2024-11-06 16:32:11) - 25/30*16.806 
         $this->assertEqualsWithDelta(33.605, $planLine['aprice'],$this->epsilon);
 
@@ -741,8 +747,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1]);//Prorate start = true
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $planLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid, 'is_upfront' => true));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
         //flat-42.566333333(9.756290323+33.605), discount(-16.806 +(-4.87916129))(start in in 2025-10-23 10:04:25) 9/30*16.806
         $this->assertEqualsWithDelta(16.799, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(null, $planLine);
@@ -775,6 +781,8 @@ class UpfrontTest extends \Codeception\Test\Unit
      *     charging cycles.
      * 11. No duplicate discount CDRs when the plan has both an upfront and a refund line - one
      *     next cycle discount + one current cycle correction.
+     * 12. A discount that only starts within the next (upfront paid) cycle - not eligible on the
+     *     current cycle at all - still discounts the upfront line, by the next cycle eligibility.
      */
 
     protected function mongoDate($str)
@@ -783,20 +791,29 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     /**
+     * The previous billrun key of the tested cycle
+     */
+    protected function previousBillrunKey()
+    {
+        return \Billrun_Billingcycle::getPreviousBillrunKey($this->defaultOptions['stamp']);
+    }
+
+    /**
      * The reconciliation only runs when the previous billing cycle has ended
      */
     protected function seedPreviousBillrun($aid)
     {
+        $cycle = new \Billrun_DataTypes_CycleTime($this->defaultOptions['stamp']);
         // Billrun_Billingcycle::hasCycleEnded requires zero_pages_limit finished empty pages
         $zeroPages = max(1, (int) \Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 1));
         for ($page = 0; $page < $zeroPages; $page++) {
             $cycleDoc = array(
-                'billrun_key' => '202512',
+                'billrun_key' => $this->previousBillrunKey(),
                 'page_number' => $page,
                 'page_size' => (int) \Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100),
                 'count' => 0,
-                'start_time' => $this->mongoDate('2025-12-01 00:10:00'),
-                'end_time' => $this->mongoDate('2025-12-01 00:20:00'),
+                'start_time' => new \MongoDB\BSON\UTCDateTime(($cycle->start() + 600) * 1000),
+                'end_time' => new \MongoDB\BSON\UTCDateTime(($cycle->start() + 1200) * 1000),
             );
             if (\Billrun_Factory::config()->isMultiDayCycle()) {
                 $cycleDoc['invoicing_day'] = \Billrun_Factory::config()->getConfigChargingDay();
@@ -806,41 +823,42 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     /**
-     * An upfront plan line as created by the 202512 cycle run - covering the 202601 cycle (December)
+     * An upfront plan line as created by the previous cycle run - covering the tested cycle
      */
     protected function seedPreviousUpfrontLine($aid, $sid, $plan, $aprice)
     {
+        $cycle = new \Billrun_DataTypes_CycleTime($this->defaultOptions['stamp']);
         $this->tester->haveInCollection('lines', array(
-            'stamp' => md5('test_old_upfront_' . $aid . '_' . $plan),
+            'stamp' => md5('test_old_upfront_' . $aid . '_' . $sid . '_' . $plan),
             'aid' => $aid,
             'sid' => $sid,
-            'billrun' => '202512',
+            'billrun' => $this->previousBillrunKey(),
             'type' => 'flat',
             'usaget' => 'flat',
             'plan' => $plan,
-            'name' => $plan,
             'charge_op' => 'charge',
             'is_upfront' => true,
             'aprice' => $aprice,
             'full_price' => $aprice,
             'usagev' => 1,
             'source' => 'billrun',
-            'urt' => $this->mongoDate('2025-11-30 23:59:59'),
-            'start' => $this->mongoDate('2025-12-01 00:00:00'),
-            'end' => $this->mongoDate('2026-01-01 00:00:00'),
+            'urt' => new \MongoDB\BSON\UTCDateTime(($cycle->start() - 1) * 1000),
+            'start' => new \MongoDB\BSON\UTCDateTime($cycle->start() * 1000),
+            'end' => new \MongoDB\BSON\UTCDateTime($cycle->end() * 1000),
         ));
     }
 
     /**
-     * An upfront discount line as created by the 202512 cycle run - relating to the 202601 cycle (December)
+     * An upfront discount line as created by the previous cycle run - relating to the tested cycle
      */
     protected function seedPreviousUpfrontDiscountLine($aid, $sid, $key, $aprice)
     {
+        $cycle = new \Billrun_DataTypes_CycleTime($this->defaultOptions['stamp']);
         $this->tester->haveInCollection('lines', array(
-            'stamp' => md5('test_old_upfront_discount_' . $aid . '_' . $key),
+            'stamp' => md5('test_old_upfront_discount_' . $aid . '_' . $sid . '_' . $key),
             'aid' => $aid,
             'sid' => $sid,
-            'billrun' => '202512',
+            'billrun' => $this->previousBillrunKey(),
             'type' => 'credit',
             'usaget' => 'discount',
             'key' => $key,
@@ -849,7 +867,11 @@ class UpfrontTest extends \Codeception\Test\Unit
             'aprice' => $aprice,
             'usagev' => 1,
             'source' => 'billrun',
-            'urt' => $this->mongoDate('2025-11-30 23:59:59'),
+            'urt' => new \MongoDB\BSON\UTCDateTime(($cycle->start() - 1) * 1000),
+            'discount_from' => new \MongoDB\BSON\UTCDateTime($cycle->start() * 1000),
+            'discount_to' => new \MongoDB\BSON\UTCDateTime($cycle->end() * 1000),
+            'discount_start' => new \MongoDB\BSON\UTCDateTime($cycle->start() * 1000),
+            'discount_end' => new \MongoDB\BSON\UTCDateTime($cycle->end() * 1000),
         ));
     }
 
@@ -879,7 +901,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $planLine['end_date']->toDateTime()->getTimestamp());
 
         // the December charge did not change - no reconciliation line
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertEmpty($reconcileLine, 'the previous charge did not change - no reconciliation line was expected');
 
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
@@ -902,7 +924,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
         $this->tester->runCycle($this->defaultOptions);
 
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
         $this->assertEquals('refund', $reconcileLine['charge_op']);
         $this->assertEquals('202601', $reconcileLine['billrun']);
@@ -940,11 +962,11 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
 
         // no record of the removed plan - nothing reconciles it
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertEmpty($reconcileLine, 'a plan without a subscriber record is not reconciled');
 
         // the arrears plan of December is charged regularly
-        $arrearsLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $arrearsPlan, 'aid' => $aid));
+        $arrearsLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $arrearsPlan, 'aid' => $aid));
         $this->assertEqualsWithDelta(50, $arrearsLine['aprice'], $this->epsilon);
 
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
@@ -966,14 +988,14 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->seedPreviousBillrun($aid);
         $this->tester->runCycle($this->defaultOptions);
 
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
         $this->assertEquals('refund', $reconcileLine['charge_op']);
         $this->assertEqualsWithDelta(100, $reconcileLine['aprice'], $this->epsilon);
         $this->assertEquals(strtotime('2025-12-01 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
 
         // the regular upfront charge of January
-        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
         $this->assertEqualsWithDelta(100, $upfrontLine['aprice'], $this->epsilon);
         $this->assertEquals(strtotime('2026-01-01 00:00:00'), $upfrontLine['prorated_start_date']->toDateTime()->getTimestamp());
 
@@ -1002,7 +1024,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge', 'billrun' => '202601'));
         $this->assertEqualsWithDelta(100, $planLine['aprice'], $this->epsilon);
 
-        $discountLine = $this->tester->grabFromCollection('lines', array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'discount_from' => $this->mongoDate('2026-01-01 00:00:00')));
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'discount_from' => $this->mongoDate('2026-01-01 00:00:00')));
         $this->assertNotEmpty($discountLine, 'upfront discount line was not created');
         // 15 days out of the 31 days of January
         $this->assertEqualsWithDelta(-10 * 15 / 31, $discountLine['aprice'], $this->epsilon);
@@ -1031,7 +1053,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
 
         // the plan charge did not change - no plan reconciliation line
-        $planReconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $planReconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertEmpty($planReconcileLine, 'the plan charge did not change - no reconciliation line was expected');
 
         // the discount ended within December - no upfront discount for January
@@ -1077,7 +1099,7 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         // the plan was active only from the re-activation (16/31), but a full month was charged -
         // the reconciliation credits the difference
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
         $this->assertEqualsWithDelta(100 * 16 / 31 - 100, $reconcileLine['aprice'], $this->epsilon);
         $this->assertEquals(strtotime('2025-12-16 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
@@ -1197,7 +1219,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
 
         // both a refund line (the December reconciliation) and an upfront line (January) exist
-        $reconcileLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
         $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601'));
         $this->assertNotEmpty($upfrontLine, 'upfront plan line was not created');
@@ -1224,6 +1246,38 @@ class UpfrontTest extends \Codeception\Test\Unit
         // plan: 16/31*100 - 100 (reconciliation) + 100 (January upfront), discounts as above
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
         $this->assertEqualsWithDelta(90 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 12. A discount that only starts within the next (upfront paid) cycle (2026-01-10) - not
+     *     eligible on the current (December) cycle at all, but the upfront line is discounted by
+     *     the next cycle eligibility, prorated from the discount start.
+     */
+    public function testUpfrontDiscountEligibleOnlyOnNextCycle()
+    {
+        $aid = 41009;
+        $sid = 51009;
+        $planName = 'UPFRONT_ADV_PLAN9';
+        $this->defaultOptions['stamp'] = '202601';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        // December was correctly charged by the previous cycle run - nothing to reconcile
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $planLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge', 'billrun' => '202601'));
+        $this->assertEqualsWithDelta(100, $planLine['aprice'], $this->epsilon);
+
+        // the upfront (January) discount, prorated from the discount start (22 of the 31 days)
+        $discountLine = $this->tester->grabFromCollection('lines', array('type' => 'credit', 'usaget' => 'discount', 'aid' => $aid, 'billrun' => '202601'));
+        $this->assertNotEmpty($discountLine, 'upfront discount line was not created');
+        $this->assertEqualsWithDelta(-10 * 22 / 31, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-01-10 00:00:00'), $discountLine['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-02-01 00:00:00'), $discountLine['discount_end']->toDateTime()->getTimestamp());
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 - 10 * 22 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
 
     /**

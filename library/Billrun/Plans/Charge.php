@@ -43,7 +43,7 @@ class Billrun_Plans_Charge {
 		if ($chargeObj instanceof Billrun_Plans_Charge_Upfront) {
 			$refund = $chargeObj->getRefund($cycle,Billrun_Util::getFieldVal($entityData['quantity'], 1));
 			if ($refund !== null &&
-				(!empty($refund['value']) || Billrun_Factory::config()->getConfigValue('billrun.flats.generate_zero_refunds',true))) {
+				(!empty($refund['value']) || !empty($refund[0]['value']) || Billrun_Factory::config()->getConfigValue('billrun.flats.generate_zero_refunds',true))) {
 				$results['refund'] = $refund;
 			}
 		}
@@ -51,11 +51,11 @@ class Billrun_Plans_Charge {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param type $plan
 	 * @return Billrun_Plans_Charge_Base
 	 */
-	protected function getChargeObject($plan) {
+	public function getChargeObject($plan) {
 		$object = __CLASS__;
 		//TODO change this to configurtion based mapping
 		Billrun_Factory::dispatcher()->trigger('beforeGetPlanChargeObject', array(&$plan));

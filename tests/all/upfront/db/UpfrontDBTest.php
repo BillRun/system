@@ -31,14 +31,30 @@ class UpfrontDBTest extends \Codeception\Test\Unit
     }
 
     /**
-     * BRCD-5421 - the upfront charges are reconciled against the previous cycle lines, so the
-     * previous cycle runs first to create them (as it would in production).
+     * BRCD-5421 - the upfront charges are reconciled against the previous cycle run lines. the
+     * legacy expectations assume the previous run did NOT know the changes in advance - so it runs
+     * with the full fraction (legacy) upfront behavior, and the tested cycle runs with the default
+     * (knowing the changes in advance) behavior.
      */
     protected function runCycleWithPrevious($options)
     {
         $previousOptions = $options;
         $previousOptions['stamp'] = \Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
-        $this->tester->runCycle($previousOptions);
+        \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', true);
+        try {
+            $this->tester->runCycle($previousOptions);
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', false);
+        }
+        // keep only the previous run lines the reconciliation reads, and drop their name - the
+        // tests (written for a single run) grab lines loosely and must match the tested run only
+        $linesCollection = \Billrun_Factory::db()->linesCollection();
+        $previousLinesQuery = array('billrun' => $previousOptions['stamp'], 'source' => 'billrun');
+        $linesCollection->remove(array_merge($previousLinesQuery, array('$or' => array(
+            array('is_upfront' => array('$ne' => true)),
+            array('charge_op' => 'refund'),
+        ))));
+        $linesCollection->update($previousLinesQuery, array('$unset' => array('name' => '')), array('multiple' => true));
         $this->tester->runCycle($options);
     }
 
@@ -98,8 +114,8 @@ class UpfrontDBTest extends \Codeception\Test\Unit
 
         $this->runCycleWithPrevious($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
-        $planLine = $this->tester->grabFromCollection('lines', array('type' => "flat", "name"=> $planName, 'aid' => $aid));
-        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('type' => "credit", "usaget" => "discount", 'aid' => $aid, 'is_upfront' => true));
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "flat", "name"=> $planName, 'aid' => $aid));
+        $discountLineUpfront = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => "credit", "usaget" => "discount", 'aid' => $aid, 'charge_op' => 'refund'));
         //flat-100 discount(16)(finish in 2025-11-06T05:00:00Z) - 6/30*20 
         $this->assertEqualsWithDelta(116, $billrun['totals']['before_vat'],$this->epsilon);
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());

@@ -146,6 +146,7 @@
         
          foreach ($this->tests as $key => $row) {
              $this->shouldRunAggregate = true;
+             Billrun_Plans_Charge_Upfront::resetReconciliationCache();
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
