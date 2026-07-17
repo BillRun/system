@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Panel, HelpBlock, Alert } from 'react-bootstrap';
+import { Form, Col, Alert } from 'react-bootstrap';
+import {
+  ControlLabel,
+  FormGroup,
+  HelpBlock,
+  Panel,
+} from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
   getFieldName,
@@ -103,12 +109,12 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
     <div className="subscribers">
 
       {(isDirtyType || isDirtyAuth || isDirtyUrl) && (
-        <Alert bsStyle="warning"> { getFieldName('unsaved_changes')}</Alert>
+        <Alert variant="warning"> { getFieldName('unsaved_changes')}</Alert>
       )}
 
-      <Form horizontal>
+      <Form className="form-horizontal">
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('ext_subs_type', 'settings')}
           </Col>
           <Col sm={6}>
@@ -134,7 +140,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
             bsStyle={isDirtyAuth ? "warning" : "default"}
           >
             <FormGroup validationState={!validAuthUrl ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.url', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>
@@ -149,7 +155,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               </Col>
             </FormGroup>
             <FormGroup validationState={isEmptyString(auth_secret) ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.secret', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>
@@ -167,7 +173,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               </Col>
             </FormGroup>
             <FormGroup validationState={isEmptyString(auth_id) ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.id', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>
@@ -179,7 +185,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3} lg={2}/>
+              <Col as={ControlLabel} sm={3} lg={2}/>
               <Col sm={6}>
                 <Field
                   fieldType="checkbox"
@@ -196,7 +202,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
         {!isSourceDb && (
           <Panel header={<h3>{getFieldName('ext_subs_url', 'settings')}</h3>} bsStyle={isDirtyUrl ? "warning" : "default"}>
             <FormGroup validationState={!validUrlGba ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_url.gba', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>
@@ -211,7 +217,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               </Col>
             </FormGroup>
             <FormGroup validationState={!validUrlGad ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_url.gad', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>
@@ -226,7 +232,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
               </Col>
             </FormGroup>
             <FormGroup validationState={!validUrlGsd ? 'error' : null}>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_url.gsd', 'settings')}
                   <span className="danger-red"> *</span>
               </Col>

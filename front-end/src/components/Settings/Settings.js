@@ -178,7 +178,7 @@ class Settings extends Component {
 
     return (
       <div>
-        <Tabs activeKey={activeTab} animation={false} id="SettingsTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="SettingsTab" onSelect={this.handleSelectTab}>
           <Tab title="Company" eventKey={10}>
             <Panel style={{ borderTop: 'none' }}>
               <Tenant onChange={this.onChangeFieldValue} data={tenant} />
