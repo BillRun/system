@@ -166,7 +166,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		foreach ($expected as $expectedRow) {
 			// each expected row is compared with its exact previous run line - the reconciliation
 			// row is the expected row with the difference as its price
-			$old = self::extractMatchingOldLine($olds, $expectedRow);
+			$old = $this->extractMatchingOldLine($olds, $expectedRow);
 			$diff = ($expectedRow['value'] ?? 0) - (is_null($old) ? 0 : ($old['aprice'] ?? 0));
 			if (Billrun_Util::isEqual($diff, 0, 0.000001)) {
 				continue;
@@ -210,24 +210,46 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	}
 
 	/**
-	 * Extract the old line that matches an expected charge row - by its price tier when both carry
-	 * it, otherwise the first line left. The matched line is removed from the given list.
+	 * Extract the old line that matches an expected charge row - an old line of the same charged
+	 * entity (plan / discount), by its price tier when both carry it, otherwise the first such
+	 * line left. The matched line is removed from the given list.
 	 * @param array $olds the still unmatched old lines
 	 * @param array $expectedRow the expected charge row
-	 * @return array|null null when no old line is left
+	 * @return array|null null when no matching old line is left
 	 */
-	protected static function extractMatchingOldLine(&$olds, $expectedRow) {
+	protected function extractMatchingOldLine(&$olds, $expectedRow) {
 		foreach ($olds as $key => $old) {
-			if (isset($expectedRow['cycle'], $old['cycle']) && $expectedRow['cycle'] == $old['cycle']) {
+			if ($this->isSameChargedEntity($expectedRow, $old) &&
+					isset($expectedRow['cycle'], $old['cycle']) && $expectedRow['cycle'] == $old['cycle']) {
 				unset($olds[$key]);
 				return $old;
 			}
 		}
 		foreach ($olds as $key => $old) {
-			unset($olds[$key]);
-			return $old;
+			if ($this->isSameChargedEntity($expectedRow, $old)) {
+				unset($olds[$key]);
+				return $old;
+			}
 		}
 		return null;
+	}
+
+	/**
+	 * Verify an old line charges the same entity the expected row settles - the same plan this
+	 * charge reconciles (flat lines) or the same discount (credit lines, by the discount key the
+	 * expected discount CDR carries).
+	 * @param array $expectedRow the expected charge row
+	 * @param array $old an old upfront line
+	 * @return boolean
+	 */
+	protected function isSameChargedEntity($expectedRow, $old) {
+		if (Billrun_Util::getFieldVal($old['type'], '') == 'credit') {
+			$expectedKey = Billrun_Util::getFieldVal($expectedRow['key'], Billrun_Util::getFieldVal($expectedRow['arate_key'], ''));
+			$oldKey = Billrun_Util::getFieldVal($old['key'], Billrun_Util::getFieldVal($old['arate_key'], ''));
+			return $expectedKey == $oldKey;
+		}
+		$planName = Billrun_Util::getFieldVal($this->planData['plan'], Billrun_Util::getFieldVal($this->planData['name'], ''));
+		return Billrun_Util::getFieldVal($old['plan'], '') == $planName;
 	}
 
 	/**
