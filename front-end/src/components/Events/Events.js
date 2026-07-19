@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Tab, Panel } from 'react-bootstrap';
+import { Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { titleCase } from 'change-case';
 import { TabsWrapper } from '@/components/Elements';
 import EventSettings from './EventSettingsContainer';
@@ -20,7 +21,7 @@ class Events extends Component {
   render() {
     const { location } = this.props;
     return (
-      <div>
+      <div id="events-tabs-page">
         <TabsWrapper id="EventsTab" location={location}>
 
           <Tab title={titleCase(getConfig(['events', 'entities', 'balance', 'title'], 'balance'))} eventKey={1}>

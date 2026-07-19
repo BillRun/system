@@ -46,8 +46,10 @@ class generat_test_data
     // Encode the entire 'update' array as JSON
     $request['update'] = json_encode($request['update']);
 
+
     $baseUrl =  (Billrun_Factory::config()->getEnv() == 'container' ) ? "web":$_SERVER['SERVER_NAME'];
     $url = "http://$baseUrl/billapi/$entity/create";
+
     $secret = Billrun_Utils_Security::getValidSharedKey();
     $signed = Billrun_Utils_Security::addSignature($request, $secret['key']);
     $request['_sig_'] = $signed['_sig_'];
@@ -65,16 +67,20 @@ class generat_test_data
   public static function sendAPI($url, $request)
   {
     Billrun_Factory::log("send API to $url with params l" . print_r($request, 1), Zend_Log::INFO);
-    $respons = json_decode(Billrun_Util::sendRequest($url, $request), true);
+    $respons = json_decode(Billrun_Util::sendRequest($url, $request,'POST', array('Accept-encoding' => 'deflate'), 50), true);
     Billrun_Factory::log("response is :" . print_r($respons, 1), Zend_Log::INFO);
     return $respons;
   }
 
-  public function retry($entity, $params)
-  {
-    $count = 0;
-    while ($count < 10) {
+
+  public static function retry($entity, $params){
+    $count =0;
+   while($count < 10){
       $response = self::bulidAPI($entity, $params);
+      if(($response['message'] ?? '') == 'Entity already exists' ){
+             $params['name'] = self::uniqueName('RETRY_');
+             $response = self::bulidAPI($entity, $params);
+      }
       $count++;
       if ($response['status'] == '1' || $response['status'] == 1) {
         $count += 10;

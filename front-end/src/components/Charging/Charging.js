@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel, Col, Form, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import { Actions } from '@/components/Elements';
 import ChargingList from './ChargingList';
 import ChargingDetails from './ChargingDetails';
@@ -33,14 +34,13 @@ import {
     getChargeStatus,
 } from '@/common/Util';
 
-
 const Charging = ({ 
-    items,
-    scheduleItems,
-    listSize,
+    items = Immutable.List(),
+    scheduleItems = Immutable.List(),
+    listSize = 20,
     onChangeListSize,
-    activeItem,
-    isWorkers,
+    activeItem = Immutable.Map(),
+    isWorkers = false,
     loadCharges,
     removeCharges,
     loadActiveCharge,
@@ -146,14 +146,6 @@ const Charging = ({
     );
 }
 
-Charging.defaultProps = {
-    items: Immutable.List(),
-    activeItem: Immutable.Map(),
-    scheduleItems: Immutable.List(),
-    isWorkers: false,
-    listSize: 20,
-};
-
 Charging.propTypes = {
     items: PropTypes.instanceOf(Immutable.List),
     activeItem: PropTypes.instanceOf(Immutable.Map),
@@ -223,10 +215,10 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
         confirm.message = isSchedule
             ? 'Are you sure you what to create a charging schedule?'
             : 'Are you sure you what to start charging?';
-        confirm.children = <Form horizontal id='charging-wrapper'>
+        confirm.children = <Form id='charging-wrapper' className="form-horizontal">
             { isSchedule && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col sm={5} as={ControlLabel}>
                         {getFieldName('schedule', 'charging_process', 'Scheduler')}:
                     </Col>
                     <Col sm={5}>
@@ -236,7 +228,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
             )}
             { !isSchedule && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col sm={5} as={ControlLabel}>
                         {getFieldName('start_time', 'charging_process')}:
                     </Col>
                     <Col sm={5}>
@@ -246,7 +238,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
             )}
             { item.get('run_on', '') === 'include' && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col sm={5} as={ControlLabel}>
                         {getFieldName('include_aids', 'charging_process')}:
                     </Col>
                     <Col sm={5}>
@@ -256,7 +248,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
             )}
             { item.get('run_on', '') === 'exclude' && (
                 <FormGroup>
-                    <Col sm={5} componentClass={ControlLabel}>
+                    <Col sm={5} as={ControlLabel}>
                         {getFieldName('exclude_aids', 'charging_process')}:
                     </Col>
                     <Col sm={5}>
@@ -319,6 +311,5 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
         onCreateChargeInPopup,
     });
 };
-
 
 export default connect(mapStateToProps, mapDispatchToProps, mergeProps)(Charging);

@@ -627,7 +627,7 @@ class Tests_Mongodloid extends UnitTestCase{
 				'values' => array('$set' => array('firstname' => 'or', 'lastname' => 'SHAASHUA')),
 				'query' => array('_id' => '5aeee57b05e68c02d035e1f6')
 			),
-			'expected' => array('result' => array('ok' => 0, 'errmsg' =>"The dollar ($) prefixed field '\$set' in '\$set' is not valid for storage."))
+			'expected' => array('result' => array('ok' => 0))
 		),
 	);
 

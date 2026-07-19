@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Col, Form, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { ModalWrapper } from '@/components/Elements'
 
@@ -102,16 +103,16 @@ class EditMenuItem extends Component {
 
     return (
       <ModalWrapper show={editMode} onOk={this.onSaveAdvencedEdit} onCancel={this.onCancelAdvencedEdit} title={`Edit ${currentTitle} Details`}>
-        <Form horizontal>
+        <Form className="form-horizontal">
           <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>Label</Col>
+            <Col sm={2} as={ControlLabel}>Label</Col>
             <Col sm={10}>
               <Field autoFocus onChange={this.onChangeTitle} value={title} />
             </Col>
           </FormGroup>
 
           <FormGroup >
-            <Col sm={2} componentClass={ControlLabel}>Roles</Col>
+            <Col sm={2} as={ControlLabel}>Roles</Col>
             <Col sm={10}>
               <Field
                 fieldType="select"

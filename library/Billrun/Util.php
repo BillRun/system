@@ -1524,6 +1524,9 @@ class Billrun_Util {
 	}
 
 	public static function isValidRegex($regex) {
+		if (!is_string($regex)) {
+			return false;
+		}
 		return !(@preg_match($regex, null) === false);
 	}
 
@@ -1800,6 +1803,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (is_object($keys)) {
+				$keys = (string) $keys;
+			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}
@@ -1983,7 +1989,7 @@ class Billrun_Util {
 	}
 
 	/**
-	 * check all conditions is met
+	 * check all conditions are met
 	 * 
 	 * @param array $row
 	 * @param array $conditions - array of condtions includes the following attributes: "field_name", "op", "value"

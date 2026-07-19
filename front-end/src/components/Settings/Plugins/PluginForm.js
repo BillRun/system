@@ -1,22 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import Field from '@/components/Field';
 import { EntityFields } from '@/components/Entity';
 
-
 const PluginForm = ({
-  item,
+  item = Immutable.Map(),
   onChangeEnabled,
   errors,
   onChange,
   onRemove,
 }) => (
-  <Form horizontal>
+    <Form className="form-horizontal">
 
     <FormGroup>
-      <Col sm={3} lg={2} componentClass={ControlLabel}>Status</Col>
+      <Col sm={3} lg={2} as={ControlLabel}>Status</Col>
       <Col sm={8} lg={9}>
         <span>
           <span className="inline mr10">
@@ -46,10 +46,6 @@ PluginForm.propTypes = {
   onChangeEnabled: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
-};
-
-PluginForm.defaultProps = {
-  item: Immutable.Map(),
 };
 
 export default PluginForm;

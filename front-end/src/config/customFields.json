@@ -77,6 +77,11 @@
       "title": "Range",
       "exclude": ["select_options", "select_list"],
       "includeEntity": ["subscription", "product"]
+    }, {
+      "id": "encrypted",
+      "type": "string",
+      "title": "Encrypted",
+      "exclude": ["multiple", "select_options", "select_list"]
     }
   ],
   "foreignFields": {

@@ -266,10 +266,7 @@ export const taxMappingSelector = createSelector(
   (tax = Immutable.Map()) => tax.get('mapping'),
 );
 
-export const exportGeneratorsSelector = createSelector(
-  getExportGenerators,
-  (exportGenerators = Immutable.List()) => exportGenerators,
-);
+export const exportGeneratorsSelector = (state, props) => getExportGenerators(state, props) || Immutable.List();
 
 export const importersSelector = createSelector(
   getPluginActions,
@@ -290,35 +287,20 @@ export const importersSelector = createSelector(
     ),
 );
 
-export const importSelector = createSelector(
-  getImport,
-  importConfig => importConfig,
-);
+export const importSelector = getImport;
 
-export const taxationSelector = createSelector(
-  getTaxation,
-  taxation => taxation,
-);
+export const taxationSelector = getTaxation;
 
 export const taxationTypeSelector = createSelector(
   taxationSelector,
   (taxation = Immutable.Map()) => taxation.get('tax_type'),
 );
 
-export const pricingSelector = createSelector(
-  getPricing,
-  pricing => pricing,
-);
+export const pricingSelector = getPricing;
 
-export const systemSettingsSelector = createSelector(
-  getSystemSettings,
-  system => system,
-);
+export const systemSettingsSelector = getSystemSettings;
 
-export const playsSettingsSelector = createSelector(
-  getPlaysSettings,
-  plays => plays,
-);
+export const playsSettingsSelector = getPlaysSettings;
 
 export const playsEnabledSelector = createSelector(
   playsSettingsSelector,
@@ -343,10 +325,7 @@ export const closedCycleChangesSelector = createSelector(
   (system = Immutable.Map()) => system.get('closed_cycle_changes'),
 );
 
-export const billrunSelector = createSelector(
-  getBillrun,
-  billrun => billrun,
-);
+export const billrunSelector = getBillrun;
 
 export const minEntityDateSelector = createSelector(
   getMinEntityDate,
@@ -382,20 +361,11 @@ export const eventCodeSelector = createSelector(
   selectEventCode,
 );
 
-export const usageTypesDataSelector = createSelector(
-  getUsageType,
-  usageTypes => usageTypes,
-);
+export const usageTypesDataSelector = getUsageType;
 
-export const propertyTypeSelector = createSelector(
-  getPropertyTypes,
-  propertyTypes => propertyTypes,
-);
+export const propertyTypeSelector = getPropertyTypes;
 
-export const entityFieldSelector = createSelector(
-  getEntityFields,
-  fields => fields,
-);
+export const entityFieldSelector = getEntityFields;
 
 export const accountFieldsSelector = createSelector(
   getAccountFields,
@@ -625,10 +595,7 @@ export const planFieldsSelector = createSelector(
   (fields = Immutable.List()) => fields.map(field => setFieldTitle(field, 'plan')),
 );
 
-export const templateTokenSettingsSelector = createSelector(
-  getTemplateTokens,
-  templateTokens => templateTokens,
-);
+export const templateTokenSettingsSelector = getTemplateTokens;
 
 export const templateTokenSettingsSelectorForEditor = createSelector(
   templateTokenSettingsSelector,
@@ -759,15 +726,9 @@ export const invoiceTemplateStatusSelector = createSelector(
   (invoiceExport = Immutable.Map()) => invoiceExport.get('status'),
 );
 
-export const paymentGatewaysSelector = createSelector(
-  getPaymentGateways,
-  availablePaymentGateways => availablePaymentGateways,
-);
+export const paymentGatewaysSelector = getPaymentGateways;
 
-export const emailTemplatesSelector = createSelector(
-  getEmailTemplates,
-  emailTemplates => emailTemplates,
-);
+export const emailTemplatesSelector = getEmailTemplates;
 
 export const taxParamsKeyOptionsSelector = createSelector(
   taxFieldsSelector,
@@ -825,18 +786,19 @@ export const getFieldsWithPreFunctions = () => getConfig(['rates', 'preFunctions
     return Immutable.List([...acc, ...id_options]);
   }, Immutable.List());
 
-const getAdditionInputProcessorlineKeyOptions = () => {
-  const options = [
-    { value: 'type', label: 'Type' },
-    { value: 'usaget', label: 'Usage Type' },
-    { value: 'connection_type', label: 'Connection Type' },
-    { value: 'usagev', label: 'Activity Volume' },
-    { value: 'file', label: 'File name' },
-    ...getFieldsWithPreFunctions().map(formatSelectOptions),
-    { value: 'computed', label: 'Computed' },
-  ];
-  return Immutable.List(options);
-}
+// Reselect 5: input selectors must return stable references; creating a new
+// Immutable.List on every call defeats memoization. Hoist to a module-level
+// constant so the same reference is always returned.
+const ADDITION_INPUT_PROCESSOR_LINE_KEY_OPTIONS = Immutable.List([
+  { value: 'type', label: 'Type' },
+  { value: 'usaget', label: 'Usage Type' },
+  { value: 'connection_type', label: 'Connection Type' },
+  { value: 'usagev', label: 'Activity Volume' },
+  { value: 'file', label: 'File name' },
+  ...getFieldsWithPreFunctions().map(formatSelectOptions),
+  { value: 'computed', label: 'Computed' },
+]);
+const getAdditionInputProcessorlineKeyOptions = () => ADDITION_INPUT_PROCESSOR_LINE_KEY_OPTIONS;
 
 export const inputProcessorlineKeyOptionsSelector = createSelector(
   getInputProcessorFields,

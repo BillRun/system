@@ -5,4 +5,4 @@
  * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-echo $this->output;
+echo is_array($this->output) ? print_R($this->output, 1) : $this->output;

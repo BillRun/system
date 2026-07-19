@@ -231,7 +231,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 * updates balance of subscriber, breakdown by 3g/4g
 	 * @param array $update: the update of the balance in question
 	 */
-	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator, $balanceToUpdate) {
 		if ($row['type'] != "ggsn" || !isset($row['rat_type'])) {
 			return;
 		}

@@ -1,14 +1,15 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import { withRouter } from "react-router";
+import withRouter from '@/common/withRouter';
 import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
 import { titleCase } from "change-case";
-import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
-import { WithTooltip, CreateButton } from "@/components/Elements";
+import { Form, Col, Button } from "react-bootstrap";
+import { ControlLabel, FormGroup, Panel } from "@/common/BootstrapCompat";
+import { WithTooltip } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
 import Field from "@/components/Field";
 import GeneratePaymentFileForm from "./GeneratePaymentFileForm";
@@ -125,6 +126,7 @@ class RequestPaymentFiles extends Component {
     if (this.reloadTableTimeout) {
       clearTimeout(this.reloadTableTimeout);
     }
+    this.props.dispatch(setPageTitle(''));
   }
 
   // class variable for auto reload timer
@@ -274,12 +276,12 @@ class RequestPaymentFiles extends Component {
     if (!errors.isEmpty()) {
       const data = errors.join(', ');
       const maxLen = 25;
-      
+
       if (typeof data === 'string' && maxLen < data.length) {
         return <span title={data}>{data.slice(0, maxLen)}...</span>;
       }
     }
-    return null; 
+    return null;
   };
 
   getDetailsFields = () => [
@@ -400,7 +402,7 @@ class RequestPaymentFiles extends Component {
       }),
       Map({ name: 'pay_mode', title: 'Payment per invoice?', type: 'boolean' }),
     ]);
-    
+
     const fields = paymentFiles
       .find((paymentFile) => paymentFile.get("name", "") === paymentGateway, null, Map())
       .get("transactions_request", List())
@@ -412,6 +414,24 @@ class RequestPaymentFiles extends Component {
 
   getAffectsBills = (data) => {
     return data.get("affects_bills", true);
+  }
+
+  normalizeAids = (data) => {
+    const aids = data.get('aids', '');
+
+    if (typeof aids !== 'string' || aids.trim() === '') {
+      return data;
+    }
+
+    const aidList = aids
+      .split(',')
+      .map(aid => aid.trim())
+      .filter(aid => aid !== '')
+      .map(aid => Number(aid));
+
+    return aidList.every(aid => Number.isFinite(aid))
+      ? data.set('aids', aidList)
+      : data;
   }
 
   getHelpTextForReport = (data) => {
@@ -431,6 +451,9 @@ class RequestPaymentFiles extends Component {
       const payModeValue = data.get('pay_mode') ? 'multiple_payments' : 'one_payment';
       data = data.set('pay_mode', payModeValue);
     }
+
+    data = this.normalizeAids(data);
+
     if (data.has('min_invoice_date')) {
       const minInvoiceDate = data.get('min_invoice_date');
 
@@ -473,7 +496,14 @@ class RequestPaymentFiles extends Component {
         <div className='pull-right'>
           {
             <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
-              <CreateButton onClick={this.onClickGenerateNewFile} buttonStyle={{}} action='' label='Generate Transactions Request File' disabled={!showGeneratePaymentFile} />
+              <Button
+                onClick={this.onClickGenerateNewFile}
+                variant="primary"
+                className="btn-xs"
+                disabled={!showGeneratePaymentFile}
+              >
+                <i className="fa fa-plus" /> Generate Transactions Request File
+              </Button>
             </WithTooltip>
           }
         </div>
@@ -491,9 +521,9 @@ class RequestPaymentFiles extends Component {
     return (
       <Panel header={this.renderPanelHeader()}>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('payment_gateway')}
               </Col>
               <Col sm={5} lg={4}>
@@ -501,7 +531,7 @@ class RequestPaymentFiles extends Component {
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('file_type')}
               </Col>
               <Col sm={5} lg={4}>

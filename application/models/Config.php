@@ -1181,9 +1181,11 @@ class ConfigModel {
 							if (isset($fileSettings['unify'])) {
 								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
-							
 							if (isset($fileSettings['filters'])) {
 								$updatedFileSettings['filters'] = $fileSettings['filters'];
+							}
+							if (isset($fileSettings['drop_lines'])) {
+								$updatedFileSettings['drop_lines'] = $fileSettings['drop_lines'];
 							}
 						}
 					}
@@ -1428,7 +1430,7 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3');
+		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3', 'nsn');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}

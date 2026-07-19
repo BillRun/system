@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import moment from 'moment';
 import Immutable from 'immutable';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import PrepaidPlanDetails from './PrepaidPlanDetails';
 import PlanNotifications from './PlanNotifications';
 import BlockedProducts from './BlockedProducts';
@@ -84,12 +85,11 @@ class PrepaidPlanSetup extends Component {
     activeTab: parseInt(this.props.activeTab),
   }
 
-  componentWillMount() {
-    this.props.dispatch(getList('pp_includes', getPrepaidIncludesQuery()));
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.props.dispatch(getList('pp_includes', getPrepaidIncludesQuery()));
+        this.fetchItem();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, 'prepaid_plan');
@@ -98,14 +98,16 @@ class PrepaidPlanSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId, ppIncludes } = nextProps;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId, ppIncludes } = this.props;
     const {
       item: oldItem,
       itemId: oldItemId,
       mode: oldMode,
       ppIncludes: oldPpIncludes,
-    } = this.props;
+    } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'prepaid_plan', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -117,6 +119,7 @@ class PrepaidPlanSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clearPlan());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -277,7 +280,7 @@ class PrepaidPlanSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} animation={false} id="PrepaidPlan" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="PrepaidPlan" onSelect={this.handleSelectTab}>
 
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>

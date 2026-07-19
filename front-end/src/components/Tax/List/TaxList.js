@@ -27,10 +27,7 @@ class TaxList extends Component {
 
   static defaultListFields = getConfig(['systemItems', 'tax', 'defaultListFields'], Immutable.List());
   
-  componentWillMount() {
-    this.props.dispatch(getSettings('taxes.fields'));
-  }
-
+  
   filterPlayField = (field) => {
     const { isPlaysEnabled } = this.props;
     if (field.get('field_name', '') !== 'play') {
@@ -73,6 +70,11 @@ class TaxList extends Component {
   getActions = () => [
     { type: 'edit' },
   ];
+
+  
+  componentDidMount() {
+    this.props.dispatch(getSettings('taxes.fields'));
+  }
 
   render () {
     const { fields } = this.props;

@@ -89,6 +89,7 @@ class TaxMapping extends PureComponent {
     if (dirty) {
       this.props.dispatch(getSettings('tax'));
     }
+    this.props.dispatch(setPageTitle(''));
   }
 
   removePriorityUIFlags = () => {
@@ -189,8 +190,8 @@ class TaxMapping extends PureComponent {
     return (
       <TabsWrapper id="TaxTabs" location={location}>
         {taxMapping.map((priorities, category) => (
-          <Tab title={titleCase(category)} eventKey={category}>
-            this.renderPriority(category, priorities);
+          <Tab key={category} title={titleCase(category)} eventKey={category}>
+            {this.renderPriority(category, priorities)}
           </Tab>
         ))
         .toArray()

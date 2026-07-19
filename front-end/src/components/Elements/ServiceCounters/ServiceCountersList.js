@@ -2,7 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Panel, Col, Row } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Help from '@/components/Help';
 import List from '@/components/List';
 import { ServiceDescription } from '@/language/FieldDescriptions';
@@ -84,11 +85,6 @@ const ServiceCountersList = ({ groups, allowCreate, onCreate, onEdit, onDelete }
     </Row>
   );
 }
-
-ServiceCountersList.defaultProps = {
-  mode: 'view',
-  includeGroups: Immutable.Map(),
-};
 
 ServiceCountersList.propTypes = {
   mode: PropTypes.string,
