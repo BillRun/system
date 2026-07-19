@@ -124,4 +124,63 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2025-11-06T05:00:00Z"), $discountLineUpfront['discount_start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
     }
+
+    /**
+     * BRCD-5421 - an upfront plan known to start in the middle of the next (upfront paid) cycle
+     * (2026-08-15, cycle 202608 paying August upfront) is charged in advance, prorated from the
+     * activation (100 * 17/31). The activation is then cancelled (the account decided not to
+     * activate any plan after all) before the next cycle runs - cycle 202609 expects no August
+     * charge and fully refunds the advance one.
+     * NOTE - the account must be included in the cycle runs (getBillable) although no plan is
+     * active within their own windows - here the subscriber revision starts within the 202608
+     * window (only the plan activation is scheduled to 2026-08-15) so the billable query picks it
+     * up, and the cancelled revision still overlaps the 202609 window.
+     */
+    public function testUpfrontPlanCancelledAfterChargedInAdvance_DB()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid = $account['aid'];
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $planName = 'UPFRONT_ADV_PLAN_DB2';
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1, 'price' => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]]]);
+        $plan = json_decode($this->tester->grabResponse(), true)['entity'];
+        $this->tester->generateSubscriber([
+            'aid' => $aid,
+            'from' => '2026-07-01T00:00:00Z',
+            'plan' => $plan['name'],
+        ]);
+        // the plan activation is known in advance - scheduled to 2026-08-15
+        $activation = new Mongodloid_Date(strtotime('2026-08-15 00:00:00'));
+        $subscribersCollection = \Billrun_Factory::db()->subscribersCollection();
+        $subscriberQuery = array('aid' => $aid, 'type' => 'subscriber');
+        $subscribersCollection->update($subscriberQuery, array('$set' => array('plan_activation' => $activation)), array('multiple' => true));
+
+        // cycle 202608 (paying August upfront) charges the plan in advance, prorated from the
+        // activation (17 of 31 days)
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
+        $this->assertNotEmpty($planLine, 'upfront plan line was not created');
+        $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+        // the account decides not to activate any plan after all - the activation is cancelled
+        $subscribersCollection->update($subscriberQuery, array('$set' => array(
+            'to' => $activation,
+            'deactivation_date' => $activation,
+            'plan_deactivation' => $activation,
+        )), array('multiple' => true));
+
+        // the next cycle expects no August charge - the advance one is fully refunded
+        $this->defaultOptions['stamp'] = '202609';
+        $this->tester->runCycle($this->defaultOptions);
+        $refundLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($refundLine, 'refund line was not created');
+        $this->assertEqualsWithDelta(-100 * 17 / 31, $refundLine['aprice'], $this->epsilon);
+        $chargeLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
+        $this->assertEmpty($chargeLine, 'no new upfront charge was expected');
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202609', 'aid' => $aid));
+        $this->assertEqualsWithDelta(-100 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
 }

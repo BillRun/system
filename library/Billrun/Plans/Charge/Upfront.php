@@ -257,14 +257,16 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return array|null the upfront charge rows, null if no charge
 	 */
 	public function getPrice($quantity = 1) {
-		//Is the  activation/deactivation outside the current cycle?
-		if( $this->activation > $this->cycle->end() || $this->deactivation < $this->cycle->start()) {
-			return null;
-		}
 		$nextCycle = self::getUpfrontCycle($this->cycle, Billrun_Util::getFieldVal($this->planData['recurrence'], null), $this->activation);
 		// the full fraction mode charges the full next cycle, ignoring the changes that are already
 		// known (the legacy upfront behavior, e.g. for tests emulating a legacy previous run)
 		$fullFraction = Billrun_Factory::config()->getConfigValue('billrun.upfront.full_fraction', false);
+		// Is the activation beyond the charged (next) cycle, or the deactivation before the
+		// current one? (an activation within the next cycle is known in advance and charged
+		// prorated - BRCD-5421 - except in the full fraction mode, which does not know the future)
+		if( $this->activation > ($fullFraction ? $this->cycle->end() : $nextCycle->end()) || $this->deactivation < $this->cycle->start()) {
+			return null;
+		}
 		if (!$fullFraction && !empty($this->deactivation) && $this->deactivation <= $nextCycle->start()) {
 			// the plan is already known to end before the next cycle starts - nothing to pay upfront
 			return null;

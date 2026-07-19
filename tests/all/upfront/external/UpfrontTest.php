@@ -790,12 +790,12 @@ class UpfrontTest extends \Codeception\Test\Unit
      *     next cycle discount + one current cycle correction.
      * 12. A discount that only starts within the next (upfront paid) cycle - not eligible on the
      *     current cycle at all - still discounts the upfront line, by the next cycle eligibility.
-     * 13. (skipped) An upfront plan that starts in the middle of the next (upfront paid) cycle -
-     *     should the run charge the prorated prepaid month in advance?
-     * 14. (skipped) A discount of an upfront plan that starts in the middle of the next (upfront
-     *     paid) cycle - the upfront discount prorated from the discount start.
-     * 15. (skipped) A plan change in the middle of the next (upfront paid) cycle, from another
-     *     upfront plan held before - each plan should pay its own part of the prepaid month.
+     * 13. An upfront plan that starts in the middle of the next (upfront paid) cycle - the
+     *     prorated prepaid month is charged in advance.
+     * 14. A discount of an upfront plan that starts in the middle of the next (upfront paid)
+     *     cycle - the upfront discount prorated from the discount start.
+     * 15. A plan change in the middle of the next (upfront paid) cycle, from another upfront plan
+     *     held before - each plan pays its own part of the prepaid month.
      */
 
     protected function mongoDate($str)
@@ -1203,7 +1203,6 @@ class UpfrontTest extends \Codeception\Test\Unit
      */
     public function testUpfrontPlanStartsMidPrepaidCycle()
     {
-        $this->markTestSkipped('BRCD-5421 - pending: charging a future mid month activation in advance');
         $aid = 41010;
         $planName = 'UPFRONT_ADV_PLAN10';
         $this->defaultOptions['stamp'] = '202607';
@@ -1228,7 +1227,6 @@ class UpfrontTest extends \Codeception\Test\Unit
      */
     public function testUpfrontPlanChangeMidPrepaidCycle()
     {
-        $this->markTestSkipped('BRCD-5421 - pending: charging a future mid month plan change in advance');
         $aid = 41012;
         $oldPlan = 'UPFRONT_ADV_PLAN12A';
         $newPlan = 'UPFRONT_ADV_PLAN12B';
@@ -1353,5 +1351,58 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertCount(1, $rows);
         $this->assertEqualsWithDelta(100 * 15 / 31, $rows[0]['value'], $this->epsilon);
         $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $rows[0]['prorated_end_date']->sec);
+    }
+
+    /**
+     * 16. An upfront plan known to start in the middle of the next (upfront paid) cycle
+     *     (2026-08-15, cycle 202608 paying August upfront) is charged in advance, prorated from
+     *     the activation (100 * 17/31). The activation is then cancelled (the account decided not
+     *     to activate any plan after all) before the next cycle runs - cycle 202609 expects no
+     *     August charge and fully refunds the advance one.
+     *     NOTE - the account must be included in the cycle runs (getBillable) although no plan is
+     *     active within their own windows - here force_accounts and the CRM mockup include it.
+     */
+    public function testUpfrontPlanCancelledAfterChargedInAdvance()
+    {
+        $aid = 41013;
+        $planName = 'UPFRONT_ADV_PLAN13';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+
+        $fixturePath = __DIR__ . '/../../../../docker/billrun-docker/mockup-servers/crm_data/' . $aid . '.json';
+        $original = file_get_contents($fixturePath);
+        try {
+            // the plan is known to start on 2026-08-15 - cycle 202608 (paying August upfront)
+            // charges it in advance, prorated from the activation (17 of 31 days)
+            $this->defaultOptions['stamp'] = '202608';
+            $this->tester->runCycle($this->defaultOptions);
+            $planLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
+            $this->assertNotEmpty($planLine, 'upfront plan line was not created');
+            $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
+            $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+            // the account decides not to activate any plan after all - the activation is cancelled
+            $cancelled = json_decode($original, true);
+            foreach ($cancelled['data'] as &$entry) {
+                if ($entry['type'] == 'subscriber') {
+                    $entry['to'] = $entry['deactivation_date'] = $entry['plan_deactivation'] = '2026-08-15 00:00:00';
+                }
+            }
+            file_put_contents($fixturePath, json_encode($cancelled, JSON_PRETTY_PRINT));
+
+            // the next cycle expects no August charge - the advance one is fully refunded
+            $this->defaultOptions['stamp'] = '202609';
+            $this->tester->runCycle($this->defaultOptions);
+        } finally {
+            file_put_contents($fixturePath, $original);
+        }
+
+        $refundLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($refundLine, 'refund line was not created');
+        $this->assertEqualsWithDelta(-100 * 17 / 31, $refundLine['aprice'], $this->epsilon);
+        $chargeLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
+        $this->assertEmpty($chargeLine, 'no new upfront charge was expected');
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202609', 'aid' => $aid));
+        $this->assertEqualsWithDelta(-100 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
 }
