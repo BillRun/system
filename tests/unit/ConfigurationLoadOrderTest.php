@@ -2,63 +2,60 @@
 
 class ConfigurationLoadOrderTest extends \Codeception\Test\Unit
 {
-    /** @var \UnitTester */
-    protected $tester;
-
-    private $includePath;
     private $hostIniPath;
-    private $hostIniExisted = false;
-    private $hostIniBackup;
+    private $hostIniBackup = null;
 
     protected function _before()
     {
-        $this->includePath = tempnam(sys_get_temp_dir(), 'brcd4542_') . '.json';
-        file_put_contents($this->includePath, json_encode([
-            'configuration' => ['brcd4542_marker' => 'from_include'],
-        ]));
-
-        $hostname = Billrun_Util::getHostName();
-        $this->hostIniPath = APPLICATION_PATH . '/conf/' . $hostname . '.ini';
-
-        if (file_exists($this->hostIniPath)) {
-            $this->hostIniExisted = true;
+        array_map('unlink', glob(sys_get_temp_dir() . '/brcd4542_*'));
+        $this->hostIniPath = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini';
+        if (file_exists($this->hostIniPath) && strpos(file_get_contents($this->hostIniPath), 'brcd4542') === false) {
             $this->hostIniBackup = file_get_contents($this->hostIniPath);
         }
-        file_put_contents(
-            $this->hostIniPath,
-            "configuration.include[] = \"{$this->includePath}\"\n"
-            . "configuration.brcd4542_host = \"from_host\"\n"
-        );
     }
 
     protected function _after()
     {
-        @unlink($this->includePath);
-        if ($this->hostIniExisted) {
-            file_put_contents($this->hostIniPath, $this->hostIniBackup);
-        } else {
+        array_map('unlink', glob(sys_get_temp_dir() . '/brcd4542_*'));
+        if ($this->hostIniBackup === null) {
             @unlink($this->hostIniPath);
+        } else {
+            file_put_contents($this->hostIniPath, $this->hostIniBackup);
         }
     }
 
-    public function testIncludeDeclaredInHostIniIsLoaded()
+    public function testConfigurationIncludeLoadOrder()
     {
-        $base = new Yaf_Config_Simple([
-            'configuration' => ['brcd4542_base' => 'from_base'],
-        ]);
+        $baseJson = $this->tempJson(['brcd4542_base_only' => 'from_base_include', 'brcd4542_marker' => 'from_base_include']);
+        $hostJson = $this->tempJson(['brcd4542_marker' => 'from_host_include']);
+        file_put_contents(
+            $this->hostIniPath,
+            "configuration.include[] = \"{$hostJson}\"\n"
+            . "configuration.brcd4542_host = \"from_host\"\n"
+        );
 
+        $base = new Yaf_Config_Simple(['configuration' => ['include' => [$baseJson]]]);
         $ref = new ReflectionClass('Billrun_Config');
         $instance = $ref->newInstanceWithoutConstructor();
         $ctor = $ref->getConstructor();
         $ctor->setAccessible(true);
         $ctor->invoke($instance, $base);
-
         $configProp = $ref->getProperty('config');
         $configProp->setAccessible(true);
-        $merged = $configProp->getValue($instance)->toArray();
+        $conf = $configProp->getValue($instance)->toArray()['configuration'];
 
-        $this->assertEquals('from_include', $merged['configuration']['brcd4542_marker']);
-        $this->assertEquals('from_host', $merged['configuration']['brcd4542_host']);
-        $this->assertEquals('from_base', $merged['configuration']['brcd4542_base']);
+        // the host ini itself is loaded
+        $this->assertEquals('from_host', $conf['brcd4542_host']);
+        // the host ini's include list does not override the base one - both files load
+        $this->assertEquals('from_base_include', $conf['brcd4542_base_only']);
+        // includes load in declaration order, so on conflicting keys the host include wins
+        $this->assertEquals('from_host_include', $conf['brcd4542_marker']);
+    }
+
+    private function tempJson(array $values)
+    {
+        $path = tempnam(sys_get_temp_dir(), 'brcd4542_') . '.json';
+        file_put_contents($path, json_encode(['configuration' => $values]));
+        return $path;
     }
 }
