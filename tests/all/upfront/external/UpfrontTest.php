@@ -786,6 +786,10 @@ class UpfrontTest extends \Codeception\Test\Unit
      *     next cycle discount + one current cycle correction.
      * 12. A discount that only starts within the next (upfront paid) cycle - not eligible on the
      *     current cycle at all - still discounts the upfront line, by the next cycle eligibility.
+     * 13. (skipped) An upfront plan that starts in the middle of the next (upfront paid) cycle -
+     *     should the run charge the prorated prepaid month in advance?
+     * 14. (skipped) A discount of an upfront plan that starts in the middle of the next (upfront
+     *     paid) cycle - the upfront discount prorated from the discount start.
      */
 
     protected function mongoDate($str)
@@ -1281,6 +1285,66 @@ class UpfrontTest extends \Codeception\Test\Unit
 
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
         $this->assertEqualsWithDelta(100 - 10 * 22 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 13. An upfront plan that starts in the middle of the next (upfront paid) cycle (2026-07-15,
+     *     cycle 202607 paying July upfront) - knowing the activation in advance, the prepaid month
+     *     should be charged prorated from the activation (100 * 17/31).
+     */
+    public function testUpfrontPlanStartsMidPrepaidCycle()
+    {
+        $this->markTestSkipped('BRCD-5421 - pending: charging a future mid month activation in advance');
+        $aid = 41010;
+        $planName = 'UPFRONT_ADV_PLAN10';
+        $this->defaultOptions['stamp'] = '202607';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->seedPreviousBillrun($aid);
+        $this->tester->runCycle($this->defaultOptions);
+
+        // the plan is known to start on 2026-07-15 - the prepaid July is prorated (17 of 31 days)
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
+        $this->assertNotEmpty($planLine, 'upfront plan line was not created');
+        $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 14. A discount of an upfront plan that starts in the middle of the next (upfront paid) cycle
+     *     (2026-07-15, cycle 202607 paying July upfront) - the upfront discount is prorated from
+     *     the discount start (10 * 17/31).
+     */
+    public function testUpfrontDiscountStartsMidPrepaidCycle()
+    {
+        $this->markTestSkipped('BRCD-5421 - pending: verify the mid prepaid month discount start');
+        $aid = 41011;
+        $sid = 51011;
+        $planName = 'UPFRONT_ADV_PLAN11';
+        $this->defaultOptions['stamp'] = '202607';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        // June was correctly charged by the previous cycle run - nothing to reconcile
+        $this->seedPreviousBillrun($aid);
+        $this->seedPreviousUpfrontLine($aid, $sid, $planName, 100);
+        $this->tester->runCycle($this->defaultOptions);
+
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
+        $this->assertEqualsWithDelta(100, $planLine['aprice'], $this->epsilon);
+
+        // the discount is known to start on 2026-07-15 - the prepaid July discount is prorated
+        // from its start (17 of 31 days)
+        $discountLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'credit', 'usaget' => 'discount', 'aid' => $aid));
+        $this->assertNotEmpty($discountLine, 'upfront discount line was not created');
+        $this->assertEqualsWithDelta(-10 * 17 / 31, $discountLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $discountLine['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-08-01 00:00:00'), $discountLine['discount_end']->toDateTime()->getTimestamp());
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 - 10 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
 
     /**
