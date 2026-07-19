@@ -36,11 +36,11 @@ class UpfrontDBTest extends \Codeception\Test\Unit
      * with the full fraction (legacy) upfront behavior, and the tested cycle runs with the default
      * (knowing the changes in advance) behavior.
      */
-    protected function runCycleWithPrevious($options)
+    protected function runCycleWithPrevious($options, $fullFraction = true)
     {
         $previousOptions = $options;
         $previousOptions['stamp'] = \Billrun_Billingcycle::getPreviousBillrunKey($options['stamp']);
-        \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', true);
+        \Billrun_Factory::config()->setConfigValue('billrun.upfront.full_fraction', $fullFraction);
         try {
             $this->tester->runCycle($previousOptions);
         } finally {

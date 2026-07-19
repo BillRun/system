@@ -2,7 +2,7 @@
   "status": 1,
   "data": [
     {
-      "aid": 41003,
+      "aid": 41011,
       "crm_account_id": null,
       "type": "account",
       "from": "2025-10-23 13:02:37",
@@ -30,51 +30,18 @@
       "deactivation_date": "2200-01-01 02:00:00"
     },
     {
-      "sid": 51003,
-      "aid": 41003,
+      "sid": 51011,
+      "aid": 41011,
       "type": "subscriber",
       "from": "2025-10-23 13:04:25",
-      "to": "2025-11-25 00:00:00",
-      "plan": "UPFRONT_ADV_PLAN3",
+      "to": "2200-01-01 02:00:00",
+      "plan": "UPFRONT_ADV_PLAN11",
       "play": "MOBILE",
       "firstname": "adv",
       "lastname": "test",
       "activation_date": "2025-10-23 13:04:25",
-      "deactivation_date": "2025-11-25 00:00:00",
-      "plan_activation": "2025-10-23 13:04:25",
-      "plan_deactivation": "2025-11-25 00:00:00",
-      "creation_time": null,
-      "former_plan": null,
-      "services": [],
-      "imsi": [],
-      "sub_number": "",
-      "portability_code": "",
-      "discounts": [],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN3",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
-    },
-    {
-      "sid": 51003,
-      "aid": 41003,
-      "type": "subscriber",
-      "from": "2025-11-25 00:00:00",
-      "to": "2200-01-01 02:00:00",
-      "plan": "SIMPLE_ADV_PLAN3",
-      "play": "MOBILE",
-      "firstname": "adv",
-      "lastname": "test",
-      "activation_date": "2025-11-25 00:00:00",
       "deactivation_date": "2200-01-01 02:00:00",
-      "plan_activation": "2025-11-25 00:00:00",
+      "plan_activation": "2025-10-23 13:04:25",
       "plan_deactivation": "2200-01-01 02:00:00",
       "creation_time": null,
       "former_plan": null,
@@ -82,12 +49,32 @@
       "imsi": [],
       "sub_number": "",
       "portability_code": "",
-      "discounts": [],
+      "discounts": [
+        {
+          "priority": "",
+          "params": {},
+          "from": "2026-07-15 00:00:00",
+          "subject": {
+            "plan": {
+              "UPFRONT_ADV_PLAN11": {
+                "value": 10
+              }
+            }
+          },
+          "proration": "inherited",
+          "prorata_in": "PRORATE_PERIOD",
+          "prorata_out": "PRORATE_PERIOD",
+          "type": "monetary",
+          "to": "2200-01-01 00:00:00",
+          "description": "changes in advance test discount",
+          "key": "SUBSCRIBER_DISCOUNT_11"
+        }
+      ],
       "overrides": [
         {
           "type": "plan",
           "id": null,
-          "key": "SIMPLE_ADV_PLAN3",
+          "key": "UPFRONT_ADV_PLAN11",
           "value": {
             "prorata_in": "PRORATE_PERIOD",
             "prorata_out": "PRORATE_PERIOD"
