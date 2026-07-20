@@ -1561,7 +1561,7 @@ abstract class Billrun_Bill {
 		
 		if($loadFromBills){
 			if(!empty($account_query)){
-				$rejectionQuery = array('$and' => array($account_query, $rejectionQuery));
+				$rejectionQuery = !empty($rejectionQuery) ? array('$and' => array($account_query, $rejectionQuery)) : $account_query;
 			}
 			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();

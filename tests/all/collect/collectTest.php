@@ -314,6 +314,68 @@ class collectTest extends \Codeception\Test\Unit
 
     }
 
+    public function testCollectWithAidAndWithNullRejectionRquired()
+    {
+        // rejection_required = null means empty customer conditions, which match every account -
+        // all accounts require a rejection, so debt alone must not keep an account in collection
+        $this->setRejectionRequiredSettings(null);
+        try {
+            $this->tester->createAccountWithAllMandatoryCustomFields(['in_collection' => true]);
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $aid = $account['aid'];
+            $payment = [
+                "amount"=>10,
+                "aid"=>$aid,
+                "dir"=>"tc",
+            ];
+            $options['aids'] = $aid;
+            $this->tester->payApi($payment);
+            $this->sendCollectCommand($options);
+            //out collection despite the debt, since the account has no rejections
+            $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+            $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+        } finally {
+            // the config collection is not cleaned by cleanDB, and once rejection_required is null
+            // ConfigModel::updateConfig throws "Category not found" for it - restore a real value
+            // so the following tests' _before can set the collection settings again
+            $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
+        }
+    }
+
+    public function testCollectWithAidAndWithNullRejectionRquiredWithRejection()
+    {
+        // rejection_required = null makes every account require a rejection - so once the debt
+        // has a past rejection, the account must enter collection
+        $this->setRejectionRequiredSettings(null);
+        try {
+            $this->tester->createAccountWithAllMandatoryCustomFields();
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $aid = $account['aid'];
+            $payment = [
+                "amount"=>10,
+                "aid"=>$aid,
+                "dir"=>"tc",
+            ];
+            $options['aids'] = $aid;
+            $this->tester->payApi($payment);
+            $this->sendCollectCommand($options);
+            //debt alone is not collectible when every account requires a rejection
+            $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            //pay the debt, then reject the payment so the debt bill gets a past rejection
+            $payment['dir'] = 'fc';
+            $this->tester->payApi($payment);
+            $fcPayment = $this->tester->grabFromCollection('bills', ['aid' => $aid, 'dir' => 'fc']);
+            $this->tester->rejectPaymentApi([['id' => $fcPayment['txid'], 'rejection' => ['code' => '005']]]);
+            $this->tester->seeInCollection('bills', ['aid' => $aid, 'dir' => 'tc', 'past_rejections' => ['$exists' => true, '$ne' => []]]);
+            $this->sendCollectCommand($options);
+            //in collection
+            $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        } finally {
+            $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
+        }
+    }
+
 public function testCollectInCollectionWithoutAids()
     {
         $this->tester->createAccountWithAllMandatoryCustomFields();
@@ -405,6 +467,22 @@ public function testCollectInCollectionWithoutAids()
     }
     
     
+    /**
+     * Writes rejection_required directly as a new config revision. ConfigModel::updateConfig
+     * cannot write null here (rejection_required has no entry in the settings template ini),
+     * and the config collection is capped so the latest revision cannot be updated in place.
+     */
+    protected function setRejectionRequiredSettings($rejectionSettings) {
+        $configColl = \Billrun_Factory::db()->configCollection();
+        $latest = $configColl->query([])->cursor()->sort(['_id' => -1])->limit(1)->current();
+        $raw = $latest->getRawData();
+        unset($raw['_id']);
+        $raw['urt'] = new \MongoDB\BSON\UTCDateTime(); // loadDbConfig picks the latest revision by urt
+        $raw['collection']['settings']['rejection_required'] = $rejectionSettings;
+        $configColl->insert(new \Mongodloid_Entity($raw));
+        \Billrun_Config::getInstance()->loadDbConfig();
+    }
+
     protected function sendCollectCommand($options = []) {
         $command = 'php public/index.php --env container --collect';
         if (isset($options['aids'])) {
