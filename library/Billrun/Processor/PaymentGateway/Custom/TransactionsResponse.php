@@ -44,6 +44,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                         }
                 }
 		$payment->setExtraFields(array_merge(['vendor_response' => $this->billSavedFields], $customFields), array_merge(array_keys($customFields), ['vendor_response']));
+		Billrun_Factory::dispatcher()->trigger('afterUpdatePayments', array($row, $payment, $currentProcessor, $billData, $this));
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
