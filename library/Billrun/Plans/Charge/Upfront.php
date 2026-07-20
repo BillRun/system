@@ -90,23 +90,21 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * its matching previous run line), null when there is nothing to reconcile
 	 */
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle, $quantity=1) {
-		if (!isset($this->planData['plan_activation'])) {
-			// only subscriber plan records carry plan_activation - services keep their legacy behavior
-			return null;
-		}
 		$aid = Billrun_Util::getIn($this->planData, ['line_stump', 'aid'], null);
 		$sid = Billrun_Util::getIn($this->planData, ['line_stump', 'sid'], null);
 		$planName = Billrun_Util::getFieldVal($this->planData['plan'], Billrun_Util::getFieldVal($this->planData['name'], ''));
-		$reconcileKey = $aid . '/' . $sid . '/' . $planName . '/' . $this->cycle->key();
-		$isMidCycleActivation = $this->activation >= $this->cycle->start();
-		$prevKey = Billrun_Billingcycle::getPreviousBillrunKey($this->cycle->key());
-		$prevCycle = new Billrun_DataTypes_CycleTime($prevKey, $this->cycle->invoicingDay());
-		if (!$isMidCycleActivation && !Billrun_Utils_Cycle::shouldBeInCycle($this->planData, $prevCycle)) {
-			// the previous cycle was not a charging cycle of the plan (custom recurrence).
-			// a mid cycle (re)activation is not gated by its own alignment - the old lines
-			// themselves are the evidence that the previous run charged upfront
+		if (!empty($this->planData['recurrence']['frequency']) && $this->planData['recurrence']['frequency'] > 1) {
+			// custom recurrence (billing frequency) reconciliation is not supported yet (a
+			// separate task) - skip it entirely. the previous run lines of such a plan live
+			// under its last charging cycle key, NOT under the previous cycle key, so
+			// reconciling here would find nothing and re-charge the whole (already paid) period
+			// as missed on every charging run (double billing - see
+			// testCustomRecurrencePlanIsNotReconciled)
+			Billrun_Factory::log("Upfront reconciliation skipped for custom recurrence plan {$planName} (aid: {$aid}, sid: {$sid}, cycle: {$this->cycle->key()}) - billing frequency reconciliation is not supported yet", Zend_Log::NOTICE);
 			return null;
 		}
+		$reconcileKey = $aid . '/' . $sid . '/' . $planName . '/' . $this->cycle->key();
+		$prevKey = Billrun_Billingcycle::getPreviousBillrunKey($this->cycle->key());
 		if (!self::shouldReconcile($prevKey, $this->cycle->invoicingDay())) {
 			// the previous billing cycle never ran - the current cycle was never charged upfront so
 			// there is nothing to reconcile (can be disabled by setting the
@@ -303,8 +301,11 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			$row['is_upfront'] = true;
 			// the upfront line carries the charged (next cycle) period in start/end - the arrears
 			// rows carry the price tier dates there (or leave them empty, e.g. an UNLIMITED tier
-			// end), and the tier dates are already kept in start_date/end_date
-			$row['start'] = $nextCycle->start();
+			// end), and the tier dates are already kept in start_date/end_date. a start/end within
+			// the cycle (a mid cycle activation/deactivation known in advance) is kept
+			if (empty($row['start']) || $row['start'] < $nextCycle->start()) {
+				$row['start'] = $nextCycle->start();
+			}
 			if (empty($row['end']) || $row['end'] > $nextCycle->end()) {
 				$row['end'] = $nextCycle->end();
 			} else if ($row['end'] < $nextCycle->end()) {

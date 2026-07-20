@@ -70,17 +70,7 @@
           "key": "SUBSCRIBER_DISCOUNT_1"
         }
       ],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN6",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     }
   ],
   "options": null,

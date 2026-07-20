@@ -23,6 +23,9 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $this->tester->enableDBModeSettings();
         $this->tester->cleanDB();
         \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+        // the discounts static cache is keyed by cycle - tests sharing cycle keys must not see
+        // each other's (cleaned) discounts
+        \Billrun_DiscountManager::resetDiscountsCache();
     }
 
     protected function _after()

@@ -2,10 +2,10 @@
   "status": 1,
   "data": [
     {
-      "aid": 41009,
+      "aid": 41019,
       "crm_account_id": null,
       "type": "account",
-      "from": "2025-10-23 13:02:37",
+      "from": "2025-10-01 00:00:00",
       "to": "2200-01-01 02:00:00",
       "firstname": "adv",
       "lastname": "test",
@@ -25,23 +25,46 @@
       "country": "",
       "zip_code": "",
       "po_box": "",
-      "creation_time": "2025-10-23 13:02:37",
-      "activation_date": "2025-10-23 13:04:25",
+      "creation_time": "2025-10-01 00:00:00",
+      "activation_date": "2025-10-01 00:00:00",
       "deactivation_date": "2200-01-01 02:00:00"
     },
     {
-      "sid": 51009,
-      "aid": 41009,
+      "sid": 51132,
+      "aid": 41019,
       "type": "subscriber",
-      "from": "2025-10-23 13:04:25",
-      "to": "2200-01-01 02:00:00",
-      "plan": "UPFRONT_ADV_PLAN9",
+      "from": "2025-10-23 00:00:00",
+      "to": "2026-07-10 00:00:00",
+      "plan": "ARREARS_ADV_PLAN19",
       "play": "MOBILE",
-      "firstname": "adv",
+      "firstname": "gap",
       "lastname": "test",
-      "activation_date": "2025-10-23 13:04:25",
+      "activation_date": "2025-10-23 00:00:00",
+      "deactivation_date": "2026-07-10 00:00:00",
+      "plan_activation": "2025-10-23 00:00:00",
+      "plan_deactivation": "2026-07-10 00:00:00",
+      "creation_time": null,
+      "former_plan": null,
+      "services": [],
+      "imsi": [],
+      "sub_number": "",
+      "portability_code": "",
+      "discounts": [],
+      "overrides": []
+    },
+    {
+      "sid": 51132,
+      "aid": 41019,
+      "type": "subscriber",
+      "from": "2026-07-20 00:00:00",
+      "to": "2200-01-01 02:00:00",
+      "plan": "ARREARS_ADV_PLAN19",
+      "play": "MOBILE",
+      "firstname": "gap",
+      "lastname": "test",
+      "activation_date": "2026-07-20 00:00:00",
       "deactivation_date": "2200-01-01 02:00:00",
-      "plan_activation": "2025-10-23 13:04:25",
+      "plan_activation": "2026-07-20 00:00:00",
       "plan_deactivation": "2200-01-01 02:00:00",
       "creation_time": null,
       "former_plan": null,
@@ -49,27 +72,7 @@
       "imsi": [],
       "sub_number": "",
       "portability_code": "",
-      "discounts": [
-        {
-          "priority": "",
-          "params": {},
-          "from": "2026-01-10 00:00:00",
-          "subject": {
-            "plan": {
-              "UPFRONT_ADV_PLAN9": {
-                "value": 10
-              }
-            }
-          },
-          "proration": "inherited",
-          "prorata_in": "PRORATE_PERIOD",
-          "prorata_out": "PRORATE_PERIOD",
-          "type": "monetary",
-          "to": "2200-01-01 00:00:00",
-          "description": "changes in advance test discount",
-          "key": "SUBSCRIBER_DISCOUNT_9"
-        }
-      ],
+      "discounts": [],
       "overrides": []
     }
   ],

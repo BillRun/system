@@ -50,17 +50,7 @@
       "sub_number": "",
       "portability_code": "",
       "discounts": [],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN3",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     },
     {
       "sid": 51003,
@@ -83,17 +73,7 @@
       "sub_number": "",
       "portability_code": "",
       "discounts": [],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "SIMPLE_ADV_PLAN3",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     }
   ],
   "options": null,

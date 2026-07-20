@@ -1279,7 +1279,9 @@ class Billrun_DiscountManager {
 		$cdrs = [];
 		$this->discountedLinesAmounts = [];
 
-		if (!empty($lines) && !empty($this->getEligibleDiscounts())) {
+		// BRCD-5421 - a discount/charge eligible only on the next (upfront paid) cycle still
+		// creates the upfront lines CDRs, even when nothing is eligible on the current cycle
+		if (!empty($lines) && (!empty($this->getEligibleDiscounts()) || !empty($this->upfrontEligibleDiscounts) || !empty($this->upfrontEligibleCharges))) {
 			$cdrs = $this->generateLinesCdrs($lines);
 		}
 

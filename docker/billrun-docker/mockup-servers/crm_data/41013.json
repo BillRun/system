@@ -50,17 +50,7 @@
       "sub_number": "",
       "portability_code": "",
       "discounts": [],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN13",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     }
   ],
   "options": null,

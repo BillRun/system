@@ -70,17 +70,7 @@
           "key": "SUBSCRIBER_DISCOUNT_2"
         }
       ],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN8",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     },
     {
       "sid": 51008,
@@ -122,17 +112,7 @@
           "key": "SUBSCRIBER_DISCOUNT_2"
         }
       ],
-      "overrides": [
-        {
-          "type": "plan",
-          "id": null,
-          "key": "UPFRONT_ADV_PLAN8",
-          "value": {
-            "prorata_in": "PRORATE_PERIOD",
-            "prorata_out": "PRORATE_PERIOD"
-          }
-        }
-      ]
+      "overrides": []
     }
   ],
   "options": null,
