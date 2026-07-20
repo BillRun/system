@@ -2274,6 +2274,11 @@ runOnce(lastConfig, 'BRCD-4915', function () {
 
 });
 
+// BRCD-5421: upfront reconciliation - load the previous cycle upfront lines by aid/billrun
+runOnce(lastConfig, 'BRCD-5421', function () {
+	db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'type':1 }, { unique: false, sparse: false, background: true, partialFilterExpression: { 'is_upfront': true, 'charge_op': 'charge' }});
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
