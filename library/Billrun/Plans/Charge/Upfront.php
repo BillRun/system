@@ -402,7 +402,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
 	/**
 	 * Load the upfront lines that were created by the previous cycle run (they relate to the current cycle).
-	 * Uses the existing {aid/sid, billrun, urt} lines indexes.
+	 * Covered by the {aid, billrun} partial lines index over {is_upfront: true, charge_op: 'charge'}.
 	 * @param int $aid
 	 * @param string $previousBillrunKey
 	 * @param string $type 'flat' - the upfront plan lines, grouped by plan name
@@ -416,7 +416,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			'billrun' => $previousBillrunKey,
 			'type' => $type,
 			'is_upfront' => true,
-			'charge_op' => array('$ne' => 'refund'),
+			'charge_op' => 'charge',
 		);
 		if ($type == 'credit') {
 			// credit lines also include conditional charges / manual credits
