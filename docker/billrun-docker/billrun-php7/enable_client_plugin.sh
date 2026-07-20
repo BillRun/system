@@ -19,6 +19,15 @@ if test -d "/plugin/application/plugins/"; then
      done
 fi
 
+if test -d "/plugin/application/controllers/Action/"; then
+     cd /plugin/application/controllers/Action/
+     for f in *.php
+     do
+          rm -f "/billrun/application/controllers/Action/"$f
+          ln -s /plugin/application/controllers/Action/$f "/billrun/application/controllers/Action/"$f
+     done
+fi
+
 if test -d "/plugin/application/views/"; then
      cd /plugin/application/views/
      for d in *

@@ -92,19 +92,28 @@ export const getConfig = (key, defaultValue = null) => {
   return configCache.getIn(path, defaultValue);
 };
 
-export const getFieldName = (field, category, defaultValue = null) => {
+export const replaceReplacements = (str, replacements = null, defaultValue = '') => {
+  if (replacements === null) {
+    replacements = {}; // force replace placeholders by empty string by default
+  }
+  return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return replacements[key] !== undefined ? replacements[key] : defaultValue;
+  });
+};
+
+export const getFieldName = (field, category, defaultValue = null, replacements = null, defaultReplacementValue = '') => {
   const categoryName = getConfig(['fieldNames', category, field], false);
   if (typeof categoryName === 'string' && categoryName.length > 0) {
-    return categoryName;
+    return replaceReplacements(categoryName, replacements, defaultReplacementValue);
   }
   const rootName = getConfig(['fieldNames', field], false);
   if (typeof rootName === 'string' && rootName.length > 0) {
-    return rootName;
+    return replaceReplacements(rootName, replacements, defaultReplacementValue);
   }
   if (defaultValue !== null) {
-    return defaultValue;
+    return replaceReplacements(defaultValue, replacements, defaultReplacementValue);
   }
-  return field;
+  return replaceReplacements(field, replacements, defaultReplacementValue);
 };
 
 
@@ -926,3 +935,29 @@ export const getChargeStatus = (item) => {
   }
   return 'done';
 }
+
+export const getServiceType = (service) => {
+    if (!service || !Immutable.Map.isMap(service)) {
+      return null;
+    }
+    if (service.get('quantitative', false)) {
+      return 'quantitative';
+    }
+    if (service.get('balance_period', 'default') !== 'default') {
+      return 'balance_period';
+    }
+    return 'normal';
+  }
+
+// BE-equivalent of `str_replace('_', '', ucwords($str, '_'))`: capitalise each
+// '_'-segment's first letter, keep the rest, strip '_'. (Not `pascalCase` — that
+// lower-cases first and breaks keys like `ABC`/`AB_data_files`.)
+export const ucwordsStrip = (str = '') => String(str)
+  .split('_')
+  .map(word => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+  .join('');
+
+// `log.source` for a custom payment gateway, matching the BE: e.g.
+// ('ABC','payments') => 'ABCPayments'; ('manual_files','payments') => 'ManualFilesPayments'.
+export const buildPaymentFileSource = (paymentGateway, paymentsFileType) =>
+  ucwordsStrip(paymentGateway) + ucwordsStrip(paymentsFileType);

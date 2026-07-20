@@ -1,0 +1,23 @@
+{
+  "name": "CreditGuard",
+  "txId": "ebb87c5b-9f8e-4f71-9c58-f7f4fa26d3db",
+  "uniqueID": "1736407375297",
+  "errorCode": "000",
+  "ErrorCode": "000",
+  "errorText": "עסקה תקינה",
+  "ErrorText": "עסקה תקינה",
+  "lang": "HE",
+  "mid": "13607",
+  "cardExp": "1225",
+  "personalId": "",
+  "cardToken": "1022273188555606",
+  "cardMask": "532610******5606",
+  "authNumber": "1364765",
+  "numberOfPayments": "0",
+  "firstPayment": "",
+  "periodicalPayment": "",
+  "cgUid": "112358951",
+  "responseMac": "09976b70c270faeca62f31ee5f70855ff7a797df66aef0d3402e2f218cecf236",
+  "userData2": "SinglePayment",
+  "userData1": "1"
+}

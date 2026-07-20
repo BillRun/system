@@ -30,6 +30,7 @@ services:
         - "BR_MDB_DBNAME=billing_container"
         volumes:
             - ./../..:/billrun
+            - ${PWD}/../../cache:/billrun/cache
     mongodb:
         image: mongo:5.0
         container_name: billrun-mongodb

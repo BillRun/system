@@ -75,6 +75,9 @@ class Billrun_Cycle_Account_Invoice {
 		$this->initInvoiceDates();
 		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->groupingMinExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.min_fields', array());
+		$this->groupingMaxExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.max_fields', array());
+
 		$this->constructOptions = $options;
 	}
 
@@ -227,7 +230,47 @@ class Billrun_Cycle_Account_Invoice {
 	public function addConfigurableData() {
 		Billrun_Factory::dispatcher()->trigger('beforeAddInvoiceConfigurableData', array($this, &$this->data));
 		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.account.final_data',array()));
+		$this->addLastBills();
 		Billrun_Factory::dispatcher()->trigger('afterAddInvoiceConfigurableData', array($this, &$this->data));
+	}
+
+	protected function addLastBills() {
+		$options = Billrun_Factory::config()->getConfigValue('billrun.last_bills', []);
+		if (empty($options)) {
+			return;
+		}
+		$invoiceData = $this->data->getRawData();
+		$count = null;
+		foreach ($options as $option) {
+			if (!empty($option['conditions']) && $this->isConditionsMeet($invoiceData, $option['conditions'])) {
+				$count = (int) ($option['count'] ?? 0);
+				break;
+			}
+		}
+		if ($count === null) {
+			return;
+		}
+		$priorBills = $count > 0 ? Billrun_Bill::getLatestValidBillsWithBalance($this->getAid(), $count) : [];
+		$currentBill = Billrun_Bill::buildBaseBillFromInvoice($invoiceData);
+		$total = !empty($priorBills) ? $priorBills[0]['balance'] : Billrun_Bill::getTotalDueForAccount($this->getAid(), null, true)['total'];
+		$currentBill['balance'] = $total + ($currentBill['due'] ?? 0);
+		$entries = array_merge([$currentBill], $priorBills);
+		$projected = [];
+		foreach ($entries as $entry) {
+			$projected[] = $this->projectLastBillsEntry($entry);
+		}
+		$invoiceData['last_bills'] = $projected;
+		$this->data->setRawData($invoiceData);
+	}
+
+	protected function projectLastBillsEntry(array $bill) {
+		$out = [];
+		foreach (['type', 'urt', 'invoice_id', 'txid', 'invoice_type', 'invoice_date', 'balance', 'amount', 'due', 'total_paid', 'left_to_pay', 'left', 'due_before_vat', 'vatable_left_to_pay'] as $field) {
+			if (isset($bill[$field])) {
+				$out[$field] = $bill[$field];
+			}
+		}
+		return $out;
 	}
 	/**
 	 * 
@@ -288,7 +331,7 @@ class Billrun_Cycle_Account_Invoice {
 			$invoiceRawData['invoice_id'] = $invoiceId;
 			$newRawData = $invoiceRawData;
 		}
-		$this->data->setRawData($newRawData);		
+		$this->data->setRawData($newRawData);
 
 	}
 
@@ -333,6 +376,15 @@ class Billrun_Cycle_Account_Invoice {
 	public function setUserFields(array $user_fields) {
 		$invoiceRawData = $this->getRawData();
 		$invoiceRawData['uf'] = $user_fields;
+		$this->data->setRawData($invoiceRawData);
+	}
+
+	public function setNote($note) {
+		if (empty($note)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['note'] = $note;
 		$this->data->setRawData($invoiceRawData);
 	}
 	
@@ -429,7 +481,18 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
+
+		if(count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_to_file_subs_limit',10000)) {
+			$rawData = $this->data->getRawData();
+			$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
+			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} , saved to {$failedPath} ", Zend_Log::NOTICE);
+			file_put_contents($failedPath,json_encode($rawData));
+			$rawData['subs'] = [];
+			$this->data->setRawData($rawData);
+		}
+
 		$ret = $this->billrun_coll->save($this->data);
+
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
@@ -494,6 +557,7 @@ class Billrun_Cycle_Account_Invoice {
 			'billrun'=>$this->key,
 			'usaget'=>['$nin'=>['flat']],
 		];
+		Billrun_Factory::log('Checking if there are recent lines for account ' . $this->aid . ' for billrun ' . $this->key, Zend_Log::DEBUG);
 		$hasUsageLines = !$this->lines->query($query)->cursor()->limit(1)->current()->isEmpty();
 
 		return $hasUsageLines;
@@ -555,6 +619,7 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function sumUpGroupingTotalForAccount($currentTotalGroups, $subTotalGroups) {
 		foreach ($subTotalGroups as $group) {
+			$type = $group['grouping'];
 			if (isset($group['sid'])) {
 				continue;
 			}
@@ -569,15 +634,47 @@ class Billrun_Cycle_Account_Invoice {
 			$afterTax = $group['after_taxes'];
 			unset($group['after_taxes']);
 			$extraSumGroupData = [];
+			$extraMinGroupData = [];
+			$extraMaxGroupData = [];
 			// Unset extra sum grouping fields
-			foreach ($this->groupingSumExtraFields as $field) {
+			if(!empty($this->groupingSumExtraFields)){
+				$groupingSumExtraFields = $this->groupingSumExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingSumExtraFields = $groupingExtraFields['sum'] ?? [];
+			}
+			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($extraSumGroupData, $field, Billrun_Util::getIn($group, $field, 0));
 				Billrun_Util::unsetInPath($group, $field);
 			}
-			$stamp = Billrun_Util::generateArrayStamp($group);
+			
+			// Unset extra min grouping fields
+			if(!empty($this->groupingMinExtraFields)){
+				$groupingMinExtraFields = $this->groupingMinExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMinExtraFields = $groupingExtraFields['min'] ?? [];
+			}
+			foreach ($groupingMinExtraFields as $field) {
+				Billrun_Util::setIn($extraMinGroupData, $field, Billrun_Util::getIn($group, $field, null));
+				Billrun_Util::unsetInPath($group, $field);
+			}
+			
+			// Unset extra max grouping fields
+			if(!empty($this->groupingMaxExtraFields)){
+				$groupingMaxExtraFields = $this->groupingMaxExtraFields;
+			}else{
+				$groupingExtraFields = static::getGroupingExtraFields($type);
+				$groupingMaxExtraFields = $groupingExtraFields['max'] ?? [];
+			}
+			foreach ($groupingMaxExtraFields as $field) {
+				Billrun_Util::setIn($extraMaxGroupData, $field, Billrun_Util::getIn($group, $field, null));
+				Billrun_Util::unsetInPath($group, $field);
+			}
+			$stamp = Billrun_Util::generateArrayStamp($group, [], true);
 			$index = Billrun_Util::getIn($this->totalGroupHashMap, $stamp, null);
 			if (!isset($index)) {
-				$index = count($this->totalGroupHashMap);
+				$index = count($currentTotalGroups);
 				$currentTotalGroups[$index] = $group;
 				$this->totalGroupHashMap[$stamp] = $index;
 			}
@@ -587,12 +684,46 @@ class Billrun_Cycle_Account_Invoice {
 			$currentTotalGroups[$index]['taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['taxes'], 0) + $taxes;
 			$currentTotalGroups[$index]['after_taxes'] = Billrun_Util::getFieldVal($currentTotalGroups[$index]['after_taxes'], 0) + $afterTax;
 			// Sum extra grouping fields
-			foreach ($this->groupingSumExtraFields as $field) {
+			foreach ($groupingSumExtraFields as $field) {
 				Billrun_Util::setIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($currentTotalGroups[$index], $field, 0) + Billrun_Util::getIn($extraSumGroupData, $field, 0));
+			}
+			// min extra grouping fields
+			foreach ($groupingMinExtraFields as $field) {
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, min(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMinGroupData, $field, null)), Billrun_Util::getIn($extraMinGroupData, $field, null)));
+			}	
+			// max extra grouping fields
+			foreach ($groupingMaxExtraFields as $field) {
+				Billrun_Util::setIn($currentTotalGroups[$index], $field, max(Billrun_Util::getIn($currentTotalGroups[$index], $field, Billrun_Util::getIn($extraMaxGroupData, $field, null)), Billrun_Util::getIn($extraMaxGroupData, $field, null)));
 			}	
 		}
 		return $currentTotalGroups;
 	}
+
+	public static function getGroupingExtraFields($type){
+		$groupingExtraFields = [];
+		$grouping = Billrun_Factory::config()->getConfigValue('billrun.grouping', []);
+		foreach($grouping as $groupingStructure){
+			if($groupingStructure['name'] == $type){
+				foreach ($groupingStructure['fields'] as $field) {
+					if (!isset($field['field_name']) || !isset($field['op'])) {
+						continue;
+					}
+					if ($field['op'] === 'sum') {
+						$groupingExtraFields['sum'][] = $field['field_name'];
+					}elseif ($field['op'] === 'min') {
+						$groupingExtraFields['min'][] = $field['field_name'];
+					}elseif ($field['op'] === 'max') {
+						$groupingExtraFields['max'][] = $field['field_name'];
+					}
+
+				}
+			}
+			
+		}
+		return $groupingExtraFields;
+	}
+	
+
 	
 	public function setInvoicingDay(&$rawData, $attributes) {
 		$config = Billrun_Factory::config();
@@ -601,5 +732,14 @@ class Billrun_Cycle_Account_Invoice {
 
 	public function addAggragtionTranslations($translations) {
 		$this->aggregationTranslations = array_merge($this->aggregationTranslations,$translations);
+	}
+
+	public function setdAdjustments($adj) {
+		if (empty($adj)) {
+			return;
+		}
+		$invoiceRawData = $this->getRawData();
+		$invoiceRawData['adjusted_from_invoices'] = $adj;
+		$this->data->setRawData($invoiceRawData);
 	}
 }

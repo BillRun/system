@@ -119,6 +119,7 @@ $gateway->addField($type = 'custom_field_1', $value = '123456789', $name = array
     3 => 'Benutzerdefiniertes Feld (FR)',
     4 => 'Benutzerdefiniertes Feld (IT)',
 ));
+$gateway->addField($type = 'custom_field_2', $value = '123456789', $name = 'Custom Field');
 
 try {
     $response = $payrexx->create($gateway);

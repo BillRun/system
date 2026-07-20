@@ -10,7 +10,7 @@
  * @package  pay API
  * @since    0.5
  */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 require_once(APPLICATION_PATH . '/library/Tests/testrail.php');
 
 define('UNIT_TESTING', 'true');

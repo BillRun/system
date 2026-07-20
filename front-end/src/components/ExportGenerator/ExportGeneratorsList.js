@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import EntityList from '../EntityList';
 import { StateIcon } from '@/components/Elements';
 import {

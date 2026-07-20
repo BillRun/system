@@ -24,24 +24,25 @@
 		"ext-json": "*"
 	},
 	"require-dev": {
-		"phan/phan": "^5.4",
-		"phpmd/phpmd": "^2.13",
+		"phpmd/phpmd": "^2.15",
+		"phpstan/phpstan": "^1.11",
+		"phpstan/phpstan-deprecation-rules": "^1.2",
 		"phpunit/phpunit": "^9.6",
-		"phpcsstandards/php_codesniffer": "^3.8"
+		"squizlabs/php_codesniffer": "^3.10"
 	},
 	"autoload": {
 		"psr-4": {
-			"chillerlan\\Settings\\": "src/"
+			"chillerlan\\Settings\\": "src"
 		}
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"chillerlan\\SettingsTest\\": "tests/"
+			"chillerlan\\SettingsTest\\": "tests"
 		}
 	},
 	"scripts": {
 		"phpunit": "@php vendor/bin/phpunit",
-		"phan": "@php vendor/bin/phan"
+		"phpstan": "@php vendor/bin/phpstan"
 	},
 	"config": {
 		"lock": false,

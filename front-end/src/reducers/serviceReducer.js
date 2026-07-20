@@ -1,7 +1,7 @@
 import Immutable from 'immutable';
 import { getConfig, reCalculateCycles } from '@/common/Util';
 import includeGroupsReducer from './includeGroupsReducer';
-import { ADD_GROUP, REMOVE_GROUP } from '@/actions/includeGroupsActions';
+import { ADD_GROUP, REMOVE_GROUP, ADD_COUNTER_GROUP } from '@/actions/includeGroupsActions';
 import {
   SERVICE_PRODUCTS_REMOVE,
   SERVICE_PRODUCTS_RATE_UPDATE_TO,
@@ -15,6 +15,7 @@ import {
   UPDATE_SERVICE,
   ADD_GROUP_SERVICE,
   REMOVE_GROUP_SERVICE,
+  ADD_GROUP_SERVICE_COUNTER,
   DELETE_SERVICE_FIELD,
   SERVICE_ADD_TARIFF,
   SERVICE_UPDATE_SERVICE_CYCLE, 
@@ -58,6 +59,11 @@ const serviceReducer = (state = DefaultState, action) => {
           itemWithMutations.delete(keyToDelete);
         });
       });
+    }
+
+    case ADD_GROUP_SERVICE_COUNTER: {
+      const includeGroupsAction = Object.assign({}, action, { type: ADD_COUNTER_GROUP });
+      return includeGroupsReducer(state, includeGroupsAction);
     }
 
     case ADD_GROUP_SERVICE: {

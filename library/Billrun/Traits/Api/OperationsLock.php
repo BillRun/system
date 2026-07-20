@@ -62,7 +62,7 @@ trait Billrun_Traits_Api_OperationsLock {
 		}
 		unset($data['filtration']);
 		$query = array_merge($data, $lockCondition);
-		Billrun_Factory::log("Locking operation " . $data['action'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Attempting to acquire lock for operation: " . $data['action'], Zend_Log::DEBUG);
 		$updateOperation = $operationsColl->findAndModify($query, array('$setOnInsert' => $updateQuery), array(),  array('upsert' => true));
 		if ($updateOperation->isEmpty()) {
 			Billrun_Factory::log("Operation " . $data['action'] . ' was locked', Zend_Log::DEBUG);
@@ -79,10 +79,10 @@ trait Billrun_Traits_Api_OperationsLock {
 	public function release() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$query = static::getReleaseQuery();
-		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Attempting to release lock for operation: " . $query['action'], Zend_Log::DEBUG);
 		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new Mongodloid_Date())));
-		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 		if (!$releaseOperation->isEmpty()){
+			Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 			return true;
 		}
 		return false;

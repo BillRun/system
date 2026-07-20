@@ -1,10 +1,15 @@
 import Immutable from 'immutable';
-import { ADD_GROUP, REMOVE_GROUP } from '@/actions/includeGroupsActions';
+import { ADD_GROUP, REMOVE_GROUP, ADD_COUNTER_GROUP } from '@/actions/includeGroupsActions';
 
 const DefaultState = Immutable.Map();
 
 const includeGroupsReducer = (state = DefaultState, action) => {
   switch (action.type) {
+
+    case ADD_COUNTER_GROUP: 
+      return state
+        .updateIn(['include', 'groups'], Immutable.Map(), groups => (groups.isEmpty() ? Immutable.Map() : groups))
+        .setIn(['include', 'groups', action.groupName], action.groupData);
 
     case ADD_GROUP: {
       const group = Immutable.Map({}).withMutations((groupWithMutations) => {

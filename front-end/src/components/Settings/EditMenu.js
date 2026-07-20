@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Grid, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
 import SortableMenuItem from './EditMenu/SortableMenuItem';
 import SortableMenuList from './EditMenu/SortableMenuList';
 
@@ -98,9 +98,9 @@ export default class EditMenu extends Component {
         <Col md={6} className="text-left">Main Menu</Col>
         <Col md={4} className="text-right">Roles</Col>
         <Col md={2} className="text-right">Show/Hide</Col>
-        <Grid bsClass="wrapper" style={{ paddingTop: 35 }}>
+        <div className="wrapper" style={{ paddingTop: 35 }}>
           { this.renderTree(data, [], 'root') }
-        </Grid>
+        </div>
       </div>
     );
   }

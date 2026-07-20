@@ -121,7 +121,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function getRequestType() {
 		if (Billrun_Utils_Realtime::getRealtimeConfigValue($this->config, 'postpay_charge', 'general', false)) {
-			$this->event['skip_calc'] = array('unify');
+			//$this->event['skip_calc'] = array('unify');
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
 		}
 		
@@ -171,10 +171,7 @@ class RealtimeController extends ApiController {
 		if ($processor) {
 			$multiLines = !Billrun_Util::isAssoc($this->event);
 			$rows = $multiLines ? $this->event : [$this->event];
-			foreach ($rows as $row) {
-				$processor->addDataRow($row);
-			}
-			$processor->process($this->config);
+			$processor->process($this->config, $rows);
 			$data = $processor->getData()['data'];
 			$allLines = $processor->getAllLines();
 			return $multiLines ? $allLines : current($allLines);
@@ -210,11 +207,12 @@ class RealtimeController extends ApiController {
 		$response = $responder->getResponse();
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterGetResponse', array($data, &$response));
 		$params = array('root' => 'response');
-		$response = $encoder->encode($response, $params);
-		$this->setOutput(array($response, 1));
+		$responseEncoded = $encoder->encode($response, $params);
+		$this->setOutput(array($responseEncoded, 1));
 
 		Billrun_Factory::log("Realtime req: " . print_R($this->event, 1), Billrun_Log::DEBUG);
 		Billrun_Factory::log("Realtime res: " . print_R($response, 1), Billrun_Log::DEBUG);
+		Billrun_Factory::log("Realtime res enc: " . print_R($responseEncoded, 1), Billrun_Log::DEBUG);
 		$this->updateLineResponse($data, $response);
 		return $response;
 	}

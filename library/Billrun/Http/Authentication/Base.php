@@ -48,4 +48,18 @@ abstract class Billrun_Http_Authentication_Base {
         
         return new $authClassName($request, $params);
     }
+
+    /**
+     * Handles a failed authentication response to determine if a retry is possible.
+     * Child classes can override this to implement retry logic.
+     *
+     * @param Zend_Http_Response $response The failed response object.
+     * @return bool True if the failure was handled and a retry should be attempted, false otherwise.
+     */
+    public function handleAuthFailure(Zend_Http_Response $response)
+    {
+        // By default, retries for auth failure are not needed.
+        return false;
+    }
+
 }

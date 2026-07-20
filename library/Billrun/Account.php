@@ -13,6 +13,7 @@
  * @since    5.0
  */
 abstract class Billrun_Account extends Billrun_Base {
+	use Billrun_Traits_ConditionsCheck;
 
 	/**
 	 * Type of object
@@ -338,8 +339,19 @@ abstract class Billrun_Account extends Billrun_Base {
 				Billrun_Factory::log()->log("Loading account " . $aid, Zend_Log::DEBUG);
 				if ($this->loadAccountForQuery($params)) {
 					$remove_values = array('in_collection', 'in_collection_from');
-					Billrun_Factory::log()->log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
-					$collectionSteps->removeCollectionSteps($aid);
+					Billrun_Factory::log("Removing collection steps for account " . $aid, Zend_Log::DEBUG);
+					if (!$collectionSteps->removeCollectionSteps($aid)) {
+						Billrun_Factory::log('Retrying to remove aid ' . $aid . ' from collection steps.', Zend_Log::NOTICE);
+						if ($collectionSteps->removeCollectionSteps($aid)) {
+							Billrun_Factory::log("Successfully removed from collection steps on retry for account " . $aid, Zend_Log::INFO);
+						} else {
+							Billrun_Factory::log(
+								"Could not remove collection steps for account " . $aid .
+									". Proceeding with the update of the 'in_collection' status regardless.",
+								Zend_Log::ERR
+							);
+						}
+					} 
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
@@ -397,22 +409,12 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-	/**
-	 * Function that returns the relevant aids for collection.
-	 * @param array $aids
-	 * @param boolean $is_aids_query
-	 * @param array $rejection_conditions
-	 * @return array of aids
-	 */
-	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
-		$rejection_query = [];
-		foreach ($rejection_conditions as $condition) {
-			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+
+	public static function convertConditionsToAccountQuery($conditions){
+		$query = [];
+		foreach ($conditions as $condition) {
+			$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
 		}
-		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		if ($rejection_query == ['aid' => ['$in' => [-1]]]) {
-			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
-		}
-		return array_merge_recursive($rejection_query, $account_query);
+		return $query;
 	}
 }

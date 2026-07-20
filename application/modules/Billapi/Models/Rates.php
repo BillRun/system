@@ -57,7 +57,7 @@ class Models_Rates extends Models_Entity {
 					'$nin' => $ignoreIds,
 				);
 			}
-			return $query ? !$this->collection->query($query)->count() : TRUE;
+			return $query ? $this->collection->query($query)->cursor()->limit(1)->current()->isEmpty() : TRUE;
 		}
 		return parent::duplicateCheck($data, $ignoreIds);
 	}

@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col, InputGroup } from 'react-bootstrap';
+import { Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getFieldName } from '@/common/Util';
 
@@ -46,9 +47,8 @@ const getOptionsByFrequency = (frequency) => {
   , Immutable.List()).toJS();
 }
 
-
 const RecurrenceFrequency = ({
-  item, sourceItem, itemName, starPath, frequencyPath, editable, onChange, onRemove
+  item = Immutable.Map(), sourceItem = Immutable.Map(), itemName = '', starPath = ['recurrence', 'start'], frequencyPath = ['recurrence', 'frequency'], editable = true, onChange, onRemove
 }) => {
   const periodicity = item.getIn(frequencyPath, '');
 
@@ -109,7 +109,7 @@ const RecurrenceFrequency = ({
 
   return (
     <FormGroup>
-      <Col componentClass={ControlLabel} sm={3} lg={2}>
+      <Col as={ControlLabel} sm={3} lg={2}>
         {getFieldName('billing_frequency', itemName, 'Billing Frequency')}
         <span className="danger-red"> *</span>
       </Col>
@@ -126,12 +126,12 @@ const RecurrenceFrequency = ({
       {(recurrenceStartEditable) && (
         <Col sm={4} lg={5}>
           <InputGroup>
-            <InputGroup.Addon>
-              <Col componentClass={ControlLabel} className="pt0">
+            <InputGroup.Text>
+              <Col as={ControlLabel} className="pt0">
                 {getFieldName('fixed_cycle_months', itemName, '')}
                 <span className="danger-red"> *</span>
               </Col>
-            </InputGroup.Addon>
+            </InputGroup.Text>
             <Field
               fieldType="select"
               editable={recurrenceStartEditable}
@@ -144,7 +144,7 @@ const RecurrenceFrequency = ({
       )}
       {(!editable) && (periodicity !== 1) && (
         <>
-          <Col componentClass={ControlLabel} sm={2} lg={2}>
+          <Col as={ControlLabel} sm={2} lg={2}>
             {getFieldName('fixed_cycle_months', itemName, '')}:
           </Col>
           <Col sm={2} lg={3} className="non-editable-field">
@@ -155,15 +155,6 @@ const RecurrenceFrequency = ({
     </FormGroup>
   );
 }
-
-RecurrenceFrequency.defaultProps = {
-  item: Immutable.Map(),
-  itemName: '',
-  starPath: ['recurrence', 'start'],
-  frequencyPath: ['recurrence', 'frequency'],
-  sourceItem: Immutable.Map(),
-  editable: true,
-};
 
 RecurrenceFrequency.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),

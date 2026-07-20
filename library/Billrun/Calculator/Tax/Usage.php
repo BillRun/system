@@ -124,7 +124,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if (isset($line['tax_data'])) {
 			return $line['tax_data'];
 		}
-		
+		Billrun_Factory::log()->log("TaxCalculator - fetching tax data for row {$line['stamp']}", Zend_Log::DEBUG);
 		$taxes = $this->getLineTaxes($line);
 		if ($taxes === false) {
 			return false;
@@ -170,6 +170,7 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		if ($totalEmbeddedAmount > 0) {
 			$ret['total_embedded_amount'] = $totalEmbeddedAmount;
 		}
+		Billrun_Factory::log()->log("TaxCalculator - finished fetching tax data for row {$line['stamp']}", Zend_Log::DEBUG);
 
 		return $ret;
 	}
@@ -288,10 +289,12 @@ class Billrun_Calculator_Tax_Usage extends Billrun_Calculator_Tax {
 		}
 		
 		if (empty($tax)) {
+			Billrun_Factory::log()->log("TaxCalculator - DB lookup for tax key '{$key}'", Zend_Log::DEBUG);
 			$taxCollection = self::getTaxCollection();
 			$query = Billrun_Utils_Mongo::getDateBoundQuery($time);
 			$query['key'] = $key;
 			$tax = $taxCollection->query($query)->cursor()->limit(1)->current();
+			Billrun_Factory::log()->log("TaxCalculator - finished DB lookup for tax key '{$key}'", Zend_Log::DEBUG);
 			
 			if (!$tax->isEmpty()) {
 				self::$taxes[$key][] = $tax;

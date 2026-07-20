@@ -27,11 +27,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $is_fake_generation = FALSE;
 	protected $is_onetime = FALSE;
 	protected $exporterFlags = null;
-        protected $invoice_extra_params = [];
+	protected $invoice_extra_params = [];
 	protected $header_path = "";
 	protected $footer_path = "";
 	protected $header_content = "";
 	protected $footer_content = "";
+	
+	protected $loadFromFile = FALSE;
 	
 
 
@@ -128,6 +130,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
 		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
 		$this->render_detailed_quantitative_services = Billrun_Util::getFieldVal($options['detailed_quantitative_services'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_detailed_quantitative_services', FALSE));
+		$this->loadFromFile = Billrun_Util::getFieldVal($options['load_from_file'], $this->loadFromFile);
 	}
 
 	/**
@@ -166,6 +169,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->view->assign('invoice_display_options', Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_display_options', []));
 		$this->view->assign('is_onetime', $this->is_onetime);
+		$this->view->assign('construction_options', $this->constructionOptions);
 		$this->prepareGraphicsResources();
 	}
 
@@ -261,11 +265,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
                 return $defaultFileName;
             }
         }
-        
+
         public function setFileName($billrunObject, $fileName) {
             $billrunObject->set('file_name', $fileName);
         }
-        
+
         public function getTranslationValue($paramObj, $billrunObject) {
             if(isset($paramObj['linked_entity'])){
                 if(isset($paramObj['type']) && $paramObj['type'] === "date"){
@@ -326,17 +330,21 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 
 	public function load() {
+		if($this->loadFromFile) {
+			$this->billrun_data = [ new Mongodloid_Entity(Billrun_Utils_Mongo::recursiveConvertJSONToMongo(json_decode(file_get_contents($this->loadFromFile),JSON_OBJECT_AS_ARRAY))) ];
+		} else {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(
 				array('totals.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold))),
 				array('totals.credit.after_vat' => array('$not' => array('$gt' => -$this->invoice_threshold, '$lt' => $this->invoice_threshold)))
-//																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
+//					array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)))
 		));
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
 		Billrun_Factory::dispatcher()->trigger("beforeLoadWkpdf", array(&$query, $this->accountsToInvoice));
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
+ 		}
 	}
 
 	public function loadLines( $data ) {
@@ -560,7 +568,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @return type
 	 */
 	protected function getLogoPath($options = array()) {
-		if (!defined('APPLICATION_MULTITENANT') || !APPLICATION_MULTITENANT) {
+		if (!Billrun_Config::isMultitenantEnabled()) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal($options['header_tpl_logo'], "/application/views/invoices/theme/logo.png");
 		}
 		return $this->getTempDir($this->stamp) . DIRECTORY_SEPARATOR . 'logo.png';
@@ -589,12 +597,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 
-	protected function updateInvoicePropertyToBillrun($account, $pdfPath, $htmlPath = false) {
+	protected function updateInvoicePropertyToBillrun(&$account, $pdfPath, $htmlPath = false) {
 		$update = ['invoice_file' => $pdfPath ];
 		if($htmlPath) {
 			$update['invoice_html'] = $htmlPath;
 		}
+
+		Billrun_Factory::dispatcher()->trigger('alterGenerationBillrunUpdate',[&$update, $account, $pdfPath, $htmlPath, $this->constructionOptions, $this ]);
+
 		if(!$this->is_fake_generation) {
+			$account['invoice_file'] = $pdfPath;
 			$this->billrunColl->update(["_id"=>$account['_id']->getMongoID(),"invoice_id"=>$account['invoice_id'], "aid"=>$account['aid'], 'billrun_key' => $account['billrun_key']], ['$set' => $update ]);
 		}
 	}

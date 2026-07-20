@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, FormControl, ControlLabel } from 'react-bootstrap';
+import { Form, Col, FormControl } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import filesize from 'file-size';
 import { saveFile } from '@/actions/settingsActions';
 import { showWarning } from '@/actions/alertsActions';
@@ -57,9 +58,9 @@ class Tenant extends Component {
     const logo = this.state.logo.length > 0 ? this.state.logo : this.props.logo;
     return (
       <div className="Tenant">
-        <Form horizontal>
+    <Form className="form-horizontal">
           <FormGroup controlId="name" key="name">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Name
             </Col>
             <Col sm={6}>
@@ -68,16 +69,16 @@ class Tenant extends Component {
           </FormGroup>
 
           <FormGroup controlId="address" key="address">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Address
             </Col>
             <Col sm={6}>
-              <FormControl componentClass="textarea" name="address" onChange={this.onChangeField} value={data.get('address', '')} />
+              <FormControl as="textarea" name="address" onChange={this.onChangeField} value={data.get('address', '')} />
             </Col>
           </FormGroup>
 
           <FormGroup controlId="phone" key="phone">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Phone
             </Col>
             <Col sm={6}>
@@ -86,7 +87,7 @@ class Tenant extends Component {
           </FormGroup>
 
           <FormGroup controlId="email" key="email">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Email
             </Col>
             <Col sm={6}>
@@ -95,7 +96,7 @@ class Tenant extends Component {
           </FormGroup>
 
           <FormGroup controlId="website" key="website">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Website
             </Col>
             <Col sm={6}>
@@ -103,7 +104,7 @@ class Tenant extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Logo
             </Col>
             <Col sm={6}>

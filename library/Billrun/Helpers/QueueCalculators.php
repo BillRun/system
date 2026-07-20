@@ -54,6 +54,10 @@ class Billrun_Helpers_QueueCalculators {
 			}
 			$queue_data = $processor->getQueueData();
 			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
+			if (!$calc) {
+                Billrun_Factory::log('calculator ' . $calc_name . ' is unknown', Zend_Log::ALERT);
+                throw new Exception('calculator ' . $calc_name . ' is unknown');
+            }
 			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
             $allExtraLines = [];
 			foreach ($data['data'] as $key => &$line) {
@@ -153,13 +157,8 @@ class Billrun_Helpers_QueueCalculators {
 				$calc_options = array('type' => 'customerPricing');
 				break;
 
-			case 'tax':
-			case 'unify':
+			default:
 				$calc_options = array('type' => $calc_name);
-				break;
-
-			default :
-				Billrun_Factory::log('calculator ' . $calc_name . ' is unknown', Zend_Log::ALERT);
 				break;
 		}
 

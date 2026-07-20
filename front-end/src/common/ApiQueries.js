@@ -1,12 +1,29 @@
 import Immutable from 'immutable';
 import moment from 'moment';
+import isNumber from 'is-number';
 import {
   escapeRegExp,
   isValueOn,
 } from './Util';
 
+
+export const getAccountsInvoicesQuery = (aid) => {
+  return getEntitesQuery('bills', {
+    aid: 1,
+    amount: 1,
+    invoice_id: 1,
+    invoice_date: 1,
+    due_before_vat: 1,
+  }, { 
+    type: 'inv',
+    aid: parseFloat(aid),
+  }, {
+    invoice_id: 1
+  });
+}
+
 // TODO: fix to uniqueget (for now billAoi can't search by 'rates')
-export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') => {
+export const searchProductsByKeyAndUsagetQuery = (usages, notKeys = [], plays = '') => {
   const usagesToQuery = Array.isArray(usages) ? usages : [usages];
   const query = {
     key: {
@@ -38,7 +55,7 @@ export const searchProductsByKeyAndUsagetQuery = (usages, notKeys, plays = '') =
   formData.append('collection', 'rates');
   formData.append('size', 99999);
   formData.append('page', 0);
-  formData.append('project', JSON.stringify({ key: 1, name: 1 }));
+  formData.append('project', JSON.stringify({ key: 1, name: 1, description: 1 }));
   formData.append('query', JSON.stringify(query));
 
   return {
@@ -70,28 +87,50 @@ export const getPaymentGatewaysQuery = () => ({
   action: 'list',
 });
 
-export const getUserLoginQuery = (username, password) => {
+export const getUserLoginQuery = (username, password, protocol = 'Internal', provider = null) => {
   const formData = new FormData();
-  formData.append('username', username);
-  formData.append('password', password);
+  if (username) {
+    formData.append('username', username);
+  }
+  if (password) {
+    formData.append('password', password);
+  }
+  
+  const params = [{ protocol }];
+  if (provider) {
+    params.push({ provider });
+  }
+
   return ({
-    api: 'auth',
+    api: 'Auth',     
+    action: 'login', 
+    params,
     options: {
       method: 'POST',
-      body: formData,
+      body: formData, 
     },
   });
 };
 
-export const getUserLogoutQuery = () => ({
-  api: 'auth',
+export const getUserLogoutQuery = (protocol = 'Internal') => ({
+  api: 'Auth',
+  action: 'logout',
   params: [
-    { action: 'logout' },
+    { protocol },
   ],
 });
 
 export const getUserCheckLoginQuery = () => ({
-  api: 'auth',
+  api: 'Auth',
+  action: 'login',
+  params: [
+    { protocol: 'Internal' },
+  ],
+});
+
+export const getAuthOptionsQuery = () => ({
+  api: 'Auth',
+  action: 'options',
 });
 
 export const saveFileQuery = (file, metadata) => {
@@ -216,14 +255,20 @@ export const postpaidBalancesListQuery = (query, page, sort, size) => ({
 });
 
 /* Settings API */
-export const savePaymentGatewayQuery = gateway => ({
-  api: 'settings',
-  params: [
-    { category: 'payment_gateways' },
-    { action: 'set' },
-    { data: JSON.stringify(gateway) },
-  ],
-});
+export const savePaymentGatewayQuery = gateway => {
+  const formData = new FormData();
+  formData.append('category', 'payment_gateways');
+  formData.append('action', 'set');
+  formData.append('data', JSON.stringify(gateway));
+
+  return ({
+    api: 'settings',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
 
 /* Settings API */
 export const saveSharedSecretQuery = secret => ({
@@ -319,6 +364,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
   switch (collection) {
     case 'users':
     case 'suggestions':
+    case 'bills':
     case 'export_generators':
       action = 'get';
       break;
@@ -498,11 +544,17 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
   };
 }
 
-export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType) => {
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType, source) => {
   const formData = new FormData();
   formData.append('payment_gateway', paymentGateway);
   formData.append('file_type', fileType);
   formData.append('payments_file_type', paymentsFileType);
+  // `source` is the value persisted on `log.source` and looked up by the list query.
+  // Pass it explicitly so FE owns the naming contract and BE doesn't need to reconstruct it
+  // from `payment_gateway + payments_file_type` (which mis-handled snake_case gateway keys).
+  if (typeof source !== 'undefined') {
+    formData.append('source', source);
+  }
   formData.append('file', file);
   return ({
     api: 'uploadfile',
@@ -513,7 +565,7 @@ export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file,
   });
 }
 
-export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false) => {
+export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_charge', sendMail = false, note = '', invoiceUnixtime = '') => {
   const cdrs = lines
     .map(line => Immutable.Map({
       aid: aid,
@@ -529,6 +581,24 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
     { aid },
     { send_email: sendMail ? 1 : 0 },
   ];
+  const adjusts = lines
+    .map(line => Immutable.Map({
+      invoice_id: line.get('inv_id', ''),
+      amount: line.get('price', ''),
+    }))
+    .filter(adjust => adjust.get('invoice_id', '') !== '');
+  if (adjusts && !adjusts.isEmpty()) {
+    params.push({ adjusts: JSON.stringify(adjusts) });
+  }
+  if (typeof note === 'string' && note.length > 0) {
+      params.push({ note });
+  }
+  if (isNumber(invoiceUnixtime)) {
+      params.push({ invoice_unixtime: invoiceUnixtime });
+  }
+  if (typeof lines === 'string' && lines.length > 0) {
+      params.push({ lines });
+  }
   if (invoiceType === 'without_charge') {
     params.push({ step: 1 });
     params.push({ allow_bill: 1 });
@@ -541,13 +611,9 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
     params.push({ charge_flow: 'charge_before_invoice' });
   } else if (invoiceType === 'expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
   } else if (invoiceType === 'download_expected') {
     params.push({ step: 0 });
-    params.push({ allow_bill: 1 });
-    params.push({ charge_flow: 'charge_before_invoice' });
     params.push({ expected: 1 });
     params.push({ send_back_invoices: 1 });
   }
@@ -557,11 +623,11 @@ export const generateOneTimeInvoiceQuery = (aid, lines, invoiceType = 'without_c
   };
 }
 
-export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, invoiceType) =>
-  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false);
+export const generateOneTimeInvoiceDownloadExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'download_expected', false, note, invoiceUnixtime);
 
-export const generateOneTimeInvoiceExpectedQuery = (aid, lines) =>
-  generateOneTimeInvoiceQuery(aid, lines, 'expected');
+export const generateOneTimeInvoiceExpectedQuery = (aid, lines, note = '', invoiceUnixtime = '') =>
+  generateOneTimeInvoiceQuery(aid, lines, 'expected', false, note, invoiceUnixtime);
 
 export const auditTrailListQuery = (query, page, fields, sort, size) => ({
   action: 'get',
@@ -988,3 +1054,18 @@ export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_
     },
   });
 }
+
+export const getExternalLoginQuery = (protocol, returnTo, provider) => {
+  const params = [
+    { protocol },
+    { return_to: returnTo },
+  ];
+  if (provider) {
+    params.push({ provider });
+  }
+  return ({
+    api: 'Auth',
+    action: 'login',
+    params,
+  });
+};

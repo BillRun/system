@@ -1,16 +1,56 @@
-About
-======
+# BillRun - Open-Source Enterprise Billing Solution
 
-BillRun is Open-Source Billing and Anti-Fraud System. 
+🔗 https://www.bill.run
 
-http://www.billrun.net
+# Overview
 
-BillRun used in Telecom companies which required sophisticated system and tools to receive, process, rate, charge and monitor customer usage. The usage can be telecom CDR-s, pre-pay cards, and all can be handle in real-time. The system support different type of output such as customer invoices, wholesale reports for management, system monitor & alerts, anti-fraud system that can be trigger event. The system is fail-over safe and fully support in high-availability volumes and sizes. 
+BillRun is a powerful open-source enterprise billing system designed for telecom operators, digital service providers, and large-scale usage-based businesses.
+It provides a complete solution to collect, process, rate, charge, and monitor customer usage in real time - enabling you to run complex billing operations with confidence and flexibility.
 
-The system built on integration of YAF PHP Framework, for high performance, with Zend Framework toolbox, for custom usage of its open source ready-to-use classes. Because the system is open source, you can change it to your needs and requirements, get support from 3rd party, cause you are not depend on one company.
+# Key Features
 
-The database is MongoDB that can support for different type of documents, no matter the size and type, what make the system easy to maintain. In addition, MongoDB is the most widely used NoSQL database that can be scale easily with minimal efforts.
+* ⚙️ Real-Time Processing - Handles high-volume data streams such as CDRs, prepaid events, and IoT usage in real time.
 
-BillRun built by BillRun Technologies Ltd. - company that support Open-Source in wide different fields and innovations.
+* 🧾 Flexible Output - Generate customer invoices, wholesale reports, management analytics, alerts, and automated triggers.
 
+* 💪 Enterprise-Grade Resilience - Built for fault tolerance, high availability, and large-scale performance.
 
+* 🧩 Modular Architecture - Combines YAF PHP Framework (for speed) with Zend Framework (for reusable components).
+
+* 🗄️ MongoDB Backend - Document-oriented data storage that scales horizontally with minimal effort.
+
+* 🛠️ Fully Customizable - 100% open source: modify, extend, and integrate it according to your business needs.
+
+* 🕊️ Vendor Independence - No lock-in. Get support from BillRun Technologies, third parties, or your own team.
+
+# Architecture
+
+BillRun’s architecture is designed for performance and scalability:
+
+* Backend: PHP (YAF + Zend Framework)
+
+* Database: MongoDB (NoSQL, schema-less, horizontally scalable)
+
+* Processing Engine: Supports rating, charging, invoicing, mediation, and real-time balance management
+
+* Extensibility: REST APIs and plugin architecture allow easy integration with CRM, ERP, and network systems
+
+## Why BillRun?
+
+* Proven in production by telecom operators worldwide
+
+* Scalable for millions of subscribers and billions of transactions
+
+* Fully transparent open-source stack
+
+* Active community and commercial support available from BillRun Technologies Ltd.
+
+# License
+
+BillRun is released under an open-source license.
+
+For license details, see the LICENSE file in the repository.
+
+## About BillRun Technologies
+
+BillRun Technologies Ltd. is the company behind the BillRun open-source ecosystem, driving innovation in telecom billing, data processing, and enterprise automation.

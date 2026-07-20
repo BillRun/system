@@ -180,7 +180,7 @@ abstract class Billrun_Base {
 			if ($typeInConfig) {
 				$typeInConfig = current($typeInConfig);
 			}
-			if (!empty($typeInConfig['custom'])) {
+			if (!empty(array_intersect(["transactions_request", "transactions_response", "denials", "payments"], [$type]))) {
 				$args = array_merge($typeInConfig, $args);
 				$args['type'] = $type;
 				$class_type = 'PaymentGateway_Custom_' . str_replace('_', '', ucwords($type, '_'));

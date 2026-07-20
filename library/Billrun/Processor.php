@@ -54,6 +54,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var array
 	 */
 	protected $queue_data = array();
+
+	/**
+	 * the drop lines
+	 * @var array
+	 */
+	protected $drop_lines_counter = 0;
 	
 	/**
 	 * Limit iterator
@@ -104,10 +110,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected  $usage_type = null;
 	
 	/**
-	 * filters configuration by file type
+	 * configuration by file type
 	 * @var array
 	 */
-	protected $filters = array();
+	protected $configCache = array();
 
 
 	/**
@@ -121,14 +127,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 *
 	 * @param array $options for the file processor
 	 */
+	 protected $shouldremovefromWorkspace = true;
 	public function __construct($options) {
 
 		parent::__construct($options);
-
-		if (isset($options['path'])) {
-			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
-		}
-		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$lineTypes = $options['line_types'] ?? [];
 			$this->setParser(array_merge($options['parser'], (!empty($lineTypes) ? ['line_types' => $lineTypes] : [])));
@@ -187,7 +189,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	/**
 	 * method to run over all the files received which did not have been processed
 	 */
-	public function process_files() {
+	public function process_files($path = null) {
 
 		$log = Billrun_Factory::db()->logCollection();
 
@@ -199,7 +201,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return $linesCount;
 			} else {
 				$this->init();
-				$file = $this->getFileForProcessing();
+				$file = $this->getFileForProcessing($path);
 				if ($file->isEmpty()) {
 					break;
 				}
@@ -220,7 +222,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		return $linesCount;
 	}
-
 	/**
 	 * method to initialize the data and the file handler of the processor
 	 * useful when processing files in iterations one after another
@@ -251,6 +252,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 			
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+			$this->dropLines();
 			$this->filterLines();
 			$this->prepareQueue();
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
@@ -265,8 +267,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
-
-			$this->removefromWorkspace($this->getFileStamp());
+			if($this->shouldremovefromWorkspace){
+				$this->removefromWorkspace($this->getFileStamp());
+			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
 			return count($this->data['data']);
 		}
@@ -309,6 +312,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		$header['linesStats']['queue'] = count($this->queue_data);
 		$header['linesStats']['good'] = count($this->data['data']) - $header['linesStats']['queue'];
+		$header['linesStats']['dropped'] = $this->drop_lines_counter;
 
 		$current_stamp = $this->getStamp(); // mongo id in new version; else string
 		if ($current_stamp instanceof Mongodloid_Entity || $current_stamp instanceof Mongodloid_Id) {
@@ -326,7 +330,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			// backward compatibility
 			// old method of processing => receiver did not logged, so it's the first time the file logged into DB
 			$entity = new Mongodloid_Entity($trailer);
-			if ($log->query('stamp', $entity->get('stamp'))->count() > 0) {
+			if (!$log->query(array('stamp' => $entity->get('stamp')))->cursor()->limit(1)->current()->isEmpty()) {
 				Billrun_Factory::log("Billrun_Processor::logDB - DUPLICATE! trying to insert duplicate log file with stamp of : {$entity->get('stamp')}", Zend_Log::NOTICE);
 				return FALSE;
 			}
@@ -447,7 +451,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * mark a file in the log collection as being processed and return it
 	 * @return Mongodloid_Entity the file to process on sucessful update false otherwise
 	 */
-	protected function getFileForProcessing() {
+	protected function getFileForProcessing($path = null) {
 		$log = Billrun_Factory::db()->logCollection();
 		$adoptThreshold = strtotime('-' . $this->orphandFilesAdoptionTime);
 
@@ -457,6 +461,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$adoptThreshold = time() - 3600;
 		}
 		$query = $this->getLogFileQuery($adoptThreshold);
+		if(isset($path)){
+			$query['path'] = $path;
+		}
 		$update = array(
 			'$set' => array(
 				'start_process_time' => new Mongodloid_Date(time()),
@@ -731,7 +738,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function isQueueFull() {
 		$queue_max_size = Billrun_Factory::config()->getConfigValue("queue.max_size", 999999999);
-		return (Billrun_Factory::db()->queueCollection()->count() >= $queue_max_size);
+		return (Billrun_Factory::db()->queueCollection()->estimatedDocumentCount() >= $queue_max_size);
 	}
 
 	protected function setFileStamp($file) {
@@ -764,9 +771,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * "garbage" lines are defined by "filters" configuration of input processor
 	 */
 	public function filterLines() {
+		$type = $this->receiverSource ?? static::$type;
+		$filtersPathExists = $this->checkIfPathExistsInFileTypeProcessor('filters', $type);
+		if(!$filtersPathExists){
+			return;
+		}
 		$data = &$this->getData();
 		foreach ($data['data'] as &$row) {
-			$filters = $this->getFilters($row);
+			$filters = $this->getConfigValue($row, 'filters') ?? [];
 			foreach ($filters as $filter) {
 				if ($this->isFilterConditionsMet($row, $filter)) {
                                         if(isset($row['skip_calc'])) {
@@ -779,26 +791,58 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 		}
 	}
+
+	public function dropLines() {
+		$type = $this->receiverSource ?? static::$type;
+		$dropLinesPathExists = $this->checkIfPathExistsInFileTypeProcessor('drop_lines', $type);
+		if(!$dropLinesPathExists){
+			return;
+		}
+		$data = &$this->getData();
+		foreach ($data['data'] as $stamp => &$row) {
+			$dropLinesConfig = $this->getConfigValue($row, 'drop_lines') ?? [];
+			foreach ($dropLinesConfig as $index => $dropLineConf) {
+				if (isset($dropLineConf['conditions'])  && Billrun_Util::areConditionsMet($row, $dropLineConf['conditions'])) {
+					$desc = $dropLineConf['description'] ?? "No description (config index: $index)";
+					Billrun_Factory::log("Line dropped. Reason: " . $desc . ". Line details: " . print_r($row, true), Zend_Log::INFO);
+					$this->drop_lines_counter ++;
+					unset($data['data'][$stamp]);
+					continue 2;
+				}
+			}
+		}
+	}
 	
 	/**
-	 * get filters relevant for a line (by file type)
+	 * get filters/drop_lines relevant for a line (by file type)
 	 * 
 	 * @param array $row
 	 * @return array
 	 */
-	protected function getFilters($row) {
-		if(isset($row['linet'])){
-			if(!isset($this->filters[$row['type']][$row['linet']])){
-				$filters = Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true, $row['linet'])['filters'] ?? 
-				(Billrun_Factory::config()->getLineTypeConfigByName($row['type'], true)['filters'] ?? [] );
-				$this->filters[$row['type']][$row['linet']] = $filters;
-			}
-			return $this->filters[$row['type']][$row['linet']];
-		} else if (!isset($this->filters[$row['type']])) {
-			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
-			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
+	public function getConfigValue($row, $key) {
+		if (!isset($this->configCache)) {
+			$this->configCache = [];
 		}
-		return $this->filters[$row['type']];
+		$fileType = $row['type'];
+		if (isset($row['linet'])) {
+			$lineType = $row['linet'];
+			if (!isset($this->configCache[$key][$fileType][$lineType])) {
+				
+				$specificConfig = Billrun_Factory::config()->getLineTypeConfigByName($fileType, true, $lineType);
+				$genericConfig = Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
+				$value = $specificConfig[$key] ?? ($genericConfig[$key] ?? []);
+				$this->configCache[$key][$fileType][$lineType] = $value;
+			}
+			return $this->configCache[$key][$fileType][$lineType];
+		} 
+		
+		else {
+			if (!isset($this->configCache[$key][$fileType])) {
+				$config = Billrun_Factory::config()->getFileTypeSettings($fileType, true);
+				$this->configCache[$key][$fileType] = $config[$key] ?? [];
+			}
+			return $this->configCache[$key][$fileType];
+		}
 	}
 	
 	/**
@@ -855,4 +899,107 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$entity['full_calculation'] = new MongoDate();
 		}
 	}
+
+	public function createLogForProcessWithPath($options){
+		$filename = basename($options['path']);
+		$type = $this->receiverSource ?? static::$type;
+		$addData = array(	
+			'path' => Billrun_Util::getBillRunPath($options['path'])
+    );
+		$moreFields = !empty($options['file_type']) ? array('pg_file_type' => $options['file_type']) : array();
+		$moreFields = array_merge($moreFields, $addData);
+		if (!$this->lockFileForReceive($filename, $type, $moreFields)) {
+			Billrun_Factory::log('File ' . $filename . ' has been received already', Zend_Log::INFO);
+			return false;
+		}
+		$fileData = $this->getFileLogData($filename, $type, $moreFields);
+		$file_types = Billrun_Factory::config()->getFileTypes();            
+		$query = array(
+			'stamp' => $fileData['stamp'],
+			'received_time' => array('$exists' => false)
+		);
+                
+    $addData = array(
+			'received_hostname' => Billrun_Util::getHostName(),
+			'received_time' => new MongoDate()
+    );
+		
+		if (!empty($fileData['source']) && in_array($fileData['source'], $file_types)) {
+			$addData['type'] = 'input_processor';
+		}
+
+		$update = array(
+			'$set' => array_merge($fileData, $addData)
+		);
+
+		if (empty($query['stamp'])) {
+			Billrun_Factory::log("Billrun_Processor::logDB - got file with empty stamp :  {$fileData['stamp']}", Zend_Log::NOTICE);
+			return FALSE;
+		}
+
+		$log = Billrun_Factory::db()->logCollection();
+		$result = $log->update($query, $update);
+
+		if ($result['ok'] != 1 || $result['n'] != 1) {
+			Billrun_Factory::log("Billrun_Processor::logDB - Failed when trying to update a file log record " . $fileData['file_name'] . " with stamp of : {$fileData['stamp']}", Zend_Log::NOTICE);
+		}
+
+		return $result['n'] == 1 && $result['ok'] == 1;
+
+	}
+
+	public function setShouldremovefromWorkspace($flag){
+		$this->shouldremovefromWorkspace = $flag;
+	}
+
+	public function processorByPath($options){
+		$absPath = Billrun_Util::getBillRunPath($options['path']);
+		if (is_dir($absPath)) {
+			return $this->processorByDir($options, $absPath);
+		}
+		if(!$this->createLogForProcessWithPath($options)){
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files($absPath);
+	}
+
+	protected function processorByDir($options, $dir) {
+		$entries = glob(rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*');
+		if ($entries === false) {
+			return;
+		}
+		sort($entries);
+		$hasFiles = false;
+		foreach ($entries as $entry) {
+			if (!is_file($entry)) {
+				continue;
+			}
+			$fileOptions = array_merge($options, array('path' => $entry));
+			if ($this->createLogForProcessWithPath($fileOptions)) {
+				$hasFiles = true;
+			}
+		}
+		if (!$hasFiles) {
+			return;
+		}
+		$this->setShouldremovefromWorkspace(false);
+		return $this->process_files();
+	}
+
+	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){
+		$inputProcessorConf =  Billrun_Factory::config()->getLineTypeConfigByName($fileType, true);
+		$value = $inputProcessorConf[$path] ?? false;
+		if(!$value && isset($inputProcessorConf['line_types']) && !empty($inputProcessorConf['line_types'])){
+			foreach($inputProcessorConf['line_types'] as $lineTypeConf){
+				$value = $lineTypeConf[$path] ?? false;
+				if($value && !empty($value)){
+					return true;
+				}
+			}
+			return false;
+		}
+		return $value;
+	}
+
 }

@@ -17,8 +17,22 @@
 class Models_Action_Uniqueget_Accounts extends Models_Action_Uniqueget {
 
 	protected function runQuery() {
-		$this->query['type'] = 'account';
-		return parent::runQuery();
+		$ids = $this->getUniqueIds();
+		$this->query = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
+
+		$project = $this->prepareProjection();
+
+		Billrun_Factory::log("Billapi get runs query: " . json_encode($this->query), Zend_Log::DEBUG);
+		$cursor = $this->collectionHandler->find($this->query, $project);
+		if (!empty($this->sort)) {
+			$cursor->sort($this->sort);
+		}
+
+		return $this->processResults($cursor);
 	}
 
 	protected function initGroup() {
@@ -31,6 +45,15 @@ class Models_Action_Uniqueget_Accounts extends Models_Action_Uniqueget {
 	
 	protected function getCustomFieldsKey() {
 		return $this->getCollectionName() . ".account";
+	}
+
+	/**
+	 * Overrides the parent getUniqueIds to add pagination to the original selection logic.
+	 * * @return array of mongo ids
+	 */
+	protected function getUniqueIds()
+	{
+		return $this->getPaginatedUniqueIds(['type' => 'account']);
 	}
 
 }

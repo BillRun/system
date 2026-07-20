@@ -30,6 +30,7 @@ class NotifyAction extends Action_Base {
 		switch ($options['type']) {
 			case 'email':
 				$this->notifyEmail($options);
+				break;
 			case 'events':
 			default:
 				$this->notifyEvents();

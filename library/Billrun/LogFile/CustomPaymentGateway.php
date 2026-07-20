@@ -35,11 +35,12 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 			'process_time' => array('$gt' => new Mongodloid_Date(strtotime($this->orphanTime))),
 		);
 
-		$customLog = $this->collection->query($query)->cursor();
-		if ($customLog->count() > 1) {
+		$customLog = iterator_to_array($this->collection->query($query)->cursor()->limit(2));
+		$docCount = count($customLog);
+		if ($docCount > 1) {
 			throw new Exception('Billrun_LogFile_CustomPaymentGateway: More than one log file was found');
-		} elseif ($customLog->count() == 1) {
-			$this->data = $customLog->current();
+		} elseif ($docCount == 1) {
+			$this->data = reset($customLog);
 			if (isset($this->data['process_time'])) {
 				throw new Exception('Billrun_LogFile_CustomPaymentGateway: file already created');
 			}

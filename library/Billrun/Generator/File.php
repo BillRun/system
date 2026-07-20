@@ -266,6 +266,9 @@ abstract class Billrun_Generator_File {
 	 * get file path
 	 */
 	protected function getFilePath() {
+        if ($this->localDir !== null) {
+			return $this->localDir;
+		}
 		$sharedPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getIn($this->config, 'workspace', 'workspace'));
 		return rtrim($sharedPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'export' . DIRECTORY_SEPARATOR . date("Ym") . DIRECTORY_SEPARATOR . substr(md5(serialize($this->config)), 0, 7);
 	}

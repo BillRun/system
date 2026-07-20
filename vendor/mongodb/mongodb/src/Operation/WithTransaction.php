@@ -10,16 +10,13 @@ use Throwable;
 use function call_user_func;
 use function time;
 
-/**
- * @internal
- */
+/** @internal */
 class WithTransaction
 {
     /** @var callable */
     private $callback;
 
-    /** @var array */
-    private $transactionOptions;
+    private array $transactionOptions;
 
     /**
      * @see Session::startTransaction for supported transaction options

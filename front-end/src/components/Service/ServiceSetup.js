@@ -1,17 +1,23 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel, Tabs, Tab } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import ServiceDetails from './ServiceDetails';
 import PlanIncludesTab from '../Plan/PlanIncludesTab';
 import PlanProductsPriceTab from '../Plan/PlanProductsPriceTab';
 import { EntityTaxDetails } from '@/components/Tax';
 import { EntityRevisionDetails } from '../Entity';
-import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import {
+  ActionButtons,
+  LoadingItemPlaceholder,
+  ServiceCounters,
+} from '@/components/Elements';
+import {
+  getFieldName,
   buildPageTitle,
   getConfig,
   getItemId,
@@ -19,6 +25,7 @@ import {
 import {
   addGroup,
   removeGroup,
+  addGroupCounter,
   getService,
   clearService,
   updateService,
@@ -29,6 +36,7 @@ import {
   onServiceCycleUpdate,
   onServiceTariffRemove
 } from '@/actions/serviceActions';
+import { getAllGroup } from '@/actions/planActions';
 import { showSuccess } from '@/actions/alertsActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { clearItems, getRevisions, clearRevisions } from '@/actions/entityListActions';
@@ -64,13 +72,14 @@ class ServiceSetup extends Component {
   state = {
     activeTab: parseInt(this.props.activeTab),
     progress: false,
+    existingGroups: Immutable.List(),
   };
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+        this.fetchGroupNames();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, 'service');
@@ -79,9 +88,19 @@ class ServiceSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  shouldComponentUpdate(nextProps, nextState) {
+    return !Immutable.is(this.props.item, nextState.item)
+      || !Immutable.is(this.props.revisions, nextState.revisions)
+      || this.props.activeTab !== nextProps.activeTab
+      || this.props.itemId !== nextProps.itemId
+      || this.props.mode !== nextProps.mode;
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'service', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -91,16 +110,9 @@ class ServiceSetup extends Component {
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !Immutable.is(this.props.item, nextState.item)
-      || !Immutable.is(this.props.revisions, nextState.revisions)
-      || this.props.activeTab !== nextProps.activeTab
-      || this.props.itemId !== nextProps.itemId
-      || this.props.mode !== nextProps.mode;
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearService());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -144,6 +156,21 @@ class ServiceSetup extends Component {
     }
   }
 
+  fetchGroupNames = () => {
+    getAllGroup().then((responses) => {
+      const existingGroups = Immutable.Set().withMutations((groupsWithMutations) => {
+        responses.data.forEach((response) => {
+          response.data.details.forEach((item) => {
+            if (item.include && item.include.groups) {
+              groupsWithMutations.union(Object.keys(item.include.groups));
+            }
+          });
+        });
+      }).toList();
+      this.setState(() => ({ existingGroups }));
+    });
+  }
+
   clearRevisions = () => {
     const { item } = this.props;
     const key = item.get('name', '');
@@ -163,11 +190,19 @@ class ServiceSetup extends Component {
     }
   }
 
+  onAddGroupCounter = (groupName, data) => {
+    const { existingGroups } = this.state;
+    this.setState(() => ({existingGroups: existingGroups.push(groupName)}));
+    this.props.dispatch(addGroupCounter(groupName, data));
+  }
+
   onGroupAdd = (groupName, usages, unit, value, shared, pooled, quantityAffected, products) => {
     this.props.dispatch(addGroup(groupName, usages, unit, value, shared, pooled, quantityAffected, products));
   }
 
   onGroupRemove = (groupName) => {
+    const { existingGroups } = this.state;
+    this.setState(() => ({existingGroups: existingGroups.filter((name) => name !== groupName)}));
     this.props.dispatch(removeGroup(groupName));
   }
 
@@ -209,7 +244,7 @@ class ServiceSetup extends Component {
   }
 
   render() {
-    const { progress, activeTab } = this.state;
+    const { progress, activeTab, existingGroups} = this.state;
     const { item, sourceItem, mode, revisions } = this.props;
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
@@ -217,6 +252,8 @@ class ServiceSetup extends Component {
 
     const allowEdit = mode !== 'view';
     const includeGroups = item.getIn(['include', 'groups'], Immutable.Map());
+    const includeServices = includeGroups.filter(group => !group.get('counter_only', false));
+    const counterServices = includeGroups.filter(group => group.get('counter_only', false));
     const planRates = item.get('rates', Immutable.Map());
     const plays = item.get('play', Immutable.List());
     return (
@@ -235,7 +272,7 @@ class ServiceSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} animation={false} id="ServiceTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="ServiceTab" onSelect={this.handleSelectTab}>
 
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>
@@ -267,7 +304,7 @@ class ServiceSetup extends Component {
           <Tab title="Service Includes" eventKey={3}>
             <Panel style={{ borderTop: 'none' }}>
               <PlanIncludesTab
-                includeGroups={includeGroups}
+                includeGroups={includeServices}
                 onChangeFieldValue={this.onUpdateItem}
                 onGroupAdd={this.onGroupAdd}
                 onGroupRemove={this.onGroupRemove}
@@ -278,7 +315,20 @@ class ServiceSetup extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Tax" eventKey={4}>
+          <Tab title={getFieldName('service_counters', 'service')} eventKey={4}>
+            <Panel style={{ borderTop: 'none' }}>
+              <ServiceCounters
+                includeGroups={counterServices}
+                onGroupUpdate={this.onUpdateItem}
+                onGroupAdd={this.onAddGroupCounter}
+                onGroupRemove={this.onGroupRemove}
+                mode={mode}
+                existingGroupsNames={existingGroups}
+              />
+            </Panel>
+          </Tab>
+
+          <Tab title="Tax" eventKey={5}>
             <Panel style={{ borderTop: 'none' }}>
               <EntityTaxDetails
                 tax={item.get('tax')}

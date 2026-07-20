@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { Actions } from '@/components/Elements';
 import List from '@/components/List';
 import { pageFlagSelector } from '@/selectors/guiSelectors';
@@ -11,18 +12,18 @@ import {
     scheduleChargeParser,
     cancelledChargeParser,
     statusIconChargeParser,
+    md5ShorterParser,
 } from '@/common/Parsers';
 import {
     getFieldName,
     getChargeStatus,
 } from '@/common/Util';
 
-
 const ChargingList = ({
-    items,
+    items = Immutable.List(),
     scheduleItems,
-    size,
-    listType,
+    size = 20,
+    listType = 'all',
     listSizeOptions,
     listTypeOptions,
     onChangeSize,
@@ -67,14 +68,6 @@ const ChargingList = ({
     );
 }
 
-
-ChargingList.defaultProps = {
-    items: Immutable.List(),
-    allowCreate: false,
-    size: 20,
-    listType: 'all',
-};
-
 ChargingList.propTypes = {
     items: PropTypes.instanceOf(Immutable.List),
     listType: PropTypes.string,
@@ -95,7 +88,7 @@ const mapStateToProps = (state, props) => ({
 
 const mapDispatchToProps = (dispatch, props) => ({
     onChangeSize: (e) => props.onUpdateSize(parseInt(e.target.value)),
-    onChangeType: (e )=> dispatch(setPageFlag('charging', 'listType', e.target.value)),
+    onChangeType: (e) => dispatch(setPageFlag('charging', 'listType', e.target.value)),
     isItemCancelable: (item) => getChargeStatus(item) === 'future',
 });
 
@@ -103,6 +96,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
 
     const listFields = [
         { id: 'state', parser: statusIconChargeParser, cssClass: 'state'},
+        { id: 'md5', title: getFieldName('md5', 'charging_process'), parser: md5ShorterParser, cssClass: 'text-center'},
         { id: 'created', title: getFieldName('created', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
         { id: 'schedule', title: getFieldName('schedule', 'charging_process'), type: 'datetime', parser: scheduleChargeParser, cssClass: 'text-center'},
         { id: 'start_time', title: getFieldName('start_time', 'charging_process'), type: 'datetime', cssClass: 'text-center'},
@@ -129,6 +123,7 @@ const mergeProps = (stateProps, dispatchProps, ownProps) => {
         showIcon: true,
         helpText: 'View',
         onClick: ownProps.onShowDetails,
+        onClickColumn: 'md5',
     }, {
         type: 'remove',
         showIcon: true,

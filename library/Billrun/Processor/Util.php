@@ -24,16 +24,18 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZoneField = null, $timeZoneLiteral = null) {
 		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
 		$timeZoneValue = null;
 		if (is_null($dateValue)) {
 			return null;
 		}
-		if (!empty($timeZone)) {
-			if (!empty($value = billrun_util::getIn($userFields, $timeZone))) {
+		if (!empty($timeZoneLiteral)) {
+			$timeZoneValue = new DateTimeZone($timeZoneLiteral);
+		} else if (!empty($timeZoneField)) {
+			if (!empty($value = billrun_util::getIn($userFields, $timeZoneField))) {
 				$timeZoneValue = new DateTimeZone($value);
-			} else $timeZoneValue = null;
+			}
 		}
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);

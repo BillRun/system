@@ -133,49 +133,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $invoice
 	 */
 	public function createBillFromInvoice($invoice, $callback = FALSE) {
-		$bill =array(
-				'type' => 'inv',
-				'invoice_id' => $invoice['invoice_id'],
-				'aid' => $invoice['aid'],
-				'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
-				'due_date' => $this->updateDueDate($invoice),
-				'charge' => ['not_before' => $this->updateChargeDate($invoice)],
-				'due' => $invoice['totals']['after_vat_rounded'],
-				'due_before_vat' => $invoice['totals']['before_vat'],
-				'customer_status' => 'open',//$invoice['attributes']['account_status'],
-				'payer_name' => $invoice['attributes']['lastname'] .' ' . $invoice['attributes']['firstname'],
-				'billrun_key' => $invoice['billrun_key'],
-				'amount' => abs($invoice['totals']['after_vat_rounded']),
-				'lastname' => $invoice['attributes']['lastname'],
-				'firstname' => $invoice['attributes']['firstname'],
-				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
-				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
-				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
-				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
-				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
-				'urt' => new Mongodloid_Date(),
-				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
-        'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
-				'paid' => '0',
-				'total_paid' => 0
-			);
-		if (!empty($invoice['invoicing_day'])) {
-			$bill['invoicing_day'] = $invoice['invoicing_day'];
-		}
-		if (!empty($invoice['uf'])) {
-			$bill['uf'] = $invoice['uf'];
-		}
-		if ($bill['due'] < 0) {
-			$bill['left'] = $bill['amount'];
-		}
-		else {
-			$bill['left_to_pay'] = $bill['due'];
-			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
-		}
-		if(!empty($invoice['attributes']['suspend_debit'])) {
-			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
+		$bill = Billrun_Bill::buildBaseBillFromInvoice($invoice, $this->updateDueDate($invoice), $this->updateChargeDate($invoice));
+		if (!empty($invoice['adjusted_from_invoices'])) {
+			$this->handleAdjustments($bill, $invoice['adjusted_from_invoices']);
 		}
 		
 		$account = Billrun_Factory::account();
@@ -199,7 +159,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		Billrun_Factory::log("Paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
 		Billrun_Bill::payUnpaidBillsByOverPayingBills($invoice['aid'], true, $switch_links);
-		Billrun_Factory::log("Finished paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);
+		Billrun_Factory::log("Finished paying unpaid bills by over paying bills for aid " . $invoice['aid'], Zend_Log::DEBUG);		
 		Billrun_Factory::dispatcher()->trigger('afterInvoiceConfirmed', array($bill, $invoice));
 		return true;
  	}
@@ -407,4 +367,44 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		return 'bills';
 	}
 	
+	protected function handleAdjustments(&$bill, $adj) {
+		Billrun_Factory::log("Processing and updating adjustments in bills collection, for invoice " . $bill['invoice_id'], Zend_Log::DEBUG);
+		$invoices_to_adjust = [];
+		try {
+			foreach ($adj as $adjustment) {
+				$amount = $invoice_to_adjust = null;
+				$amount = $adjustment['amount'];
+				//Pulling original bill to adjust
+				if (!isset($invoices_to_adjust[$adjustment['invoice_id']])) {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByid($adjustment['invoice_id']);
+				} else {
+					$invoices_to_adjust[$adjustment['invoice_id']] = Billrun_Bill_Invoice::getInstanceByData($invoices_to_adjust[$adjustment['invoice_id']]->getRawData());
+				}
+				$invoice_to_adjust = $invoices_to_adjust[$adjustment['invoice_id']];
+				Billrun_Factory::log("Adding original invoice " . $invoice_to_adjust->getId() . " to new immediate invoice bill " . $bill['invoice_id'] . " adjusted_from_invoices list", Zend_Log::DEBUG);
+				$new_adj_array = ["invoice_id" => $invoice_to_adjust->getId(), "amount" => $amount];
+				if (isset($bill['adjusted_from_invoices'])) {
+					$bill['adjusted_from_invoices'][] = $new_adj_array;
+				} else {
+					$bill['adjusted_from_invoices'] = [$new_adj_array];
+				}
+				Billrun_Factory::log("Adding new immediate invoice " . $bill['invoice_id'] . " to original invoice " . $invoice_to_adjust->getId() . " adjusted_by_invoices list", Zend_Log::DEBUG);
+				$invoice_to_adjust->addAdjustmentToOriginalInvoice(["invoice_id" => $bill['invoice_id'], "amount" => $amount]);
+				Billrun_Factory::log("Finished linking adjustment between invoice " . $bill['invoice_id'] . " and " . $invoice_to_adjust->getId() . ". Moving on", Zend_Log::DEBUG);
+			}
+			foreach ($invoices_to_adjust as $invoice_id => $adjusted_invoice_object) {
+				Billrun_Factory::log("Trying to save adjusted invoice " . $invoice_id, Zend_Log::DEBUG);
+				$res = $adjusted_invoice_object->save();
+				Billrun_Factory::log("Successfully saved original invoice " . $adjusted_invoice_object->getId(), Zend_Log::DEBUG);
+				$saved_invoice_ids[$adjusted_invoice_object->getId()] = true;
+			}
+			Billrun_Factory::log("Successfully attached all invoice " . $bill['invoice_id'] . " original invoices adjustments", Zend_Log::DEBUG);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Something went wrong when trying to handle adjustments. Code - ' . $ex->getCode() . ", message - " . $ex->getMessage() . ". Already saved invoices " . implode(",", array_keys($saved_invoice_ids)), Zend_Log::ALERT);
+			return false;
+		}
+		Billrun_Factory::log("Successfully saved updated original invoices " . implode(",", array_keys($saved_invoice_ids)), Zend_Log::DEBUG);
+		return true;
+	}
+
 }
