@@ -27,7 +27,7 @@ class ExportGeneratorsList extends Component {
     const confirm = {
       message: `Are you sure you want to delete export generator "${item.get('name')}" ?`,
       onOk: () => {
-        this.props.dispatch(deleteExportGenerator(item.getIn(['_id', '$id'])))
+        this.props.dispatch(deleteExportGenerator(item))
           .then(() => {
             this.setState({ refreshString: moment().format() });
           });
@@ -39,16 +39,14 @@ class ExportGeneratorsList extends Component {
   };
 
   onClickDisable = (item) => {
-    const id = item.getIn(['_id', '$id']);
-    this.props.dispatch(updateExportGeneratorStatus(id, false))
+    this.props.dispatch(updateExportGeneratorStatus(item, false))
       .then(() => {
         this.setState({ refreshString: moment().format() });
       });
   };
 
   onClickEnable = (item) => {
-    const id = item.getIn(['_id', '$id']);
-    this.props.dispatch(updateExportGeneratorStatus(id, true))
+    this.props.dispatch(updateExportGeneratorStatus(item, true))
       .then(() => {
         this.setState({ refreshString: moment().format() });
       });
@@ -95,6 +93,7 @@ class ExportGeneratorsList extends Component {
       <div className="ExportGenerators">
         <EntityList
           collection="export_generators"
+          api="get"
           itemsType="export generators"
           itemType="export_generator"
           tableFields={tableFields}
