@@ -23,11 +23,11 @@ class Billrun_Utils_Cycle {
 
 		return !( empty($entryConfig['upfront']) && $entryConfig['start'] >= $cycle->end() ) && ( // dont include falto in the future that are not upfront
 				// does entry is a regular cycle entry AND  falls   within the current  cycle?
-				( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] >= $cycle->start() ) &&
+				( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&
 																	( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() ) )
 				|| //  is the  entry a  custom cycle and is aligned  with  current  cycle AND the flat dates is overlaps the curent cycle
 				 (!empty($entryConfig['recurrence']['frequency']) && Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
-					&& ( empty($entryConfig['end']) || $entryConfig['end'] >= $cycle->start() ) &&
+					&& ( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&
 						( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() )
 				|| // is the entry a custom cycle entry AND the  subscriber deactevidted  during the current  cycle?
 				(!empty($entryConfig['deactivation_date']) && $entryConfig['deactivation_date']->sec <= $cycle->end() &&  $entryConfig['deactivation_date']->sec >= $cycle->start() )

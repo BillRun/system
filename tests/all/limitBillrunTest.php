@@ -96,6 +96,11 @@ class limitBillrunTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = $stamp ;
         $this->tester->runCycle($this->defaultOptions);
+        // The order of entries inside the 'subs' array is not deterministic
+        // (the sid=0 account entry may land at index 0 or 1), so don't rely on
+        // fixed positions. Assert both required entries exist anywhere in the
+        // array: 'subs.sid' => X matches a doc whose subs array has ANY element
+        // with sid=X. Two assertions => BOTH must be present.
         $this->tester->seeInCollection('billrun', [
             'billrun_key' => $stamp, 
             'aid' =>  $data['account']['aid']
@@ -104,9 +109,13 @@ class limitBillrunTest extends \Codeception\Test\Unit
          $this->tester->seeInCollection('billrun_subs', [
             'key' => $stamp, 
             'aid' =>  $data['account']['aid'],
-            'sid'=>$data['subscriber'][0]['sid']
-            ]
-        );
+            'subs.sid' => 0,
+        ]);
+        $this->tester->seeInCollection('billrun', [
+            'billrun_key' => $stamp,
+            'aid' =>  $data['account']['aid'],
+            'subs.sid' => $data['subscriber'][0]['sid'],
+        ]);
     } 
  
 }
