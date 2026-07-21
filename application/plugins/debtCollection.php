@@ -168,7 +168,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			"display" => true,
 			"nullable" => false,
 			"mandatory" => true,
-			"default_value" => false
+			"default_value" => true
 		]];
 	}
 }
