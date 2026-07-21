@@ -27,12 +27,41 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $nonWorkingDays = array(0, 6);
 	protected $collectionSteps;
 
+	/**
+	 * in-memory (per process) indication that a transactions response file is currently
+	 * being processed. the collectOnTransactionsResponseFile flag is checked only in this
+	 * context, so other payment flows (charge, rejection etc.) are not affected by it.
+	 *
+	 * @var boolean
+	 */
+	protected static $processingTransactionsResponseFile = false;
+
 	public function __construct($options = array()) {
 		$this->collection = Billrun_Factory::collection();
 		$this->collectionSteps = Billrun_Factory::collectionSteps();
 	}
-	
+
+	public function beforeProcessorParsing($processor) {
+		if ($processor instanceof Billrun_Processor && ($processor->getType() == 'transactions_response')) {
+			self::$processingTransactionsResponseFile = true;
+		}
+	}
+
+	public function afterProcessorRemove($processor) {
+		if ($processor instanceof Billrun_Processor && ($processor->getType() == 'transactions_response')) {
+			self::$processingTransactionsResponseFile = false;
+		}
+	}
+
+	public function isCollectOnTransactionsResponseFileDisabled() {
+		return empty($this->options['collectOnTransactionsResponseFile']);
+	}
+
 	public function afterChargeSuccess($bill) {
+		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
+			return;
+		}
 		if ($this->options['immediateExit']) {
 			$this->collection->collect(array($bill['aid']), 'exit_collection');
 		}
@@ -47,6 +76,10 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterRefundSuccess($bill) {
+		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
+			return;
+		}
 		if ($this->options['immediateEnter']) {
 			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
@@ -61,6 +94,10 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterRejection($bill) {
+		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
+			return;
+		}
 		if ($this->options['immediateEnter']) {
 			$this->collection->collect(array($bill['aid']), 'enter_collection');
 		}
@@ -93,6 +130,10 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateConfirmation($bill) {
+		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
+			return;
+		}
 		if ($bill['due'] > (0 + Billrun_Bill::precision) && $this->options['immediateEnter']) {
 			$this->collection->collect([$bill['aid']], 'enter_collection');
 		} else if ($bill['due'] < (0 - Billrun_Bill::precision) && $this->options['immediateExit']) {
@@ -119,6 +160,15 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 			"nullable" => false,
 			"mandatory" => true,
 			"default_value" => true
+		],[
+			"type" => "boolean",
+			"field_name" => "collectOnTransactionsResponseFile",
+			"title" => "Collect On Process of Transactions Response File",
+			"editable" => true,
+			"display" => true,
+			"nullable" => false,
+			"mandatory" => true,
+			"default_value" => false
 		]];
 	}
 }
