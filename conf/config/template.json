@@ -7,6 +7,9 @@
 		"email" : "",
 		"logo": ""
 	},
+	"smser": {
+		"type": ""
+  },
 	"collection" : {
 		"steps": [],
 		"processes": [],
