@@ -1547,8 +1547,12 @@ abstract class Billrun_Bill {
 
 	protected static function getRejectionRequiredAids($account_query){
 		$account = Billrun_Factory::account();
-		$currentAccounts = [];	
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$currentAccounts = [];
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", null);
+		if (is_null($rejection_required_conditions)) {
+			Billrun_Factory::log()->log("Rejection required conditions are not configured - no accounts require rejection in order to be in collection", Zend_Log::DEBUG);
+			return [];
+		}
 		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
 		$loadFromBills = true;

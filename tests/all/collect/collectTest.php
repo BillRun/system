@@ -316,11 +316,11 @@ class collectTest extends \Codeception\Test\Unit
 
     public function testCollectWithAidAndWithNullRejectionRquired()
     {
-        // rejection_required = null means empty customer conditions, which match every account -
-        // all accounts require a rejection, so debt alone must not keep an account in collection
+        // rejection_required = null means the conditions are not configured - rejections are not
+        // required for any account, so debt alone puts the account in collection
         $this->setRejectionRequiredSettings(null);
         try {
-            $this->tester->createAccountWithAllMandatoryCustomFields(['in_collection' => true]);
+            $this->tester->createAccountWithAllMandatoryCustomFields();
             $account = json_decode($this->tester->grabResponse(), true)['entity'];
             $aid = $account['aid'];
             $payment = [
@@ -331,9 +331,9 @@ class collectTest extends \Codeception\Test\Unit
             $options['aids'] = $aid;
             $this->tester->payApi($payment);
             $this->sendCollectCommand($options);
-            //out collection despite the debt, since the account has no rejections
-            $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
-            $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+            //in collection on the debt alone, since no rejection is required
+            $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
         } finally {
             // the config collection is not cleaned by cleanDB, and once rejection_required is null
             // ConfigModel::updateConfig throws "Category not found" for it - restore a real value
@@ -342,11 +342,11 @@ class collectTest extends \Codeception\Test\Unit
         }
     }
 
-    public function testCollectWithAidAndWithNullRejectionRquiredWithRejection()
+    public function testCollectWithAidAndWithEmptyRejectionRquiredConditionsWithRejection()
     {
-        // rejection_required = null makes every account require a rejection - so once the debt
-        // has a past rejection, the account must enter collection
-        $this->setRejectionRequiredSettings(null);
+        // empty customer conditions match every account - all accounts require a rejection,
+        // so the debt is only collectible once it has a past rejection
+        $this->setRejectionRequiredSettings(['conditions' => ['customers' => []]]);
         try {
             $this->tester->createAccountWithAllMandatoryCustomFields();
             $account = json_decode($this->tester->grabResponse(), true)['entity'];
@@ -368,6 +368,63 @@ class collectTest extends \Codeception\Test\Unit
             $this->tester->rejectPaymentApi([['id' => $fcPayment['txid'], 'rejection' => ['code' => '005']]]);
             $this->tester->seeInCollection('bills', ['aid' => $aid, 'dir' => 'tc', 'past_rejections' => ['$exists' => true, '$ne' => []]]);
             $this->sendCollectCommand($options);
+            //in collection
+            $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        } finally {
+            $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
+        }
+    }
+
+    public function testCollectWithoutAidsAndWithNullRejectionRquired()
+    {
+        // rejection_required = null means the conditions are not configured - rejections are not
+        // required for any account, so debt alone puts the account in collection
+        $this->setRejectionRequiredSettings(null);
+        try {
+            $this->tester->createAccountWithAllMandatoryCustomFields();
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $aid = $account['aid'];
+            $payment = [
+                "amount"=>10,
+                "aid"=>$aid,
+                "dir"=>"tc",
+            ];
+            $this->tester->payApi($payment);
+            $this->sendCollectCommand();
+            //in collection on the debt alone, since no rejection is required
+            $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        } finally {
+            $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
+        }
+    }
+
+    public function testCollectWithoutAidsAndWithEmptyRejectionRquiredConditionsWithRejection()
+    {
+        // empty customer conditions match every account - all accounts require a rejection,
+        // so the debt is only collectible once it has a past rejection
+        $this->setRejectionRequiredSettings(['conditions' => ['customers' => []]]);
+        try {
+            $this->tester->createAccountWithAllMandatoryCustomFields();
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $aid = $account['aid'];
+            $payment = [
+                "amount"=>10,
+                "aid"=>$aid,
+                "dir"=>"tc",
+            ];
+            $this->tester->payApi($payment);
+            $this->sendCollectCommand();
+            //debt alone is not collectible when every account requires a rejection
+            $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            //pay the debt, then reject the payment so the debt bill gets a past rejection
+            $payment['dir'] = 'fc';
+            $this->tester->payApi($payment);
+            $fcPayment = $this->tester->grabFromCollection('bills', ['aid' => $aid, 'dir' => 'fc']);
+            $this->tester->rejectPaymentApi([['id' => $fcPayment['txid'], 'rejection' => ['code' => '005']]]);
+            $this->tester->seeInCollection('bills', ['aid' => $aid, 'dir' => 'tc', 'past_rejections' => ['$exists' => true, '$ne' => []]]);
+            $this->sendCollectCommand();
             //in collection
             $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
             $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
