@@ -1384,7 +1384,7 @@ class Billrun_DiscountManager {
 			}
 			return $cdrs;
 		}
-		//if not a conditional *charge* then ...
+		//if not a monetary conditional *charge* then ...
 
 		$amountLimit = Billrun_Util::getIn($discount, 'limit', PHP_INT_MAX);
 
@@ -1438,7 +1438,7 @@ class Billrun_DiscountManager {
 				}
 
 				if(isset($line['before_rounding']['aprice'])){
-					$discountAmount = abs($cdr['aprice']);//the new discount amount after rounding
+					$discountAmount = abs($cdr['aprice']);//the new discount amount after rounding 
 					$lineAmountLimit = $line['aprice'];
 					if ($discountAmount >= 0  && (($discountedAmount + $discountAmount > $amountLimit) ||
 						($this->discountedLinesAmounts[$line['stamp']] + $discountAmount > $lineAmountLimit)) ) { // current discount reached limit
@@ -1705,15 +1705,17 @@ class Billrun_DiscountManager {
 	}
 
 	/**
-	 * BRCD-5421 - reconcile the upfront discounts of the previous cycle run with the discounts
-	 * deserved by the currently known data - the same reconciliation as the plan charges, run
-	 * through the upfront charge class of the plan the discount relates to
+	 * BRCD-5421 - reconcile the upfront discounts and percentage charges of the previous cycle run
+	 * with the ones deserved by the currently known data - the same reconciliation as the plan
+	 * charges, run through the upfront charge class of the plan the discount/charge relates to
 	 * (Billrun_Plans_Charge_Upfront::getDiscountRefund):
 	 * - both exist: give/charge back the difference (nothing when identical)
-	 * - only the newly deserved discount exists: give it as is
-	 * - only the old discount exists: charge it back fully
-	 * The deserved discounts are calculated by the regular (arrears) discount CDR generation, over
+	 * - only the newly deserved discount/charge exists: give it as is
+	 * - only the old discount/charge exists: charge it back fully
+	 * The deserved discounts/charges are calculated by the regular (arrears) CDR generation, over
 	 * the expected plan lines that the plan reconciliation calculated for the current cycle.
+	 * Monetary charges are anchored on their eligible lines rather than applied upfront - only
+	 * percentage charges are reconciled.
 	 *
 	 * @return array the reconciliation CDRs
 	 */
@@ -1731,48 +1733,58 @@ class Billrun_DiscountManager {
 		// 1. the expected (arrears) lines of the account upfront plans for the current cycle, as
 		//    regular lines (is_upfront false)
 		$expectedPlansLines = $this->getExpectedUpfrontPlanLines($aid);
-		// 2. the discounts these lines deserve - the regular CDRs generation over them (the CDRs
-		//    are temporary: only their amounts and periods are reconciled, they are never billed)
-		$expectedDiscountCdrs = [];
-		foreach (empty($expectedPlansLines) ? [] : $this->generateLinesCdrs($expectedPlansLines) as $expectedDiscountCdr) {
-			if (Billrun_Util::getFieldVal($expectedDiscountCdr['usaget'], '') != 'discount') {
-				continue; // only discounts are reconciled
+		// 2. the discounts/charges these lines deserve - the regular CDRs generation over them (the
+		//    CDRs are temporary: only their amounts and periods are reconciled, they are never billed)
+		$expectedCdrs = ['discount' => [], 'conditional_charge' => []];
+		foreach (empty($expectedPlansLines) ? [] : $this->generateLinesCdrs($expectedPlansLines) as $expectedCdr) {
+			$usaget = Billrun_Util::getFieldVal($expectedCdr['usaget'], '');
+			if (!isset($expectedCdrs[$usaget])) {
+				continue; // only discounts and conditional charges are reconciled
 			}
-			$expectedDiscountCdrs[$expectedDiscountCdr['key']][Billrun_Util::getFieldVal($expectedDiscountCdr['sid'], 0)][] = $expectedDiscountCdr;
+			$expectedCdrs[$usaget][$expectedCdr['key']][Billrun_Util::getFieldVal($expectedCdr['sid'], 0)][] = $expectedCdr;
 		}
 		Billrun_Plans_Charge_Upfront::clearExpectedCharges($aid, $this->cycle->key());
-		// 3. compare the deserved discounts with the old (previous run) upfront discount lines -
+		// 3. compare the deserved discounts/charges with the old (previous run) upfront lines -
 		//    the same reconciliation as the plan charges
-		$olds = Billrun_Plans_Charge_Upfront::loadPreviousUpfrontLines($aid, $prevKey, 'credit');
-		foreach (array_unique(array_merge(array_keys($olds), array_keys($expectedDiscountCdrs))) as $key) {
-			$discount = $this->getDiscount($key, $this->cycle->key());
-			if (!$discount) {
-				Billrun_Factory::log("Upfront discount reconciliation: cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
-				continue;
-			}
-			$sids = array_unique(array_merge(array_keys(Billrun_Util::getFieldVal($olds[$key], [])), array_keys(Billrun_Util::getFieldVal($expectedDiscountCdrs[$key], []))));
-			foreach ($sids as $sid) {
-				// the deserved discount CDRs as line price rows - the reconciliation works in the
-				// line price space, like the plan lines
-				$expectedRows = [];
-				foreach (Billrun_Util::getIn($expectedDiscountCdrs, [$key, $sid], []) as $expectedDiscountCdr) {
-					// the expected CDRs are temporary (never billed) - they cannot anchor the
-					// reconciliation CDR the way a real DB line does
-					unset($expectedDiscountCdr['stamp'], $expectedDiscountCdr['eligible_line']);
-					$expectedRows[] = array_merge($expectedDiscountCdr, ['value' => $expectedDiscountCdr['aprice']]);
+		foreach ($expectedCdrs as $usaget => $expectedTypeCdrs) {
+			$isCharge = $usaget == 'conditional_charge';
+			$olds = Billrun_Plans_Charge_Upfront::loadPreviousUpfrontLines($aid, $prevKey, 'credit', null, $usaget);
+			foreach (array_unique(array_merge(array_keys($olds), array_keys($expectedTypeCdrs))) as $key) {
+				$entity = $isCharge ? $this->getCharge($key, $this->cycle->key()) : $this->getDiscount($key, $this->cycle->key());
+				if (!$entity) {
+					Billrun_Factory::log("Upfront {$usaget} reconciliation: cannot get '{$key}', CDR was not generated", Billrun_Log::ERR);
+					continue;
 				}
-				$refundRows = $this->getUpfrontCharger($discount)->getDiscountRefund($expectedRows, Billrun_Util::getIn($olds, [$key, $sid], []));
-				foreach ($refundRows as $refundRow) {
-					$addToCdr = [
-						'is_upfront' => false,
-						'charge_op' => 'refund',
-					];
-					$cdr = $this->generateCdr('discounts', $discount, -$refundRow['value'], $refundRow, $addToCdr);
-					unset($cdr['value']);
-					if (empty($refundRow['stamp'])) {
-						unset($cdr['eligible_line']);
+				if ($isCharge && Billrun_Util::getIn($entity, 'type', 'percentage') == 'monetary') {
+					// monetary charges are not applied upfront - nothing to reconcile
+					continue;
+				}
+				$sids = array_unique(array_merge(array_keys(Billrun_Util::getFieldVal($olds[$key], [])), array_keys(Billrun_Util::getFieldVal($expectedTypeCdrs[$key], []))));
+				foreach ($sids as $sid) {
+					// the deserved CDRs as line price rows - the reconciliation works in the line
+					// price space, like the plan lines
+					$expectedRows = [];
+					foreach (Billrun_Util::getIn($expectedTypeCdrs, [$key, $sid], []) as $expectedCdr) {
+						// the expected CDRs are temporary (never billed) - they cannot anchor the
+						// reconciliation CDR the way a real DB line does
+						unset($expectedCdr['stamp'], $expectedCdr['eligible_line']);
+						$expectedRows[] = array_merge($expectedCdr, ['value' => $expectedCdr['aprice']]);
 					}
-					$cdrs[] = $cdr;
+					$refundRows = $this->getUpfrontCharger($entity)->getDiscountRefund($expectedRows, Billrun_Util::getIn($olds, [$key, $sid], []));
+					foreach ($refundRows as $refundRow) {
+						$addToCdr = [
+							'is_upfront' => false,
+							'charge_op' => 'refund',
+						];
+						// generateCdr negates the given amount for discounts and keeps it for
+						// charges - hand it the row line price accordingly
+						$cdr = $this->generateCdr($isCharge ? 'charge' : 'discounts', $entity, $isCharge ? $refundRow['value'] : -$refundRow['value'], $refundRow, $addToCdr);
+						unset($cdr['value']);
+						if (empty($refundRow['stamp'])) {
+							unset($cdr['eligible_line']);
+						}
+						$cdrs[] = $cdr;
+					}
 				}
 			}
 		}
@@ -2244,5 +2256,9 @@ class Billrun_DiscountManager {
 
 	public static function resetDiscountsCache(){
 		self::$discounts= [];
+	}
+
+	public static function resetChargesCache(){
+		self::$charges = [];
 	}
 }

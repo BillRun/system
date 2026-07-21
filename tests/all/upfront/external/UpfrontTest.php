@@ -24,9 +24,10 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->setTimezone('UTC');
         $this->tester->enableExternalModeSettings();
         \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
-        // the discounts static cache is keyed by cycle - tests sharing cycle keys must not see
-        // each other's (cleaned) discounts
+        // the discounts/charges static caches are keyed by cycle - tests sharing cycle keys must
+        // not see each other's (cleaned) discounts/charges
         \Billrun_DiscountManager::resetDiscountsCache();
+        \Billrun_DiscountManager::resetChargesCache();
     }
 
     protected function _after()
@@ -822,9 +823,9 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertNotEmpty($planLine, 'upfront plan line was not created');
         // 15 days (the arrears convention - the deactivation day is not charged) out of 31
         $this->assertEqualsWithDelta(100 * 15 / 31, $planLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-01-01 00:00:00'), $planLine['start']->toDateTime()->getTimestamp());
         // the arrears convention - the charge period ends a second before the deactivation
-        $this->assertEquals(strtotime('2026-01-16 00:00:00') - 1, $planLine['end_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-01-16 00:00:00'), $planLine['end']->toDateTime()->getTimestamp());
 
         // the December charge did not change - no reconciliation line
         $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
@@ -856,9 +857,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertEquals('202601', $reconcileLine['billrun']);
         // expected 15/31 of the month (the arrears convention), charged a full month -> credit the difference
         $this->assertEqualsWithDelta(100 * 15 / 31 - 100, $reconcileLine['aprice'], $this->epsilon);
-        // the line carries the corrected (expected) charge period
-        $this->assertEquals(strtotime('2025-12-01 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime('2025-12-16 00:00:00') - 1, $reconcileLine['end_date']->toDateTime()->getTimestamp());
+        // the line carries the corrected refund period
+        $this->assertEquals(strtotime('2025-12-16 00:00:00'), $reconcileLine['start']->toDateTime()->getTimestamp());
 
         // the plan deactivates before the next cycle starts - no new upfront charge
         $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601'));
@@ -871,7 +871,9 @@ class UpfrontTest extends \Codeception\Test\Unit
     /**
      * 3. A plan that no longer exists in the subscriber records is not reconciled - the
      *    reconciliation is driven by the plan charge flow, so a record must exist (e.g. via
-     *    plan_deactivation). A fully removed plan keeps its previous charge untouched.
+     *    plan_deactivation). The previous run pays nothing for it either - a plan that is not
+     *    active at the start of the prepaid cycle is not charged upfront (in the full fraction
+     *    legacy mode as well).
      */
     public function testRemovedPlanIsNotReconciled()
     {
@@ -884,7 +886,8 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->tester->generatePlan(['name' => $removedPlan, 'upfront' => 1]);
         $this->tester->generatePlan(['name' => $arrearsPlan, 'price' => [['price' => 50, 'from' => 0, 'to' => 'UNLIMITED']]]);
         // the subscriber held the upfront plan until 2025-11-25 and switched to the arrears
-        // plan - the previous run (not knowing the change) charged December for the upfront plan
+        // plan - the previous run pays nothing for December (the upfront plan is not active at
+        // its start), and the removed plan leaves no record in the tested cycle
         $this->runCycleWithPrevious($this->defaultOptions);
 
         // no record of the removed plan - nothing reconciles it
@@ -918,7 +921,6 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
         $this->assertEquals('refund', $reconcileLine['charge_op']);
         $this->assertEqualsWithDelta(100, $reconcileLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2025-12-01 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
 
         // the regular upfront charge of January
         $upfrontLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
@@ -1001,10 +1003,11 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     /**
-     * 8. The previous run charged December fully, and now it is known that the plan was deactivated
-     *    before December started (2025-11-25, recorded after that run) and re-activated in the middle
-     *    of December (2025-12-16) - the reconciliation credits the difference between the re-activated
-     *    period and the full month that was charged, and January is paid upfront.
+     * 8. The plan was deactivated before December started (2025-11-25) and re-activated in its
+     *    middle (2025-12-16) - the previous run pays nothing for December, since a plan that is
+     *    not active at the start of the prepaid cycle is not charged (in the full fraction legacy
+     *    mode as well). The reconciliation charges the re-activated period as a missed charge,
+     *    and January is paid upfront.
      */
     public function testReactivatedPlanReconcilesThePreviousCharge()
     {
@@ -1014,25 +1017,24 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
         $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
-        // the previous run charged a full month, not knowing the deactivation and re-activation
+        // the previous run pays nothing for December - the plan is not active at its start
         $this->runCycleWithPrevious($this->defaultOptions);
 
-        // the plan was active only from the re-activation (16/31), but a full month was charged -
-        // the reconciliation credits the difference
+        // the plan was active only from the re-activation (16/31) and nothing was paid upfront -
+        // the reconciliation charges the missed period as is
         $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
-        $this->assertEqualsWithDelta(100 * 16 / 31 - 100, $reconcileLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2025-12-16 00:00:00'), $reconcileLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEqualsWithDelta(100 * 16 / 31, $reconcileLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2025-12-16 00:00:00'), $reconcileLine['start']->toDateTime()->getTimestamp());
 
         // January is paid upfront as usual
-        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'prorated_start_date' => $this->mongoDate('2026-01-01 00:00:00')));
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'is_upfront' => true));
         $this->assertNotEmpty($upfrontLine, 'upfront plan line was not created');
         $this->assertEqualsWithDelta(100, $upfrontLine['aprice'], $this->epsilon);
-        $this->assertTrue(!empty($upfrontLine['is_upfront']));
 
-        // 16/31*100 - 100 (reconciliation) + 100 (January upfront)
+        // 16/31*100 (reconciliation) + 100 (January upfront)
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
-        $this->assertEqualsWithDelta(100 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+        $this->assertEqualsWithDelta(100 + 100 * 16 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
 
 
@@ -1050,14 +1052,15 @@ class UpfrontTest extends \Codeception\Test\Unit
         $this->defaultOptions['stamp'] = '202601';
         $this->defaultOptions['force_accounts'] = [$aid];
         $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
-        // the previous run charged December fully, and gave no discount (it only starts in the
-        // middle of December - after that run charge time)
+        // the previous run pays nothing for December (the plan is not active at its start) and
+        // gives no discount
         $this->runCycleWithPrevious($this->defaultOptions);
 
-        // both a refund line (the December reconciliation) and an upfront line (January) exist
+        // both a refund line (the missed December re-activated period) and an upfront line
+        // (January) exist
         $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
         $this->assertNotEmpty($reconcileLine, 'reconciliation line was not created');
-        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601'));
+        $upfrontLine = $this->tester->grabFromCollection('lines', array('type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid, 'billrun' => '202601', 'is_upfront' => true));
         $this->assertNotEmpty($upfrontLine, 'upfront plan line was not created');
 
         // the discount CDRs of the run - grouped by their cycle window to prove no duplicates
@@ -1079,9 +1082,9 @@ class UpfrontTest extends \Codeception\Test\Unit
         // the deserved part is given by the reconciliation, once
         $this->assertEqualsWithDelta(-10 * 16 / 31, $currentCycleAmount, $this->epsilon);
 
-        // plan: 16/31*100 - 100 (reconciliation) + 100 (January upfront), discounts as above
+        // plan: 16/31*100 (reconciliation) + 100 (January upfront), discounts as above
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
-        $this->assertEqualsWithDelta(90 * 16 / 31 - 10, $billrun['totals']['before_vat'], $this->epsilon);
+        $this->assertEqualsWithDelta(100 + 90 * 16 / 31 - 10, $billrun['totals']['before_vat'], $this->epsilon);
     }
 
     /**
@@ -1132,7 +1135,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
         $this->assertNotEmpty($planLine, 'upfront plan line was not created');
         $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $planLine['start']->toDateTime()->getTimestamp());
 
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => $this->defaultOptions['stamp'], 'aid' => $aid));
         $this->assertEqualsWithDelta(100 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
@@ -1159,14 +1162,14 @@ class UpfrontTest extends \Codeception\Test\Unit
         $oldPlanLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $oldPlan, 'aid' => $aid, 'charge_op' => 'charge'));
         $this->assertNotEmpty($oldPlanLine, 'previous plan upfront line was not created');
         $this->assertEqualsWithDelta(100 * 14 / 31, $oldPlanLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-07-01 00:00:00'), $oldPlanLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-07-01 00:00:00'), $oldPlanLine['start']->toDateTime()->getTimestamp());
 
         // the new plan is known to start on 2026-07-15 - its prepaid July part is prorated
         // (17 of 31 days)
         $newPlanLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'name' => $newPlan, 'aid' => $aid, 'charge_op' => 'charge'));
         $this->assertNotEmpty($newPlanLine, 'new plan upfront line was not created');
         $this->assertEqualsWithDelta(100 * 17 / 31, $newPlanLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $newPlanLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-07-15 00:00:00'), $newPlanLine['start']->toDateTime()->getTimestamp());
 
         // June was charged correctly for the previous plan - nothing to reconcile
         $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => $this->defaultOptions['stamp'], 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
@@ -1301,7 +1304,7 @@ class UpfrontTest extends \Codeception\Test\Unit
             $planLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
             $this->assertNotEmpty($planLine, 'upfront plan line was not created');
             $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
-            $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+            $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['start']->toDateTime()->getTimestamp());
 
             // the account decides not to activate any plan after all - the activation is cancelled
             $cancelled = json_decode($original, true);
@@ -1360,7 +1363,7 @@ class UpfrontTest extends \Codeception\Test\Unit
         $planLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
         $this->assertNotEmpty($planLine, 'upfront plan line was not created');
         $this->assertEqualsWithDelta(100 * 17 / 31, $planLine['aprice'], $this->epsilon);
-        $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['prorated_start_date']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planLine['start']->toDateTime()->getTimestamp());
         $refundLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'aid' => $aid, 'charge_op' => 'refund'));
         $this->assertEmpty($refundLine, 'nothing was charged before - no reconciliation line was expected');
     }
@@ -1390,7 +1393,7 @@ class UpfrontTest extends \Codeception\Test\Unit
                 ->query(array('billrun' => '202607', 'aid' => $aid, 'type' => 'flat', 'charge_op' => 'charge'))
                 ->cursor());
         $this->assertCount(2, $chargeLines, 'each plan revision pays its own part of the prepaid month');
-        usort($chargeLines, function ($a, $b) { return $a['prorated_start_date']->sec - $b['prorated_start_date']->sec; });
+        usort($chargeLines, function ($a, $b) { return $a['start']->sec - $b['start']->sec; });
         // [Jul 1, Jul 10) - the arrears convention - the deactivation day is not charged
         $this->assertEquals(strtotime('2026-07-01 00:00:00'), $chargeLines[0]['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime('2026-07-10 00:00:00'), $chargeLines[0]['end']->toDateTime()->getTimestamp());
@@ -1474,7 +1477,7 @@ class UpfrontTest extends \Codeception\Test\Unit
                 ->query(array('billrun' => '202607', 'aid' => $aid, 'type' => 'flat', 'name' => $heldPlan, 'charge_op' => 'charge'))
                 ->cursor());
         $this->assertCount(2, $heldPlanLines, 'each revision of the held plan pays its own part of the prepaid month');
-        usort($heldPlanLines, function ($a, $b) { return $a['prorated_start_date']->sec - $b['prorated_start_date']->sec; });
+        usort($heldPlanLines, function ($a, $b) { return $a['start']->sec - $b['start']->sec; });
         $this->assertEquals(strtotime('2026-07-01 00:00:00'), $heldPlanLines[0]['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime('2026-07-10 00:00:00'), $heldPlanLines[0]['end']->toDateTime()->getTimestamp());
         $this->assertEqualsWithDelta(100 * 9 / 31, $heldPlanLines[0]['aprice'], $this->epsilon);
@@ -1693,5 +1696,64 @@ class UpfrontTest extends \Codeception\Test\Unit
         // expected one - no correction
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
         $this->assertEqualsWithDelta(180, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 22. A percentage conditional charge on an upfront plan is reconciled like the plan and its
+     *     discounts: the 202512 run paid December's plan (100) and its 10% charge (10) upfront,
+     *     then the subscriber deactivates retroactively at 2025-12-16 - the 202601 run credits
+     *     back the unheld [Dec 16, Jan 1) part of the plan AND of its percentage charge.
+     */
+    public function testUpfrontPercentageChargeIsReconciled()
+    {
+        $aid = 41021;
+        $sid = 51021;
+        $planName = 'UPFRONT_ADV_PLAN21';
+        $chargeKey = 'UPFRONT_ADV_CHARGE21';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+        $this->tester->generateConditaionlCharge([
+            'key' => $chargeKey,
+            'type' => 'percentage',
+            'from' => '2025-01-01',
+            'subject' => ['plan' => [$planName => ['value' => 0.1]]],
+        ]);
+
+        $fixturePath = __DIR__ . '/../../../../docker/billrun-docker/mockup-servers/crm_data/' . $aid . '.json';
+        $original = file_get_contents($fixturePath);
+        try {
+            // the previous run pays December upfront - the plan and its 10% charge - not knowing
+            // the (future recorded) deactivation
+            $this->defaultOptions['stamp'] = '202512';
+            $this->tester->runCycle($this->defaultOptions);
+            $oldChargeLine = $this->tester->grabFromCollection('lines', array('billrun' => '202512', 'aid' => $aid, 'usaget' => 'conditional_charge', 'charge_op' => 'charge', 'is_upfront' => true));
+            $this->assertNotEmpty($oldChargeLine, 'upfront charge CDR was not created by the previous run');
+            $this->assertEqualsWithDelta(10, $oldChargeLine['aprice'], $this->epsilon);
+
+            // the subscriber deactivates retroactively in the middle of the prepaid December
+            $changed = str_replace('2026-01-16 00:00:00', '2025-12-16 00:00:00', $original);
+            file_put_contents($fixturePath, $changed);
+
+            $this->defaultOptions['stamp'] = '202601';
+            $this->tester->runCycle($this->defaultOptions);
+        } finally {
+            file_put_contents($fixturePath, $original);
+        }
+
+        // the plan credits back the unheld [Dec 16, Jan 1) period
+        $planReconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => '202601', 'aid' => $aid, 'type' => 'flat', 'charge_op' => 'refund'));
+        $this->assertNotEmpty($planReconcileLine, 'plan reconciliation line was not created');
+        $this->assertEqualsWithDelta(100 * 15 / 31 - 100, $planReconcileLine['aprice'], $this->epsilon);
+
+        // and so does its percentage charge
+        $chargeReconcileCdr = $this->tester->grabFromCollection('lines', array('billrun' => '202601', 'aid' => $aid, 'usaget' => 'conditional_charge', 'charge_op' => 'refund'));
+        $this->assertNotEmpty($chargeReconcileCdr, 'charge reconciliation CDR was not created');
+        $this->assertEquals($chargeKey, $chargeReconcileCdr['key']);
+        $this->assertEquals($sid, $chargeReconcileCdr['sid']);
+        $this->assertEqualsWithDelta(10 * 15 / 31 - 10, $chargeReconcileCdr['aprice'], $this->epsilon);
+
+        // deactivated before January - no new upfront lines, the invoice holds the two credits
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
+        $this->assertEqualsWithDelta((100 * 15 / 31 - 100) + (10 * 15 / 31 - 10), $billrun['totals']['before_vat'], $this->epsilon);
     }
 }

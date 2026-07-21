@@ -287,8 +287,10 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		if( $this->activation > ($fullFraction ? $this->cycle->end() : $nextCycle->end()) || $this->deactivation < $this->cycle->start()) {
 			return null;
 		}
-		if (!$fullFraction && !empty($this->deactivation) && $this->deactivation <= $nextCycle->start()) {
-			// the plan is already known to end before the next cycle starts - nothing to pay upfront
+		if (!empty($this->deactivation) && $this->deactivation <= $nextCycle->start()) {
+			// the plan is already known to end before the next cycle starts - nothing to pay
+			// upfront. this holds in the full fraction mode as well - legacy never paid the next
+			// cycle for a plan not active at its start
 			return null;
 		}
 		$arrearsCharge = $this->getArrearsCharge($nextCycle, $fullFraction);
@@ -407,11 +409,12 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @param int $aid
 	 * @param string $previousBillrunKey
 	 * @param string $type 'flat' - the upfront plan lines, grouped by plan name
-	 * 					   'credit' - the upfront discount lines, grouped by discount key and sid
+	 * 					   'credit' - the upfront discount/charge lines, grouped by key and sid
 	 * @param int|null $sid limit to a single subscriber (null - the whole account)
+	 * @param string $usaget the credit lines kind - 'discount' / 'conditional_charge'
 	 * @return array
 	 */
-	public static function loadPreviousUpfrontLines($aid, $previousBillrunKey, $type = 'flat', $sid = null) {
+	public static function loadPreviousUpfrontLines($aid, $previousBillrunKey, $type = 'flat', $sid = null, $usaget = 'discount') {
 		$query = array(
 			'aid' => $aid,
 			'billrun' => $previousBillrunKey,
@@ -420,8 +423,8 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			'charge_op' => 'charge',
 		);
 		if ($type == 'credit') {
-			// credit lines also include conditional charges / manual credits
-			$query['usaget'] = 'discount';
+			// credit lines also include manual credits - take only the requested reconciled kind
+			$query['usaget'] = $usaget;
 		}
 		if (!is_null($sid)) {
 			$query['sid'] = $sid;
