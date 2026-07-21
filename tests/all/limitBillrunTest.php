@@ -114,8 +114,7 @@ class limitBillrunTest extends \Codeception\Test\Unit
         $this->tester->seeInCollection('billrun', [
             'billrun_key' => $stamp,
             'aid' =>  $data['account']['aid'],
-            'subs.sid' => $data['subscriber'][0]['sid'],
-        ]);
+            'sid'=>$data['subscriber'][0]['sid']        ]);
     } 
  
 }
