@@ -186,4 +186,113 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202609', 'aid' => $aid));
         $this->assertEqualsWithDelta(-100 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
     }
+
+    /**
+     * An account holding upfront plan A until 2026-08-15 and upfront plan B from then on (the
+     * change is recorded in advance), cycle 202608 paying August upfront. The plan B revision
+     * only starts within the next (upfront paid) cycle.
+     * @return int the aid
+     */
+    protected function preparePlanChangeMidNextCycleAccount()
+    {
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $account = json_decode($this->tester->grabResponse(), true)['entity'];
+        $aid = $account['aid'];
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => 'UPFRONT_ADV_PLAN_DB3A', 'upfront' => 1, 'price' => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]]]);
+        $this->tester->generatePlan(['name' => 'UPFRONT_ADV_PLAN_DB3B', 'upfront' => 1, 'price' => [["price" => 200, "from" => 0, "to" => "UNLIMITED"]]]);
+        $this->tester->generateSubscriber([
+            'aid' => $aid,
+            'from' => '2026-07-01T00:00:00Z',
+            'plan' => 'UPFRONT_ADV_PLAN_DB3A',
+        ]);
+        // the plan change is recorded in advance - the plan A revision closes at 2026-08-15 and a
+        // plan B revision opens from then on
+        $changeDate = new Mongodloid_Date(strtotime('2026-08-15 00:00:00'));
+        $subscribersCollection = \Billrun_Factory::db()->subscribersCollection();
+        $subscriberQuery = array('aid' => $aid, 'type' => 'subscriber');
+        $revA = $subscribersCollection->query($subscriberQuery)->cursor()->current()->getRawData();
+        $subscribersCollection->update($subscriberQuery, array('$set' => array(
+            'to' => $changeDate,
+            'plan_deactivation' => $changeDate,
+        )), array('multiple' => true));
+        $revB = $revA;
+        unset($revB['_id']);
+        $revB['from'] = $changeDate;
+        $revB['plan_activation'] = $changeDate;
+        $revB['plan'] = 'UPFRONT_ADV_PLAN_DB3B';
+        $revB['to'] = new Mongodloid_Date(strtotime('2200-01-01 00:00:00'));
+        $subscribersCollection->insert($revB);
+        return $aid;
+    }
+
+    /**
+     * BRCD-5421 - by default the billable window is the current cycle only, so the plan B
+     * revision (starting in the middle of the next cycle) is not returned by getBillable - the
+     * run only knows plan A ends at 2026-08-15 and pays its part of August in advance.
+     */
+    public function testPlanChangeMidPrepaidCycleIsNotSeenWithoutNextCycleBillable_DB()
+    {
+        $aid = $this->preparePlanChangeMidNextCycleAccount();
+
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+
+        $planALine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => 'UPFRONT_ADV_PLAN_DB3A', 'aid' => $aid, 'charge_op' => 'charge', 'is_upfront' => true));
+        $this->assertNotEmpty($planALine, 'plan A upfront line was not created');
+        $this->assertEqualsWithDelta(100 * 14 / 31, $planALine['aprice'], $this->epsilon);
+
+        // the plan B revision only exists in the next cycle - the billable query does not return
+        // it, so its part of August is not charged (it will be settled by the next cycle
+        // reconciliation)
+        $planBLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => 'UPFRONT_ADV_PLAN_DB3B', 'aid' => $aid));
+        $this->assertEmpty($planBLine, 'plan B was not expected to be known to the run');
+
+        // no previous run paid July upfront - the reconciliation charges plan A's July as missed
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'the missed July reconciliation line was not created');
+        $this->assertEqualsWithDelta(100, $reconcileLine['aprice'], $this->epsilon);
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 + 100 * 14 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * BRCD-5421 - like the previous test, with billrun.upfront.billable_next_cycle set: the
+     * billable window is extended by one cycle, the plan B revision is returned, and its part of
+     * the prepaid August is charged in advance as well.
+     */
+    public function testBillableNextCycleChargesPlanChangeMidPrepaidCycleInAdvance_DB()
+    {
+        $aid = $this->preparePlanChangeMidNextCycleAccount();
+
+        \Billrun_Factory::config()->setConfigValue('billrun.upfront.billable_next_cycle', true);
+        try {
+            $this->defaultOptions['stamp'] = '202608';
+            $this->tester->runCycle($this->defaultOptions);
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('billrun.upfront.billable_next_cycle', false);
+        }
+
+        $planALine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => 'UPFRONT_ADV_PLAN_DB3A', 'aid' => $aid, 'charge_op' => 'charge', 'is_upfront' => true));
+        $this->assertNotEmpty($planALine, 'plan A upfront line was not created');
+        $this->assertEqualsWithDelta(100 * 14 / 31, $planALine['aprice'], $this->epsilon);
+
+        // the extended window returns the plan B revision - its [Aug 15, Sep 1) part of the
+        // prepaid August is charged in advance, prorated from the activation
+        $planBLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => 'UPFRONT_ADV_PLAN_DB3B', 'aid' => $aid, 'charge_op' => 'charge', 'is_upfront' => true));
+        $this->assertNotEmpty($planBLine, 'plan B upfront line was not created');
+        $this->assertEqualsWithDelta(200 * 17 / 31, $planBLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-08-15 00:00:00'), $planBLine['prorated_start_date']->toDateTime()->getTimestamp());
+
+        // no previous run paid July upfront - the reconciliation charges plan A's July as missed
+        // (plan B holds nothing within July - the extended window does not affect the
+        // reconciliation)
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($reconcileLine, 'the missed July reconciliation line was not created');
+        $this->assertEqualsWithDelta(100, $reconcileLine['aprice'], $this->epsilon);
+
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => $aid));
+        $this->assertEqualsWithDelta(100 + 100 * 14 / 31 + 200 * 17 / 31, $billrun['totals']['before_vat'], $this->epsilon);
+    }
 }
