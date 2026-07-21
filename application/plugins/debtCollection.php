@@ -53,12 +53,12 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function isCollectOnTransactionsResponseFileDisabled() {
-		return empty($this->options['collectOnTransactionsResponseFile']);
+	public function isCollectOnTransactionsResponseFileEnabled() {
+		return $this->options['collectOnTransactionsResponseFile'] ?? true;
 	}
 
 	public function afterChargeSuccess($bill) {
-		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+		if (self::$processingTransactionsResponseFile && !$this->isCollectOnTransactionsResponseFileEnabled()) {
 			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
 			return;
 		}
@@ -76,7 +76,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterRefundSuccess($bill) {
-		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+		if (self::$processingTransactionsResponseFile && !$this->isCollectOnTransactionsResponseFileEnabled()) {
 			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
 			return;
 		}
@@ -94,7 +94,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterRejection($bill) {
-		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+		if (self::$processingTransactionsResponseFile && !$this->isCollectOnTransactionsResponseFileEnabled()) {
 			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
 			return;
 		}
@@ -130,7 +130,7 @@ class debtCollectionPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateConfirmation($bill) {
-		if (self::$processingTransactionsResponseFile && $this->isCollectOnTransactionsResponseFileDisabled()) {
+		if (self::$processingTransactionsResponseFile && !$this->isCollectOnTransactionsResponseFileEnabled()) {
 			Billrun_Factory::log('Debt collection - collect on transactions response file is disabled, skipping collect for aid ' . $bill['aid'], Zend_Log::DEBUG);
 			return;
 		}
