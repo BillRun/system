@@ -40,7 +40,7 @@ class Billrun_DiscountManager {
 
 	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
 		$this->cycle = $cycle;
-		$this->aid = $this->getAid($accountRevisions, $subscribersRevisions);
+		$this->aid = $accountRevisions[0]['aid'] ?? null;
 		$rawAccountRevisions = $accountRevisions;
 		$this->prepareRevisions($accountRevisions, $subscribersRevisions);
 		$this->loadEligibleDiscounts($accountRevisions, $subscribersRevisions);
@@ -48,28 +48,6 @@ class Billrun_DiscountManager {
 		if (isset($params['upfront_subscribers_revisions'])) {
 			$this->loadUpfrontCycleEligibility($rawAccountRevisions, $params['upfront_subscribers_revisions']);
 		}
-	}
-
-	/**
-	 * The account id of the given revisions
-	 * @param array $accountRevisions
-	 * @param array $subscribersRevisions
-	 * @return int|null
-	 */
-	protected function getAid($accountRevisions, $subscribersRevisions) {
-		foreach ($accountRevisions as $accountRevision) {
-			if (isset($accountRevision['aid'])) {
-				return $accountRevision['aid'];
-			}
-		}
-		foreach ($subscribersRevisions as $subscriberRevisions) {
-			foreach ($subscriberRevisions as $subscriberRevision) {
-				if (isset($subscriberRevision['aid'])) {
-					return $subscriberRevision['aid'];
-				}
-			}
-		}
-		return null;
 	}
 
 	/**

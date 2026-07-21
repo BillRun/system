@@ -42,7 +42,14 @@ class Billrun_Plans_Charge {
 		// Check if has refund
 		if ($chargeObj instanceof Billrun_Plans_Charge_Upfront) {
 			$refund = $chargeObj->getRefund($cycle,Billrun_Util::getFieldVal($entityData['quantity'], 1));
-			if ($refund !== null) {
+			if ($refund !== null && !Billrun_Factory::config()->getConfigValue('billrun.flats.generate_zero_refunds',true)) {
+				// drop zero value refunds - the whole refund in the legacy single refund shape, per
+				// row in the reconciliation rows list shape
+				$refund = isset($refund['value'])
+					? (!empty($refund['value']) ? $refund : null)
+					: array_values(array_filter($refund, function ($row) { return !empty($row['value']); }));
+			}
+			if (!empty($refund)) {
 				$results['refund'] = $refund;
 			}
 		}
