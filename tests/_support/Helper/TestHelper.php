@@ -179,6 +179,34 @@ class TestHelper extends \Codeception\Module {
     }
 
     /**
+     * Clear the Billrun_Base::$instance singleton cache via reflection.
+     *
+     * Billrun_Base::getInstance() caches every instance it constructs by a
+     * hash of its constructor args, so tests that change config a calc reads
+     * at construction time (e.g. customer.calculator.bulk, a freshly added
+     * file_type) need to drop the cache — otherwise the next getInstance()
+     * returns the stale instance built with the old config.
+     */
+    public function resetBillrunInstances()
+    {
+        $instances = new \ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
+
+        // Billrun_Factory keeps its OWN process-wide singletons that survive
+        // Billrun_Base::$instance clearing — most notably $subscriber and
+        // $accounts. These latch on subscribers.subscriber.type at first
+        // access, so once a Db subscriber is cached, every subsequent test
+        // gets the same Db instance even after the config flips to external.
+        // Clear them so the next factory call rebuilds against fresh config.
+        foreach (['subscriber', 'accounts'] as $prop) {
+            $factoryProp = new \ReflectionProperty('Billrun_Factory', $prop);
+            $factoryProp->setAccessible(true);
+            $factoryProp->setValue(null, null);
+        }
+    }
+
+    /**
      * Drive the file processor over the given path, which may be either a
      * single file or a directory of files. A directory is iterated in one
      * processor run so any cached calculators are reused across files (the

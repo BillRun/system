@@ -979,7 +979,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return false;
       }
       $activationDatetime = $inaNumberRevison['activationDatetime'] ? strtotime($inaNumberRevison['activationDatetime']) : null;
@@ -1510,7 +1510,19 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         return;
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
-      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
+      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : false;
+  }
+
+  public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$allowMultiRetries){
+      $matchingPaths = $this->matchingPathsByType[$row['type']] ?? null;
+      if(empty($matchingPaths)){
+        return;
+      }
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
+      $duration = Billrun_Util::getIn($row, $durationPath);
+      if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false && empty($duration)){
+        $allowMultiRetries = false;
+      }
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
@@ -1541,7 +1553,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function addCfTeldasFieldsByInaNumber($inaNumberRevison, &$row){
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return;
       }
       $row['cf']['Tariff'] = "INA_" . strval($inaNumberRevison['tariffProfile']);

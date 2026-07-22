@@ -41,7 +41,10 @@ class BillRunAPI extends \Codeception\Module{
             /** @var REST $rest */
             $rest = $this->getModule('REST');
 
-            $rest->sendPOST('oauth2/token', [
+            // Leading slash is required: PhpBrowser resolves a relative URI
+            // against the last visited page, so after e.g. /api/settings a
+            // bare 'oauth2/token' becomes /api/oauth2/token (404).
+            $rest->sendPOST('/oauth2/token', [
                 'grant_type' => 'client_credentials',
                 'client_id' => $testUser,
                 'client_secret' => $testSecret,

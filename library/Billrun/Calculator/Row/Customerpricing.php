@@ -204,10 +204,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
-
-		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this));
+		$allowMultiRetries =  true;
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this, &$allowMultiRetries));
 		$pricingData = $this->updateBalance($this->rate, $this->plan, $this->usaget, $this->usagev);
-		if ($pricingData === false) {
+		if ($pricingData === false && $allowMultiRetries) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
 			if (++$this->countConcurrentRetries >= $this->concurrentMaxRetries) {
@@ -216,6 +216,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance();
+		}
+		if ($pricingData === false) {
+			return false;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
@@ -1136,8 +1139,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usageType = $this->row['usaget'];
 		$prepricedMapping = Billrun_Factory::config()->getLineTypeConfigByName($this->row['type'], true, $this->row['linet'] ?? null)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
-		$aprice = Billrun_util::getIn($userFields, $apriceField);
-                		Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
+		$aprice = $apriceBeforeTrigger = Billrun_util::getIn($userFields, $apriceField, null);
+        Billrun_Factory::dispatcher()->trigger('beforeGetLineAprice', array($this->row, &$aprice));
 		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
@@ -1148,8 +1151,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			return $aprice;
 		}
-		
-		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
+		if($aprice === $apriceBeforeTrigger){//If different probably change in trigger so no need this alert
+			Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
+		}
 		return false;
 	}
 	
