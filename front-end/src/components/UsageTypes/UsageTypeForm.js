@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import changeCase from 'change-case';
 import Field from '@/components/Field';
 import { ModalWrapper } from '@/components/Elements';
@@ -82,9 +83,9 @@ class UsageTypeForm extends Component {
     const uom = this.getAvailableUom();
     return (
       <ModalWrapper title="Activity Type" show={true} onOk={this.props.onSave} onCancel={this.props.onCancel} labelOk="OK" >
-        <Form horizontal>
+        <Form className="form-horizontal">
           <FormGroup validationState={this.state.activityTypeError !== '' ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={4}>
+            <Col as={ControlLabel} sm={4}>
               Activity Type
             </Col>
             <Col sm={5}>
@@ -101,7 +102,7 @@ class UsageTypeForm extends Component {
 
           </FormGroup>
           <FormGroup validationState={this.state.propertyTypeError !== '' ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={4}>
+            <Col as={ControlLabel} sm={4}>
               Property Type
             </Col>
             <Col sm={5}>
@@ -119,7 +120,7 @@ class UsageTypeForm extends Component {
           </FormGroup>
           {this.props.selectUoms && (
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={4}>
+              <Col as={ControlLabel} sm={4}>
                 Invoice Unit of Measure
               </Col>
               <Col sm={5}>
@@ -134,7 +135,7 @@ class UsageTypeForm extends Component {
           )}
           {this.props.selectUoms && (
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={4}>
+              <Col as={ControlLabel} sm={4}>
                 Default Unit of Measure
               </Col>
               <Col sm={5}>

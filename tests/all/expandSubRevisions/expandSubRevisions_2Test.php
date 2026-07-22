@@ -10,21 +10,24 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
 
     protected function _before()
     {
+      $this->tester->setTimezone('UTC');
       $this->tester->cleanDB();
     }
 
-    protected function _after()
+     protected function _after()
     {
+      $this->tester->restoreTimezone();
     }
     
     
     public function test_expandSubRevisions_2(){
+        $uniqueTs = (string) ((int) (microtime(true) * 1000000));
         //3 services that end on the same revision and each starts on a different date – 4 revisions
         $plan = 
         [
 
             "from" => "2024-08-03T22:00:00Z",
-            "name" => "PLAN_A" . time(),
+            "name" => "PLAN_A" . $uniqueTs,
             "price" => [
                 [
                     "price" => 0,
@@ -47,7 +50,7 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $service1 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_1" . time(),
+            'name' => "SERVICE_1" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service1 = $this->tester->generateService($service1);
@@ -55,7 +58,7 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
 
         $service2 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_2" . time(),
+            'name' => "SERVICE_2" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service2 = $this->tester->generateService($service2);
@@ -63,7 +66,7 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
 
         $service3 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_3" . time(),
+            'name' => "SERVICE_3" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
         $service3 = $this->tester->generateService($service3);
@@ -114,6 +117,9 @@ class expandSubRevisions_2Test extends \Codeception\Test\Unit
         $subscriber['from'] =  $subscriber['from']['sec'];
         $subscriber['to'] =  $subscriber['to']['sec'];
         $stamp = "202511";
+
+        $timezone = date_default_timezone_get();
+        $t = \Billrun_Factory::config()->getConfigValue('billrun.timezone');
         $cycle = new Billrun_DataTypes_CycleTime($stamp);
         $subRevisions = Billrun_Cycle_Account::expandSubRevisions($subscriber, $cycle->start(),$cycle->end(), $services);
 		$this->assertEquals(4, count($subRevisions));

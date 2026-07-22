@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Form, Panel } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { ActionButtons, Stepper } from '@/components/Elements';
 import Segmentation from './Steps/Segmentation';
 import Filtration from './Steps/Filtration';
@@ -121,7 +123,14 @@ class ExportGeneratorSetup extends Component {
 
     switch (step.id) {
       case 'segmentation':
-        return (<Segmentation data={exportGenerator} onChange={this.onChangeValue} onRemove={this.onRemoveValue} mode={mode} />);
+        return (
+          <Segmentation
+            data={exportGenerator}
+            onChange={this.onChangeValue}
+            onRemove={this.onRemoveValue}
+            mode={mode}
+          />
+        );
       case 'filtration':
         return (<Filtration data={exportGenerator} onChange={this.onChangeValue} onRemove={this.onRemoveValue} />);
       case 'mapping':
@@ -179,7 +188,7 @@ class ExportGeneratorSetup extends Component {
     return (
       <div className="Importer">
         <Panel header={this.renderStepper()} className="mb0">
-          <Form horizontal className="mb0">
+          <Form className="mb0 form-horizontal">
             {this.renderStepContent()}
           </Form>
         </Panel>
@@ -194,4 +203,4 @@ const mapStateToProps = (state, props) => ({
   exportGeneratorName: props.params.name,
 });
 
-export default connect(mapStateToProps)(ExportGeneratorSetup);
+export default withRouter(connect(mapStateToProps)(ExportGeneratorSetup));

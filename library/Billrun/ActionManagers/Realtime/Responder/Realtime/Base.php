@@ -77,6 +77,9 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	}
 	
 	protected function getExpirationTime() {
+		if (isset($this->row['foreign']['rate']['ocsExpiryTime'])) {
+			return $this->row['foreign']['rate']['ocsExpiryTime'];
+		}
 		return $this->config['realtime'][$this->row['usaget']]['expiryTime'] ?? 3600;
 	}
 	
@@ -90,9 +93,12 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 	 */
 	protected function getGrantedUnit($serviceRating = array()) {
 		if ($this->requirePostpaidOverGroupBlock()) {
-			return $this->getRateGroupLeft();
+			$ret = $this->getRateGroupLeft();
+		} else {
+			$ret = $serviceRating['usagev'] ?? $this->getConfigGrantedVol();
 		}
-		return $serviceRating['usagev'] ?? 0;
+		Billrun_Factory::dispatcher()->trigger('afterGetGrantedUnit',[&$ret , &$this->row, $this->config]);
+		return $ret;
 	}
 	
 	/**
@@ -123,6 +129,13 @@ class Billrun_ActionManagers_Realtime_Responder_Realtime_Base extends Billrun_Ac
 			return 0;
 		}
 		
+		return $this->getConfigGrantedVol($left);
+	}
+	
+	protected function getConfigGrantedVol($left = null) {
+		if (is_null($left)) {
+			$left = PHP_INT_MAX;
+		}
 		$grantConfig = $this->config['realtime'][$this->row['usaget']]['default_values'] ?? 0;
 		return min($left, $grantConfig[$this->row['record_type']] ?? ($grantConfig['default']));
 	}

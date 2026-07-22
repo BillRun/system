@@ -20,7 +20,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $teldasPassword;
   protected $teldasAccessToken;
   protected $cache;
-  protected $lineType;
+  protected $matchingPathsByType;
   protected $moreSelctiveQuery = array();
 
   const RESPONSE_STATUS_OK = 200;
@@ -32,14 +32,17 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $this->teldasUrl = Billrun_Util::getIn($options, 'url', 'https://ws.numberportability.ch');
     $this->teldasUser = Billrun_Util::getIn($options, 'user', '');
     $this->teldasPassword = Billrun_Util::getIn($options, 'password', '');
-    $this->lineType = Billrun_Util::getIn($options, 'matching_paths.line_type', '');
+    $matchingPaths = Billrun_Util::getIn($options, 'matching_paths', '');
+    foreach($matchingPaths as $matchingPathsConf){
+        $this->matchingPathsByType[$matchingPathsConf['line_type']] = $matchingPathsConf;
+    }
     $this->teldasAccessToken = !empty($this->cache) ? ($this->cache->get(self::ACCESS_TOKEN_CACHE_KEY) ?? '' ) : '';
     $this->options = $options;
     $this->nonWorkingDaysCollection = Billrun_Factory::db()->plugin_teldas_non_working_daysCollection(['force' => true]);
     $this->inaNumbersCollection = Billrun_Factory::db()->plugin_teldas_ina_numbersCollection(['force' => true]);
     $this->tariffsProfilesCollection = Billrun_Factory::db()->plugin_teldas_tariffs_profilesCollection(['force' => true]);
     $this->tariffSwitchingClassesCollection = Billrun_Factory::db()->plugin_teldas_tariff_switching_classesCollection(['force' => true]);
-	}
+  }
     
   protected function authentication() {
     Billrun_Factory::log("Sending authentication request to teldas.", Zend_Log::DEBUG);
@@ -215,8 +218,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       
       if ($success1 && $success2 && $success3 && $success4) { //todo::remove this if 
           Billrun_Factory::log("Initialize system succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('is_system_initialize', true);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['is_system_initialize' => true, 'last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
     protected function clearTeldasCollections(){
@@ -227,21 +229,24 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
 
 
-  protected function updateConfigTeldasData($field, $value) {
-      Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+  protected function updateConfigTeldasData($fields) {
       $model = new ConfigModel();
       $updatedData = $model->getConfig();
       unset($updatedData['_id']);
-      $updatedData['teldas'][$field] = $value;
+      $updatedData['urt'] = new Mongodloid_Date();
+      foreach($fields as $field => $value){
+        Billrun_Factory::log("Updating teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+        $updatedData['teldas'][$field] = $value;
+      }
       $ret = Billrun_Factory::db()->configCollection(['force' => true])->insert($updatedData);
       $saveResult = !empty($ret['ok']);
       if ($saveResult) {
           // Reload timezone.
           Billrun_Config::getInstance()->refresh();
-          Billrun_Factory::log("Succeeded to update teldas." . $field . " in config to value: " . $value, Zend_Log::DEBUG);
+          Billrun_Factory::log("Succeeded to update teldas fields :" . json_encode($fields). " in config", Zend_Log::DEBUG);
           return;
       }
-      Billrun_Factory::log("Failed to update teldas." . $field . " in config to value: " . $value, Zend_Log::ALERT);
+      Billrun_Factory::log("Failed to update teldas." . json_encode($fields). " in config" , Zend_Log::ALERT);
       return;
   }
 
@@ -270,10 +275,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               if($inaNumber['modifyPending'] === true){
                   //handle modifyPending= true in initialize
                   $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-                  if($modifyPendingRevision === false){
-                      return false;
+                  if($modifyPendingRevision !== false){
+                    $modifyPendingRevisions[] = $modifyPendingRevision;
                   }
-                  $modifyPendingRevisions[] = $modifyPendingRevision;
               }
               $totalInaNumbers[] = $inaNumber;
               $historyBackLimit = strtotime(Billrun_Factory::config()->getConfigValue('teldas.initialize.ina_numbers_history.limit', "-1 month"));              
@@ -282,10 +286,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
               }
               $modifyPendingFound = false;
               $inaNumberHistory = $this->getInaNumberHistory($inaNumber['subscriberNumber'], $historyBackLimit, $modifyPendingFound, false, true);
-              if($inaNumberHistory === false){
-                  return false;
+              if($inaNumberHistory !== false){
+                $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
               }
-              $totalHistoryInaNumbers = array_merge($totalHistoryInaNumbers, $inaNumberHistory);               
           }
           $parameters = array(
             'transactionDateTimeTo' => $parameters['transactionDateTimeFrom'],
@@ -408,7 +411,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     
       if ($success1 && $success2 && $success3) {//todo:: remove this if 
           Billrun_Factory::log("Keep system up to date succeeded", Zend_Log::INFO);
-          $this->updateConfigTeldasData('last_update_time', new MongoDate(strtotime($parameters['transactionDateTimeTo'])));
+          $this->updateConfigTeldasData(['last_update_time' => new MongoDate(strtotime($parameters['transactionDateTimeTo']))]);
       }
   }
 
@@ -431,44 +434,56 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         ['collection' =>  $this->tariffSwitchingClassesCollection, 'sortField' => 'id']
     ];
     foreach($mappingUpdates as $map){
-        $collection = $map['collection'];
-        // Step 1: Find the latest document _id per sortField
-        $pipeline = [
-            ['$sort' => [$map['sortField'] => 1, 'transactionDatetime' => -1]],
-            [
-                '$group' => [
-                    '_id' => '$' . $map['sortField'],
-                    'latestId' => ['$first' => '$_id'],
-                    'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
-                ]
-            ],
-            [
-                '$match' => ['transactionDatetimeTo' => ['$ne' => null]]
-            ]
-
-        ];
-        
-        $cursor = $collection->aggregate($pipeline);
-    
-        $latestIds = [];
-        $latestIdsCount = 0;
-        foreach ($cursor as $doc) {
-            $latestIdsCount++;
-            $latestIds[] = $doc['latestId'];
-        }
-        Billrun_Factory::log("Updating " . $latestIdsCount . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
-
-        // Step 2: Update only those latest documents
-        if (!empty($latestIds)) {
-            $res = $collection->update(
-                ['_id' => ['$in' => $latestIds]],
-                ['$set' => ['transactionDatetimeTo' => null]]
-            , ['multiple' => true]);
-
-        }
+        $this->reopenLatestRevision($map['collection'], $map['sortField']);
     }
   }
-    
+
+  /**
+   * Reopen the latest revision per $sortField by setting its transactionDatetimeTo back to null.
+   * Only the latest document of each group whose transactionDatetimeTo is currently not null is reopened.
+   *
+   * @param Mongodloid_Collection $collection the collection to update
+   * @param string $sortField the field that identifies a revision chain (e.g. subscriberNumber / id)
+   * @param array $match optional aggregation match to scope the reopen to specific revisions
+   */
+  protected function reopenLatestRevision($collection, $sortField, $match = []) {
+    // Step 1: Find the latest document _id per sortField (optionally scoped by $match)
+    $pipeline = [];
+    if (!empty($match)) {
+        $pipeline[] = ['$match' => $match];
+    }
+    // Sort so that null transactionDatetimeTo (open revision) comes first, then by transactionDatetimeTo descending.
+    // MongoDB orders null lower than any date, so a plain -1 would place nulls last; a helper flag fixes the order.
+    $pipeline[] = ['$addFields' => [
+        'toIsNull' => ['$cond' => [['$eq' => ['$transactionDatetimeTo', null]], 0, 1]]
+    ]];
+    $pipeline[] = ['$sort' => [$sortField => 1, 'transactionDatetime' => -1, 'toIsNull' => 1, 'transactionDatetimeTo' => -1]];
+    $pipeline[] = [
+        '$group' => [
+            '_id' => '$' . $sortField,
+            'latestId' => ['$first' => '$_id'],
+            'transactionDatetimeTo' => ['$first' => '$transactionDatetimeTo'],
+        ]
+    ];
+    $pipeline[] = ['$match' => ['transactionDatetimeTo' => ['$ne' => null]]];
+
+    $cursor = $collection->aggregate($pipeline);
+
+    $latestIds = [];
+    foreach ($cursor as $doc) {
+        $latestIds[] = $doc['latestId'];
+    }
+    Billrun_Factory::log("Updating " . count($latestIds) . " teldas collection: " . $collection->getName() .",  transactionDatetimeTo to null." , Zend_Log::DEBUG);
+
+    // Step 2: Update only those latest documents
+    if (!empty($latestIds)) {
+        $collection->update(
+            ['_id' => ['$in' => $latestIds]],
+            ['$set' => ['transactionDatetimeTo' => null]]
+        , ['multiple' => true]);
+    }
+  }
+
 
   protected function keepSystemUpToDateOfInaNumbers($parameters) {
       Billrun_Factory::log("Keeping system up-to-date of INA numbers", Zend_Log::DEBUG);
@@ -484,10 +499,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if($inaNumber['modifyPending'] === true){
               //handle modifyPending= true in update
               $modifyPendingRevision = $this->handleModifyPending($inaNumber);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           } 
           $query = array('subscriberNumber' => $inaNumber['subscriberNumber'], 'transactionDatetimeTo' => null);
           $update = array('$set' => array('transactionDatetimeTo' => $inaNumber['transactionDatetime']));
@@ -501,7 +515,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
 
-      $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers");
+      $result = $this->batchInsert($this->inaNumbersCollection, $inaNumbers, "INA numbers", 'subscriberNumber');
       if(!$result){
           return false;
       }
@@ -533,7 +547,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           $updatingTariffsProfiles += $ret['nModified'];
       }
       Billrun_Factory::log("Update " . $updatingTariffsProfiles . " $type tariffs profiles previous record ", Zend_Log::DEBUG);
-      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles");
+      $result = $this->batchInsert($this->tariffsProfilesCollection, $tariffsProfiles, "$type tariffs profiles", 'id');
         if(!$result){
             return false;
         }
@@ -542,7 +556,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   
-  protected function batchInsert($collection, $entitiesToInsert, $logTiltle){
+  protected function batchInsert($collection, $entitiesToInsert, $logTiltle, $sortField = null){
     Billrun_Factory::log("Inserting " . count($entitiesToInsert) . " $logTiltle."  , Zend_Log::DEBUG);
     try {
         if(!empty($entitiesToInsert)){
@@ -555,7 +569,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 	} catch (Exception $e) {
         try {
             Billrun_Factory::log("Inserting " . $logTiltle . " line by line",  Zend_Log::DEBUG);
-
             foreach ($entitiesToInsert as $entity) {
                 try {
                     $ret = $collection->insert($entity); // ok==1, err null
@@ -565,6 +578,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 } catch (Exception $e) {
                     if (in_array($e->getCode(), Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR)) {
                         Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::NOTICE);
+                        // The previous revision was already closed (transactionDatetimeTo set from null
+                        // to the new value) before this insert. Since the new revision was not inserted,
+                        // reopen the latest revision of this specific entity to keep the version chain valid.
+                        if (!empty($sortField) && isset($entity[$sortField])) {
+                            Billrun_Factory::log("Reverting transactionDatetimeTo to null for " . $sortField . ": " . $entity[$sortField] . " after duplicate key on " . $logTiltle, Zend_Log::NOTICE);
+                            $this->reopenLatestRevision($collection, $sortField, [$sortField => $entity[$sortField]]);
+                        }
                         continue;
                     } else {
                         Billrun_Factory::log("Insertion of " . $logTiltle . "  failed, Insert Error: " . $e->getMessage() , Zend_Log::ALERT);
@@ -640,8 +660,14 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             if($selectiveResult === false){
                 return false;
             }
-            if($result["errors"][0]["numberOfRecords"] !== count($selectiveResult)){
-                Billrun_Factory::log("Missing records. Need to have: " . $result["errors"][0]["numberOfRecords"] . " found only  " .  count($selectiveResult)  , Zend_Log::ALERT);
+            $selectiveResultCount = count($selectiveResult);
+            $totalNumberOfRecords = $result["errors"][0]["numberOfRecords"];
+            if($totalNumberOfRecords !== $selectiveResultCount){
+                Billrun_Factory::log("Missing records. Need to have: " . $totalNumberOfRecords . " found only " .  $selectiveResultCount  , Zend_Log::ALERT);
+                $allowMistakeError = Billrun_Factory::config()->getConfigValue('teldas.initialize.allow_mistake_error', 0.0001);
+                if(Billrun_Util::isEqual($selectiveResultCount/$totalNumberOfRecords, 1, $allowMistakeError)){
+                    return $selectiveResult;
+                }
                 return false;
             }
             return $selectiveResult;
@@ -660,29 +686,25 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function doMoreSelectiveQuery($parameters){
-    $stamp =  Billrun_Util::generateArrayStamp($parameters);
-    if(isset($this->moreSelctiveQuery[$stamp])){
-        $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
-        if($res === false){
+    $res = $this->moreSelectiveQueryWithSubscriberNumber($parameters);
+    if($res === false){
+        $endDateStr = $parameters["transactionDateTimeTo"];
+        $startDateStr = $parameters["transactionDateTimeFrom"];
+        $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
+        $result1 = $this->getInaNumbers($parameters);
+        if($result1 === false){
             return false;
         }
-        return $res;
+        $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
+        $parameters["transactionDateTimeTo"] = $endDateStr;
+        $result2 = $this->getInaNumbers($parameters);
+        if($result2 === false){
+            return false;
+        }
+        return array_merge($result2, $result1);
     }
-    $this->moreSelctiveQuery[$stamp] = true;
-    $endDateStr = $parameters["transactionDateTimeTo"];
-    $startDateStr = $parameters["transactionDateTimeFrom"];
-    $parameters["transactionDateTimeTo"] =  $this->getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr);
-    $result1 = $this->getInaNumbers($parameters);
-    if($result1 === false){
-        return false;
-    }
-    $parameters["transactionDateTimeFrom"] = $parameters["transactionDateTimeTo"];
-    $parameters["transactionDateTimeTo"] = $endDateStr;
-    $result2 = $this->getInaNumbers($parameters);
-    if($result2 === false){
-        return false;
-    }
-    return array_merge($result2, $result1);
+    return $res;
+   
   }
 
   protected function moreSelectiveQueryWithSubscriberNumber($parameters){
@@ -695,6 +717,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         [
             'from' => '0840000000',
             'to' => '0849999999'
+        ],
+        [
+            'from' => '0878000000',
+            'to' => '0878999999'
         ],
         [
             'from' => '0900000000',
@@ -715,6 +741,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             Billrun_Factory::log("Failed to do more selective query api with params: " . print_r($parameters, true), Zend_Log::ALERT);
             return false;
         }
+        Billrun_Factory::log("Found " . count($result)." INA numbers for more selective query api with params: " . print_r($parameters, true), Zend_Log::DEBUG);
         $selectiveResult = array_merge($selectiveResult, $result);
     }
     return $selectiveResult;
@@ -722,8 +749,9 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
   protected function getMiddleDatetimeWithMilliseconds($startDateStr, $endDateStr) {
-    $start = new DateTime($startDateStr);
-    $end = new DateTime($endDateStr);
+    $tz = new DateTimeZone('UTC');
+    $start = new DateTime($startDateStr, $tz);
+    $end = new DateTime($endDateStr, $tz);
 
     // Convert to float seconds including microtime
     $startTs = (float) $start->format('U.u');
@@ -733,9 +761,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     $middleTs = ($startTs + $endTs) / 2;
 
     // Create DateTime from float seconds
-    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''));
+    $middle = DateTime::createFromFormat('U.u', number_format($middleTs, 6, '.', ''), $tz);
 
     // Format with milliseconds (3 digits of microseconds)
+    $middle->setTimezone(new DateTimeZone('Europe/Zurich'));
     $formatted = $middle->format("Y-m-d\TH:i:s.") . substr($middle->format('u'), 0, 3);
 
     return $formatted;
@@ -801,12 +830,12 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function getMatchingInaNumberRevision($inaNumber, $urt) {
       $query = array('subscriberNumber' => $inaNumber, 'transactionDatetime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDatetimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDatetimeTo' => array('$eq' => null))));
-      $inaNumberRevisions = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();
-      if ($inaNumberRevisions->isEmpty()) {
+      $inaNumberRevision = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();//can be more then 1 but with the same info (future modify)
+      if ($inaNumberRevision->isEmpty()) {
           Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query), Zend_Log::NOTICE);
           return false;
       }
-            return $inaNumberRevisions;//can be more then 1 but with the same info (future modify)
+            return $inaNumberRevision;
   }
 
   protected function getInaNumberHistory($subscriberNumber, $historyBackLimit, &$modifyPendingFound, $addFirst = true, $addPreviousBeforeLimit = false) {
@@ -886,12 +915,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           if ($missingInaNumberRevisions === false) {
               return false;
           }
-          if($modifyPendingFound){
+          if($modifyPendingFound && $missingInaNumberRevisions[0]['modifyPending'] === true){
               $modifyPendingRevision = $this->handleModifyPending($missingInaNumberRevisions[0]);
-              if($modifyPendingRevision === false){
-                  return false;
+              if($modifyPendingRevision !== false){
+                $modifyPendingRevisions[] = $modifyPendingRevision;
               }
-              $modifyPendingRevisions[] = $modifyPendingRevision;
           }
           $missingInaNumbersRevisions = array_merge($missingInaNumbersRevisions, $missingInaNumberRevisions);
           $oldestMissingInaNumberRevision = end($missingInaNumberRevisions);
@@ -906,7 +934,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             $updatingInaNumbers += $ret['nModified'] ?? 0;
       }
       Billrun_Factory::log("Update " . $updatingInaNumbers . " INA number previous record ", Zend_Log::DEBUG);
-      $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers");
+      $result = $this->batchInsert($this->inaNumbersCollection, $missingInaNumbersRevisions, "missing INA numbers", 'subscriberNumber');
       if(!$result){
         return false;
       }
@@ -933,7 +961,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       $modifyPendingRevision = $inaNumberHistory[0];
       if($modifyPendingRevision['status'] !== 'F_MOD'){
-          Billrun_Factory::log("Something wrong. modify pending revision status need to be F_MOD" . print_r($modifyPendingRevision, 1), Zend_Log::ERR);
+          Billrun_Factory::log("modify pending revision status need to be F_MOD if not the last revision already modify " . print_r($modifyPendingRevision, 1), Zend_Log::DEBUG);
           return false;
       }
       $modifyPendingRevision['originalTransactionDatetime'] = $modifyPendingRevision['transactionDatetime'];
@@ -951,7 +979,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return false;
       }
       $activationDatetime = $inaNumberRevison['activationDatetime'] ? strtotime($inaNumberRevison['activationDatetime']) : null;
@@ -1047,7 +1075,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return date($format, $timestamp);
   }
 
-  protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line) {
+  protected function calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore = 0.0) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $chargeConfigurations = $tariffProfile['chargeConfigurations'];
       $matchingChargeConfigurations = null;
       foreach ($chargeConfigurations as $chargeConfiguration) {
@@ -1060,21 +1089,33 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Empty week charge configurations for sequence : " . $sequence . ". Tariff proffile revision: " . print_r($tariffProfile, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
       $duration = Billrun_Util::getIn($line, $durationPath);
       if (is_null($duration)) {
           Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
+      $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
       if($durationDivide == 0){
         Billrun_Factory::log("Invalid divide_to_seconds value. Can't divide by zero, please change matching_paths.duration.divide_to_seconds to valid value.", Zend_Log::ALERT);
         return false;
       }
       $chargeRate = $matchingChargeConfigurations['chargeRate'] ?? 0; //price in cents per 60 seconds
       $baseCharge = $matchingChargeConfigurations['baseCharge'] ?? 0; //price in cents
-      $startInterval = $matchingChargeConfigurations['startInterval'] ?? 0; //in seconds 
-      return $baseCharge / 100 + $chargeRate / 100 / 60 * max($duration / $durationDivide - $startInterval, 0);
+      $startInterval = $matchingChargeConfigurations['startInterval'] ?? 0; //in seconds
+
+      $segmentDuration = (float) $duration / $durationDivide;
+
+      // baseCharge only on the first CDR of the call (call_offset == 0 or absent)
+      $applyBaseCharge = ($callDurationBefore == 0.0);
+
+      // How much of the free startInterval pool is still remaining for this segment
+      $startIntervalRemaining = max($startInterval - $callDurationBefore, 0.0);
+
+      $charge = ($applyBaseCharge ? $baseCharge / 100 : 0.0)
+              + $chargeRate / 100 / 60 * max($segmentDuration - $startIntervalRemaining, 0.0);
+
+      return $charge;
   }
 
   protected function getChargeConfigurations($weekChargeConfigurations, $urt){
@@ -1151,8 +1192,8 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       return false;
   }
 
-  protected function convertDestNumberToSubscriberNumber($destNumber){
-      $convertPatterns = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.convertion',[]);
+  protected function convertDestNumberToSubscriberNumber($destNumber, $matchingPaths){
+      $convertPatterns = Billrun_Util::getIn($matchingPaths, 'subscriber_number.conversion',Billrun_Util::getIn($matchingPaths, 'subscriber_number.convertion',[]));
       foreach($convertPatterns as $convert){
         $pattern = $convert['pattern'] ?? '';
         $replacement = $convert['replacement'] ?? '';
@@ -1160,19 +1201,38 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       }
       return $destNumber;
   }
+
+  /**
+   * Returns how many seconds of the call occurred before this CDR's segment.
+   *
+   * Read from $line['call_offset'] (raw value in same unit as duration).
+   * If the field is absent or zero this CDR is the first (or only) CDR of
+   * the call — full startInterval and baseCharge apply.
+   *
+   * The value is divided by the same divide_to_seconds as duration so the
+   * switch only needs to write one unit consistently.
+   */
+  protected function getCallDurationBefore($line, $matchingPaths) {
+      $raw = $line['call_offset'] ?? null;
+      if (is_null($raw) || $raw === '') {
+          return 0.0;
+      }
+      return max(0.0, (float) $raw);//assume call_offset already in seconds
+  }
   protected function pricingCdr($line) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       $urt =  $line['urt']->sec;
       if (!isset($line['urt'])) {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get $inaNumberPath from line." . print_r($line, 1), Zend_Log::ALERT);
           return false;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       $inaNumberRevison = $this->getMatchingInaNumberRevision($inaNumber, $urt);
       if ($inaNumberRevison === false) {
           Billrun_Factory::log("Failed found matching subscriberNumber  revision for $inaNumberPath in INA numbers collection. subscriberNumber: $inaNumber, urt: ". date("Y-m-d H:i:s", $urt), Zend_Log::DEBUG);
@@ -1206,62 +1266,103 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     if (!$this->checkIfValidTariffProfile($tariffProfile, $urt, $inaNumberRevison['tariffProfile'])) {
         return false;
     }
-    
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $callDurationBefore = $this->getCallDurationBefore($line, $matchingPaths);
     $chargeConfigurations = $this->findMatchingOfflineAChargeConfigurations($tariffProfile, $urt);
     if (!$chargeConfigurations) {
         return false;
     }
-    return $this->calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line);
+    return $this->calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line, $callDurationBefore);
   }
 
-  protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line) {
-    $durationPath = Billrun_Util::getIn($this->options, 'matching_paths.duration.path');
+  protected function calcPriceByOfflineAChargeConfigurations($tariffProfile, $chargeConfigurations, $line, $callDurationBefore = 0.0) {
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
     $duration = Billrun_Util::getIn($line, $durationPath) ?? 0;
     if (is_null($duration)) {
         Billrun_Factory::log("Failed to get " . $durationPath . "  from line." . print_r($line, 1), Zend_Log::ALERT);
         return false;
     }
-    $durationDivide = Billrun_Util::getIn($this->options, 'matching_paths.duration.divide_to_seconds', 1000);
-    $aprice = 0 ;
+    $durationDivide = Billrun_Util::getIn($matchingPaths, 'duration.divide_to_seconds', 1000);
+    $aprice = 0;
     $left = (float) $duration / $durationDivide;
     $left = $this->converFieldByRoundingRules($left, 'duration');
+
+    // How many seconds of the call were already consumed by previous CDRs.
+    // We walk through sequences skipping capacity that was used before this segment.
+    $alreadyConsumed = (float) $callDurationBefore;
+
     foreach ($chargeConfigurations as $sequence => $chargeConfiguration){
-        if($left <= 0){
-            break;
-        }
         if($sequence + 1 !== $chargeConfiguration['sequence']){
             Billrun_Factory::log("not support unsorted 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
         }
-        $ruleType = $chargeConfiguration['ruleType'];
-        $chargeRate = $chargeConfiguration['rate'] ?? 0; //price in cents per second
-        $interval = $chargeConfiguration['time'] ?? 0; //interval in seconds
-        $sign = $chargeConfiguration['sign']; 
-        $ruleDuration = $chargeConfiguration['ruleDuration']; 
+        $ruleType     = $chargeConfiguration['ruleType'];
+        $chargeRate   = $chargeConfiguration['rate']         ?? 0; // price in cents per interval
+        $interval     = $chargeConfiguration['time']         ?? 0; // interval in seconds
+        $sign         = $chargeConfiguration['sign'];
+        $ruleDuration = $chargeConfiguration['ruleDuration'];
         if ($ruleDuration == 0){
             $ruleDuration = INF;
         }
+
+        if ($left <= 0) {//for now not support usagev=0 with FIX_PRICE should charge(still not found real example to this)
+            break;
+        }
+
+        // Total capacity of this sequence in seconds
+        if ($ruleType === 'FIX_PRICE') {
+            // FIX_PRICE has no duration — treated as consuming $interval seconds (or 0 if unset)
+            $seqCapacity = ($interval > 0) ? $interval : INF;
+        } else {
+            $seqCapacity = ($ruleDuration === INF) ? INF : ($interval * $ruleDuration);
+        }
+
+        // Skip capacity already consumed by previous CDRs of this call
+        if ($alreadyConsumed > 0) {
+            if ($seqCapacity !== INF && $alreadyConsumed >= $seqCapacity) {
+                // Entire sequence consumed before this CDR — skip it completely
+                if ($ruleType !== 'FIX_PRICE') {
+                    $alreadyConsumed -= $seqCapacity;
+                }
+                continue;
+            }
+            // Sequence partially consumed — reduce its remaining capacity
+            if ($seqCapacity !== INF) {
+                $remainingCapacity = $seqCapacity - $alreadyConsumed;
+                // Cap $left to remainingCapacity so we don't price beyond this sequence
+                $leftInThisSeq = min($left, $remainingCapacity);
+                if ($ruleType !== 'FIX_PRICE' && $interval > 0) {
+                    $ruleDuration = $remainingCapacity / $interval;
+                }
+            } else {
+                $leftInThisSeq = $left;
+            }
+            $alreadyConsumed = 0.0;
+        } else {
+            $leftInThisSeq = $left;
+        }
+
         if($sign === 'DEBIT'){
             if($ruleType === 'NOT_PRO_RATA'){
-                $useRuleDuration = ceil($left/$interval);
-
+                $useRuleDuration = ceil($leftInThisSeq / $interval);
                 if($useRuleDuration >= $ruleDuration){
-                    $aprice += ($ruleDuration*$chargeRate)/100;
-                    $left -= $interval*$ruleDuration;
+                    $aprice += ($ruleDuration * $chargeRate) / 100;
+                    $left   -= $interval * $ruleDuration;
                 }else{
-                    $aprice += ($useRuleDuration * $chargeRate)/100;
-                    $left -= $interval*ceil($useRuleDuration);
+                    $aprice += ($useRuleDuration * $chargeRate) / 100;
+                    $left   -= $interval * ceil($useRuleDuration);
                 }
             }elseif($ruleType === 'FIX_PRICE'){
-                $aprice += $chargeRate/100;
+                $aprice += $chargeRate / 100;
             }elseif($ruleType === 'PRO_RATA'){
-                $useRuleDuration = $left/$interval;
+                $useRuleDuration = $leftInThisSeq / $interval;
                 if($useRuleDuration >= $ruleDuration){
-                    $aprice += ($ruleDuration * $chargeRate)/100;
-                    $left -= $interval*$ruleDuration;
+                    $aprice += ($ruleDuration * $chargeRate) / 100;
+                    $left   -= $interval * $ruleDuration;
                 }else{
-                    $aprice += ($useRuleDuration * $chargeRate)/100;
-                    $left -= $interval*ceil($useRuleDuration);
+                    $aprice += ($useRuleDuration * $chargeRate) / 100;
+                    $left   -= $interval * ceil($useRuleDuration);
                 }
             }else{
                 Billrun_Factory::log("Not support ruleType $ruleType of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
@@ -1270,7 +1371,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
         }else{
             Billrun_Factory::log("Not support sign $sign of 'chargeConfigurations'. see 'chargeConfigurations' of Tariff Profile id : " . $tariffProfile['id'] , Zend_Log::ALERT);
             return false;
-        }  
+        }
     }
     $aprice = $this->converFieldByRoundingRules($aprice, 'final_charge');
     return $aprice;
@@ -1299,6 +1400,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   }
 
   protected function updateOnlineTariffProfile($inaNumberRevison, $urt, $line){
+    $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+    $callDurationBefore = $this->getCallDurationBefore($line, $matchingPaths);
+
+    // For TSC lookup: use real call start, not segment start
+    // real callStart = urt - callDurationBefore
+    $callStart = (int) ((float) $urt - $callDurationBefore);
+
     $tariffProfile = $this->getMatchingTariffProfile($inaNumberRevison['tariffProfile'], $urt);
     if ($tariffProfile === false) {
         return false;
@@ -1308,36 +1416,48 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     }
     $sequence = $this->isOnlyOneSequence($tariffProfile);
     if ($sequence !== false) {
-        return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
+        return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore);
     }
 
-    $tariffSwitchingClassRevision = $this->getMatchingTariffSwitchingClass($tariffProfile['tariffSwitchingClassId'], $urt);
+    // Use $callStart so TSC finds the sequence active at real call answer time
+    $tariffSwitchingClassRevision = $this->getMatchingTariffSwitchingClass($tariffProfile['tariffSwitchingClassId'], $callStart);
     if ($tariffSwitchingClassRevision === false) {
         return false;
     }
-    if (!$this->checkIfValidTariffSwitchingClassId($tariffSwitchingClassRevision, $urt, $tariffProfile['tariffSwitchingClassId'])) {
+    if (!$this->checkIfValidTariffSwitchingClassId($tariffSwitchingClassRevision, $callStart, $tariffProfile['tariffSwitchingClassId'])) {
         return false;
     }
 
-    $sequence = $this->findMatchingSwitchingClassesSequence($tariffSwitchingClassRevision, $urt);
+    $sequence = $this->findMatchingSwitchingClassesSequence($tariffSwitchingClassRevision, $callStart);
     if (!$sequence) {
         return false;
     }
-    return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line);
+    return $this->calcPriceByOnlineTariffProfileSequence($tariffProfile, $sequence, $line, $callDurationBefore);
   }
 
   protected function checkIfValidPrefixInaNumber($inaNumber){
       $inaNumberPrefixes = Billrun_Util::getIn($this->options, 'ina_number_prefixes', "/^(0800|0848|0900|0901|0906|0840|0842|0844|0878)|^18[0-9][0-9]$/");
       return preg_match($inaNumberPrefixes, $inaNumber);
   }
+ 
+  public function afterRealtimeProcessorParsing(&$line, $type){
+    return $this->afterGetLineUsageType($line, $type);
+  }
+
 
   public function afterGetLineUsageType(&$line, $type) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($type != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
+      }
+      Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " should be fillter out", Zend_Log::DEBUG);
+      if(!$this->lineMatchConditions($line, $matchingPaths)){
+        return;
       }
       Billrun_Factory::log("Checking if line "  . $line['stamp'] .  " is Teldas INA number", Zend_Log::DEBUG);
       $urt = $line['urt']->sec;
@@ -1345,13 +1465,13 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           Billrun_Factory::log("Failed to get urt from line." . print_r($line, 1), Zend_Log::ALERT);
           return;
       }
-      $inaNumberPath = Billrun_Util::getIn($this->options, 'matching_paths.subscriber_number.path');
+      $inaNumberPath = Billrun_Util::getIn($matchingPaths, 'subscriber_number.path');
       $inaNumber = Billrun_Util::getIn($line, $inaNumberPath);
       if (!$inaNumber) {
           Billrun_Factory::log("Failed to get " . $inaNumberPath . " from line " . $line['stamp'], Zend_Log::DEBUG);
           return;
       }
-      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber);
+      $inaNumber = $this->convertDestNumberToSubscriberNumber($inaNumber, $matchingPaths);
       if (!$this->checkIfValidPrefixInaNumber($inaNumber)) {
           return;
       }
@@ -1360,7 +1480,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return;
       }
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
-      $line['usaget'] = Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call');
+      $line['usaget'] = Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call');
       $line['prepriced'] = true;
     //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
@@ -1368,30 +1488,54 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     //   $stampFields = Billrun_Util::getIn($this->options, 'matching_paths.stamps_fields', array());
   }
 
+  protected function lineMatchConditions($line, $matchingPaths){
+    if (isset($matchingPaths['conditions']) && !Billrun_Util::areConditionsMet($line, $matchingPaths['conditions'])) {
+        Billrun_Factory::log("Line " . $line['stamp'] . " should not be mapped for teldas, conditions are not match." , Zend_Log::DEBUG);
+        return false;
+    }
+    
+	return true;	
+  }
+
   public function beforeGetLineAprice($line, &$aprice) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $this->priceByStamp[$line['stamp']] = $this->pricingCdr($line);
-      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : null;
+      $aprice = $this->priceByStamp[$line['stamp']] !== false ? $this->priceByStamp[$line['stamp']] : false;
+  }
+
+  public function beforeUpdateSubscriberBalance($balance, &$row, $rate, $calculator, &$allowMultiRetries){
+      $matchingPaths = $this->matchingPathsByType[$row['type']] ?? null;
+      if(empty($matchingPaths)){
+        return;
+      }
+      $durationPath = Billrun_Util::getIn($matchingPaths, 'duration.path');
+      $duration = Billrun_Util::getIn($row, $durationPath);
+      if(isset($this->priceByStamp[$row['stamp']]) && $this->priceByStamp[$row['stamp']] === false && empty($duration)){
+        $allowMultiRetries = false;
+      }
   }
 
   public function beforeGetLinePriceToTax($line, &$aprice, $instance) {
+      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
+
       if(date_default_timezone_get() != 'Europe/Zurich'){
         Billrun_Factory::log("To use Teldas plugin must have Europe/Zurich timezone.", Zend_Log::ALERT);
         return;
       }
-      if ($line['type'] != $this->lineType) {
+      if (!isset($matchingPaths)) {
           return;
       }
-      if ($line['usaget'] != Billrun_Util::getIn($this->options, 'matching_paths.usage.type', 'ina_vas_call')) {
+      if ($line['usaget'] != Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call')) {
         return;
       }
       $taxData = $instance->getPreTaxedRowTaxData($line);
@@ -1409,7 +1553,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
   protected function addCfTeldasFieldsByInaNumber($inaNumberRevison, &$row){
       if (empty($inaNumberRevison['tariffProfile'])) {
-          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::ALERT);
+          Billrun_Factory::log("Matching INA number revision not have  tariffProfile. " . print_r($inaNumberRevison, 1), Zend_Log::NOTICE);
           return;
       }
       $row['cf']['Tariff'] = "INA_" . strval($inaNumberRevison['tariffProfile']);
@@ -1462,7 +1606,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           "display" => true,
           "nullable" => false,
           /*
-          '{
+          '[{
             "line_type": "Teles", 
             "duration": {
                 "path": "uf.Duration", 
@@ -1470,7 +1614,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
             }, 
             "subscriber_number": {
                 "path": "uf.Dest_Number",
-                "convertion": [{ 
+                "conversion": [{ 
                     'pattern':'/^\\+41(?=\\d{4}$)/',
                     'replacement':''
                   },
@@ -1484,7 +1628,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
                 "type": "ina_vas_call", 
                 "unit": "seconds"
             }
-          }'*/
+          }]'*/
         ],
         [
           'type' => 'boolean',

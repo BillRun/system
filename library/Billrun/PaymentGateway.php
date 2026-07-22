@@ -534,7 +534,7 @@ abstract class Billrun_PaymentGateway {
 			$this->savePaymentGateway();
 		}
 		
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date'], 'params' => $this->saveDetails);
 	}
 
 	/**
@@ -916,7 +916,7 @@ abstract class Billrun_PaymentGateway {
 	 * Returns relevant data for ok page response
 	 */
 	public function getTransactionDetails($details) {
-		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate']);
+		return array('credit_card' => $details['creditCard'], 'expiration_date' => $details['expirationDate'], 'params' => $details['params'] ?? []);
 	}
 
 	/**

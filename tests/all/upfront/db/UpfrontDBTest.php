@@ -19,12 +19,15 @@ class UpfrontDBTest extends \Codeception\Test\Unit
 
     protected function _before()
     {
+        $this->tester->setTimezone('UTC');
         $this->tester->enableDBModeSettings();
         $this->tester->cleanDB();
+       
     }
 
     protected function _after()
     {
+       $this->tester->restoreTimezone();
     }
     
 
@@ -40,14 +43,14 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $aid = $account['aid'];
         $this->defaultOptions['stamp'] = '202512';
         $this->defaultOptions['force_accounts'] = [$aid];
-        $planName = "UPFRONT_PLAN_PORATED";
+        $planName = "UPFRONT_PLAN_PORATED_BRCD_5055";
         $this->tester->generatePlan(['name' => $planName, "upfront" => 1, 'price'=>[["price" => 100, "from" => 0, "to" => "UNLIMITED"]]]);//Prorate charge on termination = true
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
 
         $discount_name = "DIS_B2C_" . time();
         $this->tester->generateDiscount([
-            "from" => "2025-08-01T21:00:00Z",
-            "to" => "2025-11-06T05:00:00Z",
+            "from" => new Mongodloid_Date(strtotime("2025-08-01T21:00:00Z")),
+            "to" => new Mongodloid_Date(strtotime("2025-11-06T05:00:00Z")),
             "params" => [
               "conditions" => [
                       [
@@ -90,7 +93,7 @@ class UpfrontDBTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2025-12-01 00:00:00"), $planLine['start']->toDateTime()->getTimestamp());
         $this->assertEquals(strtotime("2026-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
         
-        $this->assertEquals(strtotime("2025-11-06T05:00:00Z"), $discountLineUpfront['start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-11-06T05:00:00Z"), $discountLineUpfront['discount_start']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-12-01 00:00:00"), $discountLineUpfront['discount_end']->toDateTime()->getTimestamp());
     }
 }

@@ -87,28 +87,50 @@ export const getPaymentGatewaysQuery = () => ({
   action: 'list',
 });
 
-export const getUserLoginQuery = (username, password) => {
+export const getUserLoginQuery = (username, password, protocol = 'Internal', provider = null) => {
   const formData = new FormData();
-  formData.append('username', username);
-  formData.append('password', password);
+  if (username) {
+    formData.append('username', username);
+  }
+  if (password) {
+    formData.append('password', password);
+  }
+  
+  const params = [{ protocol }];
+  if (provider) {
+    params.push({ provider });
+  }
+
   return ({
-    api: 'auth',
+    api: 'Auth',     
+    action: 'login', 
+    params,
     options: {
       method: 'POST',
-      body: formData,
+      body: formData, 
     },
   });
 };
 
-export const getUserLogoutQuery = () => ({
-  api: 'auth',
+export const getUserLogoutQuery = (protocol = 'Internal') => ({
+  api: 'Auth',
+  action: 'logout',
   params: [
-    { action: 'logout' },
+    { protocol },
   ],
 });
 
 export const getUserCheckLoginQuery = () => ({
-  api: 'auth',
+  api: 'Auth',
+  action: 'login',
+  params: [
+    { protocol: 'Internal' },
+  ],
+});
+
+export const getAuthOptionsQuery = () => ({
+  api: 'Auth',
+  action: 'options',
 });
 
 export const saveFileQuery = (file, metadata) => {
@@ -158,6 +180,19 @@ export const getSettingsQuery = (category, data = {}) => ({
     { data: JSON.stringify(data) },
   ],
 });
+
+export const sendTestSmsQuery = (recipient) => {
+  const formData = new FormData();
+  formData.append('recipient', recipient);
+
+  return ({
+    api: 'testsms',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
 
 export const setInputProcessorQuery = (data, action) => {
   const formData = new FormData();
@@ -244,14 +279,20 @@ export const postpaidBalancesListQuery = (query, page, sort, size) => ({
 });
 
 /* Settings API */
-export const savePaymentGatewayQuery = gateway => ({
-  api: 'settings',
-  params: [
-    { category: 'payment_gateways' },
-    { action: 'set' },
-    { data: JSON.stringify(gateway) },
-  ],
-});
+export const savePaymentGatewayQuery = gateway => {
+  const formData = new FormData();
+  formData.append('category', 'payment_gateways');
+  formData.append('action', 'set');
+  formData.append('data', JSON.stringify(gateway));
+
+  return ({
+    api: 'settings',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
 
 /* Settings API */
 export const saveSharedSecretQuery = secret => ({
@@ -526,11 +567,17 @@ export const sendGenerateNewFileQuery = (paymentGateway, fileType, data) => {
   };
 }
 
-export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType) => {
+export const sendTransactionsReceiveFileQuery = (paymentGateway, fileType, file, paymentsFileType, source) => {
   const formData = new FormData();
   formData.append('payment_gateway', paymentGateway);
   formData.append('file_type', fileType);
   formData.append('payments_file_type', paymentsFileType);
+  // `source` is the value persisted on `log.source` and looked up by the list query.
+  // Pass it explicitly so FE owns the naming contract and BE doesn't need to reconstruct it
+  // from `payment_gateway + payments_file_type` (which mis-handled snake_case gateway keys).
+  if (typeof source !== 'undefined') {
+    formData.append('source', source);
+  }
   formData.append('file', file);
   return ({
     api: 'uploadfile',
@@ -1030,3 +1077,18 @@ export const pushToConfirmQueueQuery = (billrun_key, include_aids = [], exclude_
     },
   });
 }
+
+export const getExternalLoginQuery = (protocol, returnTo, provider) => {
+  const params = [
+    { protocol },
+    { return_to: returnTo },
+  ];
+  if (provider) {
+    params.push({ provider });
+  }
+  return ({
+    api: 'Auth',
+    action: 'login',
+    params,
+  });
+};

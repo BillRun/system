@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment-timezone';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 export default class DateTime extends Component {
@@ -34,9 +35,9 @@ export default class DateTime extends Component {
     const { data, timeZoneOptions } = this.props;
     return (
       <div className="DateTime">
-        <Form horizontal>
+    <Form className="form-horizontal">
           <FormGroup controlId="timezone" key="timezone">
-            <Col componentClass={ControlLabel} md={2}>
+            <Col as={ControlLabel} md={2}>
               Time Zone
             </Col>
             <Col sm={6}>

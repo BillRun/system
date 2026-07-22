@@ -15,7 +15,7 @@ class Test_Case_42773
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -42,7 +42,7 @@ class Test_Case_42773
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 80,
@@ -71,7 +71,7 @@ class Test_Case_42773
             'name' => "SERVICE_DISCOUNT" . time(),
             "price" => [["price" => 20, "from" => 0, "to" => "UNLIMITED"]]
         ]);
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount3 = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",
@@ -86,7 +86,7 @@ class Test_Case_42773
               ],
               'key'=> $discount_name
           ]);
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount1 = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",
@@ -116,7 +116,7 @@ class Test_Case_42773
               'excludes' => [$discount3['key']]
 
           ]);
-          $discount_name = time()+random_int(1,111111111);
+          $discount_name = generat_test_data::uniqueName();
 
         $discount2 = generat_discounts::generateDiscount([
             "from" => "2019-05-31T22:00:00Z",

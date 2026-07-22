@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, Row, Panel, Button } from 'react-bootstrap';
+import { Col, Row, Button } from 'react-bootstrap';
+import { FormGroup, Panel } from '@/common/BootstrapCompat';
 import changeCase from 'change-case';
 import ComputedRate from './ComputedRate';
 import Field from '@/components/Field';
@@ -366,7 +367,7 @@ class RateMapping extends Component {
       <h4>
         <small>
           {`${lineKeyLabel_first} ${opLabel} ${defaultLabelSecond}`}
-          <Button onClick={this.onEditComputedLineKey(calc, rateCategory, usaget, priority, index)} bsStyle="link">
+          <Button onClick={this.onEditComputedLineKey(calc, rateCategory, usaget, priority, index)} variant="link">
             <i className="fa fa-fw fa-pencil" />
           </Button>
         </small>
@@ -500,7 +501,7 @@ class RateMapping extends Component {
               { calcKey > 0 &&
                 <FormGroup style={{ margin: 0 }}>
                   <div style={{ width: '100%', height: 39 }}>
-                    <Button onClick={this.onRemoveRating} data-ratecategory={rateCategory} data-usaget={usaget} data-index={calcKey} data-priority={priority} bsSize="small" className="pull-left" ><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>
+                    <Button onClick={this.onRemoveRating} data-ratecategory={rateCategory} data-usaget={usaget} data-index={calcKey} data-priority={priority} size="sm" variant="outline-secondary" className="pull-left" ><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>
                   </div>
                 </FormGroup>
               }
@@ -513,9 +514,10 @@ class RateMapping extends Component {
   }
 
   getAddRatingButton = (rateCategory, usaget, priority) => (
-    <Button
-      bsSize="xsmall"
-      className="btn-primary"
+    <Button variant="primary"
+      size="sm"
+      className="btn-xs"
+      
       data-ratecategory={rateCategory}
       data-usaget={usaget}
       data-priority={priority}
@@ -526,9 +528,10 @@ class RateMapping extends Component {
   );
 
   getAddRatingPriorityButton = (rateCategory, usaget) => (
-    <Button
-      bsSize="xsmall"
-      className="btn-primary"
+    <Button variant="primary"
+      size="sm"
+      className="btn-xs"
+      
       onClick={this.onAddRatingPriority(rateCategory, usaget)}
     >
       <i className="fa fa-plus" />&nbsp;Add Next Priority
@@ -537,8 +540,8 @@ class RateMapping extends Component {
 
   getRemoveRatingPriorityButton = (rateCategory, usaget, priority) => (
     <Button
-      bsStyle="link"
-      bsSize="xsmall"
+      variant="link"
+      size="sm"
       onClick={this.onRemoveRatingPriority(rateCategory, usaget, priority)}
     >
       <i className="fa fa-fw fa-trash-o danger-red" />
@@ -584,11 +587,11 @@ class RateMapping extends Component {
                 <Col sm={2} style={actionsStyle}>
                   {showRemove && this.getRemoveRatingPriorityButton(rateCategory, usaget, priority)}
                   {openRateCalculators.includes(priority) ? (
-                    <Button onClick={this.closeRateCalculator(priority)} bsStyle="link">
+                    <Button onClick={this.closeRateCalculator(priority)} variant="link">
                       <i className="fa fa-fw fa-minus" />
                     </Button>
                   ) : (
-                    <Button onClick={this.openRateCalculator(priority)} bsStyle="link">
+                    <Button onClick={this.openRateCalculator(priority)} variant="link">
                       <i className="fa fa-fw fa-plus" />
                     </Button>
                   )}

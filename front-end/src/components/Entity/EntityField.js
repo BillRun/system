@@ -2,7 +2,9 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, InputGroup, Button, HelpBlock } from 'react-bootstrap';
+import classNames from 'classnames';
+import { Col, InputGroup, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '../Field';
 import Help from '../Help';
 import { getConfig, formatSelectOptions } from '@/common/Util';
@@ -199,14 +201,12 @@ class EntityField extends Component {
     return (
       <InputGroup>
         {input}
-        <InputGroup.Button className="field-group-remove-button">
-          <Button onClick={this.onClickRemoveInput}>
-            <i
-              className="fa fa-fw fa-trash-o danger-red"
-              title={`Remove ${field.get('title', field.get('field_name', ''))} field`}
-            />
-          </Button>
-        </InputGroup.Button>
+        <Button className="field-group-remove-button" onClick={this.onClickRemoveInput}>
+          <i
+            className="fa fa-fw fa-trash-o danger-red"
+            title={`Remove ${field.get('title', field.get('field_name', ''))} field`}
+          />
+        </Button>
       </InputGroup>
     );
   }
@@ -349,7 +349,7 @@ class EntityField extends Component {
     const description = field.get('description', '');
     return (
       <FormGroup controlId={fieldName} validationState={error ? 'error' : null}>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           { field.get('title', fieldName) }
           { field.get('mandatory', false) && (<span className="danger-red"> *</span>)}
           { description !== '' && (<Help contents={description} />) }

@@ -1,0 +1,11 @@
+diff --git a/node_modules/react-floater/package.json b/node_modules/react-floater/package.json
+index 1111111..2222222 100644
+--- a/node_modules/react-floater/package.json
++++ b/node_modules/react-floater/package.json
+@@ -33,4 +33,4 @@
+   "peerDependencies": {
+-    "react": "15 - 18",
+-    "react-dom": "15 - 18"
++    "react": "15 - 19",
++    "react-dom": "15 - 19"
+   },

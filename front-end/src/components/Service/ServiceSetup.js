@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel, Tabs, Tab } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import ServiceDetails from './ServiceDetails';
 import PlanIncludesTab from '../Plan/PlanIncludesTab';
 import PlanProductsPriceTab from '../Plan/PlanProductsPriceTab';
@@ -74,12 +75,11 @@ class ServiceSetup extends Component {
     existingGroups: Immutable.List(),
   };
 
-  componentWillMount() {
-    this.fetchItem();
-    this.fetchGroupNames();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+        this.fetchGroupNames();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, 'service');
@@ -88,9 +88,19 @@ class ServiceSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  shouldComponentUpdate(nextProps, nextState) {
+    return !Immutable.is(this.props.item, nextState.item)
+      || !Immutable.is(this.props.revisions, nextState.revisions)
+      || this.props.activeTab !== nextProps.activeTab
+      || this.props.itemId !== nextProps.itemId
+      || this.props.mode !== nextProps.mode;
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'service', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -100,16 +110,9 @@ class ServiceSetup extends Component {
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !Immutable.is(this.props.item, nextState.item)
-      || !Immutable.is(this.props.revisions, nextState.revisions)
-      || this.props.activeTab !== nextProps.activeTab
-      || this.props.itemId !== nextProps.itemId
-      || this.props.mode !== nextProps.mode;
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearService());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -269,7 +272,7 @@ class ServiceSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} animation={false} id="ServiceTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="ServiceTab" onSelect={this.handleSelectTab}>
 
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>
