@@ -267,14 +267,6 @@ function extractRequestDate($payload, $key) {
 		}
 	}
 
-	if ($value === null && is_array($payload) && isset($payload[$key]) && is_scalar($payload[$key])) {
-		$value = (string) $payload[$key];
-	}
-
-	if ($value === null) {
-		return null;
-	}
-
 	$datePart = substr(trim($value), 0, 10);
 	return preg_match('/^\d{4}-\d{2}-\d{2}$/', $datePart) ? $datePart : null;
 }
