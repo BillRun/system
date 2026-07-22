@@ -176,28 +176,28 @@ abstract class Billrun_Bill {
 	 * bills collection validator (BRCD-4676) rejects the write. Zero whichever of
 	 * left / left_to_pay is present and positive, leaving the absent field
 	 * untouched (a bill holds only one of the two). No-op for non-voided bills.
+	 * Call right where a bill is flagged as rejected / rejection / cancelled /
+	 * cancel / is_denial / denied_by, so the balance is zeroed at the same place
+	 * the flag is added.
 	 *
-	 * @param array $rawData
-	 * @return array the (possibly) adjusted raw data
+	 * @return $this
 	 */
-	public static function zeroVoidedBalance(array $rawData) {
+	public function zeroVoidedBalance() {
+		$rawData = $this->getRawData();
 		if (self::isVoidedBill($rawData)) {
 			foreach (array('left', 'left_to_pay') as $field) {
 				if (array_key_exists($field, $rawData) && $rawData[$field] > 0) {
-					$rawData[$field] = 0;
+					$this->data[$field] = 0;
 				}
 			}
 		}
-		return $rawData;
+		return $this;
 	}
 
 	public function save() {
-		$rawData = $this->getRawData();
-		if (self::isVoidedBill($rawData)) {
-			// A voided bill must never keep a positive left / left_to_pay, or the
-			// bills collection validator (BRCD-4676) rejects the write.
-			$this->data->setRawData(self::zeroVoidedBalance($rawData));
-		}
+		// A voided bill must never keep a positive left / left_to_pay, or the
+		// bills collection validator (BRCD-4676) rejects the write.
+		$this->zeroVoidedBalance();
 		try{
 			$res = $this->data->save(1);
 			if(!$res){

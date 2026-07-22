@@ -159,13 +159,35 @@ db.createCollection('collection_steps');
 db.collection_steps.createIndex({'trigger_date': 1 }, { unique: false , sparse: true, background: true });
 db.collection_steps.createIndex({'extra_params.aid': 1 }, { unique: false , sparse: true, background: true });
 
-db.createCollection('bills');
+// BRCD-4676: the validator blocks writing a voided (rejected/cancelled/denied)
+// bill that still holds a positive left / left_to_pay. Kept in sync with the
+// validator installed by the BRCD-4676 task in mongo/migration/script.js.
+db.createCollection('bills', {
+	validator: { $nor: [{ $and: [
+		{ $or: [
+			{ rejected: true },
+			{ rejection: true },
+			{ cancelled: true },
+			{ cancel: { $exists: true } },
+			{ is_denial: true },
+			{ denied_by: { $exists: true } },
+		] },
+		{ $or: [
+			{ left: { $gt: 0 } },
+			{ left_to_pay: { $gt: 0 } },
+		] },
+	] }] },
+	validationLevel: 'moderate',
+	validationAction: 'error',
+});
 db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
 db.bills.createIndex({'txid': 1 }, { unique: false , sparse: true, background: true});
 db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
 db.bills.createIndex({'urt': 1 }, { unique: false, background: true});
+db.bills.createIndex({'left': 1 }, { unique: false, background: true, partialFilterExpression: { left: { $gt: 0 } } });
+db.bills.createIndex({'left_to_pay': 1 }, { unique: false, background: true, partialFilterExpression: { left_to_pay: { $gt: 0 } } });
 
 //Discounts Collection
 db.createCollection('discounts');

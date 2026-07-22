@@ -465,27 +465,6 @@ class DbinitModel {
 			],
 			[
 				'coll' => 'bills',
-				// BRCD-4676: block writing a voided (rejected/cancelled/denied) bill
-				// that still holds a positive left / left_to_pay. Kept in sync with
-				// the validator installed by application/migrations/20260713_001_BRCD-4676.php.
-				'params' => [
-					'validator' => ['$nor' => [['$and' => [
-						['$or' => [
-							['rejected' => true],
-							['rejection' => true],
-							['cancelled' => true],
-							['cancel' => ['$exists' => true]],
-							['is_denial' => true],
-							['denied_by' => ['$exists' => true]],
-						]],
-						['$or' => [
-							['left' => ['$gt' => 0]],
-							['left_to_pay' => ['$gt' => 0]],
-						]],
-					]]]],
-					'validationLevel' => 'moderate',
-					'validationAction' => 'error',
-				],
 				'indexes' => [
 					['fields' => ['aid' => 'hashed'], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['txid' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
@@ -493,8 +472,6 @@ class DbinitModel {
 					['fields' => ['billrun_key' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['invoice_date' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['urt' => 1], 'params' => ['unique' => false, 'background' => true]],
-					['fields' => ['left' => 1], 'params' => ['unique' => false, 'background' => true, 'partialFilterExpression' => ['left' => ['$gt' => 0]]]],
-					['fields' => ['left_to_pay' => 1], 'params' => ['unique' => false, 'background' => true, 'partialFilterExpression' => ['left_to_pay' => ['$gt' => 0]]]],
 				],
 			],
 			[

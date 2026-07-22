@@ -2274,6 +2274,67 @@ runOnce(lastConfig, 'BRCD-4915', function () {
 
 });
 
+runOnce(lastConfig, 'BRCD-4676', function () {
+	// Zero the remaining balance on voided (rejected/cancelled/denied) bills and
+	// install a validator so such a bill can never carry a positive balance again.
+	// "Voided" is the logical complement of Billrun_Bill::getNotRejectedOrCancelledQuery()
+	// (OR-joined); defined once and reused by both the zeroing queries and the
+	// validator so the two cannot drift.
+	var voided = [
+		{ rejected: true },
+		{ rejection: true },
+		{ cancelled: true },
+		{ cancel: { $exists: true } },
+		{ is_denial: true },
+		{ denied_by: { $exists: true } },
+	];
+
+	// A bill carries either `left` or `left_to_pay` (never both), so each field is
+	// updated under its own scoped query - this clears the field that exists
+	// without introducing the one that does not.
+	['left', 'left_to_pay'].forEach(function (field) {
+		print("BRCD-4676: zeroing " + field + " on rejected/cancelled/denied bills");
+		var query = { $or: voided };
+		query[field] = { $gt: 0 };
+		var set = {};
+		set[field] = 0;
+		var res = db.bills.updateMany(query, { $set: set });
+		print("BRCD-4676: " + field + " -> 0 on " + res.modifiedCount + " bill(s) (matched " + res.matchedCount + ")");
+	});
+	
+	['left', 'left_to_pay'].forEach(function (field) {
+		print("BRCD-4676: created partial indexes on" + field + "(> 0)");
+		var indexKey = {};
+		indexKey[field] = 1;
+		var partialFilter = {};
+		partialFilter[field] = { $gt: 0 };
+		db.bills.createIndex(indexKey, { partialFilterExpression: partialFilter, background: true });
+	});
+
+
+	// A doc is valid when it does NOT match "voided AND positive balance", hence
+	// the $nor wrapper. validationLevel "moderate" is used defensively so that any
+	// voided bill outside the zeroing predicate (e.g. a negative balance) is not
+	// blocked from further updates - inserts and updates of valid docs are always
+	// checked.
+	var forbidden = {
+		$and: [
+			{ $or: voided },
+			{ $or: [
+				{ left: { $gt: 0 } },
+				{ left_to_pay: { $gt: 0 } },
+			] },
+		],
+	};
+	print("BRCD-4676: installing validator on 'bills' (block voided bills with positive left/left_to_pay)");
+	db.runCommand({
+		collMod: 'bills',
+		validator: { $nor: [forbidden] },
+		validationLevel: 'moderate',
+		validationAction: 'error',
+	});
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

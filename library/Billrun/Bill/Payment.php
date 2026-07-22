@@ -203,7 +203,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (!$payment->getId()) {
 					$payment->setTxid();
 				}
-				$rawPayments[] = Billrun_Bill::zeroVoidedBalance($payment->getRawData());
+				$rawPayments[] = $payment->zeroVoidedBalance()->getRawData();
 			}
 			$options = array(
 				'w' => 1,
@@ -255,7 +255,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
 		$rawData['urt'] = date('c');
-		return new $className($rawData);
+		$cancellation = new $className($rawData);
+		// the constructor recomputes left / left_to_pay (updateLeft / updateLeftToPay),
+		// so the zeroing must run on the constructed object - zeroing $rawData
+		// would just be overwritten.
+		return $cancellation->zeroVoidedBalance();
 	}
 
 	public static function getClassByPaymentMethod($paymentMethod) {
@@ -287,7 +291,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         if (isset($response['urt'])) {
 			$rawData['force_urt'] = $response['urt'];
 		}
-		return new $className($rawData);
+		$rejection = new $className($rawData);
+		// the constructor recomputes left / left_to_pay (updateLeft / updateLeftToPay),
+		// so the zeroing must run on the constructed object - zeroing $rawData
+		// would just be overwritten.
+		return $rejection->zeroVoidedBalance();
 	}
         
 	public function getId() {
@@ -414,6 +422,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markRejected() {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
+		$this->zeroVoidedBalance();
 		$this->detachPaidBills(false, false);
 		$this->detachPayingBills();
                 $this->unsetAllPendingLinkedBills();
@@ -462,6 +471,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+		$this->zeroVoidedBalance();
                 $this->unsetAllPendingLinkedBills();
                 $this->setPending(false);
                 $this->setConfirmationStatus(false);
@@ -1236,6 +1246,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$deniedBy[$txId] = $amount;
 		$this->data['denied_by'] = isset($this->data['denied_by']) ? array_merge($this->data['denied_by'], $deniedBy) : $deniedBy;
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
+		$this->zeroVoidedBalance();
 		$this->detachPaidBills();
 		$this->detachPayingBills();
 		$paymentSaved = $this->save();
