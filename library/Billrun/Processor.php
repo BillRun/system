@@ -108,6 +108,14 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected $config = null;
 	protected  $usage_type = null;
+
+	/**
+	 * the input processor (file type) name, as defined in file_types configuration.
+	 * in realtime static::$type is 'realtime' (not a real file type), so this is
+	 * the reliable key for file type config lookups
+	 * @var string
+	 */
+	protected $fileType = null;
 	
 	/**
 	 * configuration by file type
@@ -131,6 +139,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function __construct($options) {
 
 		parent::__construct($options);
+		$this->fileType = $options['file_type'] ?? null;
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$lineTypes = $options['line_types'] ?? [];
 			$this->setParser(array_merge($options['parser'], (!empty($lineTypes) ? ['line_types' => $lineTypes] : [])));
@@ -771,7 +780,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * "garbage" lines are defined by "filters" configuration of input processor
 	 */
 	public function filterLines() {
-		$type = $this->receiverSource ?? static::$type;
+		$type = $this->fileType;
 		$filtersPathExists = $this->checkIfPathExistsInFileTypeProcessor('filters', $type);
 		if(!$filtersPathExists){
 			return;
@@ -793,7 +802,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function dropLines() {
-		$type = $this->receiverSource ?? static::$type;
+		$type = $this->fileType;
 		$dropLinesPathExists = $this->checkIfPathExistsInFileTypeProcessor('drop_lines', $type);
 		if(!$dropLinesPathExists){
 			return;
@@ -953,38 +962,11 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	public function processorByPath($options){
-		$absPath = Billrun_Util::getBillRunPath($options['path']);
-		if (is_dir($absPath)) {
-			return $this->processorByDir($options, $absPath);
-		}
 		if(!$this->createLogForProcessWithPath($options)){
 			return;
 		}
 		$this->setShouldremovefromWorkspace(false);
-		return $this->process_files($absPath);
-	}
-
-	protected function processorByDir($options, $dir) {
-		$entries = glob(rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '*');
-		if ($entries === false) {
-			return;
-		}
-		sort($entries);
-		$hasFiles = false;
-		foreach ($entries as $entry) {
-			if (!is_file($entry)) {
-				continue;
-			}
-			$fileOptions = array_merge($options, array('path' => $entry));
-			if ($this->createLogForProcessWithPath($fileOptions)) {
-				$hasFiles = true;
-			}
-		}
-		if (!$hasFiles) {
-			return;
-		}
-		$this->setShouldremovefromWorkspace(false);
-		return $this->process_files();
+		return $this->process_files(Billrun_Util::getBillRunPath($options['path']));
 	}
 
 	protected function checkIfPathExistsInFileTypeProcessor($path, $fileType){

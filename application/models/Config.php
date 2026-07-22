@@ -383,6 +383,17 @@ class ConfigModel {
 			}
 		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
 			throw new Exception("Can not save collection configuration");
+		} else if ($category === 'smser') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for smser.");
+				return 0;
+			}
+
+			Billrun_Utils_Mongo::setValueByMongoIndex(
+				$data,
+				$updatedData,
+				'smser'
+			);
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -1485,7 +1496,7 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3');
+		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3', 'nsn');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}

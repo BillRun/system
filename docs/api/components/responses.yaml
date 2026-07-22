@@ -1,0 +1,80 @@
+EnvelopeSchema:
+  type: object
+  description: |
+    Common response envelope. Almost every BillRun endpoint wraps its
+    result in this shape.
+  properties:
+    status:
+      type: integer
+      description: |
+        `1` on success, `0` on hard failure, `2` on partial success (some
+        items in a batch succeeded).
+      enum: [0, 1, 2]
+    desc:
+      type: string
+      description: Human-readable description (`"success"` on success).
+    details:
+      description: Action-specific payload.
+      type:
+        - object
+        - array
+        - string
+        - "null"
+    entity:
+      type: object
+      description: The affected entity after the operation, when applicable.
+      additionalProperties: true
+    input:
+      type: object
+      description: Echo of the request input (for debugging / audit).
+      additionalProperties: true
+  required: [status]
+
+ErrorSchema:
+  type: object
+  properties:
+    status: { type: integer, enum: [0] }
+    desc: { type: string }
+    error:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        context:
+          type: object
+          additionalProperties: true
+
+Envelope:
+  description: Standard BillRun response envelope.
+  content:
+    application/json:
+      schema:
+        $ref: "#/EnvelopeSchema"
+
+BadRequest:
+  description: Invalid or missing parameters.
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorSchema"
+
+Unauthorized:
+  description: Missing or invalid authentication.
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorSchema"
+
+Forbidden:
+  description: Authenticated but lacks permission for this action.
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorSchema"
+
+NotFound:
+  description: Entity not found.
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorSchema"

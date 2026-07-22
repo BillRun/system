@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class CreatetenantAction extends ApiAction {
 
-	protected $request;
+	protected $requestData;
 	protected $status = true;
 	protected $desc = '';
 	protected $db;
@@ -121,11 +121,13 @@ class CreatetenantAction extends ApiAction {
 			$data['shared_secret'] = [];
 		}
 		$data['shared_secret'][] = Billrun_Utils_Security::generateSecretKey();
+		// generate a per-tenant field-encryption key unless one is supplied via the environment
+		Billrun_Utils_Encryption::ensureConfigKey($data);
 		$data['creation_date'] = new Mongodloid_Date();
 		$data['name'] = 'Initial Secret';
 		$data['company_name'] = $this->tenant;
 		$data['registration_date'] = new Mongodloid_Date();
-		$data['tenant']['name']['v'] = $this->request['companyname'];
+		$data['tenant']['name']['v'] = $this->requestData['companyname'];
 		$data['urt'] = new Mongodloid_Date();
 
 		if (!$this->db->configCollection()->insert($data)) {
@@ -154,11 +156,11 @@ class CreatetenantAction extends ApiAction {
 
 	public function init() {
 		Billrun_Factory::log('Create Tenant - initializing...', Zend_Log::INFO);
-		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
-		$this->tenant = strtolower($this->request['tenant']);
+		$this->requestData = $this->getRequest()->getRequest(); // supports GET / POST requests 
+		$this->tenant = strtolower($this->requestData['tenant']);
 		$this->db_name = 'billing_' . $this->tenant;
-		$this->userName = $this->request['email'];
-		$this->password = $this->request['password'];
+		$this->userName = $this->requestData['email'];
+		$this->password = $this->requestData['password'];
 	}
 
 	protected function buildResponse() {
