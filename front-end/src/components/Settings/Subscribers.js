@@ -16,6 +16,35 @@ import {
   isValidUrl,
 } from '@/common/Util';
 
+export const isSubscribersValid = (data) => {
+  const type = data.getIn(['subscriber', 'type'], 'db');
+
+  if (type === 'db') {
+    return true;
+  }
+
+  const requiredUrls = [
+    data.getIn(['external_authentication', 'access_token_url'], ''),
+    data.getIn(['subscriber', 'external_url'], ''),
+    data.getIn(['account', 'external_url'], ''),
+    data.getIn(['billable', 'url'], ''),
+  ];
+
+  const requiredCredentials = [
+    data.getIn(['external_authentication', 'data', 'client_id'], ''),
+    data.getIn(['external_authentication', 'data', 'client_secret'], ''),
+  ];
+
+  const urlsValid = requiredUrls.every(
+    value => !isEmptyString(value) && isValidUrl(value),
+  );
+
+  const credentialsValid = requiredCredentials.every(
+    value => typeof value === 'string' && !isEmptyString(value),
+  );
+
+  return urlsValid && credentialsValid;
+};
 
 const Subscribers = ({ data, typesOptions, onChange }) => {
 

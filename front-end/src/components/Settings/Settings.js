@@ -16,7 +16,7 @@ import Tenant from './Tenant';
 import Security from './Security';
 import EditMenu from './EditMenu';
 import UsageTypes from './UsageTypes';
-import Subscribers from './Subscribers';
+import Subscribers, { isSubscribersValid } from './Subscribers';
 import System from './System';
 import { ActionButtons } from '@/components/Elements';
 import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies } from '@/actions/settingsActions';
@@ -129,7 +129,17 @@ class Settings extends Component {
   }
 
   onSave = () => {
+    const { settings } = this.props;
     const { changeCategories } = this.state;
+
+    const subscribersChanged = changeCategories.has('subscribers');
+    const subscribers = settings.get('subscribers', Immutable.Map());
+
+    if (subscribersChanged && !isSubscribersValid(subscribers)) {
+      this.handleSelectTab(55);
+      return;
+    }
+
     if (!changeCategories.isEmpty()) {
       const categoryToSave = changeCategories.toArray();
       this.props.dispatch(saveSettings(categoryToSave))
