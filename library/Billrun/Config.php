@@ -56,17 +56,19 @@ class Billrun_Config {
 	protected $loadedFiles = [];
 
 	/**
+	 * configuration.include[] file paths collected from all loaded config files,
+	 * to be loaded only after all ini files (base, host, tenant) were merged
+	 * @var array
+	 */
+	protected $includedFiles = [];
+
+	/**
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
 	protected function __construct($config) {
 		$this->config = $config;
-		$configInclude = $config['configuration']['include'];
-		if (!empty($configInclude) && $configInclude->valid()) {
-			foreach ($config->toArray()['configuration']['include'] as $filePath) {
-				$this->addConfig($filePath);
-			}
-		}
+		$this->collectIncludedFiles($config->toArray());
 		if (!isset($config['disableHostConfigLoad']) && file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
 			$this->addConfig($env_conf);
 		}
@@ -80,6 +82,10 @@ class Billrun_Config {
 		} else {
 			$this->tenant = $this->getEnv();
 		}
+
+		foreach ($this->includedFiles as $filePath) {
+			$this->addConfig($filePath);
+		}
 	}
 	
 	public function addConfig($path) {
@@ -91,6 +97,7 @@ class Billrun_Config {
 					$addedConf = (new Yaf_Config_Ini($path))->toArray();
 				}
 				if (is_array($addedConf)) {
+					$this->collectIncludedFiles($addedConf);
 					$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
 					$this->loadedFiles[$path] = true;
 				} else {
@@ -99,6 +106,18 @@ class Billrun_Config {
 			} else {
 				error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 			}
+		}
+	}
+
+	/**
+	 * collect the configuration.include[] paths a config file declares, so they can be
+	 * loaded after all ini files were merged. collected per file, because merging the
+	 * files overrides the include entries of one file with another's (numeric keys collide)
+	 * @param array $config configuration values
+	 */
+	protected function collectIncludedFiles($config) {
+		if (!empty($config['configuration']['include'])) {
+			$this->includedFiles = array_merge($this->includedFiles, array_values((array) $config['configuration']['include']));
 		}
 	}
 
