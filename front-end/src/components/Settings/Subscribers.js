@@ -23,27 +23,21 @@ export const isSubscribersValid = (data) => {
     return true;
   }
 
+  const authUrl = data.getIn(['external_authentication', 'access_token_url'], '');
+
   const requiredUrls = [
-    data.getIn(['external_authentication', 'access_token_url'], ''),
     data.getIn(['subscriber', 'external_url'], ''),
     data.getIn(['account', 'external_url'], ''),
     data.getIn(['billable', 'url'], ''),
   ];
 
-  const requiredCredentials = [
-    data.getIn(['external_authentication', 'data', 'client_id'], ''),
-    data.getIn(['external_authentication', 'data', 'client_secret'], ''),
-  ];
-
-  const urlsValid = requiredUrls.every(
+  const requiredUrlsValid = requiredUrls.every(
     value => !isEmptyString(value) && isValidUrl(value),
   );
 
-  const credentialsValid = requiredCredentials.every(
-    value => typeof value === 'string' && !isEmptyString(value),
-  );
+  const authUrlValid = isEmptyString(authUrl) || isValidUrl(authUrl);
 
-  return urlsValid && credentialsValid;
+  return requiredUrlsValid && authUrlValid;
 };
 
 const Subscribers = ({ data, typesOptions, onChange }) => {
@@ -60,7 +54,7 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
   const url_gba = data.getIn(['billable', 'url'], '');
 
   const isSourceDb = type === 'db';
-  const validAuthUrl = !isEmptyString(auth_url) && isValidUrl(auth_url) ;
+  const validAuthUrl = isEmptyString(auth_url) || isValidUrl(auth_url) ;
   const validUrlGba = !isEmptyString(url_gba) && isValidUrl(url_gba);
   const validUrlGad = !isEmptyString(url_gad) && isValidUrl(url_gad);
   const validUrlGsd = !isEmptyString(url_gsd) && isValidUrl(url_gsd);
@@ -171,22 +165,17 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
             <FormGroup validationState={!validAuthUrl ? 'error' : null}>
               <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.url', 'settings')}
-                  <span className="danger-red"> *</span>
               </Col>
               <Col sm={6}>
                   <Field onChange={onChangeAuthUrl} value={auth_url} disabled={isSourceDb} />
-                  { isEmptyString(auth_url) && (
-                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.url', 'settings')}, '')}</small></HelpBlock>
-                  )}
                   { !isEmptyString(auth_url) && !isValidUrl(auth_url) === true && (
                     <HelpBlock className="mb0"><small>URL is not valid</small></HelpBlock>
                   )}
               </Col>
             </FormGroup>
-            <FormGroup validationState={isEmptyString(auth_secret) ? 'error' : null}>
+            <FormGroup>
               <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.secret', 'settings')}
-                  <span className="danger-red"> *</span>
               </Col>
               <Col sm={6}>
                   <Field
@@ -196,21 +185,14 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
                     autoComplete="new-password"
                     disabled={isSourceDb}
                   />
-                  { isEmptyString(auth_secret) && (
-                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.secret', 'settings')}, '')}</small></HelpBlock>
-                  )}
               </Col>
             </FormGroup>
-            <FormGroup validationState={isEmptyString(auth_id) ? 'error' : null}>
+            <FormGroup>
               <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('ext_subs_auth.id', 'settings')}
-                  <span className="danger-red"> *</span>
               </Col>
               <Col sm={6}>
                   <Field onChange={onChangeAuthId} value={auth_id} disabled={isSourceDb} />
-                  { isEmptyString(auth_id) && (
-                    <HelpBlock className="mb0"><small>{getFieldName('field_required', 'settings', null, {field: getFieldName('ext_subs_auth.id', 'settings')}, '')}</small></HelpBlock>
-                  )}
               </Col>
             </FormGroup>
             <FormGroup>
