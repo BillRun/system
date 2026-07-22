@@ -85,7 +85,7 @@ class Tests_Eventtest extends UnitTestCase {
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
 		print_r($this->message);
-	//    $this->restoreColletions();
+	    $this->restoreColletions();
 	}
 
 	protected function runT($stamp) {
