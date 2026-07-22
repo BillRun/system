@@ -217,6 +217,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance();
 		}
+		if ($pricingData === false) {
+			return false;
+		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
 	}
