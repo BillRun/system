@@ -1,0 +1,381 @@
+{
+	"collection": "eventsettingsCollection",
+	"data": [
+		{
+			"key": "GROUP1",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.A.usagev",
+							"total_path": "balance.groups.A.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "A"
+								},
+								{
+									"type": "service",
+									"key": "SERVICE1"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant",
+					"value": "50"
+				}
+			],
+			"event_code": "group1",
+			"event_description": "group1",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "UNLIMITEDGROUP",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.UNLIMIT.usagev",
+							"total_path": "balance.groups.UNLIMIT.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "UNLIMIT"
+								},
+								{
+									"type": "service",
+									"key": "UNLIMITETED1"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant",
+					"value": "100"
+				}
+			],
+			"event_code": "unlimitedGroup",
+			"event_description": "unlimitedGroup",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "ACTIVITITPE",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.totals.sms.usagev",
+							"total_path": "",
+							"related_entities": []
+						}
+					],
+					"unit": "counter",
+					"usaget": "sms",
+					"property_type": "",
+					"type": "reached_constant",
+					"value": "10"
+				}
+			],
+			"event_code": "activitiTpe",
+			"event_description": "activitiTpe",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "ACTIVITITPEEXCEEDINGUNITS",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.totals.sms.over_group.usagev",
+							"total_path": "",
+							"related_entities": []
+						}
+					],
+					"unit": "counter",
+					"usaget": "sms",
+					"property_type": "",
+					"type": "reached_constant",
+					"value": "10"
+				}
+			],
+			"event_code": "activitiTpeExceedingUnits",
+			"event_description": "activitiTpe",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "MONY",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.cost",
+							"total_path": "",
+							"related_entities": []
+						}
+					],
+					"unit": "",
+					"usaget": "",
+					"property_type": "",
+					"type": "is_greater_than",
+					"value": 100
+				}
+			],
+			"event_code": "mony",
+			"event_description": "mony",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "2RATES",
+			"active": false,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.CALL.usagev",
+							"total_path": "balance.groups.CALL.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "CALL"
+								},
+								{
+									"type": "service",
+									"key": "CALL"
+								}
+							]
+						},
+						{
+							"path": "balance.groups.CALLB.usagev",
+							"total_path": "balance.groups.CALLB.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "CALLB"
+								},
+								{
+									"type": "service",
+									"key": "CALLB"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant",
+					"value": "50"
+				}
+			],
+			"event_code": "2rates",
+			"event_description": "2rates",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "SAMERATE",
+			"active": false,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.CALL.usagev",
+							"total_path": "balance.groups.CALL.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "CALL"
+								},
+								{
+									"type": "service",
+									"key": "CALL"
+								}
+							]
+						},
+						{
+							"path": "balance.groups.A.usagev",
+							"total_path": "balance.groups.A.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "A"
+								},
+								{
+									"type": "service",
+									"key": "SERVICE1"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant",
+					"value": "10"
+				}
+			],
+			"event_code": "samerate",
+			"event_description": "samerate",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "GROUP2",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.CALLB.usagev",
+							"total_path": "balance.groups.CALLB.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "CALLB"
+								},
+								{
+									"type": "service",
+									"key": "CALL_B"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant",
+					"value": "50,75"
+				}
+			],
+			"event_code": "group2",
+			"event_description": "group2",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "GROUP3",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.ABCD.usagev",
+							"total_path": "balance.groups.ABCD.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "ABCD"
+								},
+								{
+									"type": "service",
+									"key": "ABC"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "reached_constant_recurring",
+					"value": "10"
+				}
+			],
+			"event_code": "group3",
+			"event_description": "group3",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "GRAET",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.ABCDE.usagev",
+							"total_path": "balance.groups.ABCDE.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "ABCDE"
+								},
+								{
+									"type": "service",
+									"key": "ISG"
+								}
+							]
+						}
+					],
+					"unit": "seconds",
+					"usaget": "call",
+					"property_type": "time",
+					"type": "is_greater_than",
+					"value": "10"
+				}
+			],
+			"event_code": "graet",
+			"event_description": "graet",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		},
+		{
+			"key": "A",
+			"active": true,
+			"conditions": [
+				{
+					"paths": [
+						{
+							"path": "balance.groups.TY.cost",
+							"total_path": "balance.groups.TY.total",
+							"related_entities": [
+								{
+									"type": "group",
+									"key": "TY"
+								},
+								{
+									"type": "service",
+									"key": "SERVICE1_DD"
+								}
+							]
+						}
+					],
+					"unit": "",
+					"usaget": "cost",
+					"property_type": "",
+					"all_groups": false,
+					"type": "reached_constant_recurring",
+					"value": 0.1
+				}
+			],
+			"event_code": "a",
+			"event_description": "tyw",
+			"from": "time*2026-07-22T08:28:12.506Z",
+			"to": "time*2126-07-22T09:28:14Z",
+			"type": "balance"
+		}
+	]
+}
