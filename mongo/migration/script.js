@@ -2275,7 +2275,7 @@ runOnce(lastConfig, 'BRCD-4915', function () {
 });
 
 // BRCD-5421: upfront reconciliation - load the previous cycle upfront lines.
-runOnce(lastConfig, 'BRCD-5421-2', function () {
+runOnce(lastConfig, 'BRCD-5421', function () {
 	db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1 }, { unique: false, sparse: false, background: true, partialFilterExpression: { 'is_upfront': true }});
 });
 

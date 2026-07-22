@@ -6,6 +6,9 @@
  * - Billable endpoint returns paged billable data across CRM fixtures.
  * The endpoints read CRM fixtures from crm_data/<aid>.json and shape the payload
  * to mimic the original CRM behavior for tests and local development.
+ * Billable requests also carry the cycle window (start_date/end_date), so a cycle
+ * scoped fixture crm_data/<aid>_<start_date>_<end_date>.json takes precedence there -
+ * tests can serve different data per cycle run without rewriting the shared fixture.
  */
 
 // Fixtures are json_decoded whole into memory per request; large ones (e.g. 300K
@@ -32,8 +35,10 @@ if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 } elseif (preg_match('/\/billable/', $_SERVER["REQUEST_URI"])) {
 	// Billable returns the raw CRM fixture for the requested aid, exactly as it
 	// did before BRCD-4564 — no directory-wide scan or pagination, which was
-	// prohibitively heavy when crm_data holds many fixtures.
-	echo loadAidData($aid);
+	// prohibitively heavy when crm_data holds many fixtures. A fixture scoped to
+	// the requested cycle window wins over <aid>.json (gad/gsd carry no window,
+	// so only billable resolves per cycle).
+	echo loadBillableData($aid, $payload);
 } else {
 	// unsupported endpoint
 }
@@ -225,6 +230,53 @@ function loadAidDataByKey($aidKey) {
 	}
 
 	return file_get_contents($filePath, true);
+}
+
+/**
+ * Load the CRM fixture for a billable request.
+ * A cycle scoped fixture <aid>_<start_date>_<end_date>.json (the request window,
+ * date part only) takes precedence; falls back to the plain <aid>.json fixture.
+ */
+function loadBillableData($aid, $payload) {
+	if ($aid === null) {
+		return '';
+	}
+
+	$startDate = extractRequestDate($payload, 'start_date');
+	$endDate = extractRequestDate($payload, 'end_date');
+	if ($startDate !== null && $endDate !== null) {
+		$filePath = crmDataFolder() . "/{$aid}_{$startDate}_{$endDate}.json";
+		if (is_readable($filePath)) {
+			return file_get_contents($filePath, true);
+		}
+	}
+
+	return loadAidData($aid);
+}
+
+/**
+ * Extract a date field from POST/GET arrays or JSON payload, normalized to the
+ * Y-m-d date part (same-day cycle requests send a full datetime).
+ */
+function extractRequestDate($payload, $key) {
+	$value = null;
+	foreach ([ $_POST, $_GET ] as $source) {
+		if (isset($source[$key]) && is_scalar($source[$key])) {
+			$value = (string) $source[$key];
+			break;
+		}
+	}
+
+	if ($value === null && is_array($payload) && isset($payload[$key]) && is_scalar($payload[$key])) {
+		$value = (string) $payload[$key];
+	}
+
+	if ($value === null) {
+		return null;
+	}
+
+	$datePart = substr(trim($value), 0, 10);
+	return preg_match('/^\d{4}-\d{2}-\d{2}$/', $datePart) ? $datePart : null;
 }
 
 /**
