@@ -18,8 +18,9 @@ import EditMenu from './EditMenu';
 import UsageTypes from './UsageTypes';
 import Subscribers, { isSubscribersValid } from './Subscribers';
 import System from './System';
+import Sms from './Sms';
 import { ActionButtons } from '@/components/Elements';
-import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies } from '@/actions/settingsActions';
+import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms } from '@/actions/settingsActions';
 import { prossessMenuTree, combineMenuOverrides, initMainMenu } from '@/actions/guiStateActions/menuActions';
 import { getList, clearList } from '@/actions/listActions';
 import { getEntitesQuery } from '@/common/ApiQueries';
@@ -79,7 +80,8 @@ class Settings extends Component {
       'file_types',
       'system',
       'plugins',
-      'plays'
+      'plays',
+      'smser',
     ];
     this.props.dispatch(getSettings(settingsToFetch));
     this.props.dispatch(getCurrencies()).then(this.initCurrencyOptions);
@@ -109,6 +111,10 @@ class Settings extends Component {
   onChangeFieldValue = (category, id, value) => {
     this.setState((prevState) => ({ changeCategories: prevState.changeCategories.add(category) }));
     this.props.dispatch(updateSetting(category, id, value));
+  }
+
+  onSendTestSms = (recipient) => {
+    this.props.dispatch(sendTestSms(recipient));
   }
 
   onChangeMenuOrder = (path, newOrder) => {
@@ -185,6 +191,7 @@ class Settings extends Component {
     const tenant = settings.get('tenant', Immutable.Map());
     const mainMenuOverrides = settings.getIn(['menu', 'main'], Immutable.Map());
     const mainMenu = prossessMenuTree(combineMenuOverrides(mainMenuOverrides), 'root');
+    const smser = settings.get('smser', Immutable.Map());
 
     return (
       <div>
@@ -244,6 +251,17 @@ class Settings extends Component {
             <Panel style={{ borderTop: 'none' }}>
               <Invoicing onChange={this.onChangeFieldValue} data={billrun} />
               {/*<Allowances onChange={this.onChangeFieldValue} data={billrun} />*/}
+            </Panel>
+          </Tab>
+
+          <Tab title="SMS" eventKey={65}>
+            <Panel style={{ borderTop: 'none' }}>
+              <Sms
+                data={smser}
+                onChange={this.onChangeFieldValue}
+                onSendTestSms={this.onSendTestSms}
+                isChanged={this.state.changeCategories.includes('smser')}
+              />
             </Panel>
           </Tab>
 

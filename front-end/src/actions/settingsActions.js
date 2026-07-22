@@ -9,6 +9,7 @@ import {
   getCurrenciesQuery,
   saveSharedSecretQuery,
   disableSharedSecretQuery,
+  sendTestSmsQuery,
 } from '../common/ApiQueries';
 
 
@@ -150,6 +151,26 @@ export const getSettings = (categories = [], data = {}) => (dispatch) => {
       dispatch(apiBillRunErrorHandler(error));
       return false;
     });
+};
+
+export const sendTestSms = recipient => (dispatch) => {
+  dispatch(startProgressIndicator());
+
+  const query = sendTestSmsQuery(recipient);
+
+  return apiBillRun(query)
+    .then(success => dispatch(
+      apiBillRunSuccessHandler(
+        success,
+        'Test SMS sent successfully!',
+      ),
+    ))
+    .catch(error => dispatch(
+      apiBillRunErrorHandler(
+        error,
+        'Error sending test SMS',
+      ),
+    ));
 };
 
 export const clearAppStorage = (keys = null) => {
