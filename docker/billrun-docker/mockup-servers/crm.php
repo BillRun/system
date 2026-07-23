@@ -196,7 +196,7 @@ function extractPluginFromUri() {
 
 	// crm/<plugin>/<endpoint> => the plugin sits between the prefix and endpoint.
 	$parts = explode('/', trim($path, '/'));
-	if (count($parts) === 3 && $parts[0] === 'crm' && $parts[1] !== '') {
+	if (count($parts) === 3 && $parts[0] === 'crm' && preg_match('/^[A-Za-z0-9_-]+$/', $parts[1])) {
 		return $parts[1];
 	}
 

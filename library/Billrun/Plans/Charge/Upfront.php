@@ -43,6 +43,15 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected static $expectedCharges = [];
 
+	/**
+	 * The previous cycle run upfront lines of the account being processed, loaded in a single query
+	 * by loadPreviousUpfrontLines and sliced by its callers (per plan, subscriber and credit kind).
+	 * Holds one account at a time (keyed by aid/previous billrun key) - the cycle processes
+	 * accounts sequentially
+	 * @var array
+	 */
+	protected static $previousUpfrontLinesCache = [];
+
 	public function __construct($plan) {
 		parent::__construct($plan);
 		$this->planData = $plan;
@@ -57,6 +66,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		self::$reconciledPlans = [];
 		self::$ranCyclesCache = [];
 		self::$expectedCharges = [];
+		self::$previousUpfrontLinesCache = [];
 	}
 
 	/**
@@ -405,7 +415,8 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 
 	/**
 	 * Load the upfront lines that were created by the previous cycle run (they relate to the current cycle).
-	 * Covered by the {aid, billrun} partial lines index over {is_upfront: true, charge_op: 'charge'}.
+	 * The whole account is fetched (and cached) in a single query - the repeated calls (per plan,
+	 * subscriber and credit kind) only slice the cached result.
 	 * @param int $aid
 	 * @param string $previousBillrunKey
 	 * @param string $type 'flat' - the upfront plan lines, grouped by plan name
@@ -415,32 +426,60 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return array
 	 */
 	public static function loadPreviousUpfrontLines($aid, $previousBillrunKey, $type = 'flat', $sid = null, $usaget = 'discount') {
+		$cacheKey = $aid . '/' . $previousBillrunKey;
+		if (!isset(self::$previousUpfrontLinesCache[$cacheKey])) {
+			self::$previousUpfrontLinesCache = [$cacheKey => self::loadAccountUpfrontLines($aid, $previousBillrunKey)];
+		}
+		$cached = self::$previousUpfrontLinesCache[$cacheKey];
+		if ($type == 'credit') {
+			return Billrun_Util::getIn($cached, ['credit', $usaget], []);
+		}
+		if (!is_null($sid)) {
+			return Billrun_Util::getIn($cached, ['flat', $sid], []);
+		}
+		// the whole account - merge the per subscriber plan groups
+		$ret = [];
+		foreach ($cached['flat'] as $sidLines) {
+			foreach ($sidLines as $planName => $lines) {
+				$ret[$planName] = array_merge(Billrun_Util::getFieldVal($ret[$planName], []), $lines);
+			}
+		}
+		return $ret;
+	}
+
+	/**
+	 * The single per-account fetch behind loadPreviousUpfrontLines - all the upfront lines the
+	 * previous cycle run created for the current cycle, grouped for both reconciliations:
+	 * 'flat' (plan) lines by subscriber and plan name, 'credit' lines by kind (usaget - the credit
+	 * lines also include manual credits, the kind grouping keeps only the requested one out),
+	 * key and subscriber.
+	 * Covered by the {aid, billrun} partial lines index over {is_upfront: true, charge_op: 'charge'}.
+	 * @param int $aid
+	 * @param string $previousBillrunKey
+	 * @return array
+	 */
+	protected static function loadAccountUpfrontLines($aid, $previousBillrunKey) {
 		$query = array(
 			'aid' => $aid,
 			'billrun' => $previousBillrunKey,
-			'type' => $type,
+			'type' => array('$in' => array('flat', 'credit')),
 			'is_upfront' => true,
 			'charge_op' => 'charge',
 		);
-		if ($type == 'credit') {
-			// credit lines also include manual credits - take only the requested reconciled kind
-			$query['usaget'] = $usaget;
-		}
-		if (!is_null($sid)) {
-			$query['sid'] = $sid;
-		}
-		$ret = [];
+		$ret = ['flat' => [], 'credit' => []];
+		Billrun_Factory::log("Loading previous upfront lines for aid: {$aid}, cycle: {$previousBillrunKey}", Zend_Log::DEBUG);
 		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor();
 		foreach ($cursor as $line) {
 			$raw = $line->getRawData();
-			if ($type == 'credit') {
+			$lineSid = Billrun_Util::getFieldVal($raw['sid'], 0);
+			if ($raw['type'] == 'credit') {
 				$key = !empty($raw['key']) ? $raw['key'] : (!empty($raw['arate_key']) ? $raw['arate_key'] : Billrun_Util::getFieldVal($raw['name'], ''));
 				if ($key === '') {
 					continue;
 				}
-				$ret[$key][Billrun_Util::getFieldVal($raw['sid'], 0)][] = $raw;
+				$ret['credit'][Billrun_Util::getFieldVal($raw['usaget'], '')][$key][$lineSid][] = $raw;
 			} else if (!empty($raw['plan'])) {
-				$ret[$raw['plan']][] = $raw;
+				$ret['flat'][$lineSid][$raw['plan']][] = $raw;
 			}
 		}
 		return $ret;

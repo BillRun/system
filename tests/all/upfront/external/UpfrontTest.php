@@ -1306,6 +1306,52 @@ class UpfrontTest extends \Codeception\Test\Unit
     }
 
     /**
+     * The full month variant of the cancelled advance charge, without extending the getBillable
+     * window (billable_next_cycle stays off) - the CRM returns the upcoming revision in the
+     * regular window request (the window scoped fixture carries it): the plan is known to start
+     * exactly on the prepaid cycle start (activation 2026-08-01, whatever the deactivation -
+     * unknown/infinity here) - cycle 202608 (paying August upfront) charges the full month in
+     * advance. The account then decides not to join the plan at all - getBillable still returns
+     * the revision, but zero length (plan_activation = plan_deactivation = 2026-08-01, never
+     * active). The 202609 run expects no August charge and fully refunds the advance one.
+     */
+    public function testUpfrontPlanFullMonthCancelledAfterChargedInAdvance()
+    {
+        $aid = 41022;
+        $planName = 'UPFRONT_ADV_PLAN22';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+
+        // the plan is known to start on 2026-08-01, the prepaid cycle start - cycle 202608
+        // (paying August upfront) charges the full month in advance, whatever the (yet unknown)
+        // deactivation. the regular window request ([2026-07-01, 2026-08-01)) is served the
+        // upcoming activation (crm_data/41022_2026-07-01_2026-08-01.json), and nothing is active
+        // in July itself - no catch up reconciliation
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+        $planLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'name' => $planName, 'aid' => $aid, 'charge_op' => 'charge'));
+        $this->assertNotEmpty($planLine, 'upfront plan line was not created');
+        $this->assertEqualsWithDelta(100, $planLine['aprice'], $this->epsilon);
+        $this->assertEquals(strtotime('2026-08-01 00:00:00'), $planLine['start']->toDateTime()->getTimestamp());
+        $reconcileLine = $this->tester->grabFromCollection('lines', array('billrun' => '202608', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertEmpty($reconcileLine, 'nothing was active in July - no reconciliation line was expected');
+
+        // the account decides not to join the plan at all - the 202609 run is served the same
+        // revision, zero length (crm_data/41022_2026-08-01_2026-09-01.json): the plan was never
+        // active, so the full month paid in advance is fully refunded and nothing new is charged
+        $this->defaultOptions['stamp'] = '202609';
+        $this->tester->runCycle($this->defaultOptions);
+
+        $refundLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'refund', 'aid' => $aid));
+        $this->assertNotEmpty($refundLine, 'refund line was not created');
+        $this->assertEqualsWithDelta(-100, $refundLine['aprice'], $this->epsilon);
+        $chargeLine = $this->tester->grabFromCollection('lines', array('billrun' => '202609', 'type' => 'flat', 'charge_op' => 'charge', 'aid' => $aid));
+        $this->assertEmpty($chargeLine, 'no new upfront charge was expected');
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202609', 'aid' => $aid));
+        $this->assertEqualsWithDelta(-100, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
      * 18. An upfront plan known to start only beyond the next (upfront paid) cycle - the
      *     activation (2026-08-15) is after the prepaid cycle end (cycle 202607 pays July
      *     upfront), so the 202607 run charges nothing in advance and has nothing to reconcile
