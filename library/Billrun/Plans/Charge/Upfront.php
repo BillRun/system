@@ -119,6 +119,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 			// the previous billing cycle never ran - the current cycle was never charged upfront so
 			// there is nothing to reconcile (can be disabled by setting the
 			// billrun.upfront.reconcile_requires_previous_billrun configuration to false)
+			Billrun_Factory::log("Upfront reconciliation skipped for plan {$planName} (aid: {$aid}, sid: {$sid}, cycle: {$this->cycle->key()}) - the previous cycle ({$prevKey}) never ran, nothing was charged upfront", Zend_Log::DEBUG);
 			return null;
 		}
 		// the previous run lines are reconciled once per plan - when the plan has several records in
@@ -291,16 +292,20 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		// the full fraction mode charges the full next cycle, ignoring the changes that are already
 		// known (the legacy upfront behavior, e.g. for tests emulating a legacy previous run)
 		$fullFraction = Billrun_Factory::config()->getConfigValue('billrun.upfront.full_fraction', false);
+		$planName = Billrun_Util::getFieldVal($this->planData['plan'], Billrun_Util::getFieldVal($this->planData['name'], ''));
+		$sid = Billrun_Util::getIn($this->planData, ['line_stump', 'sid'], null);
 		// Is the activation beyond the charged (next) cycle, or the deactivation before the
 		// current one? (an activation within the next cycle is known in advance and charged
 		// prorated - BRCD-5421 - except in the full fraction mode, which does not know the future)
 		if( $this->activation > ($fullFraction ? $this->cycle->end() : $nextCycle->end()) || $this->deactivation < $this->cycle->start()) {
+			Billrun_Factory::log("Plan {$planName} (sid: {$sid}) is not charged upfront by cycle {$this->cycle->key()}: the activation (" . ($this->activation ? date(Billrun_Base::base_dateformat, $this->activation) : 'none') . ") is beyond the charged horizon, or the deactivation (" . ($this->deactivation ? date(Billrun_Base::base_dateformat, $this->deactivation) : 'none') . ") precedes the cycle", Zend_Log::DEBUG);
 			return null;
 		}
 		if (!empty($this->deactivation) && $this->deactivation <= $nextCycle->start()) {
 			// the plan is already known to end before the next cycle starts - nothing to pay
 			// upfront. this holds in the full fraction mode as well - legacy never paid the next
 			// cycle for a plan not active at its start
+			Billrun_Factory::log("Plan {$planName} (sid: {$sid}) is not charged upfront by cycle {$this->cycle->key()}: already known to end (" . date(Billrun_Base::base_dateformat, $this->deactivation) . ") before the prepaid cycle ({$nextCycle->key()}) starts", Zend_Log::DEBUG);
 			return null;
 		}
 		$arrearsCharge = $this->getArrearsCharge($nextCycle, $fullFraction);
@@ -468,6 +473,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		);
 		$ret = ['flat' => [], 'credit' => []];
 		Billrun_Factory::log("Loading previous upfront lines for aid: {$aid}, cycle: {$previousBillrunKey}", Zend_Log::DEBUG);
+		$flatCount = $creditCount = 0;
 		$cursor = Billrun_Factory::db()->linesCollection()->query($query)->cursor();
 		foreach ($cursor as $line) {
 			$raw = $line->getRawData();
@@ -478,10 +484,13 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 					continue;
 				}
 				$ret['credit'][Billrun_Util::getFieldVal($raw['usaget'], '')][$key][$lineSid][] = $raw;
+				$creditCount++;
 			} else if (!empty($raw['plan'])) {
 				$ret['flat'][$lineSid][$raw['plan']][] = $raw;
+				$flatCount++;
 			}
 		}
+		Billrun_Factory::log("Loaded {$flatCount} plan (flat) and {$creditCount} discount/charge (credit) upfront line(s) of the previous run for aid: {$aid}, cycle: {$previousBillrunKey}", Zend_Log::DEBUG);
 		return $ret;
 	}
 

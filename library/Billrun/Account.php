@@ -129,7 +129,9 @@ abstract class Billrun_Account extends Billrun_Base {
 				!Billrun_Util::isBillrunKey($cycle->key())) { // onetime (immediate invoice) cycles are never extended
 			return $cycle->end()->sec;
 		}
-		return strtotime('+1 month', $cycle->end()->sec);
+		$windowEnd = strtotime('+1 month', $cycle->end()->sec);
+		Billrun_Factory::log("getBillable window of cycle {$cycle->key()} extended to " . date('Y-m-d', $windowEnd) . " (billrun.upfront.billable_next_cycle) - requesting the next cycle revisions as well", Zend_Log::DEBUG);
+		return $windowEnd;
 	}
 
 	/**

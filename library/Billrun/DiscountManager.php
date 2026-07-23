@@ -1757,6 +1757,7 @@ class Billrun_DiscountManager {
 				}
 				if ($isCharge && Billrun_Util::getIn($entity, 'type', 'percentage') == 'monetary') {
 					// monetary charges are not applied upfront - nothing to reconcile
+					Billrun_Factory::log("Upfront {$usaget} reconciliation for aid {$aid}: '{$key}' is a monetary charge - never applied upfront, nothing to reconcile", Zend_Log::DEBUG);
 					continue;
 				}
 				$sids = array_unique(array_merge(array_keys(Billrun_Util::getFieldVal($olds[$key], [])), array_keys(Billrun_Util::getFieldVal($expectedTypeCdrs[$key], []))));
@@ -1787,6 +1788,9 @@ class Billrun_DiscountManager {
 					}
 				}
 			}
+		}
+		if (!empty($cdrs)) {
+			Billrun_Factory::log("Upfront discount/charge reconciliation for aid {$aid} (cycle: {$this->cycle->key()}) generated " . count($cdrs) . " CDR(s)", Zend_Log::DEBUG);
 		}
 		return $cdrs;
 	}
