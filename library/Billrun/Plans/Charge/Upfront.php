@@ -175,14 +175,22 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		foreach ($expected as $expectedRow) {
 			// each expected row is compared with its exact previous run line - the reconciliation
 			// row is the expected row with the difference as its price
+			$entity = "'" . Billrun_Util::getFieldVal($expectedRow['key'], Billrun_Util::getFieldVal($this->planData['plan'], Billrun_Util::getFieldVal($this->planData['name'], ''))) . "' (cycle: {$this->cycle->key()})";
 			$old = $this->extractMatchingOldLine($olds, $expectedRow);
-			$diff = ($expectedRow['value'] ?? 0) - (is_null($old) ? 0 : ($old['aprice'] ?? 0));
+			$expectedValue = $expectedRow['value'] ?? 0;
+			$diff = $expectedValue - (is_null($old) ? 0 : ($old['aprice'] ?? 0));
 			if (Billrun_Util::isEqual($diff, 0, 0.000001)) {
+				Billrun_Factory::log("Upfront reconcile of {$entity}: " . (is_null($old)
+						? "nothing expected and no previous run line"
+						: "already charged by the previous run (" . round($old['aprice'] ?? 0, 5) . ", stamp: " . Billrun_Util::getFieldVal($old['stamp'], '') . ")") . " - no refund line", Zend_Log::DEBUG);
 				continue;
 			}
 			$expectedRow['value'] = $diff;
 			$expectedRow['is_upfront'] = false;
-			if (!is_null($old)) {
+			if (is_null($old)) {
+				Billrun_Factory::log("Upfront reconcile of {$entity}: no previous run line found - creating a refund line with the full expected charge (" . round($expectedValue, 5) . ")", Zend_Log::DEBUG);
+			} else {
+				Billrun_Factory::log("Upfront reconcile of {$entity}: the previous run charged " . round($old['aprice'] ?? 0, 5) . " (stamp: " . Billrun_Util::getFieldVal($old['stamp'], '') . ") but " . round($expectedValue, 5) . " is expected - creating a refund line for the difference (" . round($diff, 5) . ")", Zend_Log::DEBUG);
 				// the reconciliation row covers the difference between the old line and the
 				// expected row periods - the period whose charge is corrected (a missing field
 				// means the cycle own boundary)
@@ -212,6 +220,8 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		foreach ($olds as $old) {
 			$row = $this->getOldLineChargebackRow($old);
 			if (!Billrun_Util::isEqual($row['value'], 0, 0.000001)) {
+				$entity = "'" . Billrun_Util::getFieldVal($old['key'], Billrun_Util::getFieldVal($old['plan'], '')) . "' (cycle: {$this->cycle->key()})";
+				Billrun_Factory::log("Upfront reconcile of {$entity}: the previous run charge (" . round($old['aprice'] ?? 0, 5) . ", stamp: " . Billrun_Util::getFieldVal($old['stamp'], '') . ") is no longer expected - creating a full refund line (" . round($row['value'], 5) . ")", Zend_Log::DEBUG);
 				$rows[] = $row;
 			}
 		}
