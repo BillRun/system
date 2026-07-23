@@ -20,7 +20,7 @@ import Subscribers, { isSubscribersValid } from './Subscribers';
 import System from './System';
 import Sms from './Sms';
 import { ActionButtons } from '@/components/Elements';
-import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms } from '@/actions/settingsActions';
+import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms, testSubscribersAuth } from '@/actions/settingsActions';
 import { prossessMenuTree, combineMenuOverrides, initMainMenu } from '@/actions/guiStateActions/menuActions';
 import { getList, clearList } from '@/actions/listActions';
 import { getEntitesQuery } from '@/common/ApiQueries';
@@ -115,6 +115,10 @@ class Settings extends Component {
 
   onSendTestSms = (recipient) => {
     this.props.dispatch(sendTestSms(recipient));
+  }
+
+  onTestSubscribersAuth = () => {
+    this.props.dispatch(testSubscribersAuth());
   }
 
   onChangeMenuOrder = (path, newOrder) => {
@@ -243,7 +247,12 @@ class Settings extends Component {
 
           <Tab title={getFieldName('subs', 'settings')} eventKey={55}>
             <Panel style={{ borderTop: 'none' }}>
-              <Subscribers onChange={this.onChangeFieldValue} data={subscribers} />
+              <Subscribers
+                onChange={this.onChangeFieldValue}
+                onTestConnection={this.onTestSubscribersAuth}
+                isChanged={this.state.changeCategories.has('subscribers')}
+                data={subscribers}
+              />
             </Panel>
           </Tab>
 

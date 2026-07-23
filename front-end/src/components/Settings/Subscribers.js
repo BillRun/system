@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, Col, Alert } from 'react-bootstrap';
+import { Form, Col, Alert, Button } from 'react-bootstrap';
 import {
   ControlLabel,
   FormGroup,
@@ -40,7 +40,7 @@ export const isSubscribersValid = (data) => {
   return requiredUrlsValid && authUrlValid;
 };
 
-const Subscribers = ({ data, typesOptions, onChange }) => {
+const Subscribers = ({ data, typesOptions, onChange, onTestConnection, isChanged }) => {
 
   const [localData, setLocalData] = useState(Immutable.Map());
 
@@ -58,6 +58,19 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
   const validUrlGba = !isEmptyString(url_gba) && isValidUrl(url_gba);
   const validUrlGad = !isEmptyString(url_gad) && isValidUrl(url_gad);
   const validUrlGsd = !isEmptyString(url_gsd) && isValidUrl(url_gsd);
+
+  const isAuthConfigured = (
+    !isEmptyString(auth_url)
+    && isValidUrl(auth_url)
+    && !isEmptyString(auth_id)
+    && !isEmptyString(auth_secret)
+  );
+
+  const isTestConnectionDisabled = (
+    isSourceDb
+    || isChanged
+    || !isAuthConfigured
+  );
 
   const isDirtyType = localData.isEmpty() ? false : localData.getIn(['subscriber', 'type'], 'db') !== type;
   const isDirtyUrl = localData.isEmpty() ? false : (localData.getIn(['subscriber', 'external_url'], '') !== url_gsd
@@ -207,6 +220,21 @@ const Subscribers = ({ data, typesOptions, onChange }) => {
                 />
               </Col>
             </FormGroup>
+
+            <FormGroup>
+              <Col
+                sm={{ span: 6, offset: 3 }}
+                lg={{ span: 6, offset: 2 }}
+              >
+                <Button
+                  type="button"
+                  onClick={onTestConnection}
+                  disabled={isTestConnectionDisabled}
+                >
+                  Test Connection
+                </Button>
+              </Col>
+            </FormGroup>
           </Panel>
         )}
 
@@ -268,6 +296,8 @@ Subscribers.propTypes = {
   data: PropTypes.instanceOf(Immutable.Map),
   onChange: PropTypes.func.isRequired,
   typesOptions: PropTypes.array,
+  onTestConnection: PropTypes.func.isRequired,
+  isChanged: PropTypes.bool,
 };
 
 Subscribers.defaultProps = {
@@ -276,6 +306,7 @@ Subscribers.defaultProps = {
     { value: 'db', label: `${getFieldName('ext_subs_type.db', 'settings', 'DB')} | ${getFieldName('ext_subs_type.db_desc', 'settings', 'DB')}` },
     { value: 'external', label: `${getFieldName('ext_subs_type.external', 'settings', 'External')} | ${getFieldName('ext_subs_type.external_desc', 'settings', 'External')}` },
   ],
+  isChanged: false,
 };
 
 export default Subscribers;

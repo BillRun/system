@@ -10,6 +10,7 @@ import {
   saveSharedSecretQuery,
   disableSharedSecretQuery,
   sendTestSmsQuery,
+  testSubscribersAuthQuery,
 } from '../common/ApiQueries';
 
 
@@ -169,6 +170,26 @@ export const sendTestSms = recipient => (dispatch) => {
       apiBillRunErrorHandler(
         error,
         'Error sending test SMS',
+      ),
+    ));
+};
+
+export const testSubscribersAuth = () => (dispatch) => {
+  dispatch(startProgressIndicator());
+
+  const query = testSubscribersAuthQuery();
+
+  return apiBillRun(query)
+    .then(success => dispatch(
+      apiBillRunSuccessHandler(
+        success,
+        'Connection established successfully!',
+      ),
+    ))
+    .catch(error => dispatch(
+      apiBillRunErrorHandler(
+        error,
+        'Failed to connect to authentication server',
       ),
     ));
 };
