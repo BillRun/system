@@ -11,6 +11,10 @@
  * adds skip_calc -> calcCpu plugin runs queue calculators
  * (QueueCalculators::shouldSkipCalc bypasses pricing).
  *
+ * Also covers the BRCD-5250 queue-removal bug: a line stuck in the queue after
+ * the customer calculator must be fully calculated AND dequeued by running the
+ * rate + pricing calculators cron-style, without a separate tax run.
+ *
  * @package         Tests
  * @copyright       Copyright (C) 2012-2025 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
@@ -90,6 +94,120 @@ class customerPricingCest
         $I->assertArrayNotHasKey('final_charge', $line, 'final_charge must not be added when pricing is skipped');
         $I->assertArrayNotHasKey('aprice',       $line, 'aprice must not be added when pricing is skipped');
         $I->assertArrayNotHasKey('billrun',      $line, 'billrun must not be added when pricing is skipped');
+    }
+
+    /**
+     * BRCD-5250 bug reproduction - a line stuck in the queue after the customer
+     * calculator (queue calc_name=customer) is later completed by running the
+     * rate and pricing calculators cron-style (calc -> write -> removeFromQueue),
+     * with the production queue chain (customer, rate, pricing, tax).
+     *
+     * Since the tax calculator was merged into the pricing calculator
+     * (updateRow -> applyTaxToRow), once pricing ran the line is fully
+     * calculated (aprice/billrun/tax_data/final_charge), so its queue entry
+     * must be removed right after pricing.
+     *
+     * Currently FAILS on the last assertion: the line is updated but its queue
+     * entry is removed only when the tax calculator also runs.
+     *
+     * The stuck state is created through the real pipeline: the CDR references
+     * rate CALL_STUCK which does not exist yet, so the rate calculator fails
+     * during ingestion and the queue row stays at calc_name=customer.
+     */
+    public function testStuckQueueLineRemovedAfterRateAndPricing(ApiTester $I): void
+    {
+        $this->createBaseData($I);
+
+        $originalCalculators = \Billrun_Factory::config()->getConfigValue('queue.calculators');
+        \Billrun_Factory::config()->setConfigValue('queue.calculators', ['customer', 'rate', 'pricing', 'tax']);
+
+        try {
+            $csvPath = 'tests/all/calculators/test_files/stuck_queue.csv';
+            $I->resetBillrunSingletons();
+
+            $options   = ['type' => 'skipPricingTest', 'path' => $csvPath];
+            $processor = \Billrun_Processor::getInstance($options);
+            $processor->processorByPath($options);
+
+            $line = $this->getLineByFile($csvPath);
+            \PHPUnit\Framework\Assert::assertNotEmpty($line, 'input processor must have created a line from the CDR');
+            $stamp = $line['stamp'];
+
+            $queueRow = $this->getQueueRowByStamp($stamp);
+            $I->assertEquals('customer', $queueRow['calc_name'] ?? null, 'line must be stuck in the queue after the customer calculator');
+
+            // the missing rate now exists, so the cron calculators can finish the line
+            $I->generateRate([
+                'tariff_category' => 'retail',
+                'key'             => 'CALL_STUCK',
+                'rates' => [
+                    'call' => [
+                        'BASE' => [
+                            'rate' => [[
+                                'from'        => 0,
+                                'to'          => 'UNLIMITED',
+                                'interval'    => 1,
+                                'price'       => 1,
+                                'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
+                            ]],
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->runQueueCalculator($I, 'rate_Usage');
+            $queueRow = $this->getQueueRowByStamp($stamp);
+            $I->assertEquals('rate', $queueRow['calc_name'] ?? null, 'rate calculator must advance the stuck line to calc_name=rate');
+
+            $this->runQueueCalculator($I, 'customerPricing');
+
+            $line = $this->getLineByFile($csvPath);
+            $I->assertArrayHasKey('aprice',       $line, 'pricing calculator must price the stuck line');
+            $I->assertArrayHasKey('billrun',      $line, 'pricing calculator must set billrun on the stuck line');
+            $I->assertArrayHasKey('tax_data',     $line, 'pricing calculator must apply tax to the stuck line (tax is merged into pricing)');
+            $I->assertArrayHasKey('final_charge', $line, 'pricing calculator must set final_charge on the stuck line');
+
+            $queueRow = $this->getQueueRowByStamp($stamp);
+            \PHPUnit\Framework\Assert::assertEmpty(
+                $queueRow,
+                'BRCD-5250: the line must be removed from the queue right after the pricing calculator (which already applies tax) - a separate tax calculator run must not be required'
+            );
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('queue.calculators', $originalCalculators);
+        }
+    }
+
+    // =========================================================================
+    // CALCULATOR HELPERS
+    // =========================================================================
+
+    /**
+     * Run a queue calculator the way the calculate cron action does:
+     * getInstance (autoloads its queue lines) -> calc -> write -> removeFromQueue.
+     */
+    protected function runQueueCalculator(ApiTester $I, string $type): void
+    {
+        $I->resetBillrunSingletons();
+        $calc = \Billrun_Calculator::getInstance(['type' => $type]);
+        $calc->calc();
+        $calc->write();
+        $calc->removeFromQueue();
+    }
+
+    protected function getLineByFile(string $csvPath): array
+    {
+        $entity = \Billrun_Factory::db()->linesCollection()
+            ->query(['file' => basename($csvPath)])
+            ->cursor()->current();
+        return $entity->isEmpty() ? [] : $entity->getRawData();
+    }
+
+    protected function getQueueRowByStamp(string $stamp): array
+    {
+        $entity = \Billrun_Factory::db()->queueCollection()
+            ->query(['stamp' => $stamp])
+            ->cursor()->current();
+        return $entity->isEmpty() ? [] : $entity->getRawData();
     }
 
     // =========================================================================
