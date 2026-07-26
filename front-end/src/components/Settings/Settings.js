@@ -16,10 +16,11 @@ import Tenant from './Tenant';
 import Security from './Security';
 import EditMenu from './EditMenu';
 import UsageTypes from './UsageTypes';
+import Subscribers, { isSubscribersValid } from './Subscribers';
 import System from './System';
 import Sms from './Sms';
 import { ActionButtons } from '@/components/Elements';
-import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms } from '@/actions/settingsActions';
+import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms, testSubscribersAuth } from '@/actions/settingsActions';
 import { prossessMenuTree, combineMenuOverrides, initMainMenu } from '@/actions/guiStateActions/menuActions';
 import { getList, clearList } from '@/actions/listActions';
 import { getEntitesQuery } from '@/common/ApiQueries';
@@ -30,12 +31,13 @@ import {
   systemSettingsSelector,
   playsSettingsSelector,
 } from '@/selectors/settingsSelector';
+import { getFieldName } from '@/common/Util';
 
 
 class Settings extends Component {
 
   static defaultProps = {
-    activeTab: 1,
+    activeTab: 10,
     settings: Immutable.Map(),
     csiOptions: Immutable.List(),
     taxation: Immutable.Map(),
@@ -68,6 +70,7 @@ class Settings extends Component {
   
   componentDidMount() {
     const settingsToFetch = [
+      'subscribers',
       'pricing',
       'billrun',
       'tenant',
@@ -78,7 +81,7 @@ class Settings extends Component {
       'system',
       'plugins',
       'plays',
-      'smser'
+      'smser',
     ];
     this.props.dispatch(getSettings(settingsToFetch));
     this.props.dispatch(getCurrencies()).then(this.initCurrencyOptions);
@@ -114,6 +117,10 @@ class Settings extends Component {
     this.props.dispatch(sendTestSms(recipient));
   }
 
+  onTestSubscribersAuth = () => {
+    this.props.dispatch(testSubscribersAuth());
+  }
+
   onChangeMenuOrder = (path, newOrder) => {
     const { settings } = this.props;
     const mainMenuOverrides = settings.getIn(['menu', ...path], Immutable.Map()).withMutations(
@@ -132,7 +139,17 @@ class Settings extends Component {
   }
 
   onSave = () => {
+    const { settings } = this.props;
     const { changeCategories } = this.state;
+
+    const subscribersChanged = changeCategories.has('subscribers');
+    const subscribers = settings.get('subscribers', Immutable.Map());
+
+    if (subscribersChanged && !isSubscribersValid(subscribers)) {
+      this.handleSelectTab(55);
+      return;
+    }
+
     if (!changeCategories.isEmpty()) {
       const categoryToSave = changeCategories.toArray();
       this.props.dispatch(saveSettings(categoryToSave))
@@ -170,6 +187,7 @@ class Settings extends Component {
     const { settings, activeTab, csiOptions, rasRatesOptions, taxation, system, plays } = this.props;
     const { currencyOptions } = this.state;
 
+    const subscribers = settings.get('subscribers', Immutable.Map());
     const currency = settings.getIn(['pricing', 'currency'], '');
     const plugins = settings.get('plugins', Immutable.List());
     const billrun = settings.get('billrun', Immutable.Map());
@@ -182,14 +200,14 @@ class Settings extends Component {
     return (
       <div>
         <Tabs activeKey={activeTab} transition={false} id="SettingsTab" onSelect={this.handleSelectTab}>
-          <Tab title="Company" eventKey={1}>
+          <Tab title="Company" eventKey={10}>
             <Panel style={{ borderTop: 'none' }}>
               <Tenant onChange={this.onChangeFieldValue} data={tenant} />
             </Panel>
           </Tab>
 
 
-          <Tab title="Locale" eventKey={2}>
+          <Tab title="Locale" eventKey={20}>
             <Panel style={{ borderTop: 'none' }}>
               <DateTime onChange={this.onChangeFieldValue} data={billrun} />
               <Currency
@@ -200,7 +218,7 @@ class Settings extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Tax" eventKey={3}>
+          <Tab title="Tax" eventKey={30}>
             <Panel style={{ borderTop: 'none' }}>
               <Tax
                 data={taxation}
@@ -211,7 +229,7 @@ class Settings extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Menu" eventKey={4}>
+          <Tab title="Menu" eventKey={40}>
             <Panel style={{ borderTop: 'none' }}>
               <EditMenu
                 data={mainMenu}
@@ -221,20 +239,31 @@ class Settings extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Security" eventKey={5}>
+          <Tab title="Security" eventKey={50}>
             <Panel style={{ borderTop: 'none' }}>
               <Security data={sharedSecret} />
             </Panel>
           </Tab>
 
-          <Tab title="Invoicing" eventKey={6}>
+          <Tab title={getFieldName('subs', 'settings')} eventKey={55}>
+            <Panel style={{ borderTop: 'none' }}>
+              <Subscribers
+                onChange={this.onChangeFieldValue}
+                onTestConnection={this.onTestSubscribersAuth}
+                isChanged={this.state.changeCategories.has('subscribers')}
+                data={subscribers}
+              />
+            </Panel>
+          </Tab>
+
+          <Tab title="Invoicing" eventKey={60}>
             <Panel style={{ borderTop: 'none' }}>
               <Invoicing onChange={this.onChangeFieldValue} data={billrun} />
               {/*<Allowances onChange={this.onChangeFieldValue} data={billrun} />*/}
             </Panel>
           </Tab>
 
-          <Tab title="SMS" eventKey={7}>
+          <Tab title="SMS" eventKey={65}>
             <Panel style={{ borderTop: 'none' }}>
               <Sms
                 data={smser}
@@ -245,25 +274,25 @@ class Settings extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Plays" eventKey={8}>
+          <Tab title="Plays" eventKey={70}>
             <Panel style={{ borderTop: 'none' }}>
               <Plays data={plays} />
             </Panel>
           </Tab>
 
-          <Tab title="Activity Types" eventKey={9}>
+          <Tab title="Activity Types" eventKey={80}>
             <Panel style={{ borderTop: 'none' }}>
               <UsageTypes />
             </Panel>
           </Tab>
 
-          <Tab title="System" eventKey={10}>
+          <Tab title="System" eventKey={90}>
             <Panel style={{ borderTop: 'none' }}>
               <System onChange={this.onChangeFieldValue} data={system} />
             </Panel>
           </Tab>
 
-          <Tab title="Plugins" eventKey={11}>
+          <Tab title="Plugins" eventKey={100}>
             <Panel style={{ borderTop: 'none' }}>
               <Plugins onChange={this.onChangeFieldValue} data={plugins} />
             </Panel>
@@ -274,7 +303,7 @@ class Settings extends Component {
         <ActionButtons
           onClickSave={this.onSave}
           hideCancel={true}
-          hideSave={[5, 8, 9, 11].includes(activeTab)}
+          hideSave={[50, 70, 80, 100].includes(activeTab)}
         />
 
       </div>
