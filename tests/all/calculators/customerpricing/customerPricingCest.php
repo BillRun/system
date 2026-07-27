@@ -97,22 +97,16 @@ class customerPricingCest
     }
 
     /**
-     * BRCD-5250 bug reproduction - a line stuck in the queue after the customer
-     * calculator (queue calc_name=customer) is later completed by running the
-     * rate and pricing calculators cron-style (calc -> write -> removeFromQueue),
+     * BRCD-5250 - a line stuck in the queue after the customer calculator
+     * (queue calc_name=customer) is later completed by running the rate and
+     * pricing calculators cron-style (calc -> write -> removeFromQueue),
      * with the production queue chain (customer, rate, pricing, tax).
      *
      * Since the tax calculator was merged into the pricing calculator
      * (updateRow -> applyTaxToRow), once pricing ran the line is fully
-     * calculated (aprice/billrun/tax_data/final_charge), so its queue entry
-     * must be removed right after pricing.
-     *
-     * Currently FAILS on the last assertion: the line is updated but its queue
-     * entry is removed only when the tax calculator also runs.
-     *
-     * The stuck state is created through the real pipeline: the CDR references
-     * rate CALL_STUCK which does not exist yet, so the rate calculator fails
-     * during ingestion and the queue row stays at calc_name=customer.
+     * calculated (aprice/billrun/tax_data/final_charge) and the merged tax
+     * stage is completed as well, so the queue entry must be removed right
+     * after pricing - without a separate tax calculator run.
      */
     public function testStuckQueueLineRemovedAfterRateAndPricing(ApiTester $I): void
     {
@@ -123,37 +117,10 @@ class customerPricingCest
 
         try {
             $csvPath = 'tests/all/calculators/test_files/stuck_queue.csv';
-            $I->resetBillrunSingletons();
-
-            $options   = ['type' => 'skipPricingTest', 'path' => $csvPath];
-            $processor = \Billrun_Processor::getInstance($options);
-            $processor->processorByPath($options);
-
-            $line = $this->getLineByFile($csvPath);
-            \PHPUnit\Framework\Assert::assertNotEmpty($line, 'input processor must have created a line from the CDR');
-            $stamp = $line['stamp'];
-
-            $queueRow = $this->getQueueRowByStamp($stamp);
-            $I->assertEquals('customer', $queueRow['calc_name'] ?? null, 'line must be stuck in the queue after the customer calculator');
+            $stamp   = $this->ingestStuckLine($I, $csvPath);
 
             // the missing rate now exists, so the cron calculators can finish the line
-            $I->generateRate([
-                'tariff_category' => 'retail',
-                'key'             => 'CALL_STUCK',
-                'rates' => [
-                    'call' => [
-                        'BASE' => [
-                            'rate' => [[
-                                'from'        => 0,
-                                'to'          => 'UNLIMITED',
-                                'interval'    => 1,
-                                'price'       => 1,
-                                'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
-                            ]],
-                        ],
-                    ],
-                ],
-            ]);
+            $this->generateStuckRate($I);
 
             $this->runQueueCalculator($I, 'rate_Usage');
             $queueRow = $this->getQueueRowByStamp($stamp);
@@ -161,11 +128,7 @@ class customerPricingCest
 
             $this->runQueueCalculator($I, 'customerPricing');
 
-            $line = $this->getLineByFile($csvPath);
-            $I->assertArrayHasKey('aprice',       $line, 'pricing calculator must price the stuck line');
-            $I->assertArrayHasKey('billrun',      $line, 'pricing calculator must set billrun on the stuck line');
-            $I->assertArrayHasKey('tax_data',     $line, 'pricing calculator must apply tax to the stuck line (tax is merged into pricing)');
-            $I->assertArrayHasKey('final_charge', $line, 'pricing calculator must set final_charge on the stuck line');
+            $this->assertLineFullyCalculated($I, $csvPath);
 
             $queueRow = $this->getQueueRowByStamp($stamp);
             \PHPUnit\Framework\Assert::assertEmpty(
@@ -177,9 +140,107 @@ class customerPricingCest
         }
     }
 
+    /**
+     * BRCD-5250 - same stuck-line recovery, but with a queue chain that has a
+     * calculator AFTER the merged pricing+tax stages (customer, rate, pricing,
+     * tax, unify). Here pricing must NOT remove the line from the queue: the
+     * line is fully calculated, but it still has to reach unify, so pricing
+     * only advances the queue entry past the merged tax stage (calc_name=tax).
+     * Unify, being the last queue calculator, then removes it from the queue.
+     */
+    public function testStuckQueueLineWaitsForUnifyAfterPricing(ApiTester $I): void
+    {
+        $this->createBaseData($I);
+
+        $originalCalculators = \Billrun_Factory::config()->getConfigValue('queue.calculators');
+        \Billrun_Factory::config()->setConfigValue('queue.calculators', ['customer', 'rate', 'pricing', 'tax', 'unify']);
+
+        try {
+            $csvPath = 'tests/all/calculators/test_files/stuck_queue.csv';
+            $stamp   = $this->ingestStuckLine($I, $csvPath);
+
+            $this->generateStuckRate($I);
+
+            $this->runQueueCalculator($I, 'rate_Usage');
+            $this->runQueueCalculator($I, ' ');
+
+            $this->assertLineFullyCalculated($I, $csvPath);
+
+            $queueRow = $this->getQueueRowByStamp($stamp);
+            \PHPUnit\Framework\Assert::assertNotEmpty(
+                $queueRow,
+                'the line must stay in the queue after pricing when a later calculator (unify) is configured'
+            );
+            $I->assertEquals('tax', $queueRow['calc_name'] ?? null, 'pricing must advance the queue entry past the merged tax stage so unify picks it up');
+
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('queue.calculators', $originalCalculators);
+        }
+    }
+
     // =========================================================================
     // CALCULATOR HELPERS
     // =========================================================================
+
+    /**
+     * Ingest a CDR whose rate (CALL_STUCK) does not exist yet - the rate
+     * calculator fails during processing, so the line stays in the queue at
+     * calc_name=customer. Returns the stuck line's stamp.
+     */
+    protected function ingestStuckLine(ApiTester $I, string $csvPath): string
+    {
+        $I->resetBillrunSingletons();
+
+        $options   = ['type' => 'skipPricingTest', 'path' => $csvPath];
+        $processor = \Billrun_Processor::getInstance($options);
+        $processor->processorByPath($options);
+
+        $line = $this->getLineByFile($csvPath);
+        \PHPUnit\Framework\Assert::assertNotEmpty($line, 'input processor must have created a line from the CDR');
+
+        $queueRow = $this->getQueueRowByStamp($line['stamp']);
+        $I->assertEquals('customer', $queueRow['calc_name'] ?? null, 'line must be stuck in the queue after the customer calculator');
+
+        return $line['stamp'];
+    }
+
+    /**
+     * Create the CALL_STUCK rate the stuck CDR references, so the cron
+     * calculators can finish the line.
+     */
+    protected function generateStuckRate(ApiTester $I): void
+    {
+        $I->generateRate([
+            'tariff_category' => 'retail',
+            'key'             => 'CALL_STUCK',
+            'rates' => [
+                'call' => [
+                    'BASE' => [
+                        'rate' => [[
+                            'from'        => 0,
+                            'to'          => 'UNLIMITED',
+                            'interval'    => 1,
+                            'price'       => 1,
+                            'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
+                        ]],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Assert the pricing calculator finished the line: priced it and applied
+     * tax (tax is merged into pricing).
+     */
+    protected function assertLineFullyCalculated(ApiTester $I, string $csvPath): void
+    {
+        $line = $this->getLineByFile($csvPath);
+        $I->assertArrayHasKey('aprice',       $line, 'pricing calculator must price the stuck line');
+        $I->assertArrayHasKey('billrun',      $line, 'pricing calculator must set billrun on the stuck line');
+        $I->assertArrayHasKey('tax_data',     $line, 'pricing calculator must apply tax to the stuck line (tax is merged into pricing)');
+        $I->assertArrayHasKey('final_charge', $line, 'pricing calculator must set final_charge on the stuck line');
+    }
 
     /**
      * Run a queue calculator the way the calculate cron action does:

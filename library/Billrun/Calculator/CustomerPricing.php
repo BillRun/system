@@ -388,11 +388,29 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
-	 * 
+	 *
 	 * @todo Move to trait because it also use by processor
 	 */
 	public function getCalculatorQueueType() {
 		return self::$type;
+	}
+
+	/**
+	 * Tax is applied within the pricing calculator (updateRow -> applyTaxToRow),
+	 * so a tax stage that directly follows pricing in queue.calculators is
+	 * already completed once pricing ran. Tag lines past it, so they leave the
+	 * queue when tax is the last stage, or reach the next queue calculator
+	 * (e.g. unify) without a separate tax run.
+	 *
+	 * @see Billrun_Calculator::getQueueTagType
+	 */
+	public function getQueueTagType() {
+		$queue_calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+		$queue_id = array_search($this->getCalculatorQueueType(), $queue_calculators);
+		if ($queue_id !== FALSE && isset($queue_calculators[$queue_id + 1]) && $queue_calculators[$queue_id + 1] === 'tax') {
+			return 'tax';
+		}
+		return parent::getQueueTagType();
 	}
 
 	/**
