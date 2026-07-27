@@ -134,6 +134,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			foreach ($current_loop_bills as $customer) {
 				$this->aid_to_lock = null;
 				if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+					Billrun_Factory::log()->log("Reached max records limit of " . $maxRecords . " for file type " . $this->configByType['file_type'] . ". Stopping the charging loop", Zend_Log::INFO);
 					break;
 				}
 				$paymentParams = array();
