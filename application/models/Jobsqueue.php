@@ -96,8 +96,17 @@ class JobsqueueModel extends TableModel {
 		return $ret;
 	}
 	
+	/**
+	 * method to cancel job from the jobs queue
+	 * @param string $md5 the jobs md5 (id)
+	 * @param bool $includeChildJobs decide if to delete child jobs
+	 * 
+	 * @return array query results of the delete op
+	 * 
+	 * @todo put the cancel job into jobs queue internals or Jobsmanager class
+	 */
 	public function cancelJob($md5, $includeChildJobs = false) {
-		$query = [
+		$query = $beforeQuery = [
 			'start_time' => ['$exists' => 0],
 			'done' => ['$ne' => 1],
 		];
@@ -118,8 +127,20 @@ class JobsqueueModel extends TableModel {
 				'cancel_time' => new Mongodloid_Date(),		
 			]
 		];
+		
+		$beforeQuery['md5'] = $md5;
+		$beforeRecord = $this->collection->query($beforeQuery)->cursor()->current();
+		
 		$options = ['upsert' => false, 'multiple' => $multiple];
 		$ret = $this->collection->update($query, $update, $options);
+		
+		if (!empty($ret['nModified']) && $ret['nModified'] >= 1) {
+			$beforeAr = $beforeRecord->getRawData();
+			$afterAr = array_merge($beforeAr, $update['$set']);
+			$afterAr['includeChildJobs'] = $includeChildJobs ?? false;
+			Billrun_AuditTrail_Util::trackChanges('cancelled', $md5, 'jobs_messages', $beforeAr, $afterAr);
+		}
+		
 		return $ret;
 	}
 

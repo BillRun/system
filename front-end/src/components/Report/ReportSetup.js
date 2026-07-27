@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { ActionButtons, Actions, LoadingItemPlaceholder } from '@/components/Elements';
 import ReportEditor from './ReportEditor';
 import ReportList from './ReportList';
@@ -96,22 +96,21 @@ class ReportSetup extends Component {
     };
   }
 
-  componentWillMount() {
-    this.fetchItem();
-    this.props.dispatch(getSettings([
-      'file_types',
-      'subscribers.subscriber',
-      'subscribers.account',
-      'taxation.tax_type',
-      'lines',
-      'bills.fields',
-      'rates.fields',
-      'payment_gateways',
-      'payments',
-    ]));
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+        this.props.dispatch(getSettings([
+          'file_types',
+          'subscribers.subscriber',
+          'subscribers.account',
+          'taxation.tax_type',
+          'lines',
+          'bills.fields',
+          'rates.fields',
+          'payment_gateways',
+          'payments',
+        ]));
+    
     const { mode } = this.props;
     const { type = false } = this.props.location.query;
     if (mode === 'create' && type !== 'predefined') {
@@ -121,9 +120,15 @@ class ReportSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  componentDidUpdate(prevProps) {
+    const { page, size, mode, item, itemId } = this.props;
+    const { page: oldPage, size: oldSize, mode: oldMode, item: oldItem, itemId: oldItemId } = prevProps;
+    if (page !== oldPage || size !== oldSize || (mode !== oldMode && mode === 'view')) {
+      this.getReportData();
+    }
+  
+    // migrated from UNSAFE_componentWillReceiveProps
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'report', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -133,16 +138,9 @@ class ReportSetup extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
-    const { page, size, mode } = this.props;
-    const { page: oldPage, size: oldSize, mode: oldMode } = prevProps;
-    if (page !== oldPage || size !== oldSize || (mode !== oldMode && mode === 'view')) {
-      this.getReportData();
-    }
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearReport());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {

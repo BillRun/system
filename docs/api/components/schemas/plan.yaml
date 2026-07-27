@@ -1,0 +1,113 @@
+Plan:
+  type: object
+  description: |
+    Billing plan. Defines the recurring charges, inclusive units, and
+    rate overrides bundled together as a sellable package.
+  allOf:
+    - $ref: "common.yaml#/Revision"
+    - type: object
+      properties:
+        name:
+          type: string
+          description: Plan identifier (must match `/^[A-Z0-9_]+$/`).
+          example: GOLD
+        description: { type: string }
+        price:
+          type: array
+          description: |
+            Tiered price points (per cycle / per period). Each entry has
+            its own `from`/`to`, `price`, and optional `proration` flag.
+          items:
+            type: object
+            properties:
+              from:  { type: string, format: date-time }
+              to:    { type: string, format: date-time }
+              price: { type: number }
+              proration: { type: boolean }
+        recurrence:
+          type: array
+          description: Recurrence rules (cycle, period).
+          items:
+            type: object
+            properties:
+              cycle:    { type: integer }
+              period:   { type: string, enum: [day, week, month, year] }
+              unit:     { type: integer }
+        upfront:
+          type: boolean
+          description: Charge upfront (vs. in arrears).
+        connection_type: { type: string, enum: [prepaid, postpaid] }
+        notifications_threshold:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        disallowed_rates:
+          type: array
+          items: { type: string }
+        pp_threshold:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        include:
+          type: array
+          items:
+            type: object
+            properties:
+              name:     { type: string }
+              quantity: { type: number }
+              unit:     { type: string }
+        rates:
+          type: array
+          items: { type: string }
+        play:
+          type: array
+          items: { type: string }
+        tax:
+          type: array
+          items: { type: string }
+        prorated_start:        { type: boolean }
+        prorated_end:          { type: boolean }
+        prorated_termination:  { type: boolean }
+        rounding_rules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        operation: { type: string }
+        charging_type:
+          type: string
+          enum: [postpaid, prepaid]
+          deprecated: true
+        type:
+          type: string
+          deprecated: true
+  additionalProperties: true
+
+PlanUpdate:
+  type: object
+  description: Payload for create/update/closeandnew on `/billapi/plans`.
+  properties:
+    from:           { type: string, format: date-time }
+    to:             { type: string, format: date-time }
+    name:           { type: string, pattern: "^[A-Z0-9_]+$" }
+    price:          { type: array, items: { type: object, additionalProperties: true } }
+    description:    { type: string }
+    recurrence:     { type: array, items: { type: object, additionalProperties: true } }
+    upfront:        { type: boolean }
+    connection_type: { type: string }
+    notifications_threshold: { type: array, items: { type: object, additionalProperties: true } }
+    disallowed_rates: { type: array, items: { type: string } }
+    pp_threshold:   { type: array, items: { type: object, additionalProperties: true } }
+    include:        { type: array, items: { type: object, additionalProperties: true } }
+    rates:          { type: array, items: { type: string } }
+    play:           { type: array, items: { type: string } }
+    tax:            { type: array, items: { type: string } }
+    prorated_start:       { type: boolean }
+    prorated_end:         { type: boolean }
+    prorated_termination: { type: boolean }
+    operation:      { type: string }
+    rounding_rules: { type: array, items: { type: object, additionalProperties: true } }
+  required: [name, price, recurrence, upfront, connection_type]
+  additionalProperties: true

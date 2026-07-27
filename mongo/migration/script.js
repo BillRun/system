@@ -1,6 +1,10 @@
 /* 
  * General (idempotent) DB migration script goes here.
  * Please try to avoid using migration script and instead make special treatment in the code!
+ * 
+ * @deprecated since version 5.25.0
+ *             please use application/migrations
+ *             more info in application/migrations/README.md
  */
 
 // =============================== Helper functions ============================
@@ -2256,6 +2260,12 @@ runOnce(lastConfig, 'BRCD-5278', function () {
 	configValues.response_sftp_user = "";
 	configValues.response_sftp_password = "";
 	configValues.response_sftp_remote_directory = "";
+});
+
+runOnce(lastConfig, 'BRCD-4950', function () {
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_1" });
+	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index");
+
 });
 
 db.config.insertOne(lastConfig);

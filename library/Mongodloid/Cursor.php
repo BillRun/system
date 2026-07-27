@@ -204,8 +204,11 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function setReadPreference($readPreference, array $tags = array()) {
 		$this->errorIfOpened();
 		
+		$strippedReadPreference = preg_replace('/^RP_/', '', $readPreference);
 		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
 			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		} else if (defined('MongoDB\Driver\ReadPreference::' . $strippedReadPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $strippedReadPreference);
 		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
 			$mode = $readPreference;
 		}else{

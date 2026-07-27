@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Panel, InputGroup, Badge } from 'react-bootstrap';
+import { InputGroup, Badge } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { CreateButton } from '@/components/Elements';
 import SubscriptionServicesPeriod from './SubscriptionServicesPeriod';
@@ -181,7 +182,7 @@ export default class SubscriptionServicesDetails extends Component {
             </td>
             <td style={{ width: '70%', paddingBottom: 5 }}>
               <InputGroup style={{ width: '100%' }} >
-                {editable ? <InputGroup.Addon>Quantity {badge}</InputGroup.Addon> : 'Quantity: ' }
+                {editable ? <InputGroup.Text>Quantity {badge}</InputGroup.Text> : 'Quantity: ' }
                 <Field fieldType="number" min={1} value={service.get('quantity', '')} onChange={onChangeBind} editable={editable} style={viewStyle} />
               </InputGroup>
             </td>
@@ -254,7 +255,7 @@ export default class SubscriptionServicesDetails extends Component {
     const badge = this.renderServiceBadge(service, 'byPeriod');
     return (
       <InputGroup key={`byPeriod_${key}_${service.get('name', 'no-name')}`} style={{ width: '100%', marginTop: 5 }} >
-        <InputGroup.Addon>{key + 1}. Start Date {badge}</InputGroup.Addon>
+        <InputGroup.Text>{key + 1}. Start Date {badge}</InputGroup.Text>
         <Field
           style={{ width: '100%' }}
           fieldType="date"
@@ -264,9 +265,9 @@ export default class SubscriptionServicesDetails extends Component {
           editable={editable}
           highlightDates={[minStartDate]}
         />
-        <InputGroup.Addon onClick={onRemoveBind}>
+        <InputGroup.Text onClick={onRemoveBind}>
           <i className="fa fa-trash-o text-danger" />
-        </InputGroup.Addon>
+        </InputGroup.Text>
       </InputGroup>
     );
   }

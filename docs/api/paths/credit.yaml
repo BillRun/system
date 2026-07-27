@@ -1,0 +1,133 @@
+credit:
+  post:
+    tags: [Credit]
+    summary: Credit a subscriber / account
+    operationId: api.credit
+    description: |
+      Create a credit line for a subscriber or account. Used both for
+      ad-hoc charges (positive `aprice`) and refunds (negative `aprice`).
+
+      The credit is recorded immediately as a `lines` record with
+      `type=credit` and goes into the next billing cycle (or the cycle
+      specified by `billrun_key`). For multi-installment credits, set
+      `installments` to a positive integer.
+
+      Implemented by `Action_CreditAction::execute()`.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: [prepone]
+                description: |
+                  Optional sub-action. `prepone` brings forward all future
+                  installments for the given `aid`/`sid`. When omitted the
+                  endpoint creates a fresh credit line.
+              aid: { type: integer, description: "Account ID" }
+              sid: { type: integer, description: "Subscriber ID" }
+              aprice:
+                type: number
+                description: |
+                  Charge amount. Positive = debit the customer, negative =
+                  refund / credit.
+              usagev:
+                type: number
+                description: Usage volume credited (where applicable).
+              usaget:
+                type: string
+                description: Usage type (e.g. `call`, `sms`, `data`, `flat`).
+              arate:
+                type: string
+                description: Product / rate `key` to associate this credit with.
+              arategroup:
+                type: string
+                description: Optional rate group.
+              billrun_key:
+                type: string
+                description: Target billing cycle (`YYYYMM`). Defaults to the next open cycle.
+              installments:
+                type: integer
+                minimum: 1
+                description: Split the credit into N installments.
+              reason:
+                type: string
+                description: Free-text justification.
+              suggestion_stamp:
+                type: string
+                description: |
+                  When set, the credit is created from a pre-approved
+                  suggestion (see the `suggestions` collection). Multiple
+                  credit lines are written from one call - the response
+                  status will be `2` if some sub-requests fail.
+            required: [aid, aprice]
+    responses:
+      "200":
+        description: Credit recorded
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/line.yaml#/Line" }
+      "400": { $ref: "../components/responses.yaml#/BadRequest" }
+      "401": { $ref: "../components/responses.yaml#/Unauthorized" }
+
+bulkcredit:
+  post:
+    tags: [Credit]
+    summary: Credit multiple subscribers in a single call
+    operationId: api.bulkcredit
+    description: |
+      Batch version of `/api/credit`. Accepts an array of credit requests
+      and processes each independently - one failure does not roll the
+      others back. The response status is `1` if all succeeded, `2` if
+      partial, `0` if all failed.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [credits]
+            properties:
+              credits:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    aid:        { type: integer }
+                    sid:        { type: integer }
+                    aprice:     { type: number }
+                    usagev:     { type: number }
+                    usaget:     { type: string }
+                    arate:      { type: string }
+                    billrun_key: { type: string }
+                    reason:     { type: string }
+                  required: [aid, aprice]
+    responses:
+      "200":
+        description: Bulk credit result (one envelope per input row)
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          input: { type: object, additionalProperties: true }
+                          status: { type: integer, enum: [0, 1] }
+                          error: { type: string }
+                          line: { $ref: "../components/schemas/line.yaml#/Line" }

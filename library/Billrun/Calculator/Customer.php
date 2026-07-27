@@ -142,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function prepareData($lines) {
-		if ($this->isBulk() && empty($this->subscribers)) {
+		if ($this->isBulk()) {
 			$this->subscribers = $this->loadSubscribers($lines);
 		}
 		if ($this->bulkAccounts) {
@@ -180,6 +180,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$subscriber = $this->subscriber;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetSubscriberForRow', array(&$row, &$subscriber, $this));
 		if (!$subscriber || !$subscriber->isValid()) {
 			if ($this->isOutgoingCall($row)) {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::NOTICE);
@@ -205,8 +206,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'] . ', line ' . $row['stamp'], Zend_Log::ALERT);
-			$row['usagev'] = 0;
-			$row['apr'] = 0;
 			return false;
 		}
 
@@ -294,7 +293,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}, $configFields);
 		$availableFileds = $subscriber->getAvailableFields();
 		$customerExtraData = $subscriber->getCustomerExtraData();
-		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'), $configFields);
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref', 'connection_type'), $configFields);
 	}
 
 	/**

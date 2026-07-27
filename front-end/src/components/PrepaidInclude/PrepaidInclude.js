@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Map } from 'immutable';
-import { Col, Form, Panel, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import UsageTypesSelector from '../UsageTypes/UsageTypesSelector';
 
@@ -53,29 +54,29 @@ const PrepaidInclude = (props) => {
   return (
     <div className="PrepaidInclude">
       <Panel>
-        <Form horizontal>
+        <Form className="form-horizontal">
           { ['clone', 'create'].includes(mode) &&
             <FormGroup>
-              <Col lg={2} md={2} componentClass={ControlLabel}>Name</Col>
+              <Col lg={2} md={2} as={ControlLabel}>Name</Col>
               <Col lg={7} md={7}>
                 <Field id="name" value={prepaidInclude.get('name', '')} onChange={props.onChangeField} editable={editable} />
               </Col>
             </FormGroup>
           }
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>External ID</Col>
+            <Col lg={2} md={2} as={ControlLabel}>External ID</Col>
             <Col lg={7} md={7}>
               <Field id="external_id" value={prepaidInclude.get('external_id', '')} onChange={props.onChangeField} fieldType="number" editable={mode === 'create'} />
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>Priority</Col>
+            <Col lg={2} md={2} as={ControlLabel}>Priority</Col>
             <Col lg={7} md={7}>
               <Field id="priority" value={prepaidInclude.get('priority', '')} onChange={props.onChangeField} tooltip="Lower number represents higher priority" fieldType="number" editable={editable} />
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>Charging by</Col>
+            <Col lg={2} md={2} as={ControlLabel}>Charging by</Col>
             <Col lg={7} md={7}>
               <Field
                 fieldType="select"
@@ -87,7 +88,7 @@ const PrepaidInclude = (props) => {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>Usage type</Col>
+            <Col lg={2} md={2} as={ControlLabel}>Usage type</Col>
             <Col lg={7} md={7}>
               { prepaidInclude.get('charging_by') === 'total_cost'
                 ? renderChargingBy()
@@ -96,13 +97,13 @@ const PrepaidInclude = (props) => {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>Shared bucket</Col>
+            <Col lg={2} md={2} as={ControlLabel}>Shared bucket</Col>
             <Col lg={7} md={7} style={checkboxStyle}>
               <Field id="shared" value={prepaidInclude.get('shared', false)} onChange={props.onChangeField} fieldType="checkbox" editable={editable} />
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col lg={2} md={2} componentClass={ControlLabel}>Unlimited</Col>
+            <Col lg={2} md={2} as={ControlLabel}>Unlimited</Col>
             <Col lg={7} md={7} style={checkboxStyle}>
               <Field id="unlimited" value={prepaidInclude.get('unlimited', false)} onChange={props.onChangeField} fieldType="checkbox" editable={editable} />
             </Col>
@@ -111,12 +112,6 @@ const PrepaidInclude = (props) => {
       </Panel>
     </div>
   );
-};
-
-PrepaidInclude.defaultProps = {
-  prepaidInclude: Map(),
-  chargingByOptions: [],
-  mode: 'create',
 };
 
 PrepaidInclude.propTypes = {

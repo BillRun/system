@@ -78,6 +78,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 				'card_type' => (string) $this->saveDetails['card_type'],
 				'card_issuer' => (string) $this->saveDetails['card_issuer'],
 				'payment_plan' => (string) $this->saveDetails['payment_plan'],
+				'is_foreign' => (string) $this->saveDetails['is_foreign'],
 				'keepCCDetails' => $this->saveDetails['keepCCDetails'],
 				'terminal_name' => $this->saveDetails['terminal_name'],
 			)
@@ -151,6 +152,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$this->saveDetails['card_type'] = (string) $transaction['card_type'];
 		$this->saveDetails['card_issuer'] = (string) $transaction['card_issuer'] ?? '';
 		$this->saveDetails['payment_plan'] = (string) $transaction['payment_plan'] ?? '';
+		$this->saveDetails['is_foreign'] = (string) $transaction['is_foreign'];
 		$this->saveDetails['credit_company'] = (string) json_decode('"' . trim($transaction['card_description']) . '"');
 		$this->saveDetails['card_brand'] = (string) $transaction['card_brand'];
 		$this->saveDetails['card_acquirer'] = (string) $transaction['clearing_processor'];
@@ -161,6 +163,7 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			'card_type' => $this->saveDetails['card_type'],
 			'card_issuer' => $this->saveDetails['card_issuer'] ?? '',
 			'payment_plan' => $this->saveDetails['payment_plan'] ?? '',
+			'is_foreign' => $this->saveDetails['is_foreign'] ?? '',
 			'credit_company' => $this->saveDetails['credit_company'],
 			'card_brand' => $this->saveDetails['card_brand'],
 			'card_acquirer' => $this->saveDetails['card_acquirer'],

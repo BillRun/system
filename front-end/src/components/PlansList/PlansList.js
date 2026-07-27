@@ -87,10 +87,6 @@ PlansList.propTypes = {
   isPlaysEnabled: PropTypes.bool,
 };
 
-PlansList.defaultProps = {
-  isPlaysEnabled: false,
-};
-
 const mapStateToProps = (state, props) => ({
   isPlaysEnabled: isPlaysEnabledSelector(state, props),
 });

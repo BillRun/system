@@ -69,9 +69,4 @@ Pager.propTypes = {
   onChangeSize: PropTypes.func,
 };
 
-Pager.defaultProps = {
-  page: 0,
-  nextPage: false,
-};
-
 export default Pager;

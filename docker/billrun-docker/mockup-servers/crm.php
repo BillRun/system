@@ -79,13 +79,13 @@ function extractAid($payload) {
 				continue;
 			}
 
-			foreach ($query['params'] as $param) {
-				if (isset($param['key'], $param['value']) && $param['key'] === 'aid') {
+				foreach ($query['params'] as $param) {
+					if (isset($param['key'], $param['value']) && $param['key'] === 'aid') {
 					return (int) $param['value'];
+					}
 				}
 			}
 		}
-	}
 
 	return null;
 }
@@ -142,13 +142,13 @@ function loadAidData($aid, $folderPath = null) {
 		$filePath = "{$folderPath}/{$aid}.json";
 		if (is_readable($filePath)) {
 			return file_get_contents($filePath, true);
-		}
+}
 	}
 
 	$filePath = "crm_data/{$aid}.json";
 	if (!is_readable($filePath)) {
-		return file_get_contents($filePath, true);
-	}
+	return file_get_contents($filePath, true);
+}
 
 	return '';
 }

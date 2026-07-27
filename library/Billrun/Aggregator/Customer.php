@@ -331,7 +331,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $this->chargesCache;
 	}
 
-	public static function removeBeforeAggregate($billrunKey, $aids = array(),$override = true) {
+	public static function removeBeforeAggregate($billrunKey, $aids = array(), $override = true) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey);
@@ -946,7 +946,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
 		$sendMailConfig = $this->getAggregatorConfig('sendendmail', true);
 		if ($recipients && $sendMailConfig) {
-			Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
+			try {
+				Billrun_Util::sendMail("BillRun customer aggregator page finished", $msg, $recipients);
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Billrun_Aggregator_Customer: Failed to send email", Billrun_Log::ERR);
+				Billrun_Factory::log("Exception type: " . get_class($ex) . 
+				", Error code: " . $ex->getCode(). ", Error Message : " . $ex->getMessage() . ", Trace: " .  $ex->getTraceAsString(), Billrun_Log::DEBUG);
+			}
 		}
 	}
 

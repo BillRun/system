@@ -1,14 +1,15 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import { withRouter } from "react-router";
+import withRouter from '@/common/withRouter';
 import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
 import { titleCase } from "change-case";
-import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
-import { WithTooltip, CreateButton } from "@/components/Elements";
+import { Form, Col, Button } from "react-bootstrap";
+import { ControlLabel, FormGroup, Panel } from "@/common/BootstrapCompat";
+import { WithTooltip } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
 import Field from "@/components/Field";
 import GeneratePaymentFileForm from "./GeneratePaymentFileForm";
@@ -125,6 +126,7 @@ class RequestPaymentFiles extends Component {
     if (this.reloadTableTimeout) {
       clearTimeout(this.reloadTableTimeout);
     }
+    this.props.dispatch(setPageTitle(''));
   }
 
   // class variable for auto reload timer
@@ -473,7 +475,14 @@ class RequestPaymentFiles extends Component {
         <div className='pull-right'>
           {
             <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
-              <CreateButton onClick={this.onClickGenerateNewFile} buttonStyle={{}} action='' label='Generate Transactions Request File' disabled={!showGeneratePaymentFile} />
+              <Button
+                onClick={this.onClickGenerateNewFile}
+                variant="primary"
+                className="btn-xs"
+                disabled={!showGeneratePaymentFile}
+              >
+                <i className="fa fa-plus" /> Generate Transactions Request File
+              </Button>
             </WithTooltip>
           }
         </div>
@@ -491,9 +500,9 @@ class RequestPaymentFiles extends Component {
     return (
       <Panel header={this.renderPanelHeader()}>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('payment_gateway')}
               </Col>
               <Col sm={5} lg={4}>
@@ -501,7 +510,7 @@ class RequestPaymentFiles extends Component {
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('file_type')}
               </Col>
               <Col sm={5} lg={4}>

@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import withRouter from '@/common/withRouter';
 import { showDanger } from '@/actions/alertsActions';
 import Templates from '../../config/Templates';
 
-export default class SelectTemplate extends Component {
+class SelectTemplate extends Component {
   constructor(props) {
     super(props);
 
@@ -36,7 +37,7 @@ export default class SelectTemplate extends Component {
   };
 
   handleCancel = () => {
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'input_processors'
     });
   };
@@ -69,7 +70,7 @@ export default class SelectTemplate extends Component {
     if (selected === '' && type !== 'api') {
       this.props.dispatch(showDanger('Please choose one option'));
     } else {
-      this.context.router.push({
+      this.props.router.push({
         pathname: 'input_processor',
         query: this.buildQuery(),
       });
@@ -186,6 +187,5 @@ export default class SelectTemplate extends Component {
   }
 }
 
-SelectTemplate.contextTypes = {
-  router: PropTypes.object.isRequired
-};
+
+export default withRouter(SelectTemplate);

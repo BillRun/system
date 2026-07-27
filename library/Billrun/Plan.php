@@ -282,12 +282,10 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;
@@ -334,7 +332,7 @@ class Billrun_Plan extends Billrun_Service {
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
 		return array('start' => $fullMonth ? FALSE : $startPricing,
 			'end' => $fullMonth ? FALSE : $endPricing,
-			'price' => ($endPricing - $startPricing) * $tariff['price']);
+			'price' => ($endPricing - $startPricing) * (float) $tariff['price']);
 	}
 
 	/**

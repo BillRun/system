@@ -96,10 +96,12 @@ class limitBillrunTest extends \Codeception\Test\Unit
         $this->defaultOptions["stamp"] = $stamp ;
         $this->tester->runCycle($this->defaultOptions);
         $this->tester->seeInCollection('billrun', [
-            'billrun_key' => $stamp, 
+            'billrun_key' => $stamp,
             'aid' =>  $data['account']['aid'],
-            'subs.0.sid'=>0,
-            'subs.1.sid'=>$data['subscriber'][0]['sid']
+            'subs' => ['$all' => [
+                ['$elemMatch' => ['sid' => 0]],
+                ['$elemMatch' => ['sid' => $data['subscriber'][0]['sid']]]
+            ]]
             ]
         );
     } 

@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Link, withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
+import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import Immutable, { List } from 'immutable';
 import moment from 'moment';
-import { Form, FormGroup, Col, Button, ControlLabel, Row } from 'react-bootstrap';
+import { Form, Col, Button, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import classNames from 'classnames';
 import Field from '@/components/Field';
@@ -299,7 +301,7 @@ class Customer extends Component {
     const label = hasPaymentGateway ? this.renderPaymentGatewayLabel() : 'None';
     return (
       <FormGroup controlId="payment_gateway">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           Payment Gateway
         </Col>
         <Col sm={8} lg={9}>
@@ -320,7 +322,7 @@ class Customer extends Component {
     });
     return debt !== null && (
       <FormGroup controlId="total_debt">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           Total Debt
         </Col>
         <Col sm={8} lg={9}>
@@ -375,7 +377,7 @@ class Customer extends Component {
               </Col>
             </Row>
             <Row>
-              <Col sm={3} lg={2} componentClass={ControlLabel} className={'non-editable-field'}>Select cycle/s</Col>
+              <Col sm={3} lg={2} as={ControlLabel} className={'non-editable-field'}>Select cycle/s</Col>
               <Col sm={9} lg={8}>
                 <CyclesSelector
                   onChange={this.onChangeSelectedCycle}
@@ -387,9 +389,9 @@ class Customer extends Component {
             </Row>
           </FormGroup>
         </ConfirmModal>
-        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.onClickRebalance}>Rebalance</Button>
-        <Button bsSize="xsmall" className="btn-primary mb10" style={Customer.actionButtonStyle} onClick={this.createImmediateInvoice}>Create an Immediate Charge Invoice</Button>
-        <Button bsSize="xsmall" className="btn-primary" style={Customer.actionButtonStyle} onClick={this.createRefundInvoice}>Create an Immediate Refund Invoice</Button>
+        <Button size="sm" variant="primary" className="mb10" style={Customer.actionButtonStyle} onClick={this.onClickRebalance}>Rebalance</Button>
+        <Button size="sm" variant="primary" className="mb10" style={Customer.actionButtonStyle} onClick={this.createImmediateInvoice}>Create an Immediate Charge Invoice</Button>
+        <Button size="sm" variant="primary" style={Customer.actionButtonStyle} onClick={this.createRefundInvoice}>Create an Immediate Refund Invoice</Button>
       </div>
     );
   }
@@ -400,8 +402,8 @@ class Customer extends Component {
     const payerName = `${customer.get('firstname', '')} ${customer.get('lastname', '')}`;
     return (
       <FormGroup>
-        <Col sm={8} lg={9} smOffset={3} lgOffset={2}>
-          <Button bsSize="xsmall" className="btn-primary" style={{ marginTop: 12 }} onClick={this.onClickOfflinePayment}>Offline Payment</Button>
+        <Col sm={8} lg={9} className="col-sm-offset-3 col-lg-offset-2" >
+          <Button size="sm" variant="primary" style={{ marginTop: 12 }} onClick={this.onClickOfflinePayment}>Offline Payment</Button>
           { showOfflinePayement && (
             <OfflinePayment
               aid={customer.get('aid')}
@@ -434,7 +436,7 @@ class Customer extends Component {
             newestFirst={false}
           />
         </span>
-        <Button bsSize="small" className="btn-primary inline" disabled={!expectedCyclesNames} onClick={this.onClickExpectedInvoice}>Generate expected invoice</Button>
+        <Button size="sm" variant="primary" className="inline" disabled={!expectedCyclesNames} onClick={this.onClickExpectedInvoice}>Generate expected invoice</Button>
       </span>
     );
   }
@@ -445,7 +447,7 @@ class Customer extends Component {
     const aid = customer.get('aid', null);
     return (
       <div>
-        <Button bsSize="xsmall" style={Customer.actionButtonStyle} className="btn-primary mt10" onClick={this.onShowCreditCharge}>
+        <Button size="sm" variant="primary" style={Customer.actionButtonStyle} className="mt10" onClick={this.onShowCreditCharge}>
           Manual charge / refund <Help contents="To the next monthly invoice" />
         </Button>
         { showCreditCharge && (<Credit aid={aid} onClose={this.onCloseCreditCharge} />) }
@@ -489,9 +491,7 @@ class Customer extends Component {
 
     return (
       <div className="Customer">
-
-        <Form horizontal>
-
+        <Form className="form-horizontal">
           <EntityFields
             entityName={['subscribers', 'account']}
             entity={customer}
@@ -500,7 +500,7 @@ class Customer extends Component {
           />
 
           <FormGroup key="services">
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Services</Col>
             <Col sm={8} lg={9}>
               <Field
                 fieldType="select"

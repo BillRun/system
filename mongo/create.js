@@ -1,4 +1,7 @@
-//Lines collection
+// create base db for BillRun
+// this script is deprecated since version 5.25.0, please use application/controllers/Action/Dbinit.php
+
+////Lines collection
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('lines');
 db.lines.createIndex({'stamp': 1 }, { unique: true });
@@ -92,8 +95,9 @@ db.billing_cycle.createIndex({'billrun_key':1, 'page_size':1,'count':1,'invoicin
 
 db.createCollection('balances');
 db.balances.createIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+db.balances.createIndex( { aid: "hashed", sid: 1}, { background: true }); // this index for sharding
 db.balances.createIndex( { sid: 1, from: 1, to: 1, priority: 1 },{ background: true});
-db.balances.createIndex( { to: 1 },{ background: true});
+db.balances.createIndex( { to: 1 , from: 1},{ background: true});
 
 //Prepaid includes Collection
 db.createCollection('prepaidincludes');
@@ -129,6 +133,7 @@ db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false
 db.subscribers.createIndex({'sid': 1 }, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'from': 1 , 'to': 1}, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'to': 1 }, { unique: false, sparse: true, background: true });
+db.subscribers.createIndex({'aid': "hashed", "sid":1 }, { unique: false, sparse: false, background: true }); // this index for the sharding
 
 // Subscribers Auto Renew
 db.subscribers_auto_renew_services.createIndex({'sid': 1 , 'from' : 1, 'to' : 1}, { unique: false, sparse: true, background: true });

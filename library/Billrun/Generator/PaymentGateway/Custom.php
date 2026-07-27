@@ -12,10 +12,14 @@
 abstract class Billrun_Generator_PaymentGateway_Custom {
 
     use Billrun_Traits_Api_FlexibleOperationsLock {
-        // Rename the trait's methods to new names because class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest  that extends
-        // it has same function names for the old Lock.
+        // Alias to flexibleLock/flexibleRelease and demote the originals to private so the
+        // subclass Billrun_Generator_PaymentGateway_Custom_TransactionsRequest can declare its
+        // own lock()/release() via Billrun_Traits_Api_OperationsLock without PHP 8 signature-
+        // compatibility errors against the inherited methods.
         lock as flexibleLock;
         release as flexibleRelease;
+        lock as private;
+        release as private;
     }
 	public $now;
     protected $configByType;
@@ -129,9 +133,6 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
             foreach ($warningMessages as $warningMessage){
                 $this->logFile->updateLogFileField('warnings', $warningMessage);
             }
-            if (isset($dataField['value_mult'])) {
-                $dataLine[$dataField['path']] = floatval($dataField['value_mult']) * floatval($dataLine[$dataField['path']]);
-            }
             $attributes = $this->getLineAttributes($dataField);
             if (!isset($dataLine[$dataField['path']])) {
                 $configObj = $dataField['name'];
@@ -147,7 +148,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
                 continue;
             }
-            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this));
+            Billrun_Factory::dispatcher()->trigger('afterPreparingCpfDataField', array(static::$type, $dataField, &$dataLine, &$attributes, $this, $params));
         }
         if ($this->configByType['generator']['type'] == 'fixed' || $this->configByType['generator']['type'] == 'separator') {
             ksort($dataLine);
@@ -171,9 +172,14 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-                $account = Billrun_Factory::account();
-                $account->loadAccountForQuery(array('aid' => $params['aid']));
-                $accountData = $account->getCustomerData();
+                if (!empty($params['_account']) && is_array($params['_account'])) {
+                    $accountData = $params['_account'];
+                } else {
+                    Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+                    $account = Billrun_Factory::account();
+                    $account->loadAccountForQuery(array('aid' => $params['aid']));
+                    $accountData = $account->getCustomerData();
+                }
                 if (is_null(Billrun_Util::getIn($accountData, $field))) {
                     $message = "Field name $field does not exist under entity " . $entity;
                     Billrun_Factory::log($message, Zend_Log::ERR);

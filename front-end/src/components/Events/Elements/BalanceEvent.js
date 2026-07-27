@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
-import { Form, FormGroup, Col, ControlLabel, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import { getConditionDescription } from './../EventsUtil';
 import Field from '@/components/Field';
 import { Actions, CreateButton } from '@/components/Elements';
@@ -110,11 +111,11 @@ class BalanceEvent extends Component {
     const params = ({ propertyTypes, usageTypesData, currency, activityType });
     return (
       <FormGroup key={index} className="mb0">
-        <Col sm={12}>
-          <div className="inline pr100">
+        <Col sm={12} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <div>
             { getConditionDescription(condition, params) }
           </div>
-          <span className="pull-right List row pr10 line-actions">
+          <span>
             <Actions actions={this.getConditionActions(index)} />
           </span>
         </Col>
@@ -135,10 +136,10 @@ class BalanceEvent extends Component {
     const { item, errors } = this.props;
     const isEventCodeError = errors.get('event_code', false);
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
           <FormGroup validationState={isEventCodeError ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Event Code
               <span className="danger-red"> *</span>
             </Col>
@@ -150,7 +151,7 @@ class BalanceEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Description
             </Col>
             <Col sm={7}>
@@ -158,7 +159,7 @@ class BalanceEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>Status</Col>
+            <Col as={ControlLabel} sm={3}>Status</Col>
             <Col sm={7}>
               <span>
                 <span className="mr20 inline">
@@ -192,7 +193,7 @@ class BalanceEvent extends Component {
               { this.renderConditions() }
             </Col>
             <Col sm={12}>
-              <CreateButton onClick={this.addCondition} label="Add Condition" />
+              <CreateButton onClick={this.addCondition} label="Add Condition" buttonClass="btn-xs" />
             </Col>
           </FormGroup>
         </Panel>

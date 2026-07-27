@@ -1,16 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col, Panel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getFieldName } from '@/common/Util';
 
 const RoundingRules = ({
     item,
-    editable,
-    roundingTypeOptions,
-    roundingDecimalsOptions,
-    roundingStateOptions,
+    editable = true,
+    roundingTypeOptions = [
+        { value: 'down', label: 'Down' },
+        { value: 'up', label: 'Up' },
+        { value: 'nearest', label: 'Nearest' },
+    ],
+    roundingDecimalsOptions = [...Array(11)].map((_, i) => ({value: i , label: `${i}` })),
+    roundingStateOptions = [
+        { value: 'None', label: 'None' },
+        { value: 'after_tax', label: 'Final charge' },
+        { value: 'before_tax', label: 'Charge before taxes' },
+    ],
     onChangeFieldValue,
 }) => {
 
@@ -50,9 +59,9 @@ const RoundingRules = ({
     }
 
     return (
-        <Panel header={<h3>{getFieldName('rounding_rules')}</h3>} collapsible className="collapsible" defaultExpanded={roundingType && roundingType !== 'None'}>
+        <Panel header={<h3>{getFieldName('rounding_rules')}</h3>} collapsible className="collapsible" defaultExpanded={false}>
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('rounding_state')}
                 </Col>
                 <Col sm={4}>
@@ -67,7 +76,7 @@ const RoundingRules = ({
             </FormGroup>
             { roundingState !== 'None' && (
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={3} lg={2}>
+                    <Col as={ControlLabel} sm={3} lg={2}>
                         { getFieldName('rounding_type')}
                     </Col>
                     <Col sm={4}>
@@ -83,7 +92,7 @@ const RoundingRules = ({
             )}
             { roundingType !== 'None' && roundingType !== '' && ( 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={3} lg={2}>
+                    <Col as={ControlLabel} sm={3} lg={2}>
                         { getFieldName('rounding_decimals')}
                     </Col>
                     <Col sm={4}>
@@ -108,21 +117,6 @@ RoundingRules.propTypes = {
     roundingTypeOptions: PropTypes.array,
     roundingDecimalsOptions: PropTypes.array,
     onChangeFieldValue: PropTypes.func.isRequired,
-};
-
-RoundingRules.defaultProps = {
-    editable: true,
-    roundingStateOptions: [
-        { value: 'None', label: 'None' },
-        { value: 'after_tax', label: 'Final charge' },
-        { value: 'before_tax', label: 'Charge before taxes' },
-    ],
-    roundingTypeOptions: [
-        { value: 'down', label: 'Down' },
-        { value: 'up', label: 'Up' },
-        { value: 'nearest', label: 'Nearest' },
-    ],
-    roundingDecimalsOptions: [...Array(11)].map((_, i) => ({value: i , label: `${i}` })),
 };
 
 export default RoundingRules;
