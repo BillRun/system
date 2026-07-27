@@ -194,6 +194,13 @@ export const sendTestSmsQuery = (recipient) => {
   });
 };
 
+export const testSubscribersAuthQuery = () => ({
+  api: 'testsubscribersauth',
+  options: {
+    method: 'POST',
+  },
+});
+
 export const setInputProcessorQuery = (data, action) => {
   const formData = new FormData();
   formData.append('category', 'file_types');
