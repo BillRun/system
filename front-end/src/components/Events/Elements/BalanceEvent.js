@@ -149,7 +149,7 @@ class BalanceEvent extends Component {
       <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
           <FormGroup validationState={isKeyError ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Key
               <span className="danger-red"> *</span>
             </Col>

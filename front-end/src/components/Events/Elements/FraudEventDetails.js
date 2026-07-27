@@ -109,7 +109,7 @@ const FraudEventDetails = ({ item = Immutable.Map(), eventsSettings = Immutable.
   return (
     <Col sm={12}>
       <FormGroup validationState={isKeyError ? 'error' : null}>
-        <Col componentClass={ControlLabel} sm={3}>
+        <Col as={ControlLabel} sm={3}>
           Key <span className="danger-red"> *</span>
         </Col>
         <Col sm={7}>
