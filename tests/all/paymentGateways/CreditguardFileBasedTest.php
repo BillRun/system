@@ -246,8 +246,9 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $bill = $this->getProcessedBill($fcTxid);
         $pgr = (array) $bill['vendor_response'];
         $pgrDump = json_encode($pgr);
-        $this->assertEquals('28',     $pgr['File number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
-        $this->assertEquals('002648', $pgr['Voucher number'], 'Voucher number must be the suffix after stripping the 2-char prefix');
+        $this->assertEquals('28',     $pgr['file_number'],    'File number must be the 2-char prefix of the voucher. pg_response: ' . $pgrDump);
+        $this->assertEquals('002648', $pgr['payment_identifier'], 'Payment identifier must be the suffix after stripping the 2-char prefix');
+        $this->assertEquals('28002648', $pgr['voucher_number'], 'Voucher number must must not be override after stripping the 2-char prefix');
     }
 
     // -------------------------------------------------------------------------
@@ -419,7 +420,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
                             ["name" => "user_x_field",     "checked" => true, "save_to_bill" => true],
                             ["name" => "result",           "checked" => true, "save_to_bill" => true],
                             ["name" => "Reference",        "checked" => true, "save_to_bill" => true],
-                            ["name" => "Voucher number",   "checked" => true, "save_to_bill" => true],
+                            ["name" => "voucher_number",   "checked" => true, "save_to_bill" => true],
                             ["name" => "authNumber",       "checked" => true, "save_to_bill" => true],
                             ["name" => "cardId",           "checked" => true, "save_to_bill" => true],
                             ["name" => "Transmission Date","checked" => true, "format" => "ymdHis", "type" => "date", "save_to_bill" => true],

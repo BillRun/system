@@ -383,7 +383,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @param type $account the account to generate an invoice for.
 	 */
 	public function generateAccountInvoices($account, $lines = FALSE) {
+		$account = $this->reconstructBillrunObject($account);
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity',array($this, &$account,&$lines));
+		$maxSubsForDetails = Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_for_invoice_pdf', 10000); 
+		if (count(Billrun_Util::getFieldVal($account['subs'], [])) > $maxSubsForDetails) {
+			Billrun_Factory::log('AID: ' . $account['aid'] . '. Subscriber count exceeds limit (' . $maxSubsForDetails . '). Setting render_subscription_details to false.', Zend_Log::DEBUG);
+			$this->render_subscription_details = false;
+		}
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
@@ -438,6 +444,68 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->signPdf($pdf);
         
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
+	}
+
+	/**
+	 * Reconstructs the billrun object by fetching subscribers and grouping data from
+	 * separate collections and re-attaching them.
+	 *
+	 * @param Mongodloid_Entity $accountObject The main billrun object.
+	 * @return Mongodloid_Entity The reconstructed object with all its related data.
+	 */
+	protected function reconstructBillrunObject(Mongodloid_Entity $accountObject)
+	{
+		$accountData = $accountObject->getRawData();
+		//Backward Compatability (subs used to be inside the BillrunObject)
+		if (isset($accountData['subs'])) {
+			return $accountObject;
+		}
+		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+		$subsQuery = ['aid' => $accountData['aid'], 'key' => $accountData['billrun_key']];
+
+		$subscribers = [];
+		foreach ($billrun_subs_coll->query($subsQuery)->cursor() as $subObject) {
+			$subscribers[] = $subObject->getRawData();
+		}
+
+		$subscribersMap = [];
+		foreach ($subscribers as &$subscriber) {
+			unset($subscriber['_id']);
+			$subscribersMap[$subscriber['sid']] = &$subscriber;
+		}
+
+		$groupingQuery = ['aid' => $accountData['aid'], 'billrun_key' => $accountData['billrun_key']];
+
+		$groupingData = [];
+		foreach ($billrun_grouping_coll->query($groupingQuery)->cursor() as $groupObject) {
+			$groupingData[] = $groupObject->getRawData();
+		}
+
+		foreach ($groupingData as $groupItem) {
+			if (isset($subscribersMap[$groupItem['sid']])) {
+				$subscriberRef = &$subscribersMap[$groupItem['sid']];
+
+				if (!isset($subscriberRef['totals'])) {
+					$subscriberRef['totals'] = [];
+				}
+				if (!isset($subscriberRef['totals']['grouping'])) {
+					$subscriberRef['totals']['grouping'] = [];
+				}
+
+				unset($groupItem['_id']);
+				unset($groupItem['sid']);
+				unset($groupItem['billrun_key']);
+				unset($groupItem['aid']);
+
+				$subscriberRef['totals']['grouping'][] = $groupItem;
+			}
+		}
+
+		$accountData['subs'] = $subscribers;
+		$accountObject->setRawData($accountData);
+		return $accountObject;
 	}
 
 	protected function accountSpecificViewParams($billrunData) {

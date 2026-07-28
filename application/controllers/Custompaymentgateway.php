@@ -54,7 +54,7 @@ class CustompaymentgatewayController extends ApiController {
 			$cmd .= " pay_mode=" . $options['pay_mode'];
 		}
 		foreach ($options['params'] as $name => $value) {
-			$cmd .= " " . $name . "=" . $value;
+			$cmd .= " " . $name . "=" . (is_array($value) ? implode(",", $value) : $value);
 		}
 		try {
 			$success = Billrun_Util::forkProcessCli($cmd);

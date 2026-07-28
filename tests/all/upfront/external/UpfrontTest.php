@@ -622,7 +622,7 @@ class UpfrontExternalTest extends \Codeception\Test\Unit
         $this->assertEquals(strtotime("2025-01-01 00:00:00"), $planLine['end']->toDateTime()->getTimestamp());
         $this->assertEqualsWithDelta(-30.811, $discountLine['aprice'], $this->epsilon);
         $this->assertEquals(strtotime("2024-11-06 00:00:00"), $discountLine['discount_start']->toDateTime()->getTimestamp());
-        $this->assertEquals(strtotime("2024-12-01 00:00:00"), $discountLine['discount_end']->toDateTime()->getTimestamp());
+        $this->assertEquals(strtotime("2025-01-01 00:00:00"), $discountLine['discount_end']->toDateTime()->getTimestamp());
 
     }
 

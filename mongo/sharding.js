@@ -10,6 +10,8 @@ sh.shardCollection(_dbName + ".billrun", {"aid": "hashed", "billrun_key": 1});
 sh.shardCollection(_dbName + ".balances", {"aid": "hashed", sid: 1});
 sh.shardCollection(_dbName + ".audit",  { "stamp" : 1 } );
 sh.shardCollection(_dbName + ".queue", { "stamp" : 1 } );
+sh.shardCollection(_dbName + ".billrun_subs", { "aid" : 1, "key" : 1 } );
+sh.shardCollection(_dbName + ".billrun_grouping", { "aid" : 1, "billrun_key" : 1 } );
 if (Number(db.version().charAt(0)) >= 6) {
     sh.shardCollection(_dbName + ".bills", {"aid": "hashed"});
 }

@@ -41,7 +41,10 @@ class BillRunAPI extends \Codeception\Module{
             /** @var REST $rest */
             $rest = $this->getModule('REST');
 
-            $rest->sendPOST('oauth2/token', [
+            // Leading slash is required: PhpBrowser resolves a relative URI
+            // against the last visited page, so after e.g. /api/settings a
+            // bare 'oauth2/token' becomes /api/oauth2/token (404).
+            $rest->sendPOST('/oauth2/token', [
                 'grant_type' => 'client_credentials',
                 'client_id' => $testUser,
                 'client_secret' => $testSecret,
@@ -607,6 +610,24 @@ class BillRunAPI extends \Codeception\Module{
         ]);
         return json_decode($ret, true);
     }
+    /**
+     * Rejects payments through the reject API.
+     *
+     * @param array $rejections List of rejections, each ['id' => <payment txid>, 'rejection' => ['code' => <code>]].
+     * @return array The response from the reject API.
+     */
+    public function rejectPaymentApi($rejections)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/reject", [
+            'rejections' => json_encode($rejections)
+        ]);
+        return json_decode($ret, true);
+    }
+
     /**
      * Sends a GET request to the specified PG endpoint with the provided data.
      *
