@@ -1297,7 +1297,8 @@ ul.revision-history-list li.active .cycle {
 .remove-range {
   background-color: #eeeeee;
 }
-.field-group-remove-button {
-  vertical-align: top;
+
+.field-group-remove-button-wrapper {
   padding-left: 10px;
+  vertical-align: top;
 }
