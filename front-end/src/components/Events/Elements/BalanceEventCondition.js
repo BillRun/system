@@ -120,7 +120,7 @@ class BalanceEventCondition extends Component {
   onChangeTrigger = (e) => {
     const { onChangeField, item, index, limitation, servicesData } = this.props;
     const { value } = e.target;
-    const limitationToSave = (value === 'usagev' && limitation === 'none' ? 'group' : limitation);
+    const limitationToSave = (value === 'usagev' && (limitation === 'none' || limitation === 'cost_with_tax') ? 'group' : limitation);
     const paths = buildBalanceConditionPath(value, limitationToSave, { activityType: '', groupNames: '', overGroup: '', servicesData });
     const condition = item.withMutations((itemWithMutation) => {
       itemWithMutation.set('paths', paths);
@@ -334,7 +334,7 @@ class BalanceEventCondition extends Component {
                   name={`condition-trigger-${index}`}
                   id={`condition-trigger-monetary-${index}`}
                   value="cost"
-                  checked={trigger === 'cost'}
+                  checked={trigger === 'cost' || limitation === 'cost_with_tax'}
                   onChange={this.onChangeTrigger}
                   label="Monetary"
                 />
@@ -365,7 +365,19 @@ class BalanceEventCondition extends Component {
               checked={limitation === 'none'}
               onChange={this.onChangeLimitation}
               disabled={trigger === 'usagev'}
-              label="Total Amount"
+              label="Total Charge"
+            />
+          </Col>
+          <Col sm={10} smOffset={2} xsOffset={1} xs={11}>
+            <Field
+              fieldType="radio"
+              name={`condition-limitation-${index}`}
+              id={`condition-limitation-cost-with-tax-${index}`}
+              value="cost_with_tax"
+              checked={limitation === 'cost_with_tax'}
+              onChange={this.onChangeLimitation}
+              disabled={trigger === 'usagev'}
+              label="Total Charge including taxes"
             />
           </Col>
           <Col sm={10}   xs={11} className="col-sm-offset-2 col-xs-offset-1">
