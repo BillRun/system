@@ -1547,8 +1547,12 @@ abstract class Billrun_Bill {
 
 	protected static function getRejectionRequiredAids($account_query){
 		$account = Billrun_Factory::account();
-		$currentAccounts = [];	
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$currentAccounts = [];
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", null);
+		if (is_null($rejection_required_conditions)) {
+			Billrun_Factory::log()->log("Rejection required conditions are not configured - no accounts require rejection in order to be in collection", Zend_Log::DEBUG);
+			return [];
+		}
 		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
 		$loadFromBills = true;
@@ -1558,15 +1562,19 @@ abstract class Billrun_Bill {
 				break;
 			}
 		}
-		if(!empty($account_query)){
-			$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
-		}
+		
 		if($loadFromBills){
+			if(!empty($account_query)){
+				$rejectionQuery = !empty($rejectionQuery) ? array('$and' => array($account_query, $rejectionQuery)) : $account_query;
+			}
 			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
 			$currentAccounts = iterator_to_array($currentAccounts);
 
 		}else{
+			if(!empty($account_query)){
+				$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
+			}
 			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
 			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;

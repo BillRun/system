@@ -1,4 +1,23 @@
 {
+  "settings": {
+    "subs": "Subscribers",
+    "ext_subs_type": "Customers/subscribers source",
+    "ext_subs_type.db": "Internal",
+    "ext_subs_type.db_desc": "Stored in the billing",
+    "ext_subs_type.db_help": "Managed inside the billing",
+    "ext_subs_type.external": "External",
+    "ext_subs_type.external_desc": "Stored in a CRM",
+    "ext_subs_type.external_help": "Customers/subscribers stored in an external CRM/ERP and accessed through",
+    "ext_subs_auth_cache": "Cache",
+    "ext_subs_auth": "Authorization",
+    "ext_subs_auth.url": "Access Token URL",
+    "ext_subs_auth.secret": "Client Secret",
+    "ext_subs_auth.id": "Client ID",
+    "ext_subs_url": "API URLs",
+    "ext_subs_url.gba": "GBA",
+    "ext_subs_url.gsd": "GSD",
+    "ext_subs_url.gad": "GAD"
+  },
   "customerIdentification": {
     "sid": "Subscriber id (BillRun system field)"
   },
@@ -342,6 +361,8 @@
     "charging_type.charge": "Charge Only",
     "charging_type.refund": "Refund Only"
   },
+  "unsaved_changes": "You have unsaved changes!",
+  "field_required": "{{field}} is required",
   "optional": "optional",
   "is_schedule": "Schedule",
   "exclude_aids": "Excluded Customer IDs",
