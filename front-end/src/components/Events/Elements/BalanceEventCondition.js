@@ -368,7 +368,7 @@ class BalanceEventCondition extends Component {
               label="Total Charge"
             />
           </Col>
-          <Col sm={10} smOffset={2} xsOffset={1} xs={11}>
+          <Col sm={10}   xs={11} className="col-sm-offset-2 col-xs-offset-1">
             <Field
               fieldType="radio"
               name={`condition-limitation-${index}`}
