@@ -112,8 +112,6 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"balance" : [],
-		"fraud" : [],
 		"settings": {
 			"http": {
 				"url": "",
@@ -125,6 +123,9 @@
 				"global_addresses":[]
 			}
 		}
+	},
+	"eventsettings" : {
+		"fields": []
 	},
 	"suggestions" : {
 		"fields": []

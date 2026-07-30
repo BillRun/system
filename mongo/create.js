@@ -156,6 +156,9 @@ db.createCollection('config', {capped: true, size:104857600});
 db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
 
 db.createCollection('events');
+db.createCollection('event_settings');
+db.event_settings.createIndex({ 'key': 1 }, { unique: true, background: true });
+db.event_settings.createIndex({ 'type': 1, 'from': 1, 'to': 1 }, { background: true });
 db.createCollection('carriers');
 
 //Collections Steps

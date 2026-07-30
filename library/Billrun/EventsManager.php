@@ -36,7 +36,6 @@ class Billrun_EventsManager {
 	 * @var Billrun_EventsManager
 	 */
 	protected static $instance;
-	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
 	protected $eventsSettingsCache = [];
@@ -45,10 +44,15 @@ class Billrun_EventsManager {
 	 * @var Mongodloid_Collection
 	 */
 	protected static $collection;
+	
+	/**
+	 * @var Mongodloid_Collection
+	 */
+	protected $eventsSettingsCollection;
 
 	private function __construct($params = array()) {
-		$this->eventsSettings = Billrun_Factory::config()->getConfigValue('events', []);
 		self::$collection = Billrun_Factory::db()->eventsCollection();
+		$this->eventsSettingsCollection = Billrun_Factory::db()->eventsettingsCollection();
 	}
 
 	public static function getInstance($params) {
@@ -61,14 +65,22 @@ class Billrun_EventsManager {
 	public function getEventsSettings($type, $activeOnly = true) {
 		$cacheKey = $type.$activeOnly;
 		if(empty($this->eventsSettingsCache[$cacheKey])) {
-			$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
-			if (!$activeOnly) {
-				$this->eventsSettingsCache[$cacheKey] = $events;
-			} else {
-				$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
-					return isset($event['active']) ? !empty($event['active']) : true;
-				});
+			$now = new Mongodloid_Date();
+			$query = [
+				'type' => $type,
+				'from' => ['$lte' => $now],
+				'to' => ['$gte' => $now],
+			];
+			$events = [];
+			foreach ($this->eventsSettingsCollection->query($query)->cursor() as $event) {
+				$events[] = $event->getRawData();
 			}
+			if ($activeOnly) {
+				$events = array_values(array_filter($events, function ($event) {
+					return isset($event['active']) ? !empty($event['active']) : true;
+				}));
+			}
+			$this->eventsSettingsCache[$cacheKey] = $events;
 		}
 		return $this->eventsSettingsCache[$cacheKey];
 	}
@@ -319,6 +331,7 @@ class Billrun_EventsManager {
 
 	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
+		unset($event['_id'], $event['from'], $event['to'], $event['type']);
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new Mongodloid_Date();
 //		$event['value_before'] = $valueBefore;
@@ -517,21 +530,22 @@ class Billrun_EventsManager {
 			$emailTemplateConfig = Billrun_Util::findMatchingEmailTemplate($emailTemplateName);
 			$subject = Billrun_Util::getIn($emailTemplateConfig, 'subject', '');
 			$body = Billrun_Util::getIn($emailTemplateConfig, 'content', '');
-			foreach ($eventTypeEmailNotification as $eventCode => $eventCodeEmailNotification) {
+			foreach ($eventTypeEmailNotification as $key => $keyEmailNotification) {
 				$fraudEventDetails = [];
-				foreach ($eventCodeEmailNotification['aids'] as $aid => $sids) {
+				foreach ($keyEmailNotification['aids'] as $aid => $sids) {
 					$sids = implode(', ', $sids);
-					$fraudEventDetails[] = "Account id: {$aid}, Subscriber ids: {$sids}, {$eventCodeEmailNotification['desc']}";
+					$fraudEventDetails[] = "Account id: {$aid}, Subscriber ids: {$sids}, {$keyEmailNotification['desc']}";
 				}
 				$subjectTranslations = [
-					'event_code' => $eventCode,
+					'event_code' => $keyEmailNotification['event_code'],
+					'key' => $key,
 				];
 				$bodyTranslations = [
 					'fraud_event_details' => implode(PHP_EOL, $fraudEventDetails),
 				];
 				$subject = Billrun_Util::translateTemplateValue($subject, $subjectTranslations);
 				$body = Billrun_Util::translateTemplateValue($body, $bodyTranslations);
-				$recipients = Billrun_Util::getIn($eventCodeEmailNotification, 'recipients');
+				$recipients = Billrun_Util::getIn($keyEmailNotification, 'recipients');
 				Billrun_Util::sendMail($subject, $body, $recipients);
 			}
 		}
@@ -548,23 +562,24 @@ class Billrun_EventsManager {
 		foreach ($events as $event) {
 			if ($this->shouldSendEmailNotification($event)) {
 				$eventType = $event['event_type'];
-				$eventCode = $event['event_code'];
+				$key = $event['key'];
 				$aid = $event['extra_params']['aid'];
 				$sid = $event['extra_params']['sid'];
-				
-				$eventToNotify = Billrun_Util::getIn($emailNotifications, [$eventType, $eventCode], []);
+
+				$eventToNotify = Billrun_Util::getIn($emailNotifications, [$eventType, $key], []);
 				if (empty($eventToNotify)) {
 					$eventToNotify = [
+						'event_code' => $event['event_code'],
 						'desc' => $this->getEventDescription($event),
 						'recipients' => $this->getEventRecipients($event),
 						'aids' => [],
 					];
-					Billrun_Util::setIn($emailNotifications, [$eventType, $eventCode], $eventToNotify);
+					Billrun_Util::setIn($emailNotifications, [$eventType, $key], $eventToNotify);
 				}
-				
+
 				$sids = Billrun_Util::getIn($eventToNotify, ['aids', $aid], []);
 				$sids[] = $sid;
-				Billrun_Util::setIn($emailNotifications, [$eventType, $eventCode, 'aids', $aid], $sids);
+				Billrun_Util::setIn($emailNotifications, [$eventType, $key, 'aids', $aid], $sids);
 			}
 		}
 		if (!empty($emailNotifications)) {
