@@ -112,8 +112,6 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"balance" : [],
-		"fraud" : [],
 		"settings": {
 			"http": {
 				"url": "",
@@ -125,6 +123,9 @@
 				"global_addresses":[]
 			}
 		}
+	},
+	"eventsettings" : {
+		"fields": []
 	},
 	"suggestions" : {
 		"fields": []
@@ -269,6 +270,17 @@
 		{ "name": "Default", "enabled": true, "default": true }
 	],
 	"subscribers":{
+		"external_authentication": {
+			"type": "oauth2",
+				"access_token_url": "",
+				"data": {
+					"grant_type": "",
+					"client_id": "",
+					"client_secret": "",
+					"scope": ""
+				},
+				"cache": true
+		},
 		"subscriber" :{"type":"","external_url":"","timeout":""},
         "account" :{"type":"","external_url":"","timeout":""},
         "billable"  :{ "url":""}

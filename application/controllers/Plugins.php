@@ -72,7 +72,7 @@ class PluginsController extends Yaf_Controller_Abstract {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return $this->getView()->render('plugins/index.phtml', $parameters);
 	}
 

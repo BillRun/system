@@ -290,7 +290,49 @@ class Billrun_Utils_Mongo {
 
 		return self::convertRecordMongodloidDatetimeFields($record, $fields, $format);
 	}
-	
+
+	/**
+	 * Decrypt the given encrypted fields of a record (top level only).
+	 *
+	 * @param array $record
+	 * @param array $fields - list of field names that hold encrypted values
+	 *
+	 * @return The record with decrypted values.
+	 */
+	public static function decryptRecordFields($record, array $fields = array()) {
+		foreach ($fields as $field) {
+			$value = Billrun_Util::getIn($record, $field, null);
+			if (is_string($value)) {
+				Billrun_Util::setIn($record, $field, Billrun_Utils_Encryption::decryptValue($value));
+			}
+		}
+
+		return $record;
+	}
+
+	/**
+	 * Recursively decrypt the given encrypted fields of a record.
+	 *
+	 * Matching is by field NAME at any depth, not by path: a nested field that
+	 * happens to share a name with an encrypted field is also decrypt-attempted.
+	 * This is safe because decryptValue() only touches values carrying the
+	 * enc: prefix and returns anything else unchanged.
+	 *
+	 * @param array $record
+	 * @param array $fields - list of field names that hold encrypted values
+	 *
+	 * @return The record with decrypted values.
+	 */
+	public static function recursiveDecryptRecordFields($record, array $fields = array()) {
+		foreach ($record as $key => $subRecord) {
+			if (is_array($subRecord)) {
+				$record[$key] = self::recursiveDecryptRecordFields($subRecord, $fields);
+			}
+		}
+
+		return self::decryptRecordFields($record, $fields);
+	}
+
 	/**
 	 * legacy method to old MDB layer
 	 * 

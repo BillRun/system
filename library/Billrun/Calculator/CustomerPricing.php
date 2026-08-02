@@ -89,10 +89,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * balance that customer pricing update
-	 * 
+	 *
 	 * @param Billrun_Balance
 	 */
 	protected $balance;
+
+	/**
+	 * Tax calculator instance used to apply tax within the pricing calculator
+	 *
+	 * @var Billrun_Calculator_Tax
+	 */
+	protected $taxCalculator = null;
 
 	/**
 	 * prepaid minimum balance volume
@@ -236,6 +243,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$row->setRawData(array_merge($row->getRawData(), $totalPricingData, $foreignFields));
 			$row->set('rates', $rates);
 			$this->afterCustomerPricing($row);
+			$this->applyTaxToRow($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
@@ -333,11 +341,41 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group', 'cf'));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates', 'out_group', 'cf', 'tax_data', 'final_charge', 'before_rounding'));
 	}
 
 	public function getPricingField() {
 		return $this->pricingField;
+	}
+
+	/**
+	 * Get the tax calculator instance (lazy-loaded).
+	 *
+	 * @return Billrun_Calculator_Tax|false
+	 */
+	public function getTaxCalculator() {
+		if (is_null($this->taxCalculator)) {
+			$this->taxCalculator = Billrun_Calculator::getInstance(['type' => 'tax', 'autoload' => false]);
+		}
+		return $this->taxCalculator;
+	}
+
+	/**
+	 * Apply tax to a row using the configured tax calculator.
+	 * Clears any previously computed tax fields first so this method is safe to
+	 * call multiple times (e.g. after a plugin modifies aprice).
+	 *
+	 * @param Mongodloid_Entity|array $row (by reference)
+	 */
+	public function applyTaxToRow(&$row) {
+		$taxCalc = $this->getTaxCalculator();
+		if (!$taxCalc) {
+			return;
+		}
+		$result = $taxCalc->updateRow($row);
+		if ($result !== FALSE) {
+			$row = $result;
+		}
 	}
 
 	/**
@@ -350,11 +388,29 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
-	 * 
+	 *
 	 * @todo Move to trait because it also use by processor
 	 */
 	public function getCalculatorQueueType() {
 		return self::$type;
+	}
+
+	/**
+	 * Tax is applied within the pricing calculator (updateRow -> applyTaxToRow),
+	 * so a tax stage that directly follows pricing in queue.calculators is
+	 * already completed once pricing ran. Tag lines past it, so they leave the
+	 * queue when tax is the last stage, or reach the next queue calculator
+	 * (e.g. unify) without a separate tax run.
+	 *
+	 * @see Billrun_Calculator::getQueueTagType
+	 */
+	public function getQueueTagType() {
+		$queue_calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+		$queue_id = array_search($this->getCalculatorQueueType(), $queue_calculators);
+		if ($queue_id !== FALSE && isset($queue_calculators[$queue_id + 1]) && $queue_calculators[$queue_id + 1] === 'tax') {
+			return 'tax';
+		}
+		return parent::getQueueTagType();
 	}
 
 	/**

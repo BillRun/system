@@ -48,24 +48,69 @@ codecept:
     - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
     - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
     - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans || true
+    - docker-compose -f docker-compose-php85-ci.yml up --wait --build --detach
+  script:
+    - cd $CI_PROJECT_DIR/docker/billrun-docker/
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php85-tests.yml down --remove-orphans
+  after_script:
+    - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
+    - docker-compose -f docker-compose-php85-tests.yml ps
+    - docker logs billrun-app
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_PROJECT_DIR/logs/container/debug.log
+      - $CI_PROJECT_DIR/tests/_output/*
+    expire_in: 1 week
+
+codecept_php74:
+  needs:
+    - codecept
+  services:
+    - name: docker:dind
+      alias: dockerhost
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    DOCKER_HOST: tcp://dockerhost:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  stage: test
+  tags:
+    - new_docker_runner
+  before_script:
+    # build and run BillRun app in docker
+    - mkdir logs cache
+    - chmod 777 logs/ cache/
+    - cp $TEST_ENV_CODECEPT $CI_PROJECT_DIR/tests/.env
+    - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
+    - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans || true
     - docker-compose -f docker-compose-php74-ci.yml up --wait --detach
   script:
     - cd $CI_PROJECT_DIR/docker/billrun-docker/
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept build
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run unit
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run functional
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run api
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run acceptance
-    - docker exec -w /billrun billrun-app php vendor/bin/codecept run all
+    - docker exec billrun-app php vendor/bin/codecept build
+    - docker exec billrun-app php vendor/bin/codecept run unit
+    - docker exec billrun-app php vendor/bin/codecept run functional
+    - docker exec billrun-app php vendor/bin/codecept run api
+    - docker exec billrun-app php vendor/bin/codecept run acceptance
+    - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans
   after_script:
     - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml ps
-    - HEALTH=$(docker inspect --format '{{.State.Health.Status}}' billrun-app 2>/dev/null || true)
-    - if [ "$HEALTH" = "unhealthy" ]; then docker logs billrun-app; fi
+    - docker logs billrun-app
   artifacts:
     when: on_failure
     paths:
@@ -86,7 +131,7 @@ build:
     DOCKER_TLS_CERTDIR: ""
   script:
     - echo "Building Docker image from Tag $CI_COMMIT_TAG"
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin
     - |
       # Move :latest only when this tag is the highest stable tag in the repo
       # AND its major version is >= 5. A "stable" tag is exactly

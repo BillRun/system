@@ -194,6 +194,13 @@ export const sendTestSmsQuery = (recipient) => {
   });
 };
 
+export const testSubscribersAuthQuery = () => ({
+  api: 'testsubscribersauth',
+  options: {
+    method: 'POST',
+  },
+});
+
 export const setInputProcessorQuery = (data, action) => {
   const formData = new FormData();
   formData.append('category', 'file_types');
@@ -389,6 +396,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'users':
     case 'suggestions':
     case 'bills':
+    case 'eventsettings':
       action = 'get';
       break;
     default:

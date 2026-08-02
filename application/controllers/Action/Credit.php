@@ -18,7 +18,7 @@ class CreditAction extends ApiAction {
 	
 	const INSTALLMENTS_PRECISION = 2;
 	
-	protected $request = null;
+	protected $requestData = null;
 	protected $events = [];
 	protected $status = 1;
 	protected $desc = 'success';
@@ -37,7 +37,7 @@ class CreditAction extends ApiAction {
 					break;
 				default :
 					Billrun_Factory::log("Execute credit", Zend_Log::INFO);
-					$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
+					$this->requestData = $this->getRequest()->getRequest(); // supports GET / POST requests;
 					$this->setEventsData();
 					$this->process();
 					return $this->response();
@@ -70,30 +70,30 @@ class CreditAction extends ApiAction {
 	protected function setEventsData() {
 		$requests = [];
                 $reportResult = [];
-                $this->originRequest = $this->request;
-                if(isset($this->request['suggestion_stamp'])){
-                    $requests = Billrun_Compute_Suggestions::getCreditRequests($this->request['suggestion_stamp']);          
+                $this->originRequest = $this->requestData;
+                if(isset($this->requestData['suggestion_stamp'])){
+                    $requests = Billrun_Compute_Suggestions::getCreditRequests($this->requestData['suggestion_stamp']);          
                 }
                 if(empty($requests)){
-                    $requests[] = $this->request;
+                    $requests[] = $this->requestData;
                     $singleEvent = true; 
                 }
                 foreach ($requests as $request){
                     try {
-                        $this->request = $request;
+                        $this->requestData = $request;
                         $basicEvent = $this->setEventData();
                         $this->events[] = $basicEvent;
 
                         if ($this->hasInstallments()) {
                                 $this->setInstallmentsData();
                         }
-                        $reportResult[] = "Succeeded credit request : " .  json_encode($this->request);
+                        $reportResult[] = "Succeeded credit request : " .  json_encode($this->requestData);
                     } catch (Exception $ex) {
                         if($singleEvent){// single event
                             throw $ex;
                         }else{// multiple events
                             $this->status = 2;
-                            $message = "Failed credit request: " . json_encode($this->request) .", " . $ex->getMessage();
+                            $message = "Failed credit request: " . json_encode($this->requestData) .", " . $ex->getMessage();
                             $reportResult[] = $message;
                             Billrun_Factory::log($message . ", origin request: " . json_encode($this->originRequest), Zend_Log::NOTICE);
                         }
@@ -105,7 +105,7 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function setEventData() {
-		$event = $this->parse($this->request);
+		$event = $this->parse($this->requestData);
 		$event['source'] = 'credit';
 		$event['rand'] = rand(1, 1000000);
 		if ($this->hasInstallments()) {
@@ -117,7 +117,7 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function hasInstallments() {
-		return isset($this->request['installments']) && is_numeric($this->request['installments']);
+		return isset($this->requestData['installments']) && is_numeric($this->requestData['installments']);
 	}
 	
 	protected function setInstallmentsData() {
