@@ -1439,8 +1439,8 @@ abstract class Billrun_Bill {
 			)
 		);
                 
-		$project['$project']['pending'] = array('$cond' => array(array('$in' => array('$paid', array('2', 2))), true, false));
-		$project['$project']['pending_covering_amount'] = 1;
+                    $project['$project']['pending'] = array('$cond' => array(array('$in' => array('$paid', array('2', 2))), true, false));
+                    $project['$project']['pending_covering_amount'] = 1;
 
 		$addFields = array(
 			'$addFields' => array(
@@ -1500,16 +1500,16 @@ abstract class Billrun_Bill {
 			),
 		);
                 
-		$group['$group']['total_pending_debt_valid'] = array(
-								'$sum' => array(
+                    $group['$group']['total_pending_debt_valid'] = array(
+                                '$sum' => array(
 												'$cond' => array(array('$eq' => array('$total_pending_debt_valid_cond', true)), array('$add' => array('$pending_covering_amount', '$left_to_pay')), 0)
-								),
-				);
-		$group['$group']['total_pending_debt_invalid'] = array(
-								'$sum' => array(
+                                ),
+                        );
+                    $group['$group']['total_pending_debt_invalid'] = array(
+                                '$sum' => array(
 												'$cond' => array(array('$eq' => array('$total_pending_debt_invalid_cond', true)), array('$add' => array('$pending_covering_amount', '$left_to_pay')), 0)
-								),
-				);
+                                ),
+                        );
                 
 		$project3 = array(
 			'$project' => array(
@@ -1517,8 +1517,8 @@ abstract class Billrun_Bill {
 				'aid' => '$_id',
 			),
 		);
-		if ($only_debts) {			              
-      $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
+		if ($only_debts) {			
+                            $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
 			$minBalance = is_null($min_debt) ? Billrun_Factory::config()->getConfigValue('collection.settings.min_debt',  '10'): $min_debt;
 			$minBalance = floatval((!is_numeric($minBalance) ? '10' : $minBalance));
 			$match2 = array(
@@ -1529,8 +1529,8 @@ abstract class Billrun_Bill {
 				)
 			);
 		} else {			
-        $project3['$project']['total'] =  array('$add'=>array(array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_pending_debt_invalid')), '$total_credit'));                      
-        $match2 = array(
+                            $project3['$project']['total'] =  array('$add'=>array(array('$add' => array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')), '$total_pending_debt_invalid')), '$total_credit'));
+                        $match2 = array(
 				'$match' => array(
 					'total' => array(
 						'$ne' => 0
@@ -1547,8 +1547,12 @@ abstract class Billrun_Bill {
 
 	protected static function getRejectionRequiredAids($account_query){
 		$account = Billrun_Factory::account();
-		$currentAccounts = [];	
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
+		$currentAccounts = [];
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", null);
+		if (is_null($rejection_required_conditions)) {
+			Billrun_Factory::log()->log("Rejection required conditions are not configured - no accounts require rejection in order to be in collection", Zend_Log::DEBUG);
+			return [];
+		}
 		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
 		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
 		$loadFromBills = true;
@@ -1558,15 +1562,19 @@ abstract class Billrun_Bill {
 				break;
 			}
 		}
-		if(!empty($account_query)){
-			$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
-		}
+		
 		if($loadFromBills){
+			if(!empty($account_query)){
+				$rejectionQuery = !empty($rejectionQuery) ? array('$and' => array($account_query, $rejectionQuery)) : $account_query;
+			}
 			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
 			$currentAccounts = iterator_to_array($currentAccounts);
 
 		}else{
+			if(!empty($account_query)){
+				$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
+			}
 			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
 			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;

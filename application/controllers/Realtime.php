@@ -63,7 +63,7 @@ class RealtimeController extends ApiController {
 
 		$this->event['uf'] = $decoder->decode($requestBody);
 	}
-	
+
 	/**
 	 * get input processor configuration
 	 *
@@ -216,7 +216,7 @@ class RealtimeController extends ApiController {
 		$this->updateLineResponse($data, $response);
 		return $response;
 	}
-	
+
 	/**
 	 * method to return the collection the initial line exists
 	 * in prepaid it would be archive collection, while postpaid it will be lines collection

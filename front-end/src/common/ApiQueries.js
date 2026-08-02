@@ -181,6 +181,26 @@ export const getSettingsQuery = (category, data = {}) => ({
   ],
 });
 
+export const sendTestSmsQuery = (recipient) => {
+  const formData = new FormData();
+  formData.append('recipient', recipient);
+
+  return ({
+    api: 'testsms',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
+
+export const testSubscribersAuthQuery = () => ({
+  api: 'testsubscribersauth',
+  options: {
+    method: 'POST',
+  },
+});
+
 export const setInputProcessorQuery = (data, action) => {
   const formData = new FormData();
   formData.append('category', 'file_types');
@@ -366,6 +386,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'suggestions':
     case 'bills':
     case 'export_generators':
+    case 'eventsettings':
       action = 'get';
       break;
     default:

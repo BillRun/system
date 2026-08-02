@@ -41,7 +41,10 @@ class BillRunAPI extends \Codeception\Module{
             /** @var REST $rest */
             $rest = $this->getModule('REST');
 
-            $rest->sendPOST('oauth2/token', [
+            // Leading slash is required: PhpBrowser resolves a relative URI
+            // against the last visited page, so after e.g. /api/settings a
+            // bare 'oauth2/token' becomes /api/oauth2/token (404).
+            $rest->sendPOST('/oauth2/token', [
                 'grant_type' => 'client_credentials',
                 'client_id' => $testUser,
                 'client_secret' => $testSecret,
@@ -356,10 +359,10 @@ class BillRunAPI extends \Codeception\Module{
             case 'service':
                 $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
                 break;
-            case 'rates';
+            case 'rates':
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
-            case 'discount';
+            case 'discount':
                 $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
                 break;
         }
@@ -608,6 +611,24 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
     /**
+     * Rejects payments through the reject API.
+     *
+     * @param array $rejections List of rejections, each ['id' => <payment txid>, 'rejection' => ['code' => <code>]].
+     * @return array The response from the reject API.
+     */
+    public function rejectPaymentApi($rejections)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/reject", [
+            'rejections' => json_encode($rejections)
+        ]);
+        return json_decode($ret, true);
+    }
+
+    /**
      * Sends a GET request to the specified PG endpoint with the provided data.
      *
      * @param array $data The data to be sent with the request.
@@ -846,6 +867,19 @@ class BillRunAPI extends \Codeception\Module{
         $ret = $rest->sendGET("/api/onetimeinvoice", $params);
 
         return json_decode($ret, true);
+    }
+
+    /**
+     * Clear Billrun_Base's process-wide singleton cache. Callers that change
+     * file_types / queue.calculators / similar config mid-test should call
+     * this before getInstance() so the new config is picked up rather than a
+     * cached calc/processor built against the previous config.
+     */
+    public function resetBillrunSingletons()
+    {
+        $instances = new \ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     public static function cleanDB(){

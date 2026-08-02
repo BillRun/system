@@ -78,7 +78,8 @@ class limitBillrunTest extends \Codeception\Test\Unit
         $this->defaultOptions['force_accounts'] = [$data['account']['aid']];
         $this->defaultOptions["stamp"] = $stamp ;
         $this->tester->runCycle($this->defaultOptions);
-        $this->tester->seeInCollection('billrun', ['billrun_key' => $stamp, 'aid' =>  $data['account']['aid'],'subs'=>[]]);
+        $this->tester->seeInCollection('billrun', ['billrun_key' => $stamp, 'aid' =>  $data['account']['aid']]);
+        $this->tester->dontSeeInCollection('billrun_subs', ['billrun_key' => $stamp, 'aid' =>  $data['account']['aid']]);
     }
    
     public function test_limitBillrunObjectTo2_haveOneSub_saveToSubs()
@@ -101,15 +102,21 @@ class limitBillrunTest extends \Codeception\Test\Unit
         // array: 'subs.sid' => X matches a doc whose subs array has ANY element
         // with sid=X. Two assertions => BOTH must be present.
         $this->tester->seeInCollection('billrun', [
-            'billrun_key' => $stamp,
-            'aid' =>  $data['account']['aid'],
-            'subs.sid' => 0,
-        ]);
+            'billrun_key' => $stamp, 
+            'aid' =>  $data['account']['aid']
+            ]
+        );
         $this->tester->seeInCollection('billrun', [
-            'billrun_key' => $stamp,
+            'billrun_key' => $stamp, 
+            'aid' =>  $data['account']['aid']
+            ]
+        );
+         $this->tester->seeInCollection('billrun_subs', [
+            'key' => $stamp, 
             'aid' =>  $data['account']['aid'],
-            'subs.sid' => $data['subscriber'][0]['sid'],
-        ]);
-    }
+            'sid'=>$data['subscriber'][0]['sid']
+            ]
+        );
+    } 
  
 }

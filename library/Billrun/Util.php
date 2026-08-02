@@ -1524,6 +1524,9 @@ class Billrun_Util {
 	}
 
 	public static function isValidRegex($regex) {
+		if (!is_string($regex)) {
+			return false;
+		}
 		return !(@preg_match($regex, null) === false);
 	}
 
@@ -1800,6 +1803,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (is_object($keys)) {
+				$keys = (string) $keys;
+			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}

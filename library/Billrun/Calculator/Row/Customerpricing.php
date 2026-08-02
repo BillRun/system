@@ -217,6 +217,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance();
 		}
+		if ($pricingData === false) {
+			return false;
+		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
 	}
@@ -324,6 +327,19 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	public function updateBalance($rate, $plan, $usage_type, $volume) {
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan);
+
+		$aprice = $pricingData[$this->pricingField] ?? null;
+		if (is_numeric($aprice)) {
+			$taxCalc = $this->calculator->getTaxCalculator();
+			if ($taxCalc && method_exists($taxCalc, 'getRowTaxData')) {
+				$lineForTax = array_merge($this->row->getRawData(), $pricingData);
+				$taxData = $taxCalc->getRowTaxData($lineForTax);
+				if ($taxData !== false) {
+					$pricingData['final_charge'] = $aprice + ($taxData['total_amount'] ?? 0);
+				}
+			}
+		}
+
 		if (isset($this->row['billrun_pretend']) && $this->row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
@@ -345,7 +361,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$notInGroupVolume = $balancePricingData['out_group'] ?? ($balancePricingData['over_group'] ?? 0);
 			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $notInGroupVolume);
-			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
+			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this, $this->balance));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
 				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
@@ -389,7 +405,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 				list($query, $update) = $balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
 
-				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this));
+				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this, $balance));
 				$ret = $balance->update($query, $update);
 				if ($ret === FALSE) {
 					Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);

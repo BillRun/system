@@ -85,8 +85,11 @@ class Billrun_Cycle_Aggregation_CustomerDb {
 			}
 		}
 
-		usort($retResults, function($a, $b){ return @$a['from'] - @$b['from'];});
-		//usort($retResults, function($a, $b){ return $a['from']->sec - $b['from']->sec;});
+		usort($retResults, function($a, $b) {
+			$fromA = $a['from'] ?? 0;
+			$fromB = $b['from'] ?? 0;
+			return $fromA <=> $fromB;
+		});
 		return ["data" => array_map(function($item){ return new Mongodloid_Entity($item);}, array_values($retResults)), "options" => Billrun_Factory::config()->getConfigValue("customer.aggregator.options", [])];
 	}
 
