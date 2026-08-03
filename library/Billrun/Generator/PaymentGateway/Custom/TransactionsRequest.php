@@ -113,8 +113,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		}, $this->customers);
 
 		$account = Billrun_Factory::account();
-		$accountQuery = array('aid' => array('$in' => $customersAids));
-		$accounts = $account->loadAccountsForQuery($accountQuery);
+		$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
 		$accountsInArray = [];
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
@@ -135,6 +134,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			foreach ($current_loop_bills as $customer) {
 				$this->aid_to_lock = null;
 				if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+					Billrun_Factory::log()->log("Reached max records limit of " . $maxRecords . " for file type " . $this->configByType['file_type'] . ". Stopping the charging loop", Zend_Log::INFO);
 					break;
 				}
 				$paymentParams = array();
