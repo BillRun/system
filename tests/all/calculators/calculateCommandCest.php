@@ -339,7 +339,7 @@ class calculateCommandCest
      * batch is shrunk so each run advances only a few lines; after a line advances
      * we re-queue it at the BACK of the line (calc_name reset to false, calc_time
      * stamped to now) - a stand-in for whatever would put a processed line back in
-     * the queue - and set the orphan window to zero so it is eligible again next
+     * the queue - and make the orphan window negative so it is eligible again next
      * run. We keep running until every line has been circulated at least three times.
      *
      * (Unlike the stuck case a succeeding line does NOT re-circulate on its own -
@@ -359,7 +359,12 @@ class calculateCommandCest
         $originalLimit = $this->getCustomerBatchLimit();
         $originalOrphan = $this->getOrphanWait();
         $this->setCustomerBatchLimit(1);   // small batch so each run advances only a few lines
-        $this->setOrphanWait('0 seconds'); // a re-queued line is eligible again on the next run
+        // A NEGATIVE wait makes a re-queued line eligible again immediately: the
+        // eligibility threshold (strtotime "<wait> ago") has whole-second granularity,
+        // so with '0 seconds' a line stamped at second S only becomes eligible at
+        // wall-clock second S+1 - and the runs are much faster than a second, so
+        // most runs would find nothing eligible and the run budget would expire.
+        $this->setOrphanWait('-1 second');
 
         try {
             $stamps = $this->queueStamps(['type' => $this->fileType]);
@@ -403,7 +408,7 @@ class calculateCommandCest
      * pass after pass, not just once - no line may starve however many times we go
      * around. The lines are stuck at the customer stage (no subscriber) so they
      * never leave the queue, the batch is shrunk so each run handles only a few, and
-     * the orphan window is set to zero so a pulled-but-failed line becomes eligible
+     * the orphan window is made negative so a pulled-but-failed line becomes eligible
      * to be re-pulled on the next run. We then keep running the command until every
      * line has been circulated at least three times.
      *
@@ -426,7 +431,9 @@ class calculateCommandCest
         $originalLimit = $this->getCustomerBatchLimit();
         $originalOrphan = $this->getOrphanWait();
         $this->setCustomerBatchLimit(4);   // small batch so each run handles only a few lines
-        $this->setOrphanWait('0 seconds'); // a failed line is eligible to re-circulate on the next run
+        // Negative on purpose - a failed line is eligible to re-circulate on the
+        // very next run (see the note in the previous test).
+        $this->setOrphanWait('-1 second');
 
         try {
             $stamps = $this->queueStamps(['type' => $this->fileType]);
