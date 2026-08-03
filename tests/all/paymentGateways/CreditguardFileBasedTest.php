@@ -202,9 +202,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
 
     /**
      * BRCD-4676: a voided (rejection) bill must never carry a positive
-     * left / left_to_pay - the app zeroes it on save so the bills collection
-     * validator accepts the write. Without that, this rejection bill would be
-     * saved with left_to_pay equal to the reversed amount.
+     * left / left_to_pay - the app zeroes it on save.
      */
     private function assertRejectionBillHasNoRemainingBalance(string $originalTxid): void
     {

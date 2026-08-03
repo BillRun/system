@@ -156,8 +156,7 @@ abstract class Billrun_Bill {
 	/**
 	 * Whether the given raw bill data represents a voided bill - rejected,
 	 * cancelled or denied. This is the logical complement of
-	 * getNotRejectedOrCancelledQuery() and is kept in sync with the bills
-	 * collection validator installed by BRCD-4676.
+	 * getNotRejectedOrCancelledQuery().
 	 *
 	 * @param array $rawData
 	 * @return bool
@@ -172,13 +171,8 @@ abstract class Billrun_Bill {
 	}
 
 	/**
-	 * A voided bill must not carry a positive remaining balance, otherwise the
-	 * bills collection validator (BRCD-4676) rejects the write. Zero whichever of
-	 * left / left_to_pay is present and positive, leaving the absent field
-	 * untouched (a bill holds only one of the two). No-op for non-voided bills.
-	 * Call right where a bill is flagged as rejected / rejection / cancelled /
-	 * cancel / is_denial / denied_by, so the balance is zeroed at the same place
-	 * the flag is added.
+	 * Zero left / left_to_pay on a voided bill, so it carries no
+	 * positive balance; no-op otherwise. Call where the void flag is set.
 	 *
 	 * @return $this
 	 */
@@ -195,8 +189,7 @@ abstract class Billrun_Bill {
 	}
 
 	public function save() {
-		// A voided bill must never keep a positive left / left_to_pay, or the
-		// bills collection validator (BRCD-4676) rejects the write.
+		// A voided bill must never keep a positive left / left_to_pay.
 		$this->zeroVoidedBalance();
 		try{
 			$res = $this->data->save(1);
@@ -1262,12 +1255,13 @@ abstract class Billrun_Bill {
 	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null, $afterGroupMatch = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
-		$filters = array_merge($filters, $nonRejectedOrCanceled);
+		$match = array('$match' => array());
 		if (!empty($filters)) {
-			$match = array(
-				'$match' => $filters
-			);
+			$match['$match'] = $filters;
 		}
+		// $and (not array_merge) so the not-rejected/cancelled conditions never
+		// overwrite a caller filter that uses one of the voided fields.
+		$match['$match']['$and'][] = $nonRejectedOrCanceled;
 		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
