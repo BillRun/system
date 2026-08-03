@@ -608,6 +608,24 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
     /**
+     * Rejects payments through the reject API.
+     *
+     * @param array $rejections List of rejections, each ['id' => <payment txid>, 'rejection' => ['code' => <code>]].
+     * @return array The response from the reject API.
+     */
+    public function rejectPaymentApi($rejections)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $ret = $rest->sendPOST("/api/reject", [
+            'rejections' => json_encode($rejections)
+        ]);
+        return json_decode($ret, true);
+    }
+
+    /**
      * Sends a GET request to the specified PG endpoint with the provided data.
      *
      * @param array $data The data to be sent with the request.

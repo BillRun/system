@@ -31,22 +31,9 @@ class Billrun_Collection extends Billrun_Base {
 		}, $debtByAids));
 
 		$updateCollectionStateChangedByProcess = [];
+		$query['read_preference'] = 'RP_PRIMARY';
+		$accountsInConditions = $account->loadAccountsByAidsWithBatches($aidsValues, $query);
 
-		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', false, "int");
-		if ($gadBatchLimit) {
-			Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
-		} else {
-			Billrun_Factory::log("Couldn't find gad batch limit", Zend_Log::DEBUG);
-		}
-		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
-		Billrun_Factory::log("Got " . count($aidsBatches) . " aids chunks" , Zend_Log::DEBUG);
-		$accountsInConditions = [];
-		for ($i = 0; $i < count($aidsBatches); $i++) {
-
-			$query = ['aid' => array('$in' => $aidsBatches[$i])];
-			$query['read_preference'] = 'RP_PRIMARY';
-			$accountsInConditions = array_merge($account->loadAccountsForQuery($query), $accountsInConditions);
-		}
 		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
 		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
 		$result = [];

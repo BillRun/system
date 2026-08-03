@@ -383,6 +383,17 @@ class ConfigModel {
 			}
 		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
 			throw new Exception("Can not save collection configuration");
+		} else if ($category === 'smser') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for smser.");
+				return 0;
+			}
+
+			Billrun_Utils_Mongo::setValueByMongoIndex(
+				$data,
+				$updatedData,
+				'smser'
+			);
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
