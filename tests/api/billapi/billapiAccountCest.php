@@ -17,13 +17,17 @@ class billapiAccountCest
 			Billrun_Factory::config();
 			$this->defaultTimezone = date_default_timezone_get();
 		}
+        $I->setTimezone('UTC');
     }
 
-
+    public function _after(ApiTester $I)   
+    {
+        	
+        $I->setTimezone($this->$defaultTimezone);
+    }
 
     public function testCreateAccount(ApiTester $I)
     {
-        date_default_timezone_set('UTC');
         $I->createAccountWithAllMandatoryCustomFields([
             "firstname"=> "rgf",
             "lastname"=> "yhtr",
@@ -64,13 +68,11 @@ class billapiAccountCest
                 'email' => "gresw@gmail.com"
             ]);
         $this->accountDetails = json_decode($I->grabResponse(), true)['entity'];
-      date_default_timezone_set($this->defaultTimezone );
     }
 
 
     public function testAccountPermanentchange(ApiTester $I)
     {
-        date_default_timezone_set('UTC');
         $I->createAccountWithAllMandatoryCustomFields([
             "payment_gateway"=> [
                 "former"=> [],
@@ -122,14 +124,12 @@ class billapiAccountCest
                 'from' => $effective_date
             ]
         );
-       date_default_timezone_set($this->defaultTimezone );     
     }
 
 
 
     public function testAccountBillapiUniqueget(ApiTester $I)
    {
-	date_default_timezone_set('UTC');
     $from = date('Y-m-d H:i:s', strtotime('-10 day'));
 
     $I->createAccountWithAllMandatoryCustomFields([
@@ -198,7 +198,6 @@ class billapiAccountCest
         ]
     ]);
     $I->seeResponseContains('"status":1');
-    date_default_timezone_set($this->defaultTimezone );
 
 }
 

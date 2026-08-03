@@ -1,0 +1,101 @@
+login:
+  post:
+    tags: [Auth]
+    summary: Log in and obtain a session cookie
+    description: |
+      Authenticate with one of the configured providers and receive a
+      `PHPSESSID` cookie. The cookie must be sent on subsequent requests.
+
+      The available providers are returned by `GET /auth/options`. The
+      `protocol` field selects which provider to use (defaults to
+      `internal`). For `internal`, the username/password pair is checked
+      against the BillRun users collection.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              protocol:
+                type: string
+                default: internal
+                example: internal
+                description: Authentication protocol (`internal`, `ldap`, `saml`, etc.).
+              username: { type: string, example: admin }
+              password: { type: string, format: password }
+              remember:
+                type: boolean
+                description: Persist the session beyond the browser tab.
+            required: [username, password]
+    responses:
+      "200":
+        description: Authentication result
+        headers:
+          Set-Cookie:
+            schema: { type: string }
+            description: PHPSESSID session cookie.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: integer, enum: [0, 1] }
+                desc: { type: string }
+                details:
+                  type: object
+                  properties:
+                    user:
+                      type: object
+                      additionalProperties: true
+      "400":
+        $ref: "../components/responses.yaml#/BadRequest"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+
+logout:
+  post:
+    tags: [Auth]
+    summary: Log out and destroy the session
+    description: Terminates the session associated with the request cookie.
+    responses:
+      "200":
+        $ref: "../components/responses.yaml#/Envelope"
+
+options:
+  get:
+    tags: [Auth]
+    summary: List supported authentication protocols
+    description: |
+      Returns the configured authentication providers, derived from
+      `auth.protocols` and `auth.<protocol>` config keys. Use this to render
+      a "Sign in with..." picker.
+    security: []
+    responses:
+      "200":
+        description: Available providers
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: integer, enum: [1] }
+                desc: { type: string }
+                details:
+                  type: object
+                  properties:
+                    protocols:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            example: internal
+                          label:
+                            type: string
+                            example: Username / Password
+                          name:
+                            type: string
+                            example: internal_default

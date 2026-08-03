@@ -112,10 +112,6 @@ class TestHelper extends \Codeception\Module {
         $data['urt'] = new \MongoDB\BSON\UTCDateTime();
 		$config->insert($data);
 		\Billrun_Config::getInstance()->loadDbConfig();
-        // Drop the Billrun_Base singleton cache so the next getInstance()
-        // call constructs a fresh object that reads the just-changed config
-        // (calculators latch options like bulk at construction time).
-        $this->resetBillrunInstances();
     }
 
     public function setTimezone($timezone)

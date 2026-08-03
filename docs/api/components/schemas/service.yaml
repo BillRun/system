@@ -1,0 +1,64 @@
+Service:
+  type: object
+  description: |
+    Service bundle attachable to a subscriber or account (e.g. an
+    add-on, an extra data pack, a one-time activation fee).
+  allOf:
+    - $ref: "common.yaml#/Revision"
+    - type: object
+      properties:
+        name:        { type: string }
+        description: { type: string }
+        price:
+          type: array
+          items:
+            type: object
+            properties:
+              from:     { type: string, format: date-time }
+              to:       { type: string, format: date-time }
+              price:    { type: number }
+              proration: { type: boolean }
+        quantitative:
+          type: boolean
+          description: Allows multiple quantities per subscriber.
+        balance_period:
+          type: string
+          description: Validity period of attached balances (`1M`, `30D`, ...).
+        include:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        play:
+          type: array
+          items: { type: string }
+        tax:
+          type: array
+          items: { type: string }
+        prorated_start:        { type: boolean }
+        prorated_end:          { type: boolean }
+        prorated_termination:  { type: boolean }
+        params:
+          type: object
+          additionalProperties: true
+  additionalProperties: true
+
+ServiceUpdate:
+  type: object
+  description: Payload for create/update/closeandnew on `/billapi/services`.
+  properties:
+    from:        { type: string, format: date-time }
+    to:          { type: string, format: date-time }
+    name:        { type: string }
+    description: { type: string }
+    price:       { type: array, items: { type: object, additionalProperties: true } }
+    quantitative: { type: boolean }
+    balance_period: { type: string }
+    include:     { type: array, items: { type: object, additionalProperties: true } }
+    play:        { type: array, items: { type: string } }
+    tax:         { type: array, items: { type: string } }
+    prorated_start:       { type: boolean }
+    prorated_end:         { type: boolean }
+    prorated_termination: { type: boolean }
+    params:      { type: object, additionalProperties: true }
+  additionalProperties: true

@@ -20,10 +20,9 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 	protected $remote_authentication;
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}:\d{2}(\.\d{3}|)?(Z|[+-]\d\d\:?\d\d|)$/';
-		
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->remote = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', '');
+		$this->setRemoteDetails(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url', ''));
 		$defaultAuthentication = Billrun_Factory::config()->getConfigValue('subscribers.external_authentication', []);
 		$this->remote_authentication = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_authentication', $defaultAuthentication);
 
@@ -56,20 +55,23 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		}
 
 		$results = $this->loadCache($externalQuery, function($externalQuery) {
-		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
+			$request_type = Billrun_Http_Request::POST;
+			Billrun_Factory::dispatcher()->trigger('beforeGetExternalSubscriberDetails', array(&$externalQuery, &$request_type, &$this));
+			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 
-		$params = [
-			'authentication' => $this->remote_authentication,
-		];
-		$request = new Billrun_Http_Request($this->remote, $params);
-		$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
-		$request->setRawData(json_encode($externalQuery));
-		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
-		$request->setConfig(array('timeout' => $requestTimeout));
-		$results = $request->request(Billrun_Http_Request::POST)->getBody();
-
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results, Zend_Log::DEBUG);
-			return json_decode($results, true);
+			$params = [
+				'authentication' => $this->remote_authentication,
+			];
+			$request = new Billrun_Http_Request($this->remote, $params);
+			$request->setHeaders(['Accept-encoding' => 'deflate', 'Content-Type'=>'application/json']);
+			$request->setRawData(json_encode($externalQuery));
+			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.subscriber.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+			$request->setConfig(array('timeout' => $requestTimeout));
+			$resjson = $request->request($request_type)->getBody();
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $resjson, Zend_Log::DEBUG);
+			$results = json_decode($resjson, true);
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalSubscriberDetailsResponse', array(&$results, $externalQuery));
+			return $results;
 		});
 
 		if (!$results) {
@@ -117,5 +119,14 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 		$query['params'] = $params;
 		return $query;
 	}
+	
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
+	}
+	
 }
 

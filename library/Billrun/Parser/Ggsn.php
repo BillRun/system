@@ -25,11 +25,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		$this->headerRows = array();
 		$this->trailerRows = array();
 
-		$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
-		$fileReadAheadLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_file_read_ahead_length');
-		$headerLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_header_length');
+		$maxChunklengthLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_max_chunklength_length', 0);
+		$fileReadAheadLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_file_read_ahead_length', 0);
+		$headerLength = Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_header_length', 0);
+		$recordPadding = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_record_padding', 0));
+
 		if ($headerLength > 0) {
-			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength));
+			$this->headerRows[] = $this->parseHeader(fread($fp, $headerLength+$recordPadding));
 		}
 		$bytes = null;
 		while (true) {
@@ -58,7 +60,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	
 	public function parseData($type, $data) {
 		$asnObject = Asn_Base::parseASNString($data);
-		$recordPadding = Billrun_Factory::config()->getConfigValue('constants.ggsn_record_padding');
+		$recordPadding = intval(Billrun_Util::getIn($this->ggsnConfig, 'constants.ggsn_record_padding', 0));
 		$this->setLastParseLength($asnObject->getRawDataLength() + $recordPadding);
 
 		$type = $asnObject->getType();
@@ -162,13 +164,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	protected function handleMultipleVolume($cdrLine) {
 		if (isset($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 			$fbc_uplink_volume = $fbc_downlink_volume = 0;
-			$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
-			$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+			$cdrLine['org_fbc_uplink_volume'] = !empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : "";
+			$cdrLine['org_fbc_downlink_volume'] = !empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : "";
 			$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
 			foreach ($cdrLine['rating_group'] as $key => $rateVal) {
 				if (!empty($this->ggsnConfig['rating_groups'][$rateVal])) {
-					$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
-					$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+					$fbc_uplink_volume += !empty($cdrLine['fbc_uplink_volume'][$key]) ? $cdrLine['fbc_uplink_volume'][$key] : 0;
+					$fbc_downlink_volume += !empty($cdrLine['fbc_downlink_volume'][$key]) ? $cdrLine['fbc_downlink_volume'][$key] : 0;
 				}
 			}
 			$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
@@ -177,13 +179,17 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		} else if (isset($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 			return false;
 		} else {
-			if(is_array($cdrLine['fbc_uplink_volume'])) {
-				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
-				$cdrLine['fbc_uplink_volume'] = array_sum($cdrLine['fbc_uplink_volume']);
+			if (!empty($cdrLine['fbc_uplink_volume'])) {
+				if (is_array($cdrLine['fbc_uplink_volume'])) {
+					$cdrLine['org_fbc_uplink_volume'] = !empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : "";
+					$cdrLine['fbc_uplink_volume'] = array_sum(!empty($cdrLine['fbc_uplink_volume']) ? $cdrLine['fbc_uplink_volume'] : [0]);
+				}
 			}
-			if(is_array($cdrLine['fbc_downlink_volume'])) {
-				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
-				$cdrLine['fbc_downlink_volume'] = array_sum($cdrLine['fbc_downlink_volume']);
+			if (!empty($cdrLine['fbc_downlink_volume'])) {
+				if (is_array($cdrLine['fbc_downlink_volume'])) {
+					$cdrLine['org_fbc_downlink_volume'] = !empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : "";
+					$cdrLine['fbc_downlink_volume'] = array_sum(!empty($cdrLine['fbc_downlink_volume']) ? $cdrLine['fbc_downlink_volume'] : [0]);
+				}
 			}
 		} 
 		
@@ -240,11 +246,22 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	}
 
 	public function parseHeader($data) {
-		
+		$nx12Data = unpack("N", substr($data, 0x12, 4));
+		$header['line_count'] = reset($nx12Data);
+		$nx16Data = unpack("N", substr($data, 0x16, 4));
+		$header['next_file_number'] = reset($nx16Data);
+		//Billrun_Factory::log(print_r($header,1));
+		$rev = unpack("C", substr($data, 0x7, 1));
+		$this->currentRevision = $header['revision'] = decoct( reset($rev) );
+		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
+
+		return $header;
 	}
 
 	public function parseTrailer($data) {
-		
+		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
+
+		return $trailer;
 	}
 	
 	/**

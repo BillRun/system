@@ -299,6 +299,16 @@
          return $passed;
      }
 
+      public function getBillrunSubs($key, $returnBillrun, $row) {
+            
+            $billrun_key = $row['expected']['billrun']['billrun_key'];
+            $aid = $row['expected']['billrun']['aid'];
+            $query = array('key' => $billrun_key, 'aid' => $aid);
+            $billrun_subsCollection = Billrun_Factory::db()->billrun_subsCollection();
+            $billrun_subs = $billrun_subsCollection->query($query)->cursor();
+            return $billrun_subs;
+      }
+
      /**
       * check if all subscribers was calculeted
       * @param int $key number of the test case
@@ -307,10 +317,10 @@
       * @return boolean true if the test is pass and false if the tast is fail
       */
      public function sumSids($key, $returnBillrun, $row) {
-         $this->message .= "<b> sum sid's :</b> <br>";
-         $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
-         $subs = isset($returnBillrun['subs']) && is_array($returnBillrun['subs']) ? $returnBillrun['subs'] : array();
-         if (count($sids) == count($subs) - 1) {
+        $this->message .= "<b> sum sid's :</b> <br>";
+        $subscount  = count($this->getBillrunSubs($key, $returnBillrun, $row));
+        $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         if (count($sids) == $subscount - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {

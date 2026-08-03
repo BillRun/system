@@ -1,0 +1,274 @@
+# ---------------------------------------------------------------------------
+# Outgoing API
+# ---------------------------------------------------------------------------
+# When BillRun runs in *external-subscribers mode*, accounts and subscribers
+# are stored in a 3rd-party CRM rather than in BillRun's own MongoDB. In
+# that mode BillRun calls **out** to the CRM at three well-known
+# integration points:
+#
+#   - GBA  Get Billable Accounts  - fetch all accounts due in a billing cycle.
+#                                    Driven from the cycle aggregator.
+#   - GAD  Get Account Details    - fetch one or more account revisions by query.
+#                                    Used during rating and lookups.
+#   - GSD  Get Subscriber Details - fetch one or more subscriber revisions by query.
+#                                    Used during rating and lookups.
+#
+# The endpoints in this file describe the **contract the CRM is expected
+# to implement** - not endpoints that BillRun itself exposes. The base
+# URL for each is configured independently in BillRun:
+#
+#   subscribers.billable.url            -> GBA
+#   subscribers.account.external_url    -> GAD
+#   subscribers.subscriber.external_url -> GSD
+#
+# Authentication is configured per-endpoint via the matching
+# `*.external_authentication` config key (with `subscribers.external_authentication`
+# as the shared fallback). All three are POST.
+#
+# The paths shown below (`/crm/...`) are illustrative placeholders so the
+# operations have somewhere to live in the spec - actual URLs are
+# whatever the CRM exposes and BillRun is configured to call.
+
+# ---------------------------------------------------------------------------
+# GBA - Get Billable Accounts
+# ---------------------------------------------------------------------------
+getBillableAccounts:
+  post:
+    tags: [Outgoing]
+    summary: "[CRM] GBA - Get Billable Accounts"
+    operationId: outgoing.gba
+    description: |
+      Called by BillRun's cycle aggregator at cycle-close time to fetch
+      every account (with embedded subscriber revisions) that should be
+      billed in the requested window. The CRM must return the data
+      **paginated** - BillRun calls this repeatedly with increasing
+      `page` until the response runs out of rows.
+
+      Source: `Billrun_Account_External::getBillable()`.
+
+      Request fields:
+
+      - `start_date` / `end_date` - cycle window. Formatted per the
+        `subscribers.billable.single_day_cycle_format` config (default
+        `Y-m-d`, or `Y-m-d H:i:s` for same-day cycles).
+      - `page` / `size` - pagination.
+      - `aids` - optional comma-separated AID filter, used when BillRun
+        is rebilling a subset.
+      - `invoicing_days` - optional invoicing-day filter for tenants
+        that split the cycle across multiple invoicing days.
+
+      Response must include a truthy `status` and a `data` array;
+      BillRun translates `firstname`->`first_name` and
+      `lastname`->`last_name` automatically on the way in.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            required: [start_date, end_date, page, size]
+            properties:
+              start_date:
+                type: string
+                description: Cycle start (formatted per config).
+                example: "2026-05-01"
+              end_date:
+                type: string
+                description: Cycle end (formatted per config).
+                example: "2026-06-01"
+              page:
+                type: integer
+                minimum: 0
+                description: 0-based page index.
+              size:
+                type: integer
+                minimum: 1
+                maximum: 1000
+                description: Page size.
+              aids:
+                type: string
+                description: Optional comma-separated list of AIDs to restrict to.
+                example: "1001,1002,1003"
+              invoicing_days:
+                type: string
+                description: Optional invoicing-day filter.
+    responses:
+      "200":
+        description: Paginated billable accounts + their subscriber revisions.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, data]
+              properties:
+                status:
+                  description: |
+                    Truthy on success. BillRun treats `0`/empty as a
+                    fatal error and aborts the cycle.
+                  oneOf:
+                    - type: integer
+                    - type: boolean
+                desc: { type: string }
+                data:
+                  type: array
+                  description: |
+                    Mixed list of account and subscriber revisions for
+                    the window. Each item carries a `type` field
+                    (`account` or `subscriber`) so BillRun can route it.
+                  items:
+                    oneOf:
+                      - $ref: "../components/schemas/account.yaml#/Account"
+                      - $ref: "../components/schemas/subscriber.yaml#/Subscriber"
+                total: { type: integer }
+                has_more: { type: boolean }
+      "4XX":
+        description: Client error - BillRun treats this as a hard failure.
+
+# ---------------------------------------------------------------------------
+# GAD - Get Account Details
+# ---------------------------------------------------------------------------
+getAccountDetails:
+  post:
+    tags: [Outgoing]
+    summary: "[CRM] GAD - Get Account Details"
+    operationId: outgoing.gad
+    description: |
+      Fetch one or more account revisions by query. Used during rating
+      and on ad-hoc lookups. The CRM receives a JSON envelope with a
+      `query` array - each entry describes a set of `params` to match
+      and the effective `time` for the lookup.
+
+      Source: `Billrun_Account_External::getAccountDetails()` /
+      `getAccountsDetails()`.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [query]
+            properties:
+              query:
+                type: array
+                items:
+                  type: object
+                  required: [id, params]
+                  properties:
+                    id:
+                      type: string
+                      description: Stable hash of the params for caching / de-duplication.
+                    time:
+                      type: string
+                      description: |
+                        Effective-time of the revision (formatted per
+                        `subscribers.account.external.time_format`,
+                        default `Y-m-d H:i:s.u`).
+                    params:
+                      type: array
+                      description: AND-ed filter parameters.
+                      items:
+                        type: object
+                        required: [key, operator, value]
+                        properties:
+                          key:
+                            type: string
+                            example: aid
+                          operator:
+                            type: string
+                            enum: [equal, not_equal, gt, gte, lt, lte, in, not_in]
+                            example: equal
+                          value:
+                            description: Value to compare. Type depends on the field.
+                            oneOf:
+                              - type: string
+                              - type: integer
+                              - type: number
+                              - type: boolean
+                              - type: array
+              limit:
+                type: integer
+                description: Optional global limit across all sub-queries.
+              date:
+                type: string
+                description: Optional global effective-date.
+    responses:
+      "200":
+        description: Array of account revisions (one per matching query).
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "../components/schemas/account.yaml#/Account" }
+      "4XX":
+        description: Client error.
+
+# ---------------------------------------------------------------------------
+# GSD - Get Subscriber Details
+# ---------------------------------------------------------------------------
+getSubscriberDetails:
+  post:
+    tags: [Outgoing]
+    summary: "[CRM] GSD - Get Subscriber Details"
+    operationId: outgoing.gsd
+    description: |
+      Fetch one or more subscriber revisions by query. Same envelope
+      shape as GAD - a `query` array of `{id, time, params}` entries.
+
+      Source: `Billrun_Subscriber_External::getSubscriberDetails()`.
+
+      When `subscribers.account.cache_gba_to_gsd.enabled` is on, BillRun
+      pre-populates the local GSD cache from the previous GBA response
+      so the cycle close does not hammer this endpoint for every line
+      it rates.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [query]
+            properties:
+              query:
+                type: array
+                items:
+                  type: object
+                  required: [id, params]
+                  properties:
+                    id:
+                      type: string
+                    time:
+                      type: string
+                      description: Effective-time of the revision.
+                    params:
+                      type: array
+                      items:
+                        type: object
+                        required: [key, operator, value]
+                        properties:
+                          key:
+                            type: string
+                            example: sid
+                          operator:
+                            type: string
+                            enum: [equal, not_equal, gt, gte, lt, lte, in, not_in]
+                          value:
+                            oneOf:
+                              - type: string
+                              - type: integer
+                              - type: number
+                              - type: boolean
+                              - type: array
+              limit:
+                type: integer
+              date:
+                type: string
+    responses:
+      "200":
+        description: Array of subscriber revisions.
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "../components/schemas/subscriber.yaml#/Subscriber" }
+      "4XX":
+        description: Client error.

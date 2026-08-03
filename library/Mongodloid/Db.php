@@ -25,8 +25,9 @@ class Mongodloid_Db {
 	 * @return Mongodloid_Collection
 	 */
 	public function getCollection($name) {
-		if (!isset($this->_collections[$name]) || !$this->_collections[$name])
-			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name), $this);
+		if (!isset($this->_collections[$name]) || !$this->_collections[$name]) {
+			$this->_collections[$name] = new Mongodloid_Collection($this->_db->selectCollection($name, ['codec' => null]), $this);
+		}
 
 		return $this->_collections[$name];
 	}
@@ -354,4 +355,14 @@ class Mongodloid_Db {
 		return $this->getCollection($name);
 	}
 
+	/**
+	 * Check if the database environment supports transactions.
+	 * Transactions require MongoDB 4.2+ and a Replica Set or Sharded Cluster (not standalone).
+	 *
+	 * @return boolean
+	 */
+	public function supportsTransactions()
+	{
+		return $this->compareServerVersion('4.2.0', '>=') && !$this->isStandalone();
+	}
 }

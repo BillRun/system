@@ -14,8 +14,13 @@ class unifyCest
             // $this->createServices($I);
         }
         $I->cleanDB();
-        $I->resetBillrunInstances();
+        $this->clearBillrunCalculatorInstance();
+    }
 
+    protected function clearBillrunCalculatorInstance(){
+        $instances = new ReflectionProperty('Billrun_Calculator', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     protected function setUP(ApiTester $I, $inputProcessor = null)
@@ -34,6 +39,7 @@ class unifyCest
         ];
         $I->setSettings('usage_types', $type);
         Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+        $I->resetBillrunSingletons();
     }
 
     /**

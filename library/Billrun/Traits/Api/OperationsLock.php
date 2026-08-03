@@ -18,7 +18,7 @@ trait Billrun_Traits_Api_OperationsLock {
 	 * Returns the data of the operation that request to lock it.
 	 *
 	 */
-	protected abstract static function getInsertData();
+	protected abstract function getInsertData();
 	
 	/**
 	 * Returns the conflicting conditions of the selected operation.
@@ -38,11 +38,11 @@ trait Billrun_Traits_Api_OperationsLock {
 	 */
 	public function lock() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
-		$data = static::getInsertData();
+		$data = $this->getInsertData();
 		$newInsert = array(
 			'start_time' => new Mongodloid_Date(),
 		);
-		$conflict = static::getConflictingQuery();
+		$conflict = $this->getConflictingQuery();
 		$updateQuery = array_merge($data, $newInsert);
 		if (!empty($conflict)) {
 			$lockCondition = array(

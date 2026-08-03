@@ -602,8 +602,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		];
 		Billrun_Factory::log("Checking if any aids were sent to the function", Zend_Log::DEBUG);
 		if (!empty($chargeOptions['aids'])) {
-			Billrun_Factory::log("Found " . count($chargeOptions['aids']) . " aids in the charge options. Verifying aids array", Zend_Log::DEBUG);
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
+			Billrun_Factory::log("Found " . count(self::$aids) . " aids in the charge options. Verifying aids array", Zend_Log::DEBUG);
+
 		}
 		Billrun_Factory::log("Processing size and page options", Zend_Log::DEBUG);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
@@ -850,7 +851,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $paymentResponses;
 	}
 
-	protected function getAccountsToCharge($customersAids) {
+	public static function getAccountsToCharge($customersAids) {
 		Billrun_Factory::log("Trying to pull " . count($customersAids) . " accounts" , Zend_Log::DEBUG);
 		$query['aid'] = array(
 			'$in' => $customersAids

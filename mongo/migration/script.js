@@ -2161,6 +2161,21 @@ runOnce(lastConfig, 'BRCD-5060', function () {
 	lastConfig.plugins.push(ebillPlugin);
 });
 
+runOnce(lastConfig, 'BRCD-4969', function () {
+	db.billrun_subs.createIndex({
+		"aid": 1,
+		"key": 1
+	});
+	db.billrun_grouping.createIndex({
+		"aid": 1,
+		"billrun_key": 1
+	});
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+		sh.shardCollection(db.getName() + ".billrun_subs", { "aid": 1, "key": 1 });
+		sh.shardCollection(db.getName() + ".billrun_grouping", { "aid": 1, "billrun_key": 1 });
+	}
+});
+	
 runOnce(lastConfig, 'BRCD-4948', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
 });

@@ -1,0 +1,170 @@
+Revision:
+  type: object
+  description: |
+    Common revision-tracking fields. All time-bound entities in BillRun
+    (accounts, subscribers, plans, services, rates, ...) carry these and
+    follow a "close current revision + create new revision" pattern for
+    historical changes.
+  properties:
+    _id:
+      type: string
+      description: Mongo ObjectId of this revision.
+    from:
+      type: string
+      format: date-time
+      description: Effective-from boundary of this revision.
+    to:
+      type: string
+      format: date-time
+      description: |
+        Effective-to boundary. Open revisions use the sentinel
+        `2099-01-01` (configurable).
+    creation_time:
+      type: string
+      format: date-time
+    revision_info:
+      type: object
+      description: Optional metadata about prior/next revisions.
+      additionalProperties: true
+
+Discount:
+  type: object
+  allOf:
+    - $ref: "#/Revision"
+    - type: object
+      properties:
+        key:         { type: string, description: "Stable identifier" }
+        description: { type: string }
+        type:        { type: string, enum: [monetary, percentage, units] }
+        value:       { type: number }
+        priority:    { type: integer }
+        plan:        { type: array, items: { type: string } }
+        services:    { type: array, items: { type: string } }
+        rates:       { type: array, items: { type: string } }
+        subject:
+          type: object
+          additionalProperties: true
+          description: Mongo-style selector for entities the discount applies to.
+        conditions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        play:        { type: array, items: { type: string } }
+        params:
+          type: object
+          additionalProperties: true
+        tax:         { type: array, items: { type: string } }
+
+Charge:
+  type: object
+  allOf:
+    - $ref: "#/Revision"
+    - type: object
+      properties:
+        key:         { type: string }
+        description: { type: string }
+        type:        { type: string, enum: [recurring, one_time, late_fee] }
+        price:       { type: number }
+        currency:    { type: string }
+        cycles:      { type: integer, description: "Number of cycles to apply (recurring only)" }
+        tax:         { type: array, items: { type: string } }
+        params:
+          type: object
+          additionalProperties: true
+
+Tax:
+  type: object
+  allOf:
+    - $ref: "#/Revision"
+    - type: object
+      properties:
+        key:         { type: string }
+        description: { type: string }
+        rate:
+          type: number
+          description: Tax rate as a fraction (0.17 = 17%).
+        type:        { type: string, enum: [vat, gst, sales] }
+        country:     { type: string }
+        region:      { type: string }
+        compound:    { type: boolean }
+
+PrepaidInclude:
+  type: object
+  allOf:
+    - $ref: "#/Revision"
+    - type: object
+      properties:
+        external_id: { type: string }
+        name:        { type: string }
+        description: { type: string }
+        charging_by:
+          type: string
+          enum: [total_cost, usagev, cost]
+        charging_by_usaget:
+          type: string
+          description: Usage type (call, sms, data, ...) for usage-based balances.
+        priority:    { type: integer }
+        operation:
+          type: string
+          enum: [inc, dec, abs]
+        notifications_threshold:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        shared:      { type: boolean }
+        group:       { type: string }
+        recurrence:
+          type: object
+          additionalProperties: true
+
+User:
+  type: object
+  description: |
+    Operator/admin user (the kind that logs in to BillRun's back office).
+    Subscribers are *not* stored here - see the `subscribers` collection.
+  properties:
+    _id:        { type: string }
+    username:   { type: string }
+    email:      { type: string, format: email }
+    roles:      { type: array, items: { type: string } }
+    permissions: { type: array, items: { type: string } }
+    last_login: { type: string, format: date-time }
+    created:    { type: string, format: date-time }
+    enabled:    { type: boolean }
+    settings:
+      type: object
+      additionalProperties: true
+
+Report:
+  type: object
+  description: Saved report definition (run via `POST /api/report`).
+  properties:
+    _id:         { type: string }
+    key:         { type: string }
+    name:        { type: string }
+    description: { type: string }
+    entity:
+      type: string
+      description: Source collection (`lines`, `bills`, `subscribers`, ...).
+    columns:
+      type: array
+      items:
+        type: object
+        properties:
+          key:   { type: string }
+          label: { type: string }
+          type:  { type: string, enum: [string, number, date, currency] }
+          op:    { type: string, description: "Aggregation operator (`sum`, `avg`, ...)." }
+    conditions:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    sort:
+      type: object
+      additionalProperties: { type: integer, enum: [-1, 1] }
+    creation_time: { type: string, format: date-time }
+    last_run:      { type: string, format: date-time }
+    shared:        { type: boolean }

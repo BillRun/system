@@ -1456,7 +1456,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return string the render layout including the page (component)
 	 */
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
@@ -1793,11 +1793,17 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$value = $convertedValue;
 
-		list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue));
+//		list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue)); // remove PHP 8 compat
+		$opValPair = $this->getOperatorValuePair($operator, $convertedValue);
+		$operator = key($opValPair);
+		$value = current($opValPair);
 
 		// Handle a db ref option.
 		if ($advancedOptions[$key]['type'] == 'dbref') {
-			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator, $advancedOptions[$key]));
+//			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator, $advancedOptions[$key])); // remove PHP 8 compat
+			$opValPair = $this->setManualFilterForDbref($value, $operator, $advancedOptions[$key]);
+			$operator = key($opValPair);
+			$value = current($opValPair);
 		}
 
 		$query[$key][$operator] = $value;

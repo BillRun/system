@@ -47,7 +47,16 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 		return $line['type'] == 'smpp';
 	}
 
-	protected function getLineRate($row) {
+	/**
+	 * Get the associate rate object for a given CDR line.
+	 * @param $row the CDR line to get the for.
+	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @param $type CDR type
+	 * @param $tariffCategory rate category
+	 * @param $filters array of filters used to find the rate
+	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
+	 */
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
 		$matchedRate = false;
 		if ($this->shouldLineBeRated($row)) {
 			$called_number = $this->extractNumber($row);

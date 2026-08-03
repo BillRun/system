@@ -379,6 +379,25 @@ It is generated from a static scan of every `getConfigValue()` call site under `
 | `email_templates.invoice_ready.placeholders` | `[]` | Custom placeholders available when rendering invoice-ready emails. |
 | `email_templates.invoice_ready.send_pdf` | `true` | Whether to attach the invoice PDF to invoice-ready emails. |
 
+## encryption
+
+App-level 2-way encryption of database fields, backing the billapi `encrypted` field type (BRCD-4649). Values are encrypted at rest with deterministic, authenticated AES-256-CTR and decrypted on fetch; the deterministic scheme also allows exact-match queries on encrypted fields. Intended for moderately sensitive PII, not cardholder data.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `encryption.key` | `null` | Master key for field encryption, read as the fallback when no environment key is set. Accepts a 64-char hex string, a base64 string decoding to 32 bytes, or a raw 32-byte string (any other value is SHA-256-derived to 32 bytes). Generated automatically on tenant creation and by the BRCD-4649 migration when absent. Storing the key here places it next to the data it protects; prefer the environment variables below in production. |
+
+### Environment variables
+
+These take precedence over `encryption.key` and keep the key out of the database (the stronger posture for at-rest encryption). When either is set, no key is written to the DB config. Resolution order: `BR_ENCRYPTION_KEY_FILE`, then `BR_ENCRYPTION_KEY`, then `encryption.key`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BR_ENCRYPTION_KEY_FILE` | (unset) | Path to a file holding the field-encryption key (contents are trimmed). Highest precedence; preferred for production so the key is not exposed in the process environment. |
+| `BR_ENCRYPTION_KEY` | (unset) | The field-encryption key supplied directly as an environment value. Used when `BR_ENCRYPTION_KEY_FILE` is not set. |
+
+**Key rotation:** the key must be stable. Decryption fails open - if the key changes (rotation) without re-encrypting stored data, reads silently return the raw ciphertext (`enc:v1:...`) with only a WARN log, rather than erroring. Rotating the key therefore requires a one-time migration that decrypts every encrypted field with the old key and re-encrypts it with the new one before the old key is removed.
+
 ## environment
 
 | Key | Default | Description |

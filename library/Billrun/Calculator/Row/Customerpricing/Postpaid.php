@@ -27,20 +27,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		return parent::validate();
 	}
 
-	public function update($pricingOnly = false) {
-		$pricingData = parent::update($pricingOnly);
-		if(isset($this->row['skip_calc']) && in_array('tax', $this->row['skip_calc'])){
-			$billrunKey = Billrun_Billingcycle::getBillrunKeyByRow($this->row);
-			if($billrunKey){
-				$pricingData['billrun'] = $billrunKey;
-			}else{
-				Billrun_Factory::log("Line {$this->row['stamp']} failed to get billrun field." , Zend_Log::ALERT);
-				return false;
-			} 
-		}
-		return $pricingData;
-	}
-
 	/**
 	 * In case balance is in over charge, 
 	 * adds a refund row to the balance.

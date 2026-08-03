@@ -1,0 +1,769 @@
+# ---------------------------------------------------------------------------
+# BillAPI: /billapi/{collection}/{action}
+# ---------------------------------------------------------------------------
+# Every entity in BillRun (accounts, subscribers, plans, services, rates, ...)
+# is exposed through the same routing pattern. The set of supported actions
+# and the parameter list per action is declared in
+# conf/modules/billapi/<collection>.ini.
+#
+# Common actions:
+#   - get / uniqueget : read (paginated, sortable)
+#   - create          : insert a new entity
+#   - update          : modify in place
+#   - close           : set the entity's `to` revision boundary
+#   - closeandnew     : close current revision + create a new one (typical
+#                       way to record a change with effective-date semantics)
+#   - reopen          : reopen a previously closed revision
+#   - delete          : delete (by `_id`)
+#   - move            : shift the `from`/`to` of a revision
+#   - permanentchange : change the entity going forward (cuts an older
+#                       revision and applies the update from `from` onwards)
+#   - import          : bulk create from an upload
+#   - export          : stream rows out
+#   - changepassword  : users only
+# ---------------------------------------------------------------------------
+
+generic:
+  post:
+    tags: [BillAPI]
+    summary: Generic entity API
+    operationId: billapi.generic
+    description: |
+      Generic shape of every BillAPI endpoint. See the per-collection paths
+      below for the parameter list applicable to a given collection/action
+      combination.
+
+      ### Request shape
+
+      Parameters can be sent either as `application/x-www-form-urlencoded`
+      or `application/json`. The two most common are:
+
+      - `query` - a JSON-encoded MongoDB-style filter, used by read actions
+        (`get`, `uniqueget`) and by mutating actions that target a specific
+        revision (`update`, `close`, `closeandnew`, `delete`, ...).
+      - `update` - a JSON-encoded entity payload, used by all mutating
+        actions.
+
+      ### Response shape
+
+      All responses use the standard envelope - see
+      [Envelope](#components/schemas/Envelope).
+    parameters:
+      - $ref: "../components/parameters.yaml#/Collection"
+      - $ref: "../components/parameters.yaml#/Action"
+      - $ref: "../components/parameters.yaml#/Query"
+      - $ref: "../components/parameters.yaml#/Update"
+      - $ref: "../components/parameters.yaml#/Page"
+      - $ref: "../components/parameters.yaml#/Size"
+      - $ref: "../components/parameters.yaml#/Sort"
+      - $ref: "../components/parameters.yaml#/Project"
+    requestBody:
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              query:  { type: string, description: "JSON-encoded filter" }
+              update: { type: string, description: "JSON-encoded entity payload" }
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        $ref: "../components/responses.yaml#/Envelope"
+      "400": { $ref: "../components/responses.yaml#/BadRequest" }
+      "401": { $ref: "../components/responses.yaml#/Unauthorized" }
+      "403": { $ref: "../components/responses.yaml#/Forbidden" }
+      "404": { $ref: "../components/responses.yaml#/NotFound" }
+
+# ---------------------------------------------------------------------------
+# Accounts (collection_name = subscribers, type = account)
+# ---------------------------------------------------------------------------
+accounts:
+  post:
+    tags: [BillAPI]
+    summary: Accounts collection
+    operationId: billapi.accounts
+    description: |
+      Customer accounts. Backed by the `subscribers` MongoDB collection
+      with `type=account`.
+
+      Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+      `closeandnew`, `reopen`, `delete`, `permanentchange`, `import`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, permanentchange, import]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                description: Filter for reads / targeted writes.
+                properties:
+                  _id:           { type: string, description: "Mongo ObjectId" }
+                  aid:           { type: integer, description: "Account ID" }
+                  firstname:     { type: string }
+                  lastname:      { type: string }
+                  company_name:  { type: string }
+                  contact_name:  { type: string }
+                  phone:         { type: string }
+                  creation_time: { type: string, format: date-time }
+                additionalProperties: true
+              update:
+                $ref: "../components/schemas/account.yaml#/AccountUpdate"
+    responses:
+      "200":
+        description: Accounts result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      oneOf:
+                        - type: array
+                          items: { $ref: "../components/schemas/account.yaml#/Account" }
+                        - type: object
+                          additionalProperties: true
+      "400": { $ref: "../components/responses.yaml#/BadRequest" }
+      "401": { $ref: "../components/responses.yaml#/Unauthorized" }
+      "403": { $ref: "../components/responses.yaml#/Forbidden" }
+
+# ---------------------------------------------------------------------------
+# Subscribers
+# ---------------------------------------------------------------------------
+subscribers:
+  post:
+    tags: [BillAPI]
+    summary: Subscribers collection
+    operationId: billapi.subscribers
+    description: |
+      Subscribers belong to an account (linked by `aid`). Identified by
+      `sid` (auto-incremented).
+
+      Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+      `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`,
+      `import`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move, permanentchange, import]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                properties:
+                  _id:  { type: string }
+                  sid:  { type: integer }
+                  aid:  { type: integer }
+                  "services.from": { type: string, format: date-time }
+                  "services.to":   { type: string, format: date-time }
+                  "services.name": { type: array, items: { type: string } }
+                  creation_time:   { type: string, format: date-time }
+                additionalProperties: true
+              update:
+                $ref: "../components/schemas/subscriber.yaml#/SubscriberUpdate"
+    responses:
+      "200":
+        description: Subscribers result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      oneOf:
+                        - type: array
+                          items: { $ref: "../components/schemas/subscriber.yaml#/Subscriber" }
+                        - type: object
+                          additionalProperties: true
+
+# ---------------------------------------------------------------------------
+# Plans
+# ---------------------------------------------------------------------------
+plans:
+  post:
+    tags: [BillAPI]
+    summary: Plans collection
+    operationId: billapi.plans
+    description: |
+      Billing plans (a.k.a. "rate plans"). Plans bundle recurring charges,
+      inclusive units, and rate overrides.
+
+      Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+      `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move, permanentchange]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                properties:
+                  _id:  { type: string }
+                  name: { type: string }
+                  to:   { type: string, format: date-time }
+                additionalProperties: true
+              update:
+                $ref: "../components/schemas/plan.yaml#/PlanUpdate"
+    responses:
+      "200":
+        description: Plans result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/plan.yaml#/Plan" }
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+  post:
+    tags: [BillAPI]
+    summary: Services collection
+    operationId: billapi.services
+    description: |
+      Services are reusable bundles that can be attached to subscribers or
+      accounts (e.g. "VOIP Add-on", "Roaming Pack").
+
+      Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+      `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move, permanentchange]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                additionalProperties: true
+              update:
+                $ref: "../components/schemas/service.yaml#/ServiceUpdate"
+    responses:
+      "200":
+        description: Services result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/service.yaml#/Service" }
+
+# ---------------------------------------------------------------------------
+# Rates (products)
+# ---------------------------------------------------------------------------
+rates:
+  post:
+    tags: [BillAPI]
+    summary: Rates / products collection
+    operationId: billapi.rates
+    description: |
+      Rates (called "Products" in the UI) define how usage is priced.
+      Identified by `key`.
+
+      Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+      `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move, permanentchange]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                properties:
+                  _id: { type: string }
+                  key: { type: string }
+                additionalProperties: true
+              update:
+                $ref: "../components/schemas/rate.yaml#/RateUpdate"
+    responses:
+      "200":
+        description: Rates result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/rate.yaml#/Rate" }
+
+# ---------------------------------------------------------------------------
+# Balances
+# ---------------------------------------------------------------------------
+balances:
+  post:
+    tags: [BillAPI]
+    summary: Balances collection
+    operationId: billapi.balances
+    description: |
+      Monthly / cycle balance buckets per subscriber. Tracks inclusive
+      units consumed and over-usage charges.
+
+      Supported actions: `get`, `uniqueget`, `update`, `delete`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, update, delete]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                properties:
+                  _id:     { type: string }
+                  sid:     { type: integer }
+                  aid:     { type: integer }
+                  billrun: { type: string, description: "Billing cycle key (YYYYMM)" }
+                additionalProperties: true
+              update:
+                type: object
+                additionalProperties: true
+    responses:
+      "200":
+        description: Balances result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/balance.yaml#/Balance" }
+
+# ---------------------------------------------------------------------------
+# Bills (invoices + payments documents)
+# ---------------------------------------------------------------------------
+bills:
+  post:
+    tags: [BillAPI]
+    summary: Bills collection
+    operationId: billapi.bills
+    description: |
+      Bill documents - covers both invoices (`type=inv`) and payment
+      receipts/refunds (`type=rec`, `type=ref`).
+
+      Supported actions: `get`, `uniqueget`, `update`, `delete`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, update, delete]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              query:
+                type: object
+                properties:
+                  _id:     { type: string }
+                  aid:     { type: integer }
+                  type:    { type: string, enum: [inv, rec, ref] }
+                  invoice_id: { type: integer }
+                  due:     { type: string, format: date-time }
+                  billrun_key: { type: string }
+                additionalProperties: true
+              update:
+                type: object
+                additionalProperties: true
+    responses:
+      "200":
+        description: Bills result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/bill.yaml#/Bill" }
+
+# ---------------------------------------------------------------------------
+# Charges
+# ---------------------------------------------------------------------------
+charges:
+  post:
+    tags: [BillAPI]
+    summary: Charges collection
+    operationId: billapi.charges
+    description: |
+      One-off or recurring charge definitions (e.g. activation fees,
+      late-payment fees).
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Charges result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/Charge" }
+
+# ---------------------------------------------------------------------------
+# Discounts
+# ---------------------------------------------------------------------------
+discounts:
+  post:
+    tags: [BillAPI]
+    summary: Discounts collection
+    operationId: billapi.discounts
+    description: |
+      Discount definitions. Can apply to plans, services, rates, or
+      arbitrary subscriber attributes.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move, permanentchange]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Discounts result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/Discount" }
+
+# ---------------------------------------------------------------------------
+# Prepaid includes
+# ---------------------------------------------------------------------------
+prepaidincludes:
+  post:
+    tags: [BillAPI]
+    summary: Prepaid includes (inclusive unit pools)
+    operationId: billapi.prepaidincludes
+    description: |
+      Definitions of inclusive-unit pools used by plans and services
+      (minutes, MB, SMS).
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Prepaid includes result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/PrepaidInclude" }
+
+# ---------------------------------------------------------------------------
+# Prepaid groups
+# ---------------------------------------------------------------------------
+prepaidgroups:
+  post:
+    tags: [BillAPI]
+    summary: Prepaid groups
+    operationId: billapi.prepaidgroups
+    description: Grouping of prepaid includes for shared consumption.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        $ref: "../components/responses.yaml#/Envelope"
+
+# ---------------------------------------------------------------------------
+# Taxes
+# ---------------------------------------------------------------------------
+taxes:
+  post:
+    tags: [BillAPI]
+    summary: Taxes collection
+    operationId: billapi.taxes
+    description: |
+      Tax rate definitions. Linked from plans, services and rates via the
+      `tax` array.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, closeandnew, reopen, delete, move]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Taxes result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/Tax" }
+
+# ---------------------------------------------------------------------------
+# Reports (definitions; running a report is /api/report)
+# ---------------------------------------------------------------------------
+reports:
+  post:
+    tags: [BillAPI, Reports]
+    summary: Reports collection (definitions)
+    operationId: billapi.reports
+    description: |
+      CRUD on saved report definitions. To **run** a report, see
+      `POST /api/report`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, delete]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Reports result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/Report" }
+
+# ---------------------------------------------------------------------------
+# Users (admin / operator users, NOT subscribers)
+# ---------------------------------------------------------------------------
+users:
+  post:
+    tags: [BillAPI]
+    summary: Users collection (admin/operator users)
+    operationId: billapi.users
+    description: |
+      Operator user accounts used to log in to BillRun. Subscribers (end
+      customers) live in the `subscribers` collection - see
+      `/billapi/subscribers/`.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, delete, changepassword]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Users result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/common.yaml#/User" }
+
+# ---------------------------------------------------------------------------
+# Lines (CDR / usage events)
+# ---------------------------------------------------------------------------
+lines:
+  post:
+    tags: [BillAPI]
+    summary: Lines (usage events / CDRs)
+    operationId: billapi.lines
+    description: |
+      Raw usage records (a.k.a. "lines" or "CDRs"). Read-only via BillAPI;
+      mutating actions are normally driven by the calculator/aggregator
+      pipeline.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        description: Lines result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/line.yaml#/Line" }
+
+# ---------------------------------------------------------------------------
+# Autorenew rules
+# ---------------------------------------------------------------------------
+autorenew:
+  post:
+    tags: [BillAPI]
+    summary: Autorenew rules
+    operationId: billapi.autorenew
+    description: |
+      Auto-renewal subscriptions that automatically re-charge a balance
+      or top-up at a defined interval.
+    parameters:
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [get, uniqueget, create, update, close, delete]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+    responses:
+      "200":
+        $ref: "../components/responses.yaml#/Envelope"

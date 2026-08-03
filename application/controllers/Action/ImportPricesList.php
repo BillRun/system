@@ -113,7 +113,10 @@ class ImportPricesListAction extends ApiAction {
 			if (!$updatedAndMissingCategories) {
 				return null;
 			}
-			list($updated_keys, $missing_categories) = each($updatedAndMissingCategories);
+//			list($updated_keys, $missing_categories) = each($updatedAndMissingCategories); // remove PHP 8 compat
+			$updated_keys = key($updatedAndMissingCategories);
+			$missing_categories = current($updatedAndMissingCategories);
+			next($updatedAndMissingCategories);
 		}
 
 		// Check if there are keys that are in the db but not in the rules or keys that are in the rules

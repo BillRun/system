@@ -259,9 +259,9 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	private function setEndpointUrl($params){
 		$version = !empty($params['Version']) ? $params['Version'] : $this->version;
 		if (Billrun_Factory::config()->isProd()) {
-			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
+			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . ($version ?? '') . "/accounts/" . ($params['Account'] ?? '') . "/auths";
 		} else { // test/dev environment
-			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
+			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . ($version ?? '') . "/accounts/" . ($params['Account'] ?? '') . "/auths";
 		}
 	}
 	

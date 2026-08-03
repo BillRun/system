@@ -16,6 +16,8 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	static protected $type = 'realtime';
 	
+	protected $realtimeConfig = array();
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		if (!empty($options['default_usaget'])) {
@@ -24,6 +26,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!empty($options['usaget_mapping'])) {
 			$this->usagetMapping = $options['usaget_mapping'];
 		}
+	}
+
+	public function setRealtimeConfig($config = array()) {
+		$this->realtimeConfig = $config;
 	}
 
 	/**
@@ -80,7 +86,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		return true;
 	}
 
-	public function process($config, $rowsToProcess = []) {
+	public function process($config = null, $rowsToProcess = []) {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 		$this->data['data'] = [];
 		if ($this->parse($config,$rowsToProcess) === FALSE) {
@@ -139,7 +145,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	protected function processLines() {
 	}
 	
-	public function process_files() {
+	public function process_files($path = null) {
 		return 0;
 	}
 	

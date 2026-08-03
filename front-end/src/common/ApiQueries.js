@@ -396,6 +396,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'users':
     case 'suggestions':
     case 'bills':
+    case 'eventsettings':
       action = 'get';
       break;
     default:

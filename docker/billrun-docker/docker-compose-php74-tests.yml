@@ -30,6 +30,7 @@ services:
         - "COMPOSER_HOME=/tmp/composer"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         healthcheck:
@@ -37,7 +38,7 @@ services:
             interval: 20s
             timeout: 3s
             retries: 4
-        command: sh -c "composer update && php-fpm"
+        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb

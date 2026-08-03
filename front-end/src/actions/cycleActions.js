@@ -2,6 +2,7 @@ import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '..
 import {
   pushToCycleQueueQuery,
   pushToConfirmQueueQuery,
+  getWorkersQuery,
   getRunCycleQuery,
   getResetCycleQuery,
   getConfirmCycleInvoiceQuery,
@@ -88,3 +89,17 @@ export const getConfirmationInvoicesStatus = invoiceIds => (dispatch) => {
     })
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Cannot get invoice confirmation status')));
 };
+
+export const getWorkersStatus = () => (dispatch) => {
+  dispatch(startProgressIndicator());
+  return apiBillRun(getWorkersQuery())
+    .then((success) => {
+      dispatch(finishProgressIndicator());
+      return true;
+    })
+    .catch((error) => {
+      dispatch(finishProgressIndicator());
+      return false;
+    });
+};
+

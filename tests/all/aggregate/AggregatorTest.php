@@ -11,11 +11,12 @@ class AggregatorTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
+        $this->tester->enableDBModeSettings();
     }
     public $defaultOptions = array(
         "type" => "customer",

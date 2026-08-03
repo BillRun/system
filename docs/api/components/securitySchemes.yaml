@@ -1,0 +1,37 @@
+sessionCookie:
+  type: apiKey
+  in: cookie
+  name: PHPSESSID
+  description: |
+    Obtained by calling `POST /auth/login` with a valid username/password
+    (or other configured protocol such as LDAP/SAML). The session cookie is
+    set automatically by the server and must be sent on every subsequent
+    request.
+
+oauth2:
+  type: oauth2
+  description: |
+    OAuth2 client credentials grant. Issued by `POST /oauth2/token`.
+    Pass the returned access token in the `Authorization: Bearer <token>`
+    header on every subsequent request.
+  flows:
+    clientCredentials:
+      tokenUrl: /oauth2/token
+      scopes:
+        read: Read-only access
+        write: Read + write access (modify entities)
+        admin: Admin-level access (configuration, users, system actions)
+
+secretSignature:
+  type: apiKey
+  in: query
+  name: signature
+  description: |
+    HMAC-style signature computed from the request parameters and a
+    pre-shared secret (configured in BillRun under
+    `Settings -> Security -> Shared Secret`).
+
+    The same value can be passed in the request body for POST requests.
+    Validated by `Billrun_Utils_Security::validateData`. Used for
+    machine-to-machine integrations that do not maintain a session cookie
+    or OAuth2 token.
