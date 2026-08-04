@@ -129,6 +129,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$afterGroupCursor = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
 			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
 			$accountsInArray = [];
+			$account = Billrun_Factory::account();
 			$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
 			if (is_array($accounts)) {
 				foreach ($accounts as $account) {
