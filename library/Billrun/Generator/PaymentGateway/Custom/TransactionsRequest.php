@@ -128,10 +128,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			$lastBllAggregateValue = end($this->customers);
 			$afterGroupCursor = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
 			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
-			$account = Billrun_Factory::account();
-			$accountQuery = array('aid' => array('$in' => $customersAids));
 			$accountsInArray = [];
-			$accounts = $account->loadAccountsForQuery($accountQuery);
+			$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
 			if (is_array($accounts)) {
 				foreach ($accounts as $account) {
 					$accountsInArray[$account['aid']] = $account;
@@ -150,6 +148,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				foreach ($current_loop_bills as $customer) {
 					$this->aid_to_lock = null;
 					if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+						Billrun_Factory::log()->log("Reached max records limit of " . $maxRecords . " for file type " . $this->configByType['file_type'] . ". Stopping the charging loop", Zend_Log::INFO);						
 						break;
 					}
 					$paymentParams = array();

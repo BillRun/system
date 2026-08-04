@@ -32,6 +32,35 @@ class Mongodloid_Db {
 		return $this->_collections[$name];
 	}
 
+	/**
+	 * method to set the connection-wide read preference at runtime
+	 * subsequent collections fetched from this db inherit it
+	 *
+	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
+	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
+	 *
+	 * @return mixed self object on success, or FALSE otherwise.
+	 */
+	public function setReadPreference($readPreference, array $tags = []) {
+		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
+		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+			$mode = $readPreference;
+		} else {
+			return false;
+		}
+		try {
+			$readPref = new \MongoDB\Driver\ReadPreference($mode, $tags);
+		} catch (\InvalidArgumentException $e) {
+			return false;
+		}
+		$this->_db = $this->_db->withOptions([
+			'readPreference' => $readPref,
+		]);
+		$this->_collections = [];
+		return $this;
+	}
+
 	public function getName() {
 		return (string) $this->_db->getDatabaseName();
 	}

@@ -509,13 +509,10 @@ class OnetimeinvoiceAction extends ApiAction {
 
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if (empty($row['sid']) && !empty($row['aid'])) {
-			$skipArray[] = 'customer';
-		}
 		if (!empty($row['prepriced'])) {
 			$skipArray[] = 'pricing';
 		}
-		return $skipArray;
+		return Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.skip_calcs', $skipArray);
 	}
 
 	protected function parseCreditByPrice(&$row) {
