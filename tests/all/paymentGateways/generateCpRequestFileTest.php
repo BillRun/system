@@ -573,6 +573,69 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
     }
 
     /**
+     * BRCD-4676
+     *
+     * Customer case: a suspended-debit bill must not cut the batched charging
+     * short.
+     *
+     * When the customer aggregator passthrough copies the account's suspend
+     * flag onto the invoice bill (customer.aggregator.passthrough_data
+     * [suspend_debit]="suspend_debit"), getBillsAggregateValues() drops the
+     * suspended bill from the aggregate only AFTER the $limit
+     * (max_records_per_batch) stage. The generator then gets back FEWER
+     * entities than max_records_per_batch, and its batching loop - which keeps
+     * pulling only while a batch comes back full - wrongly concludes the bills
+     * are exhausted and stops after the first batch.
+     *
+     * Original report: max_records_per_batch=10, 31 bills to pay, the bill
+     * with the HIGHEST invoice_id suspended => only the 9 other bills of the
+     * first batch were charged instead of all 30 non-suspended ones. Scaled
+     * down here: max_records_per_batch=3, 7 bills (invoice_id 900001..900007),
+     * 900007 suspended. The bug charges only 900006 + 900005 (2 bills);
+     * expected is all 6 non-suspended bills charged, and the suspended one
+     * left untouched.
+     */
+    public function testSuspendDebitBillDoesNotCutBatchedChargingShort() {
+        $this->insertMasavRequestFileSettings(['max_records_per_batch' => 3]);
+
+        $invoiceIds = [900001, 900002, 900003, 900004, 900005, 900006];
+        $aidByInvoice = [];
+        foreach ($invoiceIds as $i => $invoiceId) {
+            $acc = $this->createMasavAccount($i + 1);
+            $this->insertInvoiceDebt($acc['aid'], $invoiceId, 10 * ($i + 1));
+            $aidByInvoice[$invoiceId] = $acc['aid'];
+        }
+        // The bill with the HIGHEST invoice_id is the suspended one, so it is
+        // part of the FIRST batch. suspend_debit is set on the bill itself,
+        // exactly as the aggregator passthrough_data stamps it at cycle time.
+        $suspendedAccount = $this->createMasavAccount(7);
+        $this->insertInvoiceDebt($suspendedAccount['aid'], 900007, 70, ['suspend_debit' => true]);
+
+        $this->sendGenerateRequestFileCommand();
+
+        // Every non-suspended bill is charged: the short first batch (2 loaded
+        // out of max_records_per_batch=3) must not stop the loader before the
+        // remaining bills are pulled.
+        $this->tester->verifyCollectionCount('bills', count($invoiceIds), [
+            'dir' => 'fc',
+            'generated_pg_file_log' => ['$exists' => true],
+        ]);
+        foreach ($aidByInvoice as $invoiceId => $accAid) {
+            $this->tester->verifyCollectionRecord('bills', [
+                'aid' => $accAid,
+                'dir' => 'fc',
+                'generated_pg_file_log' => ['$exists' => true],
+                'pays' => ['$elemMatch' => ['id' => $invoiceId]],
+            ]);
+        }
+        // ... and the suspended bill itself is NOT charged.
+        $this->tester->verifyCollectionCount('bills', 0, [
+            'aid' => $suspendedAccount['aid'],
+            'dir' => 'fc',
+        ]);
+    }
+
+    /**
      * Create a masav-gateway account (the gateway the request file filters on).
      *
      * @param int $customerId the gateway customer id
@@ -601,8 +664,10 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
      * @param int $aid
      * @param int $invoiceId
      * @param float $amount
+     * @param array $extraFields extra bill fields (e.g. the suspend_debit flag
+     * the aggregator passthrough_data stamps on the bill)
      */
-    protected function insertInvoiceDebt($aid, $invoiceId, $amount) {
+    protected function insertInvoiceDebt($aid, $invoiceId, $amount, $extraFields = []) {
         $doc = [
             'aid' => (int) $aid,
             'type' => 'inv',
@@ -617,6 +682,7 @@ class generateCpRequestFileTest extends \Codeception\Test\Unit
             'invoice_date' => new Mongodloid_Date(),
             'due_date' => new Mongodloid_Date(),
         ];
+        $doc = array_merge($doc, $extraFields);
         Billrun_Factory::db()->billsCollection()->insert($doc);
     }
 

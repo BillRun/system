@@ -1300,21 +1300,13 @@ abstract class Billrun_Bill {
 			$pipelines[] = array('$match' => $afterGroupMatch);
 		}
 
-		// Order by the max invoice_id / txid (unique_id_str) of the group, newest
-		// first. txid is left zero-padded (leading '0') while invoice_id is an
-		// unpadded number (leading '1'-'9'), so this also keeps invoice groups
-		// ahead of txid groups without an explicit 'type' key. invoice_id and txid
-		// are each unique auto-increment sequences, so unique_id_str is a total
-		// order on its own - which the keyset pagination above relies on.
-		$pipelines[] = [
-			'$sort' => array('unique_id_str' => -1)
-		];
-		if(!is_null($limit)){
-			$pipelines[] = array(
-				'$limit' => $limit
-			);
-		}
-
+		// The chargeability filter below (non-zero due, no suspend_debit) must run
+		// BEFORE the $sort/$limit stages: with a $limit (max_records_per_batch) in
+		// place, a group dropped only after the $limit would still consume a batch
+		// slot, so the caller would get back a partial batch while chargeable
+		// bills remain - and the batched loader (TransactionsRequest::load, which
+		// keeps pulling only while a batch comes back full) would wrongly conclude
+		// the bills are exhausted and stop charging early.
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 1,
@@ -1351,6 +1343,21 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
+
+		// Order by the max invoice_id / txid (unique_id_str) of the group, newest
+		// first. txid is left zero-padded (leading '0') while invoice_id is an
+		// unpadded number (leading '1'-'9'), so this also keeps invoice groups
+		// ahead of txid groups without an explicit 'type' key. invoice_id and txid
+		// are each unique auto-increment sequences, so unique_id_str is a total
+		// order on its own - which the keyset pagination above relies on.
+		$pipelines[] = [
+			'$sort' => array('unique_id_str' => -1)
+		];
+		if(!is_null($limit)){
+			$pipelines[] = array(
+				'$limit' => $limit
+			);
+		}
 
 		
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
