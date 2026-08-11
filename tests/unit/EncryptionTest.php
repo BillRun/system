@@ -168,4 +168,43 @@ class EncryptionTest extends \Codeception\Test\Unit
         $this->assertSame('', $translator->internalTranslateField(''));
         $this->assertSame(null, $translator->internalTranslateField(null));
     }
+
+    /**
+     * The grid search box always sends filter values as {"$regex": ..., "$options": "i"},
+     * even for encrypted fields. Left unhandled, strval() on that array collapses to the
+     * literal string "Array" (see Api_Translator_StringModel::internalTranslateField),
+     * which then gets encrypted into a query that can never match real data.
+     */
+    public function testTranslatorRegexQueryIsDowngradedToExactMatch()
+    {
+        $translator = new Api_Translator_EncryptedModel('secret', array());
+        $stored = $translator->internalTranslateField('find-me');
+        $query = $translator->internalTranslateField(array('$regex' => 'find-me', '$options' => 'i'));
+        $this->assertEquals($stored, $query, 'a $regex query must be downgraded to the exact-match ciphertext');
+        $this->assertNotEquals(Billrun_Utils_Encryption::encryptValue('Array'), $query);
+    }
+
+    public function testTranslatorEqQuery()
+    {
+        $translator = new Api_Translator_EncryptedModel('secret', array());
+        $stored = $translator->internalTranslateField('find-me');
+        $query = $translator->internalTranslateField(array('$eq' => 'find-me'));
+        $this->assertEquals(array('$eq' => $stored), $query);
+    }
+
+    public function testTranslatorInQuery()
+    {
+        $translator = new Api_Translator_EncryptedModel('secret', array());
+        $storedA = $translator->internalTranslateField('a-value');
+        $storedB = $translator->internalTranslateField('b-value');
+        $query = $translator->internalTranslateField(array('$in' => array('a-value', 'b-value')));
+        $this->assertEquals(array('$in' => array($storedA, $storedB)), $query);
+    }
+
+    public function testTranslatorUnhandledOperatorPassesThrough()
+    {
+        $translator = new Api_Translator_EncryptedModel('secret', array());
+        $query = $translator->internalTranslateField(array('$exists' => true));
+        $this->assertEquals(array('$exists' => true), $query);
+    }
 }
