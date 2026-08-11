@@ -1762,4 +1762,135 @@ class UpfrontTest extends \Codeception\Test\Unit
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202601', 'aid' => $aid));
         $this->assertEqualsWithDelta((100 * 15 / 31 - 100) + (10 * 15 / 31 - 10), $billrun['totals']['before_vat'], $this->epsilon);
     }
+
+    public function testChangePlanToPlanAndBackSameCycleFullFraction()
+    {
+        /*
+        BRCD-5389 (BRCD-5331): subscriber moves PLAN1 -> PLAN2 -> PLAN1 within February 2026 (aid
+        12601 CRM fixture - each revision carries a discount scoped by subject+from/to to exactly
+        its own window). The exact amounts do not matter - the invariant is that billing the plans
+        upfront must charge February exactly like billing them in arrears.
+
+        The arrears reference: arrears bills the previous month, so February is billed in cycle
+        202603 and its invoice is the reference net.
+
+        The upfront run: upfront bills a month in advance and corrects mid-cycle plan changes in
+        the following cycle:
+          - cycle 202602 (run in January) charges February in advance for the plan active going in;
+          - cycle 202603 (run in February) refunds the over-charge and bills the actual mid-month plans.
+        So February's true upfront cost is the sum of the February-attributable lines across BOTH
+        cycles: the advance (is_upfront) lines of the 202602 run, plus the 202603 run lines
+        excluding its own advance lines (which bill March). That sum must equal the arrears net.
+        */
+        $aid = 12601;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        // Billrun_Base::getInstance caches every aggregator by its args hash - this test (and its
+        // sibling) runs the same stamps with the same options twice, once per billing flavor, so
+        // a cached aggregator (with the plans/rates/services caches of the other flavor) must
+        // never be reused. Drop the instance cache before each phase
+        $this->tester->resetBillrunInstances();
+
+        // the arrears reference - the same scenario billed in arrears
+        $this->tester->generatePlan(['name' => 'PLAN1_5331']);
+        $this->tester->generatePlan(['name' => 'PLAN2_5331']);
+        $this->defaultOptions['stamp'] = '202603';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202603', 'aid' => $aid));
+        $this->assertNotEmpty($billrun, 'the arrears reference invoice was not created');
+        $arrearsNet = $billrun['totals']['before_vat'];
+        // guard the comparison against a trivially empty run (0 == 0 proves nothing)
+        $this->assertGreaterThan(0, $arrearsNet, 'the arrears reference billed nothing');
+
+        // re-seed and bill the very same scenario upfront - the 202603 run would otherwise get
+        // the arrears phase aggregator back and charge February like a plain arrears cycle
+        $this->tester->cleanDB();
+        $this->tester->resetBillrunInstances();
+        \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+        \Billrun_DiscountManager::resetDiscountsCache();
+        \Billrun_DiscountManager::resetChargesCache();
+        $this->tester->generatePlan(['name' => 'PLAN1_5331', "upfront" => 1]);
+        $this->tester->generatePlan(['name' => 'PLAN2_5331', "upfront" => 1]);
+        $this->tester->runCycleWithPrevious($this->defaultOptions);
+
+        // Sum the February-attributable lines across both upfront cycles: the advance
+        // (is_upfront) lines of the 202602 run bill February, and the 202603 run lines bill the
+        // February corrections - excluding its own advance lines, which bill March. No start
+        // date filtering - correction lines may carry no start date at all.
+        $query = array(
+            'aid' => $aid,
+            '$or' => array(
+                array('billrun' => '202602', 'is_upfront' => true),
+                array('billrun' => '202603', 'is_upfront' => array('$ne' => true), 'charge_op' => 'refund'),
+            ),
+        );
+        $upfrontFebruaryNet = 0;
+        foreach (Billrun_Factory::db()->linesCollection()->query($query)->cursor() as $line) {
+            $upfrontFebruaryNet += $line['aprice'];
+        }
+
+        // the upfront billing of February must equal the arrears billing of the same scenario
+        $this->assertEqualsWithDelta($arrearsNet, $upfrontFebruaryNet, $this->epsilon);
+    }
+
+
+    /**
+     * The same arrears-vs-upfront equality as testChangePlanToPlanAndBackSameCycle, with the
+     * whole plan-change-and-back known in advance: billrun.upfront.billable_next_cycle extends
+     * the billable window of the 202602 (January) run by one cycle, so it sees all three
+     * February revisions and their discounts, and charges each plan its own part of February
+     * upfront. The February advance alone (the is_upfront lines of 202602) must equal the
+     * arrears net - no 202603 correction run is needed at all.
+     */
+    public function testChangePlanToPlanAndBackSameCycleInAdvanced()
+    {
+        $aid = 12601;
+        $this->defaultOptions['force_accounts'] = [$aid];
+        // see testChangePlanToPlanAndBackSameCycle - a cached same-args aggregator of the other
+        // billing flavor (or of the sibling test) must never be reused
+        $this->tester->resetBillrunInstances();
+
+        // the arrears reference - the same scenario billed in arrears
+        $this->tester->generatePlan(['name' => 'PLAN1_5331']);
+        $this->tester->generatePlan(['name' => 'PLAN2_5331']);
+        $this->defaultOptions['stamp'] = '202603';
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202603', 'aid' => $aid));
+        $this->assertNotEmpty($billrun, 'the arrears reference invoice was not created');
+        $arrearsNet = $billrun['totals']['before_vat'];
+        // guard the comparison against a trivially empty run (0 == 0 proves nothing)
+        $this->assertGreaterThan(0, $arrearsNet, 'the arrears reference billed nothing');
+
+        // re-seed and bill the very same scenario upfront, knowing the changes in advance
+        $this->tester->cleanDB();
+        $this->tester->resetBillrunInstances();
+        \Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+        \Billrun_DiscountManager::resetDiscountsCache();
+        \Billrun_DiscountManager::resetChargesCache();
+        $this->tester->generatePlan(['name' => 'PLAN1_5331', "upfront" => 1]);
+        $this->tester->generatePlan(['name' => 'PLAN2_5331', "upfront" => 1]);
+        $this->defaultOptions['stamp'] = '202602';
+        // without the extended billable window the January run cannot see the mid-February
+        // revisions at all, and only PLAN1's [Feb 1, Feb 10) part would be paid in advance
+        \Billrun_Factory::config()->setConfigValue('billrun.upfront.billable_next_cycle', true);
+        try {
+            $this->tester->runCycle($this->defaultOptions);
+        } finally {
+            \Billrun_Factory::config()->setConfigValue('billrun.upfront.billable_next_cycle', false);
+        }
+
+        // the whole of February is paid in advance - the 202602 advance lines alone cover it
+        $query = array(
+            'aid' => $aid,
+            'billrun' => '202602',
+            'is_upfront' => true,
+            'charge_op' => 'charge',
+        );
+        $upfrontFebruaryNet = 0;
+        foreach (Billrun_Factory::db()->linesCollection()->query($query)->cursor() as $line) {
+            $upfrontFebruaryNet += $line['aprice'];
+        }
+
+        // the upfront billing of February must equal the arrears billing of the same scenario
+        $this->assertEqualsWithDelta($arrearsNet, $upfrontFebruaryNet, $this->epsilon);
+    }
 }
