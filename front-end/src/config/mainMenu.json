@@ -1,12 +1,30 @@
 {
-  "products": {
-    "title": "Products",
+  "product_catalog": {
+    "title": "Product Catalog",
     "icon": "fa-book",
-    "route": "products",
+    "route": "",
     "show": true,
     "roles": [],
     "order":1,
     "parent": "root"
+  },
+  "products": {
+    "title": "Products",
+    "icon": "",
+    "route": "products",
+    "show": true,
+    "roles": [],
+    "order":0,
+    "parent": "product_catalog"
+  },
+  "products_groups": {
+    "title": "Products Groups",
+    "icon": "",
+    "route": "products_groups",
+    "show": true,
+    "roles": [],
+    "order":1,
+    "parent": "product_catalog"
   },
   "prepaid": {
     "title": "Prepaid",

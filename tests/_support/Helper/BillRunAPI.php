@@ -572,6 +572,21 @@ class BillRunAPI extends \Codeception\Module{
     }
 
     /**
+     * create a products group.
+     * @param Array $override - fields to override the default values
+     */
+    public function generateProductsGroup(array $override = [])
+    {
+        $group = array_merge([
+            'key' => 'GROUP',
+            'description' => 'products group',
+            'usage_types' => [],
+            'rates' => [],
+        ], $override);
+        return $this->sendBillapiCreate($group, 'productgroups');
+    }
+
+    /**
     * @depends apiSanityCest:oauthLogin
     */
     public function sendAuthenticatedGET($url) {

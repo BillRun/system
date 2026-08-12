@@ -258,6 +258,31 @@ class billapiProductgroupsCest
         $I->seeResponseContains('cannot be changed');
     }
 
+    public function testUniquegetReturnsAllGroups(ApiTester $I)
+    {
+        // uniqueget must group by key - a wrong group field collapses all groups into one
+        $rate1 = $this->createProduct($I, 'call');
+        $rate2 = $this->createProduct($I, 'call');
+        $key1 = $this->uniqueKey('PG');
+        $key2 = $this->uniqueKey('PG');
+        $I->generateProductsGroup([
+            'key' => $key1,
+            'usage_types' => ['call'],
+            'rates' => [$rate1],
+        ]);
+        $I->seeResponseContains('"status":1');
+        $I->generateProductsGroup([
+            'key' => $key2,
+            'usage_types' => ['call'],
+            'rates' => [$rate2],
+        ]);
+        $I->seeResponseContains('"status":1');
+        $I->sendBillapiUniqueget([], 'productgroups');
+        $I->seeResponseContains('"status":1');
+        $I->seeResponseContains($key1);
+        $I->seeResponseContains($key2);
+    }
+
     public function testCreateGroupWithSameKeyAborted(ApiTester $I)
     {
         $rate1 = $this->createProduct($I, 'call');

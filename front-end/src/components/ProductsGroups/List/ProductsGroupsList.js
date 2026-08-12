@@ -1,9 +1,6 @@
 import React, { Component } from 'react';
 import Immutable from 'immutable';
 import EntityList from '../../EntityList';
-import {
-  getConfig,
-} from '@/common/Util';
 
 class ProductsGroupsList extends Component {
 
@@ -33,11 +30,9 @@ class ProductsGroupsList extends Component {
   render () {
     return (
       <EntityList
-        itemsType={getConfig(['systemItems', 'products_group', 'itemsType'], '')}
-        itemType={getConfig(['systemItems', 'products_group', 'itemType'], '')}
+        entityKey="products_group"
         tableFields={this.getFields()}
         projectFields={this.getProjectFields()}
-        showRevisionBy="key"
         actions={this.getActions()}
       />
     );

@@ -34,7 +34,7 @@ export const searchProductsByKeyAndUsagetQuery = (usages, notKeys = [], plays = 
   };
 
   const additionConditions = []; // for addition conditions in $AND
-  if (usagesToQuery[0] !== 'cost') {
+  if (usagesToQuery.length !== 0 && usagesToQuery[0] !== 'cost') {
     additionConditions.push(
       { $or: usagesToQuery.map(usage => ({ [`rates.${usage}`]: { $exists: true } })) },
     );
@@ -480,6 +480,7 @@ export const fetchDiscountByIdQuery = id => getEntityByIdQuery('discounts', id);
 export const fetchChargeByIdQuery = id => getEntityByIdQuery('charges', id);
 export const fetchReportByIdQuery = id => getEntityByIdQuery('reports', id);
 export const fetchtaxeByIdQuery = id => getEntityByIdQuery('taxes', id);
+export const fetchProductsGroupByIdQuery = id => getEntityByIdQuery('productgroups', id);
 export const fetchPlanByIdQuery = id => getEntityByIdQuery('plans', id);
 export const fetchPrepaidGroupByIdQuery = id => getEntityByIdQuery('prepaidgroups', id);
 export const fetchUserByIdQuery = id => getEntityByIdQuery('users', id);

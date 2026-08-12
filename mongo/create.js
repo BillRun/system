@@ -113,6 +113,12 @@ db.prepaidgroups.createIndex({ 'name':1, 'from': 1, 'to': 1 }, { unique: false, 
 db.prepaidgroups.createIndex({ 'name':1, 'to': 1 }, { unique: false, sparse: true, background: true });
 db.prepaidgroups.createIndex({ 'description': 1}, { unique: false, background: true });
 
+//Products groups collection
+db.createCollection('product_groups');
+db.product_groups.createIndex({ 'key':1, 'from': 1, 'to': 1 }, { unique: false, background: true });
+db.product_groups.createIndex({ 'key':1, 'to': 1 }, { unique: false, sparse: true, background: true });
+db.product_groups.createIndex({ 'description': 1}, { unique: false, background: true });
+
 //Plans collection
 db.createCollection('plans');
 db.plans.createIndex({ 'name':1, 'from': 1, 'to': 1 }, { unique: false, background: true });
