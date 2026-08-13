@@ -131,11 +131,18 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 			}
 			$datetime = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format']);
 			if (!($datetime instanceof DateTime)) {
-				$message = $paramObj['name'] . ' field could not be parsed as a date using format ' . $paramObj['format'];
-				$this->informationArray['errors'][] = $message;
-				throw new Exception($message);
+				if (!empty($this->dateField) && (Billrun_Util::getIn($this->dateField, 'source', "") == "data") && (Billrun_Util::getIn($this->dateField, 'field', "") == $paramObj["name"])) {
+					$message = $paramObj['name'] . ' field was defined as date field, but the date value "' . $row[$paramObj['name']] . '" couldn\'t be formatted. Current time will be taken instead';
+					Billrun_Factory::log($message, Zend_Log::ERR);
+					$this->informationArray['errors'][] = $message;
+				} else {
+					$message = $paramObj['name'] . ' field could not be parsed as a date using format ' . $paramObj['format'];
+					$this->informationArray['errors'][] = $message;
+					throw new Exception($message);
+				}
+			} else {
+				$row[$paramObj['name']] = $datetime->format(Billrun_Base::base_datetimeformat);
 			}
-			$row[$paramObj['name']] = $datetime->format(Billrun_Base::base_datetimeformat);
 		}
 		if (isset($paramObj['substring'])) {
 			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
