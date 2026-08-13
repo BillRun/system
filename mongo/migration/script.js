@@ -2268,6 +2268,17 @@ runOnce(lastConfig, 'BRCD-4950', function () {
 
 });
 
+runOnce(lastConfig, 'BRCD-4915', function () {
+	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_2" });
+	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index_1");
+
+});
+
+// BRCD-5421: upfront reconciliation - load the previous cycle upfront lines.
+runOnce(lastConfig, 'BRCD-5421', function () {
+	db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1 }, { unique: false, sparse: false, background: true, partialFilterExpression: { 'is_upfront': true }});
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });

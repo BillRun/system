@@ -97,7 +97,17 @@
      }
 
      /**
-      * 
+      * BRCD-5421 - the test runs a single cycle with no previous one - require a previous billing
+      * cycle for the upfront reconciliation, so nothing is reconciled and the cycle is charged as
+      * before (the flag is restored to its default before every test case).
+      * to be used as a test case preRun.
+      */
+     public function requirePreviousBillrunForReconcile($key, $row) {
+         Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', true);
+     }
+
+     /**
+      *
       * @param $query
       * @return billrun objects by query or all if query is null
       */
@@ -131,6 +141,8 @@
         
          foreach ($this->tests as $key => $row) {
              $this->shouldRunAggregate = true;
+             Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+             Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', false);
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
