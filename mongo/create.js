@@ -9,6 +9,7 @@ db.lines.createIndex({'urt': 1 }, { unique: false , sparse: false, background: t
 db.lines.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1, 'urt' : 1}, { unique: false , sparse: true, background: true }); // index necessary for admin panel(?)
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true }); // rebalance index (might be useful by other processes)
+db.lines.createIndex({'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1}, { unique: false, sparse: false, background: true, partialFilterExpression: {'is_upfront': true}}); // BRCD-5421 - the upfront reconciliation previous cycle lines
 db.lines.createIndex({'billrun': 1, 'usaget' : 1, 'type' : 1}, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1 ,'session_id':1,'request_num':-1}, { unique: false, background: true });
 db.lines.createIndex({'session_id':1,'request_num':-1}, { unique: false, background: true });
