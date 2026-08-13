@@ -55,5 +55,29 @@ class  RealTimeApiHelper extends BillRunAPI{
     }
 
     
+        /**
+     * Assert that the realtime API response contains the expected granted volume.
+     *
+     * @param int|float|string $expectedReturnCode
+     * @param string $jsonPath JSONPath used to locate return code in response
+     */
+    public function assertReturnCode($expectedReturnCode, $jsonPath = '$..returnCode')
+    {
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $values = $rest->grabDataFromResponseByJsonPath($jsonPath);
+
+        \PHPUnit\Framework\Assert::assertNotEmpty(
+            $values,
+            "No returnCode field found in response (jsonPath: {$jsonPath})"
+        );
+
+        \PHPUnit\Framework\Assert::assertEquals(
+            $expectedReturnCode,
+            $values[0],
+            "returnCode does not match expected value"
+        );
+    }
+
     
 }

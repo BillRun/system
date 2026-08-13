@@ -68,7 +68,7 @@ class Test_Case_42773
 
 
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_DISCOUNT" . time(),
+            'name' => generat_test_data::uniqueName("SERVICE_DISCOUNT"),
             "price" => [["price" => 20, "from" => 0, "to" => "UNLIMITED"]]
         ]);
         $discount_name = generat_test_data::uniqueName();
