@@ -593,9 +593,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->autosort) {
 				if (Mongodloid_Date::equals($last['calc_time'], $first['calc_time'])) {
 					$query['$and'][] = ['calc_time' => $last['calc_time']];
-					$query['$and'][] = [
-						'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
-					];
+					if ($horizonlineCount == $this->limit + 1 && !Mongodloid_Date::equals($first['urt'], $last['urt'])) {
+						$query['$and'][] = [
+							'urt' => ['$gte' => $first['urt'], '$lt' => $last['urt']]//the (limit+1)th doc is only the boundary - exclude its urt so no more than `limit` docs are marked
+						];
+					} else {//partial last page, or all docs share one urt - $lt would mark nothing and loop forever
+						$query['$and'][] = [
+							'urt' => ['$gte' => $first['urt'], '$lte' => $last['urt']]
+						];
+					}
 				} else {
 					if($first['calc_time'] ==  false){
 						$query['$and'][] = [
@@ -647,7 +653,24 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
 		}*/
 		
-		$res = $queue->update($query, $update, array('multiple' => true));
+		$options = array('multiple' => true);
+		static $updateHintSupported = null;
+		if ($updateHintSupported === null) {
+			$updateHintSupported = Billrun_Factory::db()->compareServerVersion('4.2.0', '>=');//hint on the update command requires mongo 4.2+
+		}
+		if ($updateHintSupported && $this->limit != 0 && $this->autosort) {//the sort-less update may lose the plan selection trial - force the queue compound index
+			$options['hint'] = array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
+		}
+		Billrun_Factory::log('Queue hash update, query: ' . json_encode($query) . ', options: ' . json_encode($options), Zend_Log::DEBUG);
+		if (isset($options['hint'])) {
+			try {
+				return $queue->update($query, $update, $options);
+			} catch (Exception $ex) {//e.g. the hinted index does not exist yet - fall back to the planner's choice
+				Billrun_Factory::log('Queue hash update with hint failed, retrying without hint: ' . $ex->getMessage(), Zend_Log::WARN);
+				unset($options['hint']);
+			}
+		}
+		$res = $queue->update($query, $update, $options);
 		return $res;
 	}
 
