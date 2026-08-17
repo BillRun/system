@@ -15,6 +15,11 @@
 class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	/**
+	 * default maximum number of aids sent per collection state change request
+	 */
+	const CHANGE_STATE_DEFAULT_BATCH_SIZE = 500;
+
+	/**
 	 * The instance of the DB collection.
 	 */
 	protected $collection;
@@ -216,21 +221,39 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 		$url = $process['settings']['change_state_url'] ?? '';
 		$method = $process['settings']['change_state_method'] ?? 'POST';
-		$step = array(
-			'step_code' => "collection state change",
-			'step_type' => "httpnoack",
-			'step_config' => array(
-				'url' => $url,
-				'method' => $method,
-			),
-			'extra_params'=> array(
-				'state' => $in ? 'in_collection' : 'out_of_collection',
-				'aids' => $aids,
-				'process_name' => $process['name'] ?? ''
-			),
-			'creation_time' => date('c')
-		);
-		return $this->runStep($step);
+		$batchSize = intval($process['settings']['change_state_batch_size'] ??
+			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_batch_size', self::CHANGE_STATE_DEFAULT_BATCH_SIZE));
+		if ($batchSize <= 0) {
+			$batchSize = self::CHANGE_STATE_DEFAULT_BATCH_SIZE;
+		}
+		$state = $in ? 'in_collection' : 'out_of_collection';
+		$processName = $process['name'] ?? '';
+		$batches = array_chunk($aids, $batchSize);
+		$batchesCount = count($batches);
+		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
+		$result = true;
+		foreach ($batches as $index => $batchAids) {
+			Billrun_Factory::log('Collection state change: sending batch ' . ($index + 1) . '/' . $batchesCount . ' with ' . count($batchAids) . ' accounts (state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
+			$step = array(
+				'step_code' => "collection state change",
+				'step_type' => "httpnoack",
+				'step_config' => array(
+					'url' => $url,
+					'method' => $method,
+				),
+				'extra_params'=> array(
+					'state' => $state,
+					'aids' => $batchAids,
+					'process_name' => $processName
+				),
+				'creation_time' => date('c')
+			);
+			if ($this->runStep($step) === false) {
+				Billrun_Factory::log('Collection state change: batch ' . ($index + 1) . '/' . $batchesCount . ' failed (' . count($batchAids) . ' accounts, state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::ERR);
+				$result = false;
+			}
+		}
+		return $result;
 	}
 	
 	
