@@ -662,14 +662,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$options['hint'] = array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
 		}
 		Billrun_Factory::log('Queue hash update, query: ' . json_encode($query) . ', options: ' . json_encode($options), Zend_Log::DEBUG);
-		if (isset($options['hint'])) {
-			try {
-				return $queue->update($query, $update, $options);
-			} catch (Exception $ex) {//e.g. the hinted index does not exist yet - fall back to the planner's choice
-				Billrun_Factory::log('Queue hash update with hint failed, retrying without hint: ' . $ex->getMessage(), Zend_Log::WARN);
-				unset($options['hint']);
-			}
-		}
 		$res = $queue->update($query, $update, $options);
 		return $res;
 	}
