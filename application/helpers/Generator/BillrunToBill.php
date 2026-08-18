@@ -28,11 +28,35 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $filtration = null;
 	protected $invoicing_days = [];
 	protected $accountsInArray = [];
+	protected $excludedInvoices = [];
+	protected $includedAids = null;
+	protected $excludedAids = [];
+	protected $force = false;
+	protected $shouldLoadAccounts = true;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
 		if (!empty($options['invoices'])) {
 			$this->invoices = Billrun_Util::verify_array($options['invoices'], 'int');
+		}
+		// filtration options, aligned with the cycle confirmation job options.
+		// isset (rather than !empty) on the inclusion options - an empty inclusion list
+		// means nothing should be loaded, not that the filter should be dropped
+		if (isset($options['include_invoices'])) {
+			$this->invoices = Billrun_Util::verify_array($options['include_invoices'], 'int');
+		}
+		if (!empty($options['exclude_invoices'])) {
+			$this->excludedInvoices = Billrun_Util::verify_array($options['exclude_invoices'], 'int');
+		}
+		if (isset($options['include'])) {
+			$this->includedAids = Billrun_Util::verify_array($options['include'], 'int');
+		}
+		if (!empty($options['exclude'])) {
+			$this->excludedAids = Billrun_Util::verify_array($options['exclude'], 'int');
+		}
+		$this->force = !empty($options['force']);
+		if (isset($options['load_accounts'])) {
+			$this->shouldLoadAccounts = (bool) $options['load_accounts'];
 		}
 		if (isset($options['send_email'])) {
 			$this->sendEmail = $options['send_email'];
@@ -58,12 +82,21 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 	public function load() {
 		$this->billrunColl = Billrun_Factory::db()->billrunCollection();
-		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
+		$invoiceQuery = !is_null($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
+		if (!empty($this->excludedInvoices)) {
+			$invoiceQuery['$nin'] = $this->excludedInvoices;
+		}
 		$query = array(
 			'billrun_key' => (string) $this->stamp,
 			'invoice_id' => $invoiceQuery,
 			'allow_bill' => ['$ne' => 0],
 		);
+		if (!is_null($this->includedAids)) {
+			$query['aid']['$in'] = $this->includedAids;
+		}
+		if (!empty($this->excludedAids)) {
+			$query['aid']['$nin'] = $this->excludedAids;
+		}
 		if (!empty($this->invoicing_days)) {
 			$query['invoicing_day'] = array('$in' => $this->invoicing_days);
 		}
@@ -75,7 +108,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				->sort(array('aid' => 1))
 				->limit($invoicesLimit)->skip($invoicesLimit * $page);
 		} else {
-			$query['billed'] = array('$ne' => 1);
+			if (empty($this->force)) {
+				$query['billed'] = array('$nin' => array("1", 1, true));
+			}
 			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()->sort(array('aid' => 1));
 		}
 		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
@@ -83,15 +118,75 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
-		$this->data = $invoices;
-		$customersAids = [];
-		foreach($this->data as $invoice){
-			$customersAids[] = $invoice['aid'];
+		if ($this->shouldLoadAccounts) {
+			$this->data = $invoices;
+			$customersAids = [];
+			foreach($this->data as $invoice){
+				$customersAids[] = $invoice['aid'];
+			}
+			$this->loadInvoicesAccounts($customersAids);
+			return $this->data;
 		}
 
+		// invoices-only load (the main confirmation job) - keep only the fields
+		// required for creating the per-account child jobs
+		$this->data = [];
+		foreach ($invoices as $invoice) {
+			$this->data[] = [
+				'aid' => $invoice['aid'],
+				'billrun_key' => $invoice['billrun_key'],
+				'invoice_id' => $invoice['invoice_id'],
+			];
+		}
+		return $this->data;
+	}
+
+	/**
+	 * Setup the accounts (GAD) cache for the cycle confirmation flow, mirroring
+	 * Billrun_Aggregator_Customer::setupCycleCache - applied by the main confirmation job
+	 * before the accounts preload and by the generator before loading the invoices
+	 * accounts, so the preload writes and the child jobs reads share the same settings:
+	 * billrun.confirm.cache.gad.prefix  - cache namespace, empty (default) keeps the regular
+	 *   account cache prefix (subscribers.account.external_cache_prefix, default ext_acc_);
+	 *   configure it to separate the confirmation entries into their own namespace
+	 * billrun.confirm.cache.gad.enabled - defaults to subscribers.account.external_cache_enabled
+	 * billrun.confirm.cache.gad.ttl     - defaults to subscribers.account.external_cache_ttl
+	 * @return boolean the effective cache enabled state
+	 */
+	public static function setupConfirmationCache() {
 		$account = Billrun_Factory::account();
-		$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
+		if (!in_array('Billrun_Subscriber_External_Cacheable', class_uses($account))) {
+			Billrun_Factory::log('Account class is not cacheable. not altering cache behavior.', Zend_Log::INFO);
+			return false;
+		}
+		$config = Billrun_Factory::config();
+		$prefix = $config->getConfigValue('billrun.confirm.cache.gad.prefix', '')
+			?: $config->getConfigValue('subscribers.account.external_cache_prefix', 'ext_acc_');
+		$account->setCachePrefix($prefix);
+		$enabled = (bool) $config->getConfigValue('billrun.confirm.cache.gad.enabled',
+			$config->getConfigValue('subscribers.account.external_cache_enabled', false));
+		$account->setCacheEnabled($enabled);
+		$account->setCachingTTL((int) $config->getConfigValue('billrun.confirm.cache.gad.ttl',
+			$config->getConfigValue('subscribers.account.external_cache_ttl', 300)));
+		return $enabled;
+	}
+
+	/**
+	 * Load the invoices accounts data (GAD) with a per-aid query, batched by the gad
+	 * limit. When the confirmation cache (setupConfirmationCache) is enabled, accounts
+	 * that were preloaded by the main confirmation job (or cached from the cycle GBA
+	 * run) are served from the cache, and only the missing ones are requested.
+	 * @param array $customersAids the loaded invoices aids
+	 */
+	protected function loadInvoicesAccounts($customersAids) {
+		$customersAids = array_values(array_unique($customersAids));
 		$this->accountsInArray = [];
+		if (empty($customersAids)) {
+			return;
+		}
+		$account = Billrun_Factory::account();
+		static::setupConfirmationCache();
+		$accounts = $account->loadAccountsForQueriesByAidsWithBatches($customersAids);
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
 				$this->accountsInArray[$account['aid']] = $account;

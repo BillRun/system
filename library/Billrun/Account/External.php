@@ -33,7 +33,7 @@ class Billrun_Account_External extends Billrun_Account {
 
 		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_enabled', false));
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
-		$this->setCachePrefix('ext_acc_');
+		$this->setCachePrefix(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_prefix', 'ext_acc_'));
 		$this->setCacheGBAtoGSD( Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false));
 
 	}

@@ -243,6 +243,33 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		return $accounts;
 	}
+
+	/**
+	 * load accounts by aids with a per-aid query (loadAccountsForQueries), batched by the
+	 * gad limit - one request per batch, carrying a sub-query per account
+	 * @param array $aidsValues the aids to load
+	 * @param array $queryOptions extra query params to merge into each per-aid query
+	 * @return array of account entities
+	 */
+	public function loadAccountsForQueriesByAidsWithBatches($aidsValues, $queryOptions = []) {
+		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', 5000, "int");
+		Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
+		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
+		$batchesNumber = count($aidsBatches);
+		Billrun_Factory::log("Got " . $batchesNumber . " aids chunks", Zend_Log::DEBUG);
+		$accounts = [];
+		for ($i = 0; $i < $batchesNumber; $i++) {
+			Billrun_Factory::log("Load accounts of batch number " . ($i+1) . "/" .  $batchesNumber, Zend_Log::DEBUG);
+			$queries = array_map(function ($aid) use ($queryOptions) {
+				return array_merge(['aid' => $aid], $queryOptions);
+			}, $aidsBatches[$i]);
+			$batchAccounts = $this->loadAccountsForQueries($queries);
+			if (is_array($batchAccounts)) {
+				$accounts = array_merge($accounts, $batchAccounts);
+			}
+		}
+		return $accounts;
+	}
 	
 	
 	/**
