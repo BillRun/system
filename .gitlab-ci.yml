@@ -64,8 +64,10 @@ codecept:
     - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
     - cd $CI_PROJECT_DIR/docker/billrun-docker
     - docker-compose -f docker-compose-php74-ci.yml ps
-    - HEALTH=$(docker inspect --format '{{.State.Health.Status}}' billrun-app 2>/dev/null || true)
-    - if [ "$HEALTH" = "unhealthy" ]; then docker logs billrun-app; fi
+    # always dump app logs on failure; health check alone misses a crash-looping container
+    - docker inspect --format 'billrun-app health={{.State.Health.Status}} restarts={{.RestartCount}}' billrun-app 2>/dev/null || true
+    - docker logs --tail 300 billrun-app 2>&1 || true
+    - docker-compose -f docker-compose-php74-ci.yml down --remove-orphans || true
   artifacts:
     when: on_failure
     paths:
@@ -142,3 +144,4 @@ dependency-scanning:
 
 semgrep-sast:
   tags: [CI_SAST]
+

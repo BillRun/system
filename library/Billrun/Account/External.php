@@ -43,16 +43,17 @@ class Billrun_Account_External extends Billrun_Account {
 	}
 
 	public function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page = 0 , $size = 100, $aids = [], $invoicing_days = null) {
-			$dateFormat = ( (abs($cycle->end()->sec - $cycle->start()->sec) <= 86400 &&
+			$dateFormat = ( (!Billrun_Util::isBillrunKey($cycle->key()) &&
 							Billrun_Factory::config()->getConfigValue('subscribers.billable.compatiblity.use_datetime_for_same_day_cycle',true))
 								?  // help some CRMs understand if this is an immediate invoice call
 								Billrun_Factory::config()->getConfigValue('subscribers.billable.single_day_cycle_format','Y-m-d H:i:s')
 								: //  regualr  +1 months  cycle time  format for  start/end fields
 								Billrun_Factory::config()->getConfigValue('subscribers.billable.single_day_cycle_format','Y-m-d'));
-			// Prepare request
+			// Prepare request - the end date window may be extended by one cycle to receive the
+			// next cycle revisions as well (see getBillableWindowEnd)
 			$requestParams = [
 				'start_date' => date($dateFormat,$cycle->start()->sec),
-				'end_date' => date($dateFormat ,$cycle->end()->sec),
+				'end_date' => date($dateFormat ,$this->getBillableWindowEnd($cycle)),
 				'page' => $page,
 				'size' => $size
 			];

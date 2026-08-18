@@ -20,11 +20,16 @@ class Billrun_Utils_Cycle {
 									strtotime(date("Y-{$entryConfig['recurrence']['start']}-01 00:00:00", $activationDate));
 		$startDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $startDate : $cycle->end()));
 		$endDateStr = date(Billrun_Base::base_dateformat,($startDate < $cycle->end() ? $cycle->end() : $startDate));
+		// BRCD-5421 - an upfront entry that starts within the next (upfront paid) cycle is charged
+		// in advance by the current one (except in the full fraction mode, which emulates a run
+		// that does not know the changes in advance)
+		$fullFraction = Billrun_Factory::config()->getConfigValue('billrun.upfront.full_fraction', false);
+		$horizon = empty($entryConfig['upfront']) || $fullFraction ? $cycle->end() : Billrun_Plans_Charge_Upfront::getUpfrontCycle($cycle)->end();
 
 		return !( empty($entryConfig['upfront']) && $entryConfig['start'] >= $cycle->end() ) && ( // dont include falto in the future that are not upfront
 				// does entry is a regular cycle entry AND  falls   within the current  cycle?
 				( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&
-																	( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() ) )
+																	( empty($entryConfig['start']) || $entryConfig['start'] < $horizon ) )
 				|| //  is the  entry a  custom cycle and is aligned  with  current  cycle AND the flat dates is overlaps the curent cycle
 				 (!empty($entryConfig['recurrence']['frequency']) && Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
 					&& ( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&

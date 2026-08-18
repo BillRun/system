@@ -106,6 +106,7 @@ export default {
       { id: 'plan', inputConfig: { inputType: 'select', callback: 'getPlansOptions' } },
       { id: 'services', inputConfig: { inputType: 'select', callback: 'getServicesOptions' } },
       { id: 'plan_activation', type:'date' },
+      { id: 'activation_date', type: 'date' },
       { id: 'deactivation_date', type:'date' },
       { id: 'play', inputConfig: {
         inputType: 'select',

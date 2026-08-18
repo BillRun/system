@@ -47,7 +47,7 @@ RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN mkdir -p /data /run/nginx /var/cache/nginx \
+RUN mkdir -p /data /run/nginx /var/cache/nginx /billrun/cache \
     && chown -R www-data:www-data \
         /data /billrun /run/nginx /var/cache/nginx \
         /etc/nginx/sites-available /etc/nginx/sites-enabled
