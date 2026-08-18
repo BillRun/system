@@ -472,6 +472,8 @@ class DbinitModel {
 					['fields' => ['billrun_key' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['invoice_date' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['urt' => 1], 'params' => ['unique' => false, 'background' => true]],
+					['fields' => ['left' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
+					['fields' => ['left_to_pay' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
 				],
 			],
 			[

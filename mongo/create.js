@@ -174,6 +174,8 @@ db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
 db.bills.createIndex({'urt': 1 }, { unique: false, background: true});
+db.bills.createIndex({'left': 1 }, { unique: false, sparse: true, background: true });
+db.bills.createIndex({'left_to_pay': 1 }, { unique: false, sparse: true, background: true });
 
 //Discounts Collection
 db.createCollection('discounts');
