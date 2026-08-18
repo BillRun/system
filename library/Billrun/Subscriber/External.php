@@ -29,7 +29,7 @@ class Billrun_Subscriber_External extends Billrun_Subscriber {
 
 		$this->setCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_enabled', false));
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_ttl', 300));
-		$this->setCachePrefix(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_prefix', 'ext_sub_'));
+		$this->setCachePrefix(Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_cache_prefix', $this->cachePrefix));
 	}
 	
 	public function delete() {
