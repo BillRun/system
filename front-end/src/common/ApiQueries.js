@@ -224,17 +224,6 @@ export const getInputProcessorActionQuery = (fileType, action) => ({
   ],
 });
 
-export const getExportGeneratorActionQuery = (name, action) => ({
-  api: 'settings',
-  params: [
-    { category: 'export_generators' },
-    { action },
-    { data: JSON.stringify({ name }) },
-  ],
-});
-
-export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
-
 export const getCreditChargeQuery = params => ({
   api: 'credit',
   params,
@@ -396,6 +385,7 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'users':
     case 'suggestions':
     case 'bills':
+    case 'export_generators':
     case 'eventsettings':
       action = 'get';
       break;

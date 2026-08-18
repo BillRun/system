@@ -17,9 +17,6 @@ import {
 const getTaxation = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['taxation']);
 
-const getExportGenerators = (state, props) => // eslint-disable-line no-unused-vars
-  state.settings.get('export_generators');
-
 const getPluginActions = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['plugin_actions']);
 
@@ -265,8 +262,6 @@ export const taxMappingSelector = createSelector(
   getTaxation,
   (tax = Immutable.Map()) => tax.get('mapping'),
 );
-
-export const exportGeneratorsSelector = (state, props) => getExportGenerators(state, props) || Immutable.List();
 
 export const importersSelector = createSelector(
   getPluginActions,

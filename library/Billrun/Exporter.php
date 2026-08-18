@@ -755,12 +755,25 @@ class Billrun_Exporter extends Billrun_Generator_File {
         $this->fileName = $file_name;
     }
 
-    public function setSenderConnectionDetails($connection) {
+    public function setSenderConnectionDetails($connection)
+    {
         $this->config['senders']['connections'] = [$connection];
         $updated_config = $this->config;
         unset($updated_config['type']);
-        $model = new ConfigModel();
-        $model->updateConfig("export_generators", $updated_config);
+
+        $generatorId = (string) $this->config['_id'];
+
+        $result = Billrun_Factory::db()->export_generatorsCollection()->update(
+            ['_id' => new MongoId($generatorId)],
+            [
+                '$set' => [
+                    'senders.connections' => [$connection]
+                ],
+                '$unset' => [
+                    'type' => ""
+                ]
+            ]
+        );
     }
 
     public function setLocalPath($path) {
