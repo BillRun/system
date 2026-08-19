@@ -59,12 +59,16 @@ codecept:
     - docker exec billrun-app php vendor/bin/codecept run acceptance
     - docker exec billrun-app php vendor/bin/codecept run all
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php85-tests.yml down --remove-orphans
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans
   after_script:
     - if [ "$CI_JOB_STATUS" = "success" ]; then exit 0; fi
     - cd $CI_PROJECT_DIR/docker/billrun-docker
-    - docker-compose -f docker-compose-php85-tests.yml ps
-    - docker logs billrun-app
+    - docker-compose -f docker-compose-php85-ci.yml ps
+    # always dump app logs on failure; health check alone misses a crash-looping container
+    - docker inspect --format 'billrun-app health={{.State.Health.Status}} restarts={{.RestartCount}}' billrun-app 2>/dev/null || true
+    - docker logs --tail 300 billrun-app 2>&1 || true
+    - docker-compose -f docker-compose-php85-ci.yml down --remove-orphans || true
+
   artifacts:
     when: on_failure
     paths:
