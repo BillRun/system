@@ -1679,6 +1679,13 @@ class Billrun_DiscountManager {
 			Billrun_Factory::dispatcher()->trigger('afterCalculateToByCycles', array($discount, $startTime, $cycles, $discountStartProrated, $discountEndProrated, $this->cycle, $from, $to, $discountEligibilityFrom, $discountEligibilityTo, &$toByCycles));
 			$to = min($to, $toByCycles, $cycle->end());
 		}
+		if ($to <= $from) {
+			// the discount window does not overlap the line period at all - e.g. a mid-cycle plan
+			// change and back leaves several advance segments of the same plan, and each
+			// per-revision discount overlaps only its own segment. PHP date diffs are unsigned,
+			// so without this guard the inverted interval yields a bogus positive amount
+			return ['amount' => 0, 'discountStart' => $discountStart, 'discountEnd' => $discountEnd];
+		}
 		if(!$isSequential){
 			if(isset($cycles) && $to <= $cycle->start()){
 				$amount = 0;
@@ -1773,9 +1780,23 @@ class Billrun_DiscountManager {
 					}
 					$refundRows = $this->getUpfrontCharger($entity)->getDiscountRefund($expectedRows, Billrun_Util::getIn($olds, [$key, $sid], []));
 					foreach ($refundRows as $refundRow) {
+						// the rows work in the reconciliation space - old line chargebacks are
+						// copies of the previous run lines and the expected rows ride on the
+						// expected plan lines, both carrying raw timestamp period edges. normalize
+						// to the regular CDR shape - date typed edges
+						foreach (['start', 'end'] as $edge) {
+							if (isset($refundRow[$edge]) && !($refundRow[$edge] instanceof Mongodloid_Date)) {
+								$refundRow[$edge] = new Mongodloid_Date(Billrun_Utils_Time::getTime($refundRow[$edge]));
+							}
+						}
 						$addToCdr = [
 							'is_upfront' => false,
 							'charge_op' => 'refund',
+							// the CDR is a correction made by the current cycle run - it must not
+							// inherit the previous run billrun key from an old line chargeback copy
+							// (generateCdr takes the billrun of the line it anchors on; addToCdr is
+							// merged last and overrides it)
+							'billrun' => $this->cycle->key(),
 						];
 						// generateCdr negates the given amount for discounts and keeps it for
 						// charges - hand it the row line price accordingly
@@ -1829,6 +1850,14 @@ class Billrun_DiscountManager {
 					}
 					if (empty($expectedPlanLine['end'])) {
 						unset($expectedPlanLine['end']);
+					}
+					// the charge rows carry raw timestamps in some date fields - a billed line
+					// carries date types, and these lines anchor the reconciliation CDRs, which
+					// inherit the fields (e.g. as foreign fields)
+					foreach (['activation_date', 'deactivation_date', 'start_date', 'end_date'] as $dateField) {
+						if (isset($expectedPlanLine[$dateField]) && is_numeric($expectedPlanLine[$dateField])) {
+							$expectedPlanLine[$dateField] = new Mongodloid_Date($expectedPlanLine[$dateField]);
+						}
 					}
 					$expectedPlansLines[] = $expectedPlanLine;
 				}

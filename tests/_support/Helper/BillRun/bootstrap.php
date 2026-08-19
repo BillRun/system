@@ -1,6 +1,6 @@
 <?php
 ini_set('yaf.use_spl_autoload', 1); // to not interrupt Codeception
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(__DIR__ . '/../../../..'));
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(dirname(__DIR__, 4)));
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 define('MOCKUP_URL', 'http://mockup:8081');
 define('BILLRUN_URL', 'http://web');
@@ -12,11 +12,12 @@ if (\Billrun_Factory::config()->isProd()) {
     exit(1);
 }
 // Register Models_* classes from the Billapi module without clobbering Yaf's main library path.
+Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 spl_autoload_register(function ($class) {
     if (strpos($class, 'Models_') === 0) {
-        $file = APPLICATION_PATH . '/application/modules/Billapi/Models/' . substr($class, 7) . '.php';
+        $file = APPLICATION_PATH . '/application/modules/Billapi/' . str_replace('_', '/', $class) . '.php';
         if (file_exists($file)) {
-            require $file;
+            require_once $file;
         }
     }
 });
