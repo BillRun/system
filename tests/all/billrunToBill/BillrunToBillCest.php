@@ -8,8 +8,6 @@
  */
 class BillrunToBillCest
 {
-    const CRM_GAD_REQUEST_LOG = 'Sending request to http://mockup:8081/crm/gad';
-
     protected $stamp = '202512';
     protected $planName = 'PLAN_5445';
 
@@ -125,7 +123,7 @@ class BillrunToBillCest
         }
 
         // BRCD-5445: all the accounts are loaded in one batched CRM gad request
-        $I->seeCountInLogFile(self::CRM_GAD_REQUEST_LOG, 1);
+        $I->seeCountInLogFile($I->getExternalRequestLog('account'), 1);
     }
 
     /**
@@ -253,6 +251,6 @@ class BillrunToBillCest
         }
         $I->seeCountInLogFile('Going to create job confirm account', 4);
         $I->seeCountInLogFile('Loaded external data from cache', 4);
-        $I->seeCountInLogFile(self::CRM_GAD_REQUEST_LOG, 2);
+        $I->seeCountInLogFile($I->getExternalRequestLog('account'), 2);
     }
 }
