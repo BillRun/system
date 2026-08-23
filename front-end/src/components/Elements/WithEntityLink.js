@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import Immutable from 'immutable';
 import { getItemId, getConfig } from '@/common/Util';
 
@@ -19,22 +19,16 @@ const WithEntityLink = (props) => {
       return (<Link to={revisionUrl}>{props.children}</Link>);
     }
     case 'edit': {
-      const revisionUrl = `${itemsType}/${itemType}/${getItemId(item, '')}`;
+      const revisionUrl = `/${itemsType}/${itemType}/${getItemId(item, '')}`;
       return (<Link to={revisionUrl}>{props.children}</Link>);
     }
     case 'clone': {
-      const revisionUrl = `${itemsType}/${itemType}/${getItemId(item, '')}`;
-      return (<Link to={revisionUrl} query={{ action: 'clone' }}>{props.children}</Link>);
+      const revisionUrl = `/${itemsType}/${itemType}/${getItemId(item, '')}`;
+      // react-router v6 doesn't support a `query` prop; encode it in the URL.
+      return (<Link to={`${revisionUrl}?action=clone`}>{props.children}</Link>);
     }
     default: return props.children;
   }
-};
-
-WithEntityLink.defaultProps = {
-  children: null,
-  item: Immutable.Map(),
-  itemName: '',
-  type: 'view', // 'list', 'edit', 'clone'
 };
 
 WithEntityLink.propTypes = {

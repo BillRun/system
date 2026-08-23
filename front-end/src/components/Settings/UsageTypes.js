@@ -27,10 +27,7 @@ class UsageTypes extends Component {
     index: -1,
   }
 
-  componentWillMount() {
-    this.props.dispatch(getSettings(['usage_types', 'property_types']));
-  }
-
+  
   getItemIndex = (item) => {
     const { usageTypesData } = this.props;
     return usageTypesData.indexOf(item);
@@ -58,8 +55,8 @@ class UsageTypes extends Component {
       createNew: false,
     });
     this.props.dispatch(updateSetting('usage_types', index, currentItem));
-    this.props.dispatch(saveSettings('usage_types'));
-    this.props.dispatch(getSettings('usage_types'));
+    this.props.dispatch(saveSettings('usage_types'))
+      .then(() => this.props.dispatch(getSettings('usage_types')));
   }
 
   onUpdateItem = (fieldNames, fieldValues) => {
@@ -102,6 +99,11 @@ class UsageTypes extends Component {
   getListActions = () => [
     { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickEdit },
   ]
+
+  
+  componentDidMount() {
+    this.props.dispatch(getSettings(['usage_types', 'property_types']));
+  }
 
   render() {
     const { propertyTypes } = this.props;

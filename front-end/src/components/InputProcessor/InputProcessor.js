@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import flattenDeep from 'lodash.flattendeep';
 import Papa from 'papaparse';
@@ -181,22 +181,22 @@ class InputProcessor extends Component {
     this.props.dispatch(setPageTitle(pageTitle));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { settings, action } = this.props;
-    const name = settings.get('file_type', '');
-    const newName = nextProps.settings.get('file_type', '');
-    if (action !== 'new' && newName !== name) {
+  
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { settings: prevSettings, action: prevAction } = prevProps;
+    const name = prevSettings.get('file_type', '');
+    const newName = this.props.settings.get('file_type', '');
+    if (prevAction !== 'new' && newName !== name) {
       this.props.dispatch(setPageTitle(`Edit Input Processor - ${newName}`));
     }
-  }
-
-  componentWillUpdate(nextProps, nextState) {
-    const { settings, action, template } = this.props;
+  
+    // migrated from UNSAFE_componentWillUpdate
+    const { action, template } = this.props;
     const { stepIndex } = this.state;
-    const name = settings.get('file_type', '');
-    const newName = nextProps.settings.get('file_type', '');
     // show name only from second step.
-    if (action === 'new' && ((newName !== name && stepIndex >= 1) || (nextState.stepIndex >= 1 && stepIndex === 0))) {
+    if (action === 'new' && ((newName !== name && stepIndex >= 1) || (prevState.stepIndex >= 1 && stepIndex === 0))) {
       const templateName = template ? ` - ${template}` : '';
       const inputProcessorName = newName.length > 0 ? ` - ${newName}` : '';
       this.props.dispatch(setPageTitle(`Create New Input Processor${templateName}${inputProcessorName}`));

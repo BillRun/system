@@ -6,8 +6,7 @@ import { debounce } from 'throttle-debounce';
 import Field from '@/components/Field';
 import { entitySearchByQuery } from '@/actions/entityActions';
 
-
-const RateAsyncSearch = ({ rate, label, editable, onChange, searchPlaceholder, noResultsPlaceholder, dispatch }) => {
+const RateAsyncSearch = ({ rate = '', label = '', editable = true, onChange, searchPlaceholder = "Type a key or a title to search.", noResultsPlaceholder = "No rates were found. Try searching by another key or title.", dispatch }) => {
   const findRates = (inputValue, callback) => {
     // if (inputValue === '') {
     //   return callback([]);
@@ -65,15 +64,6 @@ const RateAsyncSearch = ({ rate, label, editable, onChange, searchPlaceholder, n
     />
   );
 }
-
-RateAsyncSearch.defaultProps = {
-  rate: '',
-  label: '',
-  editable: true,
-  accountsOptions: [],
-  searchPlaceholder: "Type a key or a title to search.",
-  noResultsPlaceholder: "No rates were found. Try searching by another key or title.",
-};
 
 RateAsyncSearch.propTypes = {
   editable: PropTypes.bool,

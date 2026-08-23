@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Col, Form, FormGroup, ControlLabel, Panel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
     chargeRunOnTitleParser,
@@ -16,8 +17,7 @@ import {
     getFieldName,
 } from '@/common/Util';
 
-
-const ChargingDetails = ({ item, dateTimeFormat }) => {
+const ChargingDetails = ({ item = Immutable.Map(), dateTimeFormat }) => {
 
     const schedule = moment(item.get('schedule', null));
     const scheduleDateTime = moment.isMoment(schedule) && schedule.isValid() ? schedule.format(dateTimeFormat) : 'No';
@@ -41,10 +41,10 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
     const minInvoiceDateTime = moment.isMoment(minInvoiceDate) && minInvoiceDate.isValid() ? minInvoiceDate.format(dateTimeFormat) : '-';
     
     return (
-        <Form horizontal>
+        <Form className="form-horizontal">
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('md5', 'charging_process', 'ID')}:
                 </Col>
                 <Col sm={6}>
@@ -53,7 +53,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('schedule', 'charging_process', 'Schedule')}:
                 </Col>
                 <Col sm={6}>
@@ -62,7 +62,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('handle', 'charging_process', 'Handle')}:
                 </Col>
                 <Col sm={6}>
@@ -71,7 +71,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('try', 'charging_process', 'try')}:
                 </Col>
                 <Col sm={6}>
@@ -80,7 +80,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('is_done', 'charging_process', 'Is Done')}:
                 </Col>
                 <Col sm={6}>
@@ -89,7 +89,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('cancelled', 'charging_process', 'Cancelled')}:
                 </Col>
                 <Col sm={6}>
@@ -98,7 +98,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('created', 'charging_process', 'Created Time')}:
                 </Col>
                 <Col sm={6}>
@@ -107,7 +107,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('start_time', 'charging_process', 'Start Time')}:
                 </Col>
                 <Col sm={6}>
@@ -116,7 +116,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('complete_time', 'charging_process', 'Complete Time')}:
                 </Col>
                 <Col sm={6}>
@@ -125,7 +125,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('timeout', 'charging_process', 'Timeout')}:
                 </Col>
                 <Col sm={6}>
@@ -134,7 +134,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
             </FormGroup>
 
             <FormGroup>
-                <Col componentClass={ControlLabel} sm={5}>
+                <Col as={ControlLabel} sm={5}>
                     {getFieldName('cancel_time', 'charging_process', 'Cancel Time')}:
                 </Col>
                 <Col sm={6}>
@@ -144,7 +144,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
             <Panel header="Progress">
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('total', 'charging_process', 'Total')}:
                     </Col>
                     <Col sm={6}>
@@ -153,7 +153,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('done', 'charging_process', 'Done')}:
                     </Col>
                     <Col sm={6}>
@@ -164,7 +164,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
 
             <Panel header="Config">
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('mode', 'charging_process', 'Charge Type')}:
                     </Col>
                     <Col sm={6}>
@@ -173,7 +173,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('billrun_key', 'charging_process', 'Cycle')}:
                     </Col>
                     <Col sm={6}>
@@ -182,7 +182,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('pay_mode', 'charging_process', 'Pay Mode')}:
                     </Col>
                     <Col sm={6}>
@@ -191,7 +191,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {getFieldName('min_invoice_date', 'charging_process', 'Min Invoice Date')}:
                     </Col>
                     <Col sm={6}>
@@ -200,7 +200,7 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
                 </FormGroup>
 
                 <FormGroup>
-                    <Col componentClass={ControlLabel} sm={5}>
+                    <Col as={ControlLabel} sm={5}>
                         {chargeRunOnTitleParser(item)}:
                     </Col>
                     <Col sm={6}>
@@ -211,10 +211,6 @@ const ChargingDetails = ({ item, dateTimeFormat }) => {
         </Form>
     );
 }
-
-ChargingDetails.defaultProps = {
-    item: Immutable.Map(),
-};
 
 ChargingDetails.propTypes = {
     item: PropTypes.instanceOf(Immutable.Map),

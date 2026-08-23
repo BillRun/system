@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Row, Col, FormGroup, HelpBlock } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import Sort from './Sort';
 import { CreateButton, SortableFieldsContainer } from '@/components/Elements';
@@ -90,9 +91,9 @@ class Sorts extends Component {
         <Col sm={12}>
           { !sortRows.isEmpty() ? (
             <FormGroup className="form-inner-edit-row">
-              <Col sm={1} xsHidden>&nbsp;</Col>
-              <Col sm={5} xsHidden><label htmlFor="field_field">Field</label></Col>
-              <Col sm={5} xsHidden><label htmlFor="order_field">Order</label></Col>
+              <Col sm={1} className="d-none d-sm-block">&nbsp;</Col>
+              <Col sm={5} className="d-none d-sm-block"><label htmlFor="field_field">Field</label></Col>
+              <Col sm={5} className="d-none d-sm-block"><label htmlFor="order_field">Order</label></Col>
             </FormGroup>
           ) : (
             <HelpBlock>{ReportDescription.block_sort}</HelpBlock>

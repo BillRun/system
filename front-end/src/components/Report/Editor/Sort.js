@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Button, FormGroup, Col } from 'react-bootstrap';
-import { SortableElement } from 'react-sortable-hoc';
+import { Button, Col } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { DragHandle } from '@/components/Elements';
 import { formatSelectOptions } from '@/common/Util';
@@ -83,9 +83,6 @@ class Sort extends Component {
           <DragHandle />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="field_field">Field</label>
-        </Col>
         <Col sm={5}>
           <Field
             fieldType="select"
@@ -97,9 +94,6 @@ class Sort extends Component {
           />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="order_field">Order</label>
-        </Col>
         <Col sm={5}>
           <Field
             fieldType="select"
@@ -112,7 +106,7 @@ class Sort extends Component {
         </Col>
 
         <Col sm={1} className="actions">
-          <Button onClick={this.onRemove} bsSize="small" className="pull-left" disabled={disabled}>
+          <Button onClick={this.onRemove} size="sm" variant="outline-secondary" className="pull-left" disabled={disabled}>
             <i className="fa fa-trash-o danger-red" />
           </Button>
         </Col>
@@ -122,4 +116,4 @@ class Sort extends Component {
 
 }
 
-export default SortableElement(Sort);
+export default Sort;

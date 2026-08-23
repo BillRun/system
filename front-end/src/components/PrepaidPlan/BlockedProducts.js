@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { apiBillRun } from '../../common/Api';
 import { getProductsKeysQuery } from '../../common/ApiQueries';

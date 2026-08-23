@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import pluralize from 'pluralize';
 import { Actions } from '@/components/Elements';
-import { Panel, PanelGroup, Col, FormGroup } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { FormGroup, Panel, PanelGroup } from '@/common/BootstrapCompat';
 import MapRow from './Elements/MapRow';
 
 
@@ -83,7 +84,7 @@ class Mapping extends Component {
     const params = data.getIn(['filename_params'], Immutable.List());
     const rowsCount = pluralize('field', Number(rows.size), true);
     return (
-      <Panel className="collapsible" key={`type_block_${idx}`} collapsible header={`Record Type - ${type} | ${rowsCount}`}>
+      <Panel className="collapsible mt10" key={`type_block_${idx}`} collapsible header={`Record Type - ${type} | ${rowsCount}`} defaultExpanded={false}>
         { !rows.isEmpty() && this.renderRowsHeader()}
         {rows.map((row, rowIdx) => (
           <MapRow
@@ -152,11 +153,11 @@ class Mapping extends Component {
     return (
       <Col sm={12} className="form-inner-edit-rows">
         <FormGroup className="form-inner-edit-row">
-          <Col sm={2} xsHidden><label htmlFor="field">Field</label></Col>
-          <Col sm={2} xsHidden><label htmlFor="type">Type</label></Col>
-          <Col sm={2} xsHidden><label htmlFor="operator">Operator</label></Col>
-          <Col sm={3} xsHidden><label htmlFor="value">Value</label></Col>
-          <Col sm={2} xsHidden><label htmlFor="value">Format</label></Col>
+          <Col sm={2} className="d-none d-sm-block"><label htmlFor="field">Field</label></Col>
+          <Col sm={2} className="d-none d-sm-block"><label htmlFor="type">Type</label></Col>
+          <Col sm={2} className="d-none d-sm-block"><label htmlFor="operator">Operator</label></Col>
+          <Col sm={3} className="d-none d-sm-block"><label htmlFor="value">Value</label></Col>
+          <Col sm={2} className="d-none d-sm-block"><label htmlFor="value">Format</label></Col>
         </FormGroup>
       </Col>
     );
@@ -171,13 +172,13 @@ class Mapping extends Component {
 
     return (
       <PanelGroup className="mb0">
-        <Panel collapsible className="collapsible" header={`Header | ${headRowsCount}`}>
+        <Panel collapsible className="collapsible mb10" header={`Header | ${headRowsCount}`} defaultExpanded={false}>
           {this.renderRows('header_structure', 'header')}
         </Panel>
-        <Panel collapsible className="collapsible" defaultExpanded={true} header="Body">
+        <Panel collapsible className="collapsible mb10" defaultExpanded={true} header="Body">
           {this.renderBody()}
         </Panel>
-        <Panel collapsible className="collapsible" header={`Footer | ${tailRowsCount}`}>
+        <Panel collapsible className="collapsible" header={`Footer | ${tailRowsCount}`} defaultExpanded={false}>
           {this.renderRows('trailer_structure', 'footer')}
         </Panel>
       </PanelGroup>

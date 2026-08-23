@@ -1,0 +1,27 @@
+server {
+    listen 8074;
+    server_name localhost;
+    root /billrun/public;
+    index index.php index.html;
+
+    # Support clean URLs / routing frameworks
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Pass PHP scripts to PHP-FPM
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+        fastcgi_param APPLICATION_ENV container;
+        fastcgi_param APPLICATION_MULTITENANT ${APPLICATION_MULTITENANT};
+    }
+
+    # Deny access to .htaccess files or hidden files
+    location ~ /\. {
+        deny all;
+    }
+}

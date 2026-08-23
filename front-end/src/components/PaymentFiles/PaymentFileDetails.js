@@ -9,7 +9,7 @@ const PaymentFileDetails = ({ item }) => {
     return 'No additional data required to generate file';
   }
   return (
-    <Form horizontal>
+    <Form className="form-horizontal">
       <EntityFields
         entityName="payments"
         entity={item.get('values', Immutable.Map())}

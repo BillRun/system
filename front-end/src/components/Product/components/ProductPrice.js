@@ -2,11 +2,14 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { Button, FormGroup, Col, Row, ControlLabel, HelpBlock } from 'react-bootstrap';
+import classNames from 'classnames';
+import { Button, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getConfig } from '@/common/Util'
 
 export default class ProductPrice extends Component {
+  getValidationClass = error => classNames({ 'has-error': error.length > 0 });
 
   static propTypes = {
     index: PropTypes.number.isRequired,
@@ -158,14 +161,14 @@ export default class ProductPrice extends Component {
 
         <Col xs={2} className="text-left actions">
           { index > 0 && isLast && editable && (
-            <Button onClick={this.onRemoveItem} bsSize="small">
+            <Button onClick={this.onRemoveItem} size="sm" variant="outline-secondary">
               <i className="fa fa-trash-o danger-red" /> &nbsp;Remove
             </Button>
           )}
         </Col>
 
         { !isLast && (
-          <Col smHidden mdHidden lgHidden xs={12}>
+          <Col xs={12} className="hidden-sm hidden-md hidden-lg">
             <hr style={{ marginTop: 8, marginBottom: 8 }} />
           </Col>
         )}

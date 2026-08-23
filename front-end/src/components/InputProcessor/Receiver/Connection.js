@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Col, Panel, FormGroup, Button } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap';
+import { FormGroup, Panel } from '@/common/BootstrapCompat';
 import { Actions } from '@/components/Elements';
 import Field from '@/components/Field';
 import Help from '@/components/Help';
@@ -150,7 +151,7 @@ class Connection extends Component {
       <div style={{ fontSize: 12, fontWeight: 'bold' }}>
         {keyLabel}
         <div className="pull-right">
-          <Button onClick={this.onCancelKeyAuth} bsSize="small" bsStyle="link" style={{ padding: 0 }} >
+          <Button onClick={this.onCancelKeyAuth} size="sm" variant="link" style={{ padding: 0 }} >
             <i className="fa fa-trash-o danger-red" />
           </Button>
         </div>
@@ -259,9 +260,9 @@ class Connection extends Component {
           </div>
         </div>
         <div className="form-group">
-          <label htmlFor="received_extension" className="col-xs-3 control-label d-flex align-items-center"
-          >Add file extension in remote
-          <Help contents="This will be added as a suffix to the file name in the remote location upon receiving." /> </label>
+          <label htmlFor="received_extension" className="col-xs-3 control-label">
+            Add file extension in remote <Help contents="This will be added as a suffix to the file name in the remote location upon receiving." />
+          </label>
           <div className="col-xs-6">
             <input
               type="text"
@@ -296,9 +297,9 @@ class Connection extends Component {
     const { isReceiverOpen } = this.state;
     const showRemove = index !== 0;
     return ([
-      { type: 'edit', onClick: this.toggleShowDetails, show: !isReceiverOpen },
-      { type: 'collapse', onClick: this.toggleShowDetails, show: isReceiverOpen },
-      { type: 'remove', onClick: this.onRemoveReceiver, enable: showRemove },
+      { type: 'edit', onClick: this.toggleShowDetails, show: !isReceiverOpen, actionStyle: 'link', actionSize: 'xsmall' },
+      { type: 'collapse', onClick: this.toggleShowDetails, show: isReceiverOpen, actionStyle: 'link', actionSize: 'xsmall' },
+      { type: 'remove', onClick: this.onRemoveReceiver, enable: showRemove, actionStyle: 'link', actionSize: 'xsmall' },
     ]);
   };
 

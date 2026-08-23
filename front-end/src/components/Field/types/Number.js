@@ -26,12 +26,14 @@ const Number = (props) => {
         title={tooltip}
       />
     );
-    if (suffix !== null || preffix !== null) {
+    // `suffix`/`preffix` may be `undefined` when not provided; treat both nullish
+    // values as "absent" to avoid rendering empty InputGroup.Text placeholders.
+    if (suffix != null || preffix != null) {
       return (
         <InputGroup>
-          {preffix !== null && (<InputGroup.Addon>{preffix}</InputGroup.Addon>)}
+          {preffix != null && (<InputGroup.Text>{preffix}</InputGroup.Text>)}
           {input}
-          {suffix !== null && (<InputGroup.Addon>{suffix}</InputGroup.Addon>)}
+          {suffix != null && (<InputGroup.Text>{suffix}</InputGroup.Text>)}
         </InputGroup>
       );
     }
@@ -41,26 +43,14 @@ const Number = (props) => {
   return (
     <div className="non-editable-field">
       <span>
-        {(preffix !== null) && preffix}
+        {(preffix != null) && preffix}
         {value}
-        {(suffix !== null) && suffix}
+        {(suffix != null) && suffix}
       </span>
     </div>
   );
 };
 
-
-Number.defaultProps = {
-  value: '',
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  tooltip: '',
-  suffix: null,
-  preffix: null,
-  onChange: () => {},
-};
 
 Number.propTypes = {
   value: PropTypes.oneOfType([

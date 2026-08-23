@@ -69,10 +69,6 @@ ServicesList.propTypes = {
   isPlaysEnabled: PropTypes.bool,
 };
 
-ServicesList.defaultProps = {
-  isPlaysEnabled: false,
-};
-
 const mapStateToProps = (state, props) => ({
   isPlaysEnabled: isPlaysEnabledSelector(state, props),
 });

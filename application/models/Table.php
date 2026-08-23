@@ -128,7 +128,7 @@ class TableModel {
 	 */
 	public function count($force = false) {
 		if ($force || is_null($this->_count)) {
-			$this->_count = $this->collection->query()->count();
+			$this->_count = $this->collection->estimatedDocumentCount();
 		}
 		return $this->_count;
 	}

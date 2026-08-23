@@ -7,9 +7,11 @@ modules:
         - \Helper\Api
         - \Helper\BillRunAPI
         - \Helper\RealTimeApiHelper
+        - \Helper\Teldas
         - \Helper\TestHelper
         - \Helper\LogChecker
         - \Helper\Aggregate
+        - \Helper\BillRun\Mockups\Crm
         - REST:
             depends: PhpBrowser
             part: Json

@@ -76,7 +76,7 @@ class Billrun_Cycle_Paging {
 		$query = array_merge( $this->identifingQuery, array('page_size' => $this->size, 'host'=> $this->host,'end_time' => array('$exists' => false)) );
 		$processCount = $this->pagerCollection->query($query)->count();
 		if ($processCount >= $this->maxProcesses) {
-			Billrun_Factory::log("Host ". $this->host. "is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
+			Billrun_Factory::log("Host ". $this->host. " is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
 			return false;
 		}
 		return true;

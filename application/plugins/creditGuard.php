@@ -263,4 +263,16 @@ class creditGuardPlugin extends Billrun_Plugin_BillrunPluginBase {
 			]
 		];
 	}
+
+    public function afterUpdatePayments($row, $payment, $processor, $billData, $general_processor) {
+        $current_fields = $general_processor->getBillSavedFieldsData();
+        if (isset($current_fields['voucher_number'])) {
+            $voucher = $current_fields['voucher_number'];
+            $current_vendor_response = Billrun_Util::getIn($payment->getRawData(), 'vendor_response', []);
+            $current_vendor_response['payment_identifier'] = substr($voucher, 2);
+            $current_vendor_response['file_number'] = substr($voucher, 0, 2);
+            $payment->setExtraFields(['vendor_response' => $current_vendor_response]);
+        }
+        return true;
+    }
 }

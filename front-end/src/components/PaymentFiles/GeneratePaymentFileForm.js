@@ -7,13 +7,13 @@ import { EntityFields } from '@/components/Entity';
 import { connect } from "react-redux";
 import { validateFieldByType } from "@/actions/entityActions";
 
-const GeneratePaymentFileForm = ({ item, errors, onChange }) => {
+const GeneratePaymentFileForm = ({ item = Map(), errors, onChange }) => {
   const fieldsConfig = item.get('fields', Immutable.List());
   if (fieldsConfig.isEmpty()) {
     return 'No additional data required to generate file';
   }
   return (
-    <Form horizontal>
+    <Form className="form-horizontal">
       <EntityFields
         entityName="payments"
         entity={item.get('values', Immutable.Map())}
@@ -29,10 +29,6 @@ GeneratePaymentFileForm.propTypes = {
   item: PropTypes.instanceOf(Map),
   fieldsConfig: PropTypes.instanceOf(List),
   onChange: PropTypes.func.isRequired,
-};
-
-GeneratePaymentFileForm.defaultProps = {
-  item: Map(),
 };
 
 const mapStateToProps = null;

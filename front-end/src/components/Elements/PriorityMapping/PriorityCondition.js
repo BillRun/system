@@ -2,17 +2,17 @@ import React, { memo, useCallback, useMemo, useState } from 'react'
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable';
 import { titleCase } from 'change-case';
-import { FormGroup, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Actions } from '@/components/Elements';
 import { getConfig, parseConfigSelectOptions } from '@/common/Util';
 import ComputedRate from './ComputedRate';
 
-
 const PriorityCondition = ({
-  condition, index, priorityIndex, type, onUpdate, onRemove, allowRemove,
-  lineKeyOptions, paramsKeyOptions, paramsTypeOptions,
-  conditionFieldsOptions, valueWhenOptions,
+  condition = Map(), index = 0, priorityIndex = 0, type, onUpdate, onRemove, allowRemove = true,
+  lineKeyOptions = [], paramsKeyOptions = [], paramsTypeOptions = getConfig(['rates', 'paramsConditions'], List()),
+  conditionFieldsOptions = [], valueWhenOptions = [],
 }) => {
   const [computedLineKey, setComputedLineKey] = useState(null);
 
@@ -99,7 +99,7 @@ const PriorityCondition = ({
 
   return (
     <FormGroup className="form-inner-edit-row">
-      <Col smHidden mdHidden lgHidden>
+      <Col className="visible-xs-block">
         <label>CDR Field</label>
       </Col>
       <Col sm={4}>
@@ -112,7 +112,7 @@ const PriorityCondition = ({
         <Actions actions={computedLineActions} data={index} />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
+      <Col className="visible-xs-block">
         <label>Operator</label>
       </Col>
       <Col sm={3}>
@@ -125,7 +125,7 @@ const PriorityCondition = ({
         />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
+      <Col className="visible-xs-block">
         <label>{titleCase(type)} Parameter</label>
       </Col>
       <Col sm={4}>
@@ -140,7 +140,7 @@ const PriorityCondition = ({
       <Col sm={1}>
         <Actions actions={conditionActions} data={index}/>
       </Col>
-      <Col sm={12} smHidden mdHidden lgHidden>
+      <Col sm={12} className="visible-xs-block">
         <hr className="mt10 mb10"/>
       </Col>
       {computedLineKey && (
@@ -155,18 +155,6 @@ const PriorityCondition = ({
     </FormGroup>
   )
 }
-
-PriorityCondition.defaultProps = {
-  condition: Map(),
-  index: 0,
-  allowRemove: true,
-  priorityIndex: 0,
-  lineKeyOptions: [],
-  paramsKeyOptions: [],
-  conditionFieldsOptions: [],
-  valueWhenOptions: [],
-  paramsTypeOptions: getConfig(['rates', 'paramsConditions'], List())
-};
 
 PriorityCondition.propTypes = {
   condition: PropTypes.instanceOf(Map),

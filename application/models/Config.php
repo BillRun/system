@@ -96,7 +96,14 @@ class ConfigModel {
 				$data[$option] = 0;
 			}
 		}
-		return $this->collection->insert($updatedData);
+		$result = $this->collection->insert($updatedData);
+		if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+			$cache = Billrun_Factory::cache();
+			if ($cache) {
+				$cache->remove('db_config', 'config');
+			}
+		}
+		return $result;
 	}
 
 	public function getFromConfig($category, $data) {
@@ -376,6 +383,17 @@ class ConfigModel {
 			}
 		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
 			throw new Exception("Can not save collection configuration");
+		} else if ($category === 'smser') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for smser.");
+				return 0;
+			}
+
+			Billrun_Utils_Mongo::setValueByMongoIndex(
+				$data,
+				$updatedData,
+				'smser'
+			);
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -386,6 +404,12 @@ class ConfigModel {
 			$ret = $this->collection->insert($updatedData);
 			$saveResult = !empty($ret['ok']);
 			if ($saveResult) {
+				if (Billrun_Config::getInstance()->isConfigCacheEnabled()) {
+					$cache = Billrun_Factory::cache();
+					if ($cache) {
+						$cache->remove('db_config', 'config');
+					}
+				}
 				// Reload timezone.
 				Billrun_Config::getInstance()->refresh();
 				if ($category === 'shared_secret') {
@@ -1175,9 +1199,11 @@ class ConfigModel {
 							if (isset($fileSettings['unify'])) {
 								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
-							
 							if (isset($fileSettings['filters'])) {
 								$updatedFileSettings['filters'] = $fileSettings['filters'];
+							}
+							if (isset($fileSettings['drop_lines'])) {
+								$updatedFileSettings['drop_lines'] = $fileSettings['drop_lines'];
 							}
 						}
 					}

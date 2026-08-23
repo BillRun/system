@@ -2,7 +2,6 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Map, List } from 'immutable';
-import { Form, } from 'react-bootstrap';
 import EntityDefaultTax from './EntityDefaultTax';
 import { getList, clearList } from '@/actions/listActions';
 import { getEntitesQuery } from '@/common/ApiQueries';
@@ -35,7 +34,9 @@ class EntityTaxDetails extends PureComponent {
     taxation: 'global',
   });
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     this.props.loadRates();
     this.initDefaultValues();
   }
@@ -61,7 +62,7 @@ class EntityTaxDetails extends PureComponent {
     const { tax, mode, itemName, typeOptions, taxRateOptions } = this.props;
     const disabled = (mode === 'view');
     return (
-      <Form horizontal>
+      <div>
         {tax.map((taxation, idx) => (
           <EntityDefaultTax
             key={idx}
@@ -73,7 +74,7 @@ class EntityTaxDetails extends PureComponent {
             onUpdate={this.onUpdateTax}
           />
         ))}
-      </Form>
+      </div>
     );
   }
 }

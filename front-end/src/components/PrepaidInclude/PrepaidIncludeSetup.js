@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import PrepaidInclude from './PrepaidInclude';
 import LimitedDestinations from './LimitedDestinations';
@@ -69,11 +70,10 @@ class PrepaidIncludeSetup extends Component {
     activeTab: parseInt(this.props.activeTab),
   }
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+    
     const { mode } = this.props;
     if (mode === 'create') {
       const pageTitle = buildPageTitle(mode, 'prepaid_include');
@@ -84,9 +84,11 @@ class PrepaidIncludeSetup extends Component {
     this.initDefaultValues();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'prepaid_include', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -98,6 +100,7 @@ class PrepaidIncludeSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clearPrepaidInclude());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -257,7 +260,7 @@ class PrepaidIncludeSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} id="PrepaidInclude" animation={false} onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} id="PrepaidInclude" transition={false} onSelect={this.handleSelectTab}>
 
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>

@@ -69,6 +69,51 @@ $page-wrapper-transition: margin 200ms linear;
     }
   }
 
+  @media (min-width: 768px) {
+    /* BS2/RB0.33 compat for RB2 wrappers in top-right navbar links. */
+    ul.navbar-top-links.navbar-right {
+      margin-right: 0;
+    }
+
+    /* Treat RB2 .nav-item/.dropdown exactly like legacy .navbar-nav > li */
+    ul.navbar-top-links.navbar-right > li,
+    ul.navbar-top-links.navbar-right > .nav-item,
+    ul.navbar-top-links.navbar-right > .dropdown {
+      float: left;
+      display: block;
+    }
+
+    ul.navbar-top-links.navbar-right > li > a,
+    ul.navbar-top-links.navbar-right > .nav-item > a {
+      display: block;
+      padding: 15px;
+      min-height: 50px;
+      text-decoration: none;
+    }
+
+    /* Restore active-state padding overridden by the general > li > a rule above. */
+    ul.navbar-top-links.navbar-right > li.active > a {
+      padding-top: 9px;
+    }
+
+    /* BS2 caret for RB2 dropdown toggle in top-right nav */
+    ul.navbar-top-links.navbar-right > .dropdown > .dropdown-toggle::after {
+      display: inline-block;
+      margin-left: 6px;
+      vertical-align: middle;
+      content: "";
+      border-top: 4px dashed;
+      border-right: 4px solid transparent;
+      border-left: 4px solid transparent;
+    }
+
+    ul.navbar-top-links.navbar-right > li:last-child,
+    ul.navbar-top-links.navbar-right > .nav-item:last-child,
+    ul.navbar-top-links.navbar-right > .dropdown:last-child {
+      margin-right: 0;
+    }
+  }
+
   .sidebar-nav {
 
     > .nav {

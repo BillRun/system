@@ -90,6 +90,7 @@ class billapiSubscriberCest
     }
     public function testCloseSubscriber(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $this->createData($I);
         $I->generateSubscriber(
             [
@@ -105,10 +106,12 @@ class billapiSubscriberCest
         //check the close date
         $a = $I->grabDataFromResponseByJsonPath('$.entity.to.sec');
         $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 day'))));
+        date_default_timezone_set($this->defaultTimezone );
     }
   
     public function testReopenSubscriber(ApiTester $I)
     {
+        date_default_timezone_set('UTC');
         $this->createData($I);
         $I->generateSubscriber(
             [
@@ -126,6 +129,7 @@ class billapiSubscriberCest
         //check the reopen date
         $a = $I->grabDataFromResponseByJsonPath('$.entity.from.sec');
         $I->assertEquals($a[0],strtotime(date('Y-m-d', strtotime('+1 year'))));
+        date_default_timezone_set($this->defaultTimezone );
     }
 
 

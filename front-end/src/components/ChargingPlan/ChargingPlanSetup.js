@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import withRouter from '@/common/withRouter';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import moment from 'moment';
 import getSymbolFromCurrency from 'currency-symbol-map';
@@ -73,13 +74,12 @@ class ChargingPlanSetup extends Component {
     activeTab: parseInt(this.props.activeTab),
   }
 
-  componentWillMount() {
-    this.props.dispatch(getList('pp_includes', getPrepaidIncludesQuery()));
-    this.fetchItem();
-    this.initDefaultValues();
-  }
-
+  
   componentDidMount() {
+    this.props.dispatch(getList('pp_includes', getPrepaidIncludesQuery()));
+        this.fetchItem();
+        this.initDefaultValues();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, 'charging_plan');
@@ -88,14 +88,16 @@ class ChargingPlanSetup extends Component {
   }
 
 
-  componentWillReceiveProps(nextProps) {
-    const { item, mode, itemId, prepaidIncludes } = nextProps;
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, mode, itemId, prepaidIncludes } = this.props;
     const {
       item: oldItem,
       itemId: oldItemId,
       mode: oldMode,
       prepaidIncludes: oldPrepaidIncludes,
-    } = this.props;
+    } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, 'charging_plan', item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -107,6 +109,7 @@ class ChargingPlanSetup extends Component {
 
   componentWillUnmount() {
     this.props.dispatch(clearPlan());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -254,7 +257,7 @@ class ChargingPlanSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} id="ChargingPlan" animation={false} onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} id="ChargingPlan" transition={false} onSelect={this.handleSelectTab}>
 
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>

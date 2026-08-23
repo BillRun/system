@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import classNames from 'classnames';
 
-const MenuItem = ({ route, id, active, icon, title, onSetActive }) => {
+const MenuItem = ({ route = '', id = '', active = false, icon = '', title = '', onSetActive = () => {} }) => {
   const setActive = () => {
     onSetActive(id);
   };
@@ -18,15 +18,6 @@ const MenuItem = ({ route, id, active, icon, title, onSetActive }) => {
       <i className={icon} /><span>{title}</span>
     </Link>
   );
-};
-
-MenuItem.defaultProps = {
-  route: '',
-  id: '',
-  active: false,
-  icon: '',
-  title: '',
-  onSetActive: () => {},
 };
 
 MenuItem.propTypes = {

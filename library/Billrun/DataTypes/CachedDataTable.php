@@ -69,6 +69,12 @@ abstract class Billrun_DataTypes_CachedDataTable {
 		}else {
 			$dictionaryKey = $key;
 		}
+		// The cached values are timezone-derived (onGet resolves the billrun key to a
+		// timestamp via strtotime, which uses the active timezone). Key the cache by
+		// the current timezone so a value computed under one timezone is never reused
+		// under another - otherwise cycle start/end times come out shifted by the
+		// timezone offset when the timezone changes at runtime.
+		$dictionaryKey .= '|' . date_default_timezone_get();
 		if(isset($this->dictionary[$dictionaryKey])) {
 			return $this->dictionary[$dictionaryKey];
 		}

@@ -50,9 +50,19 @@ class Billrun_AuthClient_Oauth2 {
         $accessToken = $response['access_token'] ?? '';
 
         if (empty($accessToken)) {
+            $errorMessage = 'Failed to generate access token for OAuth 2.0';
+            if (is_array($response)) {
+                $messageFields = ['error_description', 'message', 'error', 'desc'];
+                foreach ($messageFields as $field) {
+                    if (isset($response[$field]) && is_string($response[$field]) && trim($response[$field]) !== '') {
+                        $errorMessage = $response[$field];
+                        break;
+                    }
+                }
+            }
             unset($data['client_secret']);
             Billrun_Factory::log("OAuth 2.0 - failed to generate access token. URL: {$url}, Data: " . print_r($data, true), Zend_Log::ERR);
-            throw new Exception("Failed to generate access token for OAuth 2.0");
+            throw new Exception($errorMessage);
         }
         
         if ($useCache && !empty($cache)) {

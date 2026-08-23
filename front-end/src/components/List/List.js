@@ -5,8 +5,7 @@ import moment from 'moment';
 import classNames from 'classnames';
 import isNumber from 'is-number';
 import { titleCase } from 'change-case';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap/lib';
-import { Button } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip, Button } from 'react-bootstrap';
 import { Actions, ZoneDate } from '@/components/Elements';
 import { getConfig } from '@/common/Util';
 
@@ -256,7 +255,7 @@ class List extends Component {
               )}
               { enableRemove && (
                 <td className="edit-tb">
-                  <Button onClick={onClickRemove.bind(this, entity)} bsSize="small" className="pull-left" >
+                  <Button onClick={onClickRemove.bind(this, entity)} size="sm" variant="outline-secondary" className="pull-left" >
                     <i className="fa fa-trash-o danger-red" />&nbsp;Remove
                   </Button>
                 </td>

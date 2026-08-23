@@ -1,14 +1,15 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import { withRouter } from "react-router";
+import withRouter from '@/common/withRouter';
 import { List, Map, fromJS } from "immutable";
 import moment from "moment";
 import uuid from 'uuid';
 import pluralize from "pluralize";
 import { titleCase, pascalCase } from "change-case";
-import { Form, FormGroup, ControlLabel, Col, Panel } from "react-bootstrap";
-import { WithTooltip, CreateButton } from "@/components/Elements";
+import { Form, Col, Button } from "react-bootstrap";
+import { ControlLabel, FormGroup, Panel } from "@/common/BootstrapCompat";
+import { WithTooltip } from "@/components/Elements";
 import EntityList from "@/components/EntityList";
 import Field from "@/components/Field";
 import UploadTransactionsFile from "./UploadPaymentFileForm";
@@ -32,7 +33,7 @@ import {
 } from "@/actions/paymentFilesActions";
 import { gotEntity } from '@/actions/entityActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
-import { getFieldName } from "@/common/Util";
+import { getFieldName, buildPaymentFileSource } from "@/common/Util";
 import { reportBillsFieldsSelector} from '@/selectors/reportSelectors';
 
 class ResponsePaymentFiles extends Component {
@@ -121,6 +122,7 @@ class ResponsePaymentFiles extends Component {
     if (this.reloadTableTimeout) {
       clearTimeout(this.reloadTableTimeout);
     }
+    this.props.dispatch(setPageTitle(''));
   }
 
   // class variable for auto reload timer
@@ -373,8 +375,10 @@ class ResponsePaymentFiles extends Component {
   onUploadTransactionsFileClickOK = (paymentFile) => {
     const { paymentGateway, fileType } = this.props;
     const file = paymentFile.get("file", null);
+    // Same `source` formula as `baseFilter.source` below, so upload and list agree.
+    const source = buildPaymentFileSource(paymentGateway, 'transactions_response');
     return this.props
-      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response'))
+      .dispatch(sendTransactionsReceiveFile(paymentGateway, fileType, file, 'transactions_response', source))
       .then(this.afterSuccessUploadTransactionsFile)
       .catch((error) => Promise.reject());
   };
@@ -401,13 +405,14 @@ class ResponsePaymentFiles extends Component {
         {label}
         <div className='pull-right'>
           <WithTooltip helpText={this.getGeneratePaymentFileTooltipText()}>
-            <CreateButton
+            <Button
               onClick={this.onClickUploadTransactionsFile}
-              buttonStyle={{}}
-              action=''
-              label='Upload Transactions Response File'
+              variant="primary"
+              className="btn-xs"
               disabled={!showGeneratePaymentFile}
-            />
+            >
+              <i className="fa fa-plus" /> Upload Transactions Response File
+            </Button>
           </WithTooltip>
         </div>
       </div>
@@ -424,9 +429,9 @@ class ResponsePaymentFiles extends Component {
     return (
       <Panel header={this.renderPanelHeader()}>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('payment_gateway')}
               </Col>
               <Col sm={5} lg={4}>
@@ -434,7 +439,7 @@ class ResponsePaymentFiles extends Component {
               </Col>
             </FormGroup>
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3}>
+              <Col as={ControlLabel} sm={3}>
                 {this.getLabel('file_type')}
               </Col>
               <Col sm={5} lg={4}>
@@ -451,7 +456,8 @@ class ResponsePaymentFiles extends Component {
               api="get"
               showRevisionBy={false}
               baseFilter={{
-                source: pascalCase(paymentGateway) + 'TransactionsResponse',
+                // Must match BE `log.source`, e.g. `ABC`+`transactions_response` => `ABCTransactionsResponse`.
+                source: buildPaymentFileSource(paymentGateway, 'transactions_response'),
                 pg_file_type: fileType,
               }}
               // filterFields={this.getFilterFields()}

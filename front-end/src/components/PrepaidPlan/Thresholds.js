@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable';
-import { Form, Panel } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import BalanceThreshold from './BalanceThreshold';
 import Field from '@/components/Field';
@@ -9,9 +10,8 @@ import {
   getUnitLabel,
 } from '@/common/Util';
 
-
 const Thresholds = ({
-  plan, ppIncludes, mode, propertyTypes, usageTypesData, currency,
+  plan = Map(), ppIncludes = List(), mode = 'create', propertyTypes = List(), usageTypesData = List(), currency = '',
   onAddBalance, onChangeThreshold, onRemoveThreshold,
 }) => {
 
@@ -50,7 +50,7 @@ const Thresholds = ({
 
   return (
     <div className="Thresholds">
-      <Form horizontal>
+      <Form className="form-horizontal">
         { editable && (
           <Panel header={<h3>Select prepaid bucket</h3>}>
             <Field
@@ -76,15 +76,6 @@ const Thresholds = ({
       </Form>
     </div>
   );
-};
-
-Thresholds.defaultProps = {
-  plan: Map(),
-  ppIncludes: List(),
-  currency: '',
-  usageTypesData: List(),
-  propertyTypes: List(),
-  mode: 'create',
 };
 
 Thresholds.propTypes = {

@@ -12,7 +12,7 @@ class Test_Case_4082
         generat_test_data::setTestNumber(4082);
       
         $plan = generat_plans::generatePlan(['name' => "TEST_GENRATE$time",
-        "price" => [ json_encode(["price" => 0, "from" => 0, "to" => "UNLIMITED"])]]);
+        "price" => [ ["price" => 0, "from" => 0, "to" => "UNLIMITED"]]]);
         $service = generat_services::generateService([
             "prorated_start" =>0,
 	        "prorated_end" =>0,

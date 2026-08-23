@@ -20,7 +20,6 @@ class billapiBalanceCest
             self::$isIPSet = true;
             Billrun_Factory::config();
             $this->defaultTimezone = date_default_timezone_get();
-            date_default_timezone_set('Asia/Jerusalem');
         }
     }
     

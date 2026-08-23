@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Row, Col, FormGroup, HelpBlock, Label } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
+import { FormGroup, HelpBlock, Label } from '@/common/BootstrapCompat';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import Formatter from './Formatter';
 import { CreateButton, SortableFieldsContainer } from '@/components/Elements';
@@ -123,7 +124,7 @@ class Formatters extends Component {
         )}
         { showDateOverrideWarning && (
           <Col sm={12}>
-            <Label bsStyle="warning">
+            <Label variant="warning">
               * Subtract / Add time styling should be applied before other format
             </Label>
           </Col>

@@ -35,7 +35,8 @@
     "itemName": "prepaid plan",
     "itemsName": "prepaid plans",
     "itemType": "prepaid_plan",
-    "itemsType": "prepaid_plans"
+    "itemsType": "prepaid_plans",
+    "settingsKey": "plans"
   },
   "prepaid_include": {
     "collection": "prepaidincludes",
@@ -215,5 +216,14 @@
     "itemsName": "recurring charges",
     "itemType": "auto_renew",
     "itemsType": "auto_renews"
+  },
+  "jobs_queue": {
+    "collection": "jobs_messages",
+    "audited": true,
+    "uniqueField": "md5",
+    "itemName": "Job",
+    "itemsName": "Jobs",
+    "itemType": "job",
+    "itemsType": "jobs"
   }
 }

@@ -24,10 +24,6 @@ const Invoice = () => (
   </div>
 );
 
-Invoice.defaultProps = {
-
-};
-
 Invoice.propTypes = {
 
 };

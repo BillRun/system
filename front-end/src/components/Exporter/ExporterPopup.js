@@ -11,8 +11,7 @@ import { ModalWrapper } from '@/components/Elements';
    getConfig,
  } from '@/common/Util';
 
-
-const ExporterPopup = ({ entityKey, show, onClose, dispatch }) => {
+const ExporterPopup = ({ entityKey, show = false, onClose = () => {}, dispatch }) => {
 
   const handleExport = useCallback((entity, exportParams) => {
     const result = dispatch(exportEntities(entity, exportParams));
@@ -38,17 +37,11 @@ const ExporterPopup = ({ entityKey, show, onClose, dispatch }) => {
   );
 }
 
-ExporterPopup.defaultProps = {
-  show: false,
-  onClose: () => {}
-};
-
 ExporterPopup.propTypes = {
   entityKey: PropTypes.string.isRequired,
   show: PropTypes.bool,
   onClose: PropTypes.func,
   dispatch: PropTypes.func.isRequired,
 };
-
 
 export default connect()(ExporterPopup);

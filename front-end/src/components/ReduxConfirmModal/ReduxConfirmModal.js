@@ -6,8 +6,7 @@ import { ConfirmModal } from '@/components/Elements';
 import { hideConfirmModal } from '@/actions/guiStateActions/pageActions';
 import { confirmSelector } from '@/selectors/guiSelectors';
 
-
-const ReduxConfirmModal = ({ confirm, dispatch }) => {
+const ReduxConfirmModal = ({ confirm = Immutable.Map(), dispatch }) => {
   if (confirm.get('show', false) === false) {
     return null;
   }
@@ -40,15 +39,10 @@ const ReduxConfirmModal = ({ confirm, dispatch }) => {
   );
 };
 
-ReduxConfirmModal.defaultProps = {
-  confirm: Immutable.Map(),
-};
-
 ReduxConfirmModal.propTypes = {
   confirm: PropTypes.instanceOf(Immutable.Map),
   dispatch: PropTypes.func.isRequired,
 };
-
 
 const mapStateToProps = state => ({
   confirm: confirmSelector(state),

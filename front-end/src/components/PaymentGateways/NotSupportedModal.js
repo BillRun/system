@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Modal } from 'react-bootstrap';
-
 const NotSupportedModal = (props) => (
   <Modal show={ props.show } onHide={ props.onClose }>
     <Modal.Header closeButton>

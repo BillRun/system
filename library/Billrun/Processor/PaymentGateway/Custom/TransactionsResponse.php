@@ -29,7 +29,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	
 	protected function updatePayments($row, $payment, $currentProcessor) {
 		$customFields = $this->getCustomPaymentGatewayFields($row);
-		$payment->setExtraFields(array_merge(['pg_response' => $this->billSavedFields], $customFields), array_keys($customFields));
+		$this->setTransactionsFields($row,  $currentProcessor);
 		$fileStatus = isset($currentProcessor['file_status']) ? $currentProcessor['file_status'] : null;
 		$paymentResponse = (empty($fileStatus) || ($fileStatus == 'mixed')) ? $this->getPaymentResponse($row, $currentProcessor) : $this->getResponseByFileStatus($fileStatus);
                 $this->updatePaymentAccordingTheResponse($paymentResponse, $payment, $row);
@@ -43,6 +43,8 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
                                 Billrun_Factory::dispatcher()->trigger('afterChargeSuccess', array($billData));
                         }
                 }
+		$payment->setExtraFields(array_merge(['vendor_response' => $this->billSavedFields], $customFields), array_merge(array_keys($customFields), ['vendor_response']));
+		Billrun_Factory::dispatcher()->trigger('afterUpdatePayments', array($row, $payment, $currentProcessor, $billData, $this));
 	}
 	
 	protected function getPaymentResponse($row, $currentProcessor) {
@@ -116,10 +118,11 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		$urt = !is_null($this->dateField) ? strtotime($this->getPaymentUrt($row)) : time();
 		if ($response['stage'] == "Completed") { // payment succeeded 
                         if ($payment->isPendingPayment()){
-				$payment->setUrt($urt);
                             $payment->setPending(false);
                             $payment->updateConfirmation();
+							$payment->setUrt($urt);
                             $payment->setPaymentStatus($response, $this->gatewayName);
+							$payment->setExtraFields($this->transactionsFields['success'], ['vendor_response', 'payment_method']);
                             $this->informationArray['total_confirmed_amount']+=$payment->getAmount();
                             Billrun_Factory::log('Confirming transaction ' . $payment->getId() , Zend_Log::INFO);
                         }else{
@@ -131,11 +134,12 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 				Billrun_Factory::log('Rejecting transaction ' . $payment->getId(), Zend_Log::INFO);
 				$this->informationArray['info'][] = 'Rejecting transaction  ' . $payment->getId();
 				$rejection = $payment->getRejectionPayment($response);
-				$rejection->setUrt($urt);
 				$rejection->setConfirmationStatus(false);
+				$rejection->setExtraFields($this->transactionsFields['rejection'],['vendor_response', 'payment_method']);
+				$rejection->setUrt($urt);
 				$rejection->save();
-				$payment->markRejected();
 				$payment->setUrt($urt);
+				$payment->markRejected();
 				$payment->updatePastRejectionsOnProcessingFiles();
 				$this->informationArray['transactions']['rejected']++;
 				$this->informationArray['total_rejected_amount']+=$payment->getAmount();
@@ -167,4 +171,46 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 		return static::$type;
 	}
 
+	protected function setTransactionsFields($row, $currentProcessor){
+		$this->transactionsFields = [];
+		$transactionsFieldsStructure = [
+			'response_code_field' => [
+				'default_path' => 'response_code',
+				'billPaths' => ['rejection_code', 'vendor_response.code'],
+				'type' => ['rejection']
+			],
+			'four_digits_field' => [
+				'default_path' => 'four_digits',
+				'billPaths' => ['payment_method.last_four_digits'],
+				"substring" => [
+					"offset" => -4,
+					"length" => 4,
+				]
+
+			],
+			'card_expiration_field' => [
+				'default_path' => 'card_expiration',
+				'billPaths' => ['payment_method.expiration_date']
+			],
+			'voucher_number_field'=> [
+				'default_path' => 'voucher_number',
+				'billPaths' => ['vendor_response.payment_identifier']
+			],
+		];
+		foreach ($transactionsFieldsStructure as $field => $structure) {
+			$path = $currentProcessor['processor'][$field] ?? $structure['default_path'];
+			$value = Billrun_Util::getIn($row, $path);
+			if(isset($value)){
+				$value = Billrun_Util::formattingValue($structure, $value);
+				$types = $structure['type'] ?? ['rejection', 'success'];
+				foreach ($types as $type) {
+					foreach ($structure['billPaths'] as $billPath) {
+						Billrun_Util::setIn($this->transactionsFields, [$type , $billPath], $value);
+					}
+				}
+			}else{
+				Billrun_Factory::log("Missing value for $path in the file response" , Zend_Log::DEBUG);
+			}
+		}
+	}
 }

@@ -4,7 +4,8 @@ import Immutable from 'immutable';
 import isNumber from 'is-number';
 import moment from 'moment';
 import getSymbolFromCurrency from 'currency-symbol-map';
-import { Col, FormGroup, Button } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap'
+import { FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { SubscriberAsyncSearch, RateAsyncSearch } from '@/components/Elements';
 import {
@@ -12,8 +13,7 @@ import {
   getFieldName,
 } from '@/common/Util';
 
-
-const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove }) => {
+const InvoiceLine = ({ line = Immutable.Map(), index, aid, editable = true, currency = '', onChange, onRemove }) => {
   const apiFormat = getConfig('apiDateTimeFormat', '');
   const currencySymbol = getSymbolFromCurrency(currency);
   const price = line.get('price', '');
@@ -72,19 +72,20 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
     <Col sm={12}>
       <FormGroup className="form-inner-edit-row row" validationState={errors.isEmpty() ? null: 'error'}>
         <Col sm={3}>
-          <Col xsHidden={false} smHidden mdHidden lgHidden>
+          <Col className="visible-xs-block">
             <label htmlFor="subscriber" >{getFieldName('subscriber', 'immediate_invoice')}</label>
           </Col>
           <SubscriberAsyncSearch
             sid={line.get('sid')}
             aid={aid}
             label={line.get('subscriber_name')}
+            searchPlaceholder={getFieldName('subscriber_input_help', 'immediate_invoice')}
             onChange={onChangeSubscriber}
             editable={editable}
           />
         </Col>
         <Col sm={3}>
-          <Col xsHidden={false} smHidden mdHidden lgHidden>
+          <Col className="visible-xs-block">
             <label htmlFor="product" >{getFieldName('product', 'immediate_invoice')}</label>
             <span className="danger-red"> *</span>
           </Col>
@@ -96,7 +97,7 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
           />
         </Col>
         <Col sm={2}>
-          <Col xsHidden={false} smHidden mdHidden lgHidden>
+          <Col className="visible-xs-block">
             <label htmlFor="date" >{getFieldName('date', 'immediate_invoice')}</label>
             <span className="danger-red"> *</span>
           </Col>
@@ -109,7 +110,7 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
           />
         </Col>
         <Col sm={1}>
-          <Col xsHidden={false} smHidden mdHidden lgHidden>
+          <Col className="visible-xs-block">
             <label htmlFor="volume" >{getFieldName('volume', 'immediate_invoice')}</label>
             <span className="danger-red"> *</span>
           </Col>
@@ -121,7 +122,7 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
           />
         </Col>
         <Col sm={2}>
-          <Col xsHidden={false} smHidden mdHidden lgHidden>
+          <Col className="visible-xs-block">
             <label htmlFor="price" >{getFieldName('price', 'immediate_invoice')}</label>
           </Col>
           <Field
@@ -134,7 +135,7 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
         </Col>
         <Col sm={1} className="actions">
           {editable && (
-            <Button onClick={onRemoveLine} bsSize="small" className="pull-left">
+            <Button onClick={onRemoveLine} size="sm" variant="outline-secondary" className="pull-left">
               <i className="fa fa-trash-o danger-red" />
             </Button>
           )}
@@ -143,12 +144,6 @@ const InvoiceLine = ({ line, index, aid, editable, currency, onChange, onRemove 
     </Col>
   );
 }
-
-InvoiceLine.defaultProps = {
-  line: Immutable.Map(),
-  currency: '',
-  editable: true,
-};
 
 InvoiceLine.propTypes = {
   line: PropTypes.instanceOf(Immutable.Map),

@@ -45,7 +45,7 @@ class CollectionStep extends Component {
     return (
       <div className="row">
         <div className="col-lg-12">
-          <Form horizontal>
+          <Form className="form-horizontal">
             <CollectionDetails item={item} onChange={this.props.onChange} errors={errors} />
             <hr />
             {this.renderStepByType(item)}

@@ -872,9 +872,12 @@ class Billrun_Billingcycle {
 		}
 	}
 
+	/**
+	 * @deprecated kept for backward compatibility (external plugins) - use
+	 * 				Billrun_Plans_Charge_Upfront::getUpfrontCycle
+	 */
 	public static function getUpfrontCycle($regularCycle) {
-		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
-		return new Billrun_DataTypes_CycleTime($nextCycleKey);
+		return Billrun_Plans_Charge_Upfront::getUpfrontCycle($regularCycle);
 	}
 	
 }

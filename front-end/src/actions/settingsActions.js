@@ -9,6 +9,8 @@ import {
   getCurrenciesQuery,
   saveSharedSecretQuery,
   disableSharedSecretQuery,
+  sendTestSmsQuery,
+  testSubscribersAuthQuery,
 } from '../common/ApiQueries';
 
 
@@ -150,6 +152,46 @@ export const getSettings = (categories = [], data = {}) => (dispatch) => {
       dispatch(apiBillRunErrorHandler(error));
       return false;
     });
+};
+
+export const sendTestSms = recipient => (dispatch) => {
+  dispatch(startProgressIndicator());
+
+  const query = sendTestSmsQuery(recipient);
+
+  return apiBillRun(query)
+    .then(success => dispatch(
+      apiBillRunSuccessHandler(
+        success,
+        'Test SMS sent successfully!',
+      ),
+    ))
+    .catch(error => dispatch(
+      apiBillRunErrorHandler(
+        error,
+        'Error sending test SMS',
+      ),
+    ));
+};
+
+export const testSubscribersAuth = () => (dispatch) => {
+  dispatch(startProgressIndicator());
+
+  const query = testSubscribersAuthQuery();
+
+  return apiBillRun(query)
+    .then(success => dispatch(
+      apiBillRunSuccessHandler(
+        success,
+        'Connection established successfully!',
+      ),
+    ))
+    .catch(error => dispatch(
+      apiBillRunErrorHandler(
+        error,
+        'Failed to connect to authentication server',
+      ),
+    ));
 };
 
 export const clearAppStorage = (keys = null) => {

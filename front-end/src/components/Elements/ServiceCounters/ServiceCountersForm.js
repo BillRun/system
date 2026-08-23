@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import Help from '@/components/Help';
 import ProductSearchByUsagetype from '@/components/Plan/components/ProductSearchByUsagetype';
@@ -13,8 +14,7 @@ import {
   validateKey,
 } from '@/common/Validators';
 
-
-const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingGroupsNames, setError}) => {
+const ServiceCountersForm = ({item = Immutable.Map(), mode = 'create', usages = Immutable.List(['cost']), errors = Immutable.Map(), updateField, existingGroupsNames = [], setError}) => {
 
   // because redux fore convert all Immutable to JS
   existingGroupsNames = Immutable.List(existingGroupsNames);
@@ -88,11 +88,11 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
   }
 
   return (
-    <Form horizontal className="pt10">
+    <Form className="form-horizontal pt10">
 
       {mode === 'create' && (
         <FormGroup key="group_name" validationState={errors.has('group_key') ? 'error' : null} className="mb10">
-          <Col sm={3} componentClass={ControlLabel}>
+          <Col sm={3} as={ControlLabel}>
             {getFieldName('counter_group_name', "service")}
             <Help contents={GroupsInclude.name} />
           </Col>
@@ -109,7 +109,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
       )}
 
       <FormGroup className="mb10">
-        <Col sm={3} componentClass={ControlLabel}></Col>
+        <Col sm={3} as={ControlLabel}></Col>
         <Col sm={8}>
             <Field
               fieldType="checkbox"
@@ -124,7 +124,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
       </FormGroup>
 
       {/* <FormGroup className="mb0">
-        <Col sm={3} componentClass={ControlLabel}></Col>
+        <Col sm={3} as={ControlLabel}></Col>
         <Col sm={8}>
             <Field
               fieldType="checkbox"
@@ -139,7 +139,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
       </FormGroup> */}
 
       {/* <FormGroup className="mb0">
-        <Col sm={3} componentClass={ControlLabel}></Col>
+        <Col sm={3} as={ControlLabel}></Col>
         <Col sm={8}>
             <Field
               fieldType="checkbox"
@@ -154,7 +154,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
       </FormGroup> */}
 
       <FormGroup className="mb10">
-        <Col sm={3} componentClass={ControlLabel}>
+        <Col sm={3} as={ControlLabel}>
             {getFieldName('counter_group_rates', "service")}
         </Col>
         <Col sm={8}>
@@ -187,7 +187,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
 
       { regexpProductsBased && (
         <FormGroup key="rates_regex" validationState={errors.has('rates_regex') ? 'error' : null} className="mb10">
-          <Col sm={3} componentClass={ControlLabel}></Col>
+          <Col sm={3} as={ControlLabel}></Col>
           <Col sm={8}>
             <Field value={rates} onChange={onChangeRegexp} placeholder={getFieldName('counter_group_regex_rates_placeholder', "service")}/>
             { errors.has('rates_regex') && <HelpBlock>{errors.get('rates_regex', '')}</HelpBlock>}
@@ -197,7 +197,7 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
 
       { selectProductsBased && (
         <FormGroup key="rates_select" validationState={errors.has('rates_select') ? 'error' : null} className="mb10">
-          <Col sm={3} componentClass={ControlLabel}></Col>
+          <Col sm={3} as={ControlLabel}></Col>
           <Col sm={8}>
             <div>
               <ProductSearchByUsagetype
@@ -214,13 +214,6 @@ const ServiceCountersForm = ({item, mode, usages, errors, updateField, existingG
     </Form>
   );
 }
-
-ServiceCountersForm.defaultProps = {
-  item: Immutable.Map(),
-  existingGroupsNames: [],
-  mode: 'create',
-  usages: Immutable.List(['cost'])
-};
 
 ServiceCountersForm.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),

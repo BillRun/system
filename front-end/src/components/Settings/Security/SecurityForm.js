@@ -3,9 +3,12 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
-import { Form, FormControl, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Form, FormControl, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { ModalWrapper } from '@/components/Elements';
 import { getConfig } from '@/common/Util';
+
+const toDateFnsFormat = format => format.replace(/YYYY/g, 'yyyy').replace(/DD/g, 'dd');
 
 
 class SecurityForm extends Component {
@@ -32,17 +35,17 @@ class SecurityForm extends Component {
     this.setState({ item: item.set('name', value) });
   }
 
-  onChangeDateFrom = (momentFromDate) => {
+  onChangeDateFrom = (date) => {
     const { item } = this.state;
     const apiFormat = getConfig('apiDateFormat', 'YYYY-MM-DD');
-    const fromValue = momentFromDate ? momentFromDate.format(apiFormat) : '';
+    const fromValue = date ? moment(date).format(apiFormat) : '';
     this.setState({ item: item.set('from', fromValue) });
   }
 
-  onChangeDateTo = (momentFromDate) => {
+  onChangeDateTo = (date) => {
     const { item } = this.state;
     const apiFormat = getConfig('apiDateFormat', 'YYYY-MM-DD');
-    const fromValue = momentFromDate ? momentFromDate.format(apiFormat) : '';
+    const fromValue = date ? moment(date).format(apiFormat) : '';
     this.setState({ item: item.set('to', fromValue) });
   }
 
@@ -57,9 +60,9 @@ class SecurityForm extends Component {
 
     return (
       <ModalWrapper title={`${title} Secret`} show={true} onOk={this.onSave} onCancel={this.props.onCancel} labelOk="Save" >
-        <Form horizontal>
+        <Form className="form-horizontal">
           <FormGroup controlId="name" key="name">
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Name
             </Col>
             <Col sm={8}>
@@ -68,7 +71,7 @@ class SecurityForm extends Component {
           </FormGroup>
 
           <FormGroup controlId="key" key="key">
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Secret Key
             </Col>
             <Col sm={8}>
@@ -80,15 +83,15 @@ class SecurityForm extends Component {
           </FormGroup>
 
           <FormGroup controlId="from" key="from">
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Creation Date
             </Col>
             <Col sm={8}>
               <div className="pull-left" >
                 <DatePicker
                   className="form-control"
-                  dateFormat={getConfig('dateFormat', 'DD/MM/YYYY')}
-                  selected={item.get('from', '').length ? moment(item.get('from', '')) : null}
+                  dateFormat={toDateFnsFormat(getConfig('dateFormat', 'DD/MM/YYYY'))}
+                  selected={item.get('from', '').length ? moment(item.get('from', '')).toDate() : null}
                   onChange={this.onChangeDateFrom}
                   isClearable={true}
                   placeholderText="Select Date..."
@@ -98,15 +101,15 @@ class SecurityForm extends Component {
           </FormGroup>
 
           <FormGroup controlId="to" key="to">
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Expiration Date
             </Col>
             <Col sm={8}>
               <div className="pull-left" >
                 <DatePicker
                   className="form-control"
-                  dateFormat={getConfig('dateFormat', 'DD/MM/YYYY')}
-                  selected={item.get('to', '').length ? moment(item.get('to', '')) : null}
+                  dateFormat={toDateFnsFormat(getConfig('dateFormat', 'DD/MM/YYYY'))}
+                  selected={item.get('to', '').length ? moment(item.get('to', '')).toDate() : null}
                   onChange={this.onChangeDateTo}
                   isClearable={true}
                   placeholderText="Select Date..."
