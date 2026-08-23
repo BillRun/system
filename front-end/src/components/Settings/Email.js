@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, FormControl, Checkbox } from 'react-bootstrap';
+import { Form, Col, FormControl } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Checkbox } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 const Email = ({ data, onChange }) => {
@@ -36,10 +37,10 @@ const Email = ({ data, onChange }) => {
 
   return (
     <div>
-      <Form horizontal style={{ marginTop: '20px' }}>
+      <Form className="form-horizontal" style={{ marginTop: '20px' }}>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Type</Col>
+          <Col as={ControlLabel} sm={2}>Type</Col>
           <Col sm={6}>
             <FormControl
               type="text"
@@ -50,7 +51,7 @@ const Email = ({ data, onChange }) => {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Host</Col>
+          <Col as={ControlLabel} sm={2}>Host</Col>
           <Col sm={6}>
             <FormControl
               type="text"
@@ -61,7 +62,7 @@ const Email = ({ data, onChange }) => {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Port</Col>
+          <Col as={ControlLabel} sm={2}>Port</Col>
           <Col sm={6}>
             <FormControl
               type="text"
@@ -72,7 +73,7 @@ const Email = ({ data, onChange }) => {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>SSL</Col>
+          <Col as={ControlLabel} sm={2}>SSL</Col>
           <Col sm={6}>
             <FormControl
               type="text"
@@ -84,7 +85,7 @@ const Email = ({ data, onChange }) => {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Email Address / Username</Col>
+          <Col as={ControlLabel} sm={2}>Email Address / Username</Col>
           <Col sm={6}>
             <FormControl
               type="text"
@@ -95,7 +96,7 @@ const Email = ({ data, onChange }) => {
         </FormGroup>
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Authentication</Col>
+          <Col as={ControlLabel} sm={2}>Authentication</Col>
           <Col sm={6} style={{ paddingTop: '7px' }}>
             <Checkbox checked={isOAuth} onChange={onAuthToggle}>
               Use OAuth2
@@ -105,7 +106,7 @@ const Email = ({ data, onChange }) => {
 
         {isOAuth ? (
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={2}>OAuth2</Col>
+            <Col as={ControlLabel} sm={2}>OAuth2</Col>
             <Col sm={6}>
               <Field
                 fieldType="oauth2"
@@ -118,7 +119,7 @@ const Email = ({ data, onChange }) => {
           </FormGroup>
         ) : (
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={2}>Password</Col>
+            <Col as={ControlLabel} sm={2}>Password</Col>
             <Col sm={6}>
               <FormControl
                 type="password"
