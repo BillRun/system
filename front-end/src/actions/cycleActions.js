@@ -1,4 +1,4 @@
-import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
+import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler, delay } from '../common/Api';
 import {
   pushToCycleQueueQuery,
   pushToConfirmQueueQuery,
@@ -43,6 +43,32 @@ export const confirmCycleInvoice = (billrunKey, invoiceId) => (dispatch) => {
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming invoice...')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming invoice')));
+};
+
+export const adjustCycleInvoice = (
+  aid,
+  billrunKey,
+  creditLines,
+) => dispatch => {
+  dispatch(startProgressIndicator());
+
+  const payload = {
+    aid,
+    billrun_key: billrunKey,
+    credit_lines: creditLines,
+  };
+
+  return delay(1, true, {
+    status: 1,
+    data: payload,
+  })
+    .then(response => {
+      dispatch(finishProgressIndicator());
+      return response;
+    })
+    .catch(error =>
+      dispatch(apiBillRunErrorHandler(error, 'Error adjusting invoice'))
+    );
 };
 
 export const confirmCycle = billrunKey => (dispatch) => {
