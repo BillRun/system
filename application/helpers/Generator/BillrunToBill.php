@@ -31,7 +31,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $excludedInvoices = [];
 	protected $includedAids = null;
 	protected $excludedAids = [];
-	protected $force = false;
 	protected $shouldLoadAccounts = true;
 
 	public function __construct($options) {
@@ -54,7 +53,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($options['exclude'])) {
 			$this->excludedAids = Billrun_Util::verify_array($options['exclude'], 'int');
 		}
-		$this->force = !empty($options['force']);
 		if (isset($options['load_accounts'])) {
 			$this->shouldLoadAccounts = (bool) $options['load_accounts'];
 		}
@@ -108,9 +106,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				->sort(array('aid' => 1))
 				->limit($invoicesLimit)->skip($invoicesLimit * $page);
 		} else {
-			if (empty($this->force)) {
-				$query['billed'] = array('$nin' => array("1", 1, true));
-			}
+			$query['billed'] = array('$ne' => 1);
 			$invoicesCursor = $this->billrunColl->query($query)->cursor()->immortal()->sort(array('aid' => 1));
 		}
 		$invoices = $invoicesCursor->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);

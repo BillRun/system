@@ -23,7 +23,7 @@ class Billrun_Job_Confirm extends Billrun_Job_Abstract {
 			'load_accounts' => false, // the accounts (GAD) are loaded in batches on run()
 		];
 		// the generator load supports the job filtration options
-		foreach (['include', 'exclude', 'include_invoices', 'exclude_invoices', 'force'] as $filtrationOption) {
+		foreach (['include', 'exclude', 'include_invoices', 'exclude_invoices'] as $filtrationOption) {
 			if (isset($this->config[$filtrationOption])) {
 				$options[$filtrationOption] = $this->config[$filtrationOption];
 			}
