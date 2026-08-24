@@ -90,7 +90,7 @@ class Billrun_AuthClient_Oauth2 {
         $url = $this->params['access_token_url'] ?? '';
         $data = $this->params['data'] ?? [];
         $serializeDataForCacheKey = $this->params['serialize_data_for_cache_key'] ?? false;
-        return "Billrun_AuthClient_Oauth2_token_" . md5(serialize($url)) . (!empty($serializeDataForCacheKey) ? "_" . md5(serialize($data)) : "");
+        return Billrun_Http_Authentication_Oauth2::class . "_access_token_" . md5(serialize($url)) . (!empty($serializeDataForCacheKey) ? "_" . md5(serialize($data)) : "");
     }
 
     /**
