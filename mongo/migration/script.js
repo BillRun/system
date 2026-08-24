@@ -1999,7 +1999,11 @@ runOnce(lastConfig, 'BRCD-4455-1', function () {
 	}
 });
 
-	
+lastConfig = runOnce(lastConfig, 'BRCD-2820', function () {
+	db.bills.createIndex({'aid': "hashed" }, { unique: false , background: true});
+	_dropIndex("bills", "aid_1");
+})
+
 if (db.version() >= "6" && db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
 	sh.shardCollection(_dbName + ".bills", { "aid" : "hashed" } );
 }
