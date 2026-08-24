@@ -182,6 +182,7 @@ db.createCollection('reports');
 
 // Events collection
 db.events.createIndex({'creation_time': 1 }, { unique: false , sparse: true, background: true });
+db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
 
 // Auto Renew Collection
 db.createCollection('autorenew');
