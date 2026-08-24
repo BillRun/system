@@ -71,7 +71,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * invoice file location paths, according to conditions on billrun object.
 	 * @var array
 	 */
-        protected $export_paths = [];
+	protected $export_paths = [];
+
+
+	protected $constructionOptions = [];
 	/**
 	 * constructor
 	 * 
@@ -80,6 +83,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	public function __construct($options) {
 
 		parent::__construct($options);
+		$this->constructionOptions = $options;
 
 		if (isset($options['export_directory'])) {
 			if (!isset($options['disable_stamp_export_directory']) || !$options['disable_stamp_export_directory']) {
@@ -214,10 +218,16 @@ abstract class Billrun_Generator extends Billrun_Base {
 		return true;
 	}
 	
-        public function getExportPaths() {
-            return $this->export_paths;
-        }
-public function getFileNameConfig(){
-            return $this->file_name_config;
-        }
+	public function getExportPaths() {
+		return $this->export_paths;
+	}
+
+	public function getFileNameConfig(){
+		Billrun_Factory::dispatcher()->trigger("beforeGeneratorGetFileNameConfig", array(&$this->file_name_config, $this));
+		return $this->file_name_config;
+	}
+
+	public function getConstructionOptions() {
+		return $this->constructionOptions;
+	}
 }

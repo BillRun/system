@@ -67,5 +67,14 @@ class Billrun_User {
 	public function getLastLogin() {
 		return $this->entity['last_login'];
 	}
+
+	/**
+	 * Get the protocol used for the current login session
+	 * @return string 'Internal', 'Oidc', etc.
+	 */
+	public function getProtocol()
+	{
+		return isset($this->entity['auth_protocol']) ? $this->entity['auth_protocol'] : 'Internal';
+	}
 	
 }

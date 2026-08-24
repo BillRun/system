@@ -4,12 +4,15 @@ import Immutable from 'immutable';
 import { titleCase, sentenceCase } from 'change-case';
 import isNumber from 'is-number';
 import pluralize from 'pluralize';
-import { Form, FormGroup, ControlLabel, HelpBlock, Col, InputGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+import { Form, Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, InputGroupButton, Panel } from '@/common/BootstrapCompat';
 import { ServiceDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
+import { RecurrenceFrequency, CreateButton, RoundingRules } from '@/components/Elements';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
+import PlanPrice from '../Plan/components/PlanPrice';//todo:: need to change component name TarifParice? and need to change location? 
 import {
   getConfig,
   getFieldName,
@@ -20,7 +23,11 @@ import {
 export default class ServiceDetails extends Component {
 
   static propTypes = {
+    onServiceCycleUpdate: PropTypes.func.isRequired,
+    onServiceTariffAdd: PropTypes.func.isRequired,
+    onServiceTariffRemove: PropTypes.func.isRequired,
     item: PropTypes.instanceOf(Immutable.Map).isRequired,
+    sourceItem: PropTypes.instanceOf(Immutable.Map),
     mode: PropTypes.string.isRequired,
     updateItem: PropTypes.func.isRequired,
     onFieldRemove: PropTypes.func.isRequired,
@@ -41,6 +48,7 @@ export default class ServiceDetails extends Component {
     },
   }
 
+  
   shouldComponentUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
     return !Immutable.is(this.props.item, nextProps.item) || this.props.mode !== nextProps.mode;
   }
@@ -48,7 +56,7 @@ export default class ServiceDetails extends Component {
   onChangeName = (e) => {
     const { errorMessages: { name: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.updateItem(['name'], value);
@@ -61,8 +69,16 @@ export default class ServiceDetails extends Component {
   }
 
   onChangeCycle = (value) => {
+    const { item } = this.props;
     const newValue = isNumber(value) ? parseFloat(value) : value;
-    this.props.updateItem(['price', 0, 'to'], newValue);
+    const lastPriceIndex = item.getIn(['price'], Immutable.List()).size <= 0 ? 0 : (item.getIn(['price'], Immutable.List()).size - 1); 
+    this.props.updateItem(['price', lastPriceIndex, 'to'], newValue);
+    if(newValue === getConfig('serviceCycleUnlimitedValue', 'UNLIMITED')){
+      this.props.updateItem(['limit_cycles'], false);
+    }else{
+      this.props.updateItem(['limit_cycles'], newValue);
+    }
+    
   }
 
   onChangeProrated = (e) => {
@@ -112,9 +128,56 @@ export default class ServiceDetails extends Component {
     this.props.updateItem(['balance_period', 'value'], newValue);
   }
 
+  getAddPriceButton = () => {
+    const onclick = this.onServiceTariffInit;
+    return (<CreateButton onClick={onclick} label="Add New" />);
+  }
+
+  onServiceTariffInit = (e) => {
+    this.props.onServiceTariffAdd();
+  }
+
+  onServicePriceUpdate = (index, value) => {
+    const newValue = isNumber(value) ? parseFloat(value) : value;
+    this.props.updateItem(['price', index, 'price'], newValue);
+  }
+
+  getPrices = () => {
+    const { item, mode } = this.props;
+    const count = item.get('price', Immutable.List()).size;
+    const prices = [];
+
+    item.get('price', Immutable.List()).forEach((price, i) => {
+      
+      prices.push(
+          <PlanPrice
+            key={i}
+            index={i}
+            count={count}
+            item={price}
+            mode={mode}
+            isTrialExist={false}
+            onPlanPriceUpdate={this.onServicePriceUpdate}
+            onPlanCycleUpdate={this.props.onServiceCycleUpdate}
+            onPlanTariffRemove={this.props.onServiceTariffRemove}
+          />
+      );  
+    });
+    return prices;
+  }
+
+  
+  componentDidMount() {
+    const { item } = this.props;
+    const count = item.get('price', Immutable.List()).size;
+    if (count === 0) {
+      this.props.onServiceTariffAdd();
+    }
+  }
+
   render() {
     const { errors } = this.state;
-    const { item, mode } = this.props;
+    const { item, mode, sourceItem } = this.props;
     const serviceCycleUnlimitedValue = getConfig('serviceCycleUnlimitedValue', 'UNLIMITED');
     const editable = (mode !== 'view');
     const balancePeriodUnit = item.getIn(['balance_period', 'unit'], '');
@@ -122,9 +185,10 @@ export default class ServiceDetails extends Component {
       ? 'Select unit...'
       : titleCase(pluralize(balancePeriodUnit, Number(item.getIn(['balance_period', 'value'], 2))));
     const isByCycles = item.getIn(['balance_period', 'type'], 'default') === 'default';
+    const lastPriceIndex = item.getIn(['price'], Immutable.List()).size <= 0 ? 0: item.getIn(['price'], Immutable.List()).size - 1;
     return (
-      <Form horizontal>
-
+      <Form className="form-horizontal">
+        <Panel>
         <PlaysSelector
           entity={item}
           editable={editable && mode === 'create'}
@@ -133,7 +197,7 @@ export default class ServiceDetails extends Component {
         />
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
             <span className="danger-red"> *</span>
             <Help contents={ServiceDescription.description} />
@@ -145,7 +209,7 @@ export default class ServiceDetails extends Component {
 
         {['clone', 'create'].includes(mode) &&
           <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('name', getFieldNameType('service'), sentenceCase('key'))}
               <span className="danger-red"> *</span>
               <Help contents={ServiceDescription.name} />
@@ -157,19 +221,28 @@ export default class ServiceDetails extends Component {
           </FormGroup>
         }
 
-        <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <RecurrenceFrequency
+          item={item}
+          sourceItem={sourceItem}
+          itemName="service"
+          editable={editable}
+          onChange={this.props.updateItem}
+          onRemove={this.props.onFieldRemove}
+        />
+
+        {(!isByCycles) && <FormGroup>
+          <Col as={ControlLabel} sm={3} lg={2}>
             { getFieldName('price', getFieldNameType('service'), sentenceCase('price'))}
             <span className="danger-red"> *</span>
           </Col>
           <Col sm={4}>
             <Field value={item.getIn(['price', 0, 'price'], '')} onChange={this.onChangePrice} fieldType="price" editable={editable} />
           </Col>
-        </FormGroup>
+        </FormGroup>}
 
         {['clone', 'create'].includes(mode) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('period_type', getFieldNameType('service'), 'Eligibility Period')}
               <span className="danger-red"> *</span>
             </Col>
@@ -210,7 +283,7 @@ export default class ServiceDetails extends Component {
 
         {(!isByCycles) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2} >
+            <Col as={ControlLabel} sm={3} lg={2} >
               {!['clone', 'create'].includes(mode) && 'Custom Period'}
             </Col>
             <Col sm={4}>
@@ -226,17 +299,18 @@ export default class ServiceDetails extends Component {
                   suffix={!editable ? ` ${balancePeriodUnitTitle}` : null }
                 />
                 { editable && (
-                  <DropdownButton
+                  <InputGroupButton>
+                    <DropdownButton
                     id="balance-period-unit"
-                    componentClass={InputGroup.Button}
                     title={balancePeriodUnitTitle}
                     disabled={isByCycles}
                     >
-                    <MenuItem eventKey="days" onSelect={this.onSelectPeriodUnit}>Days</MenuItem>
-                    <MenuItem eventKey="weeks" onSelect={this.onSelectPeriodUnit}>Weeks</MenuItem>
-                    <MenuItem eventKey="months" onSelect={this.onSelectPeriodUnit}>Months</MenuItem>
-                    <MenuItem eventKey="years" onSelect={this.onSelectPeriodUnit}>Years</MenuItem>
-                  </DropdownButton>
+                    <Dropdown.Item eventKey="days" onSelect={this.onSelectPeriodUnit}>Days</Dropdown.Item>
+                    <Dropdown.Item eventKey="weeks" onSelect={this.onSelectPeriodUnit}>Weeks</Dropdown.Item>
+                    <Dropdown.Item eventKey="months" onSelect={this.onSelectPeriodUnit}>Months</Dropdown.Item>
+                    <Dropdown.Item eventKey="years" onSelect={this.onSelectPeriodUnit}>Years</Dropdown.Item>
+                    </DropdownButton>
+                  </InputGroupButton>
                 )}
               </InputGroup>
             </Col>
@@ -245,13 +319,13 @@ export default class ServiceDetails extends Component {
 
         {(isByCycles) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2} >
+            <Col as={ControlLabel} sm={3} lg={2} >
               {!['clone', 'create'].includes(mode) && 'No. of Cycles'}
             </Col>
             <Col sm={4}>
               <Field
                 disabled={!isByCycles}
-                value={item.getIn(['price', 0, 'to'], '')}
+                value={item.getIn(['price', lastPriceIndex, 'to'], '')}
                 onChange={this.onChangeCycle}
                 fieldType="unlimited"
                 unlimitedValue={serviceCycleUnlimitedValue}
@@ -264,7 +338,7 @@ export default class ServiceDetails extends Component {
 
         {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode) && isByCycles)) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Prorated?</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Prorated?</Col>
             <Col sm={4} style={editable ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"
@@ -277,16 +351,15 @@ export default class ServiceDetails extends Component {
           </FormGroup>
         }
 
-        {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode) && isByCycles)) &&
+        {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode))) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Quantitative?</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Quantitative?</Col>
             <Col sm={4} style={['clone', 'create'].includes(mode) ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"
-                value={!isByCycles ? false : item.get('quantitative', '')}
+                value={item.get('quantitative', '')}
                 onChange={this.onChangeQuantitative}
                 editable={['clone', 'create'].includes(mode)}
-                disabled={!isByCycles}
               />
             </Col>
           </FormGroup>
@@ -298,7 +371,21 @@ export default class ServiceDetails extends Component {
           onRemoveField={this.onRemoveAdditionalField}
           editable={editable}
         />
+        </Panel>
+  
+        {isByCycles && (
+          <Panel header={<h3>Recurring Charges</h3>}>
+            { this.getPrices() }
+            <br />
+            { editable && this.getAddPriceButton() }
+          </Panel>
+        )}
 
+        <RoundingRules
+          item={item}
+          editable={editable}
+          onChangeFieldValue={this.props.updateItem}
+        />
       </Form>
     );
   }

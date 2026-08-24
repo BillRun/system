@@ -1,2 +1,8 @@
-import ExportGenerator from './ExportGenerator';
-export default ExportGenerator;
+import ExportGeneratorsList from './ExportGeneratorsList';
+import ExportGenerator from './ExportGeneratorSetup';
+
+export {
+  ExportGeneratorsList,
+  ExportGenerator,
+};
+

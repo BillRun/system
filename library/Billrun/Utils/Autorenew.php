@@ -14,7 +14,7 @@
  */
 class Billrun_Utils_Autorenew {
 
-	public static function getNextRenewDate($from, $retMongoDate = true, $relative_datetime = null) {
+	public static function getNextRenewDate($from, $retMongodloidDate = true, $relative_datetime = null) {
 		if (is_null($relative_datetime)) { // default is current time
 			$relative_datetime = time();
 		}
@@ -42,8 +42,8 @@ class Billrun_Utils_Autorenew {
 			}
 		}
 
-		if ($retMongoDate) {
-			return new MongoDate($ret_ts);
+		if ($retMongodloidDate) {
+			return new Mongodloid_Date($ret_ts);
 		}
 		return $ret_ts;
 	}

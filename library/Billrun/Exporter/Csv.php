@@ -7,12 +7,12 @@
  */
 
 /**
- * Billing exporter to CSV
+ * Billing abstract exporter bulk (multiple rows at once) to CSV
  *
  * @package  Billing
- * @since    5.9
+ * @since    2.8
  */
-class Billrun_Exporter_Csv extends Billrun_Exporter_File {
+abstract class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	
 	static protected $type = 'csv';
 	
@@ -23,11 +23,8 @@ class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	 */
 	protected $delimiter = '';
 	
-	protected $fixedWidth = false;
-	
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->fixedWidth = Billrun_Util::getIn($this->config, 'exporter.format.type', 'delimiter') === 'fixed_width';
 		$this->delimiter = $this->getDelimiter();
 	}
 	
@@ -37,49 +34,23 @@ class Billrun_Exporter_Csv extends Billrun_Exporter_File {
 	 * @return string
 	 */
 	protected function getDelimiter() {
-		if ($this->fixedWidth) {
-			return '';
-		}
-		return Billrun_Util::getIn($this->config, 'format.delimiter', ',');
+		return $this->getConfig('delimiter', ',');
 	}
 	
 	/**
-	 * see parent::formatValue
+	 * see parent::getHeader()
 	 */
-	protected function formatData($row, $type = 'data') {
-		if (!$this->fixedWidth) {
-			return $row;
-		}
-
-		switch ($type) {
-			case 'header':
-				$widthMappingField = 'header_mapping';
-				break;
-			case 'footer':
-				$widthMappingField = 'footer_mapping';
-				break;
-			case 'data':
-			default:
-				$widthMappingField = 'fields_mapping';
-				break;
-		}
-		foreach ($row as $field => $value) {
-			$width = Billrun_Util::getIn($this->config, array('exporter', 'format', 'widths', $widthMappingField, $field), strlen($value));
-			$row[$field] = str_pad($value, $width, ' ', STR_PAD_LEFT);
-                        if (strlen($row[$field]) > $width){
-                            $row[$field] = substr($row[$field], 0, $width);
-                        }
-		}
-		return $row;
+	protected function getHeader() {
+		$includeHeader = $this->getConfig('include_header', true);
+		return $includeHeader ? [array_keys($this->getFieldsMapping())] : array();
 	}
-
+	
 	/**
 	 * see parent::exportRowToFile
 	 */
-	protected function exportRowToFile($fp, $row, $type = 'data') {
-		$rowToExport = $this->formatData($row, $type);
-		fputs($fp, implode($rowToExport, $this->delimiter) . PHP_EOL);
+	protected function exportRowToFile($fp, $row) {
+		fputcsv($fp, $row, $this->delimiter);
 	}
-
+	
 }
 

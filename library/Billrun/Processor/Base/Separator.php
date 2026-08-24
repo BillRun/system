@@ -127,7 +127,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$header['source'] = static::$type;
 		$header['type'] = self::$type;
 		$header['file'] = basename($this->filePath);
-		$header['process_time'] = new MongoDate();
+		$header['process_time'] = new Mongodloid_Date();
 		Billrun_Factory::dispatcher()->trigger('afterHeaderParsing', array($header, $this));
 		$this->data['header'] = $header;
 		return $header;
@@ -154,7 +154,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$row['type'] = self::$type;
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
@@ -182,7 +182,7 @@ abstract class Billrun_Processor_Base_Separator extends Billrun_Processor {
 		$trailer['type'] = self::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 		Billrun_Factory::dispatcher()->trigger('afterFooterParsing', array($trailer, $this));
 		$this->data['trailer'] = $trailer;
 		return $trailer;

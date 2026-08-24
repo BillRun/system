@@ -12,14 +12,14 @@ if(!empty($data['discounts']['lines'])) {
 	<?php if($displayTotal) { ?>
 		<tr class="total">
 			<td colspan='<?php echo $colspan; ?>'><?php echo Generator_Translations::stranslate('DEF_INV_DISCOUNTS');?></td>
-			<td><?php echo '$' . number_format($data['discounts']['total'] , 2); ?></td>
+			<td><?php echo $this->currencySymbol()  . number_format($data['discounts']['total'] , 2); ?></td>
 		</tr>
 	<?php } ?>
 	<?php foreach($data['discounts']['lines'] as $title => $amount) { ?>
 	<?php if($amount == 0 ) { continue; } ?>
 		<tr class="<?php echo ( $endKey === $title ? 'last' : '') ?>">
 			<td colspan="<?php echo $colspan; ?>"><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $title ?> </td>
-			<td><?php echo '$' . number_format($amount,2) ?></td>
+			<td><?php echo $this->currencySymbol()  . number_format($amount,2) ?></td>
 		</tr>
 	<?php }//foreach ?>
 <?php } ?>

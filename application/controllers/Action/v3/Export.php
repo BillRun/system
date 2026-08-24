@@ -116,13 +116,13 @@ class V3_exportAction extends ApiAction {
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
 				if (isset($retQuery['from'])) {
-					$retQuery['from'] = $this->intToMongoDate($retQuery['from']);
+					$retQuery['from'] = $this->intToMongodloidDate($retQuery['from']);
 				}
 				if (isset($retQuery['to'])) {
-					$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
+					$retQuery['to'] = $this->intToMongodloidDate($retQuery['to']);
 				}
 				if (isset($retQuery['urt'])) {
-					$retQuery['urt'] = $this->intToMongoDate($retQuery['urt']);
+					$retQuery['urt'] = $this->intToMongodloidDate($retQuery['urt']);
 				}
 		}
 
@@ -130,24 +130,24 @@ class V3_exportAction extends ApiAction {
 	}
 
 	/**
-	 * Change numeric references to MongoDate object in a given filed in an array.
-	 * @param MongoDate $arr 
+	 * Change numeric references to Mongodloid_Date object in a given filed in an array.
+	 * @param Mongodloid_Date $arr 
 	 * @param type $fieldName the filed in the array to alter
 	 * @return the translated array
 	 */
-	protected function intToMongoDate($arr) {
+	protected function intToMongodloidDate($arr) {
 		if (is_array($arr)) {
 			foreach ($arr as $key => $value) {
 				if (is_numeric($value)) {
-					$arr[$key] = new MongoDate((int) $value);
+					$arr[$key] = new Mongodloid_Date((int) $value);
 				} else if(is_string($value)) {
-					$arr[$key] = new MongoDate( strtotime($value) );
+					$arr[$key] = new Mongodloid_Date( strtotime($value) );
 				}
 			}
 		} else if (is_numeric($arr)) {
-			$arr = new MongoDate((int) $arr);
+			$arr = new Mongodloid_Date((int) $arr);
 		} else if(is_string($value)) {
-				$arr = new MongoDate((int) $arr);
+				$arr = new Mongodloid_Date((int) $arr);
 		}
 		return $arr;
 	}

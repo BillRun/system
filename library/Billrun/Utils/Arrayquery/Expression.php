@@ -28,6 +28,14 @@ class Billrun_Utils_Arrayquery_Expression {
 		'$not' => '_not',
 		'$exists' => '_exists',
 		'$regex' => '_regex',
+		'$lengthEq' => '_lengthEq',
+		'$lengthNe' => '_lengthNe',
+		'$lengthIn' => '_lengthIn',
+		'$lengthNin' => '_lengthNin',
+		'$lengthLt' => '_lengthLt',
+		'$lengthLte' => '_lengthLte',
+		'$lengthGt' => '_lengthGt',
+		'$lengthGte' => '_lengthGte',
 		'*' => '_search',
 		'**' => '_deepSearch',
 		'__callback' => '_callback'
@@ -61,10 +69,10 @@ class Billrun_Utils_Arrayquery_Expression {
 					
 					$ret &= $this->{$this->mapping[$key]}($field,$value);
 					
-				} else if(($field instanceof ArrayAccess || is_array($field)) /*&& isset($field[$key])*/) {
-					
-					$ret &= $this->evaluate(@$field[$key], $value);
-					
+				} else if (isset($value)) {
+
+					$fieldVal = $field instanceof ArrayAccess || is_array($field) ? @$field[$key] : $field;
+					$ret &= $this->evaluate($fieldVal, $value);
 				} else {
 					$ret = FALSE;
 				}
@@ -131,10 +139,11 @@ class Billrun_Utils_Arrayquery_Expression {
 	//======================================= Complex expressions ===============================
 	
 	protected function _in($field, $value) {
+		$nonStrictPairs = [['integer', 'float'], ['integer', 'double']];
 		return  is_array($value) && is_array($field) && !empty(array_intersect($value,$field))
-				|| is_array($value) && in_array($field,$value, true)
-				|| is_array($field) && in_array($value,$field, true)
-				|| $this->_equal($field, $value);
+		|| is_array($value) && static::in_array_custom($field, $value, $nonStrictPairs)
+		|| is_array($field) && static::in_array_custom($value,$field, $nonStrictPairs)
+		|| static::equal_custom($field, $value, $nonStrictPairs);
 	}
 	
 	protected function _nin($field, $value) {
@@ -172,6 +181,98 @@ class Billrun_Utils_Arrayquery_Expression {
 		return  (is_array($field) && !empty(array_filter($field, $arrayRegexFunc)))
 					|| 
 				preg_match($value, $field);
+	}
+
+	//======================================= Array length logic ===============================
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthEq($field, $value) {
+		if (!is_array($field)) {
+			return false;
+		}
+
+		return count($field) == $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthNe($field, $value) {
+		return !$this->_lengthEq($field, $value);
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthIn($field, $value) {
+		if (!is_array($field)) {
+			return false;
+		}
+
+		if (!is_array($value)) {
+			return count($field) == $value;
+		}
+
+		foreach ($value as $count) {
+			if (count($field) == $count) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthNin($field, $value) {
+		return !$this->_lengthIn($field, $value);
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthLt($field, $value) {
+		return is_array($field) && count($field) < $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthLte($field, $value) {
+		return is_array($field) && count($field) <= $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthGt($field, $value) {
+		return is_array($field) && count($field) > $value;
+	}
+
+	/**
+	 * @param mixed $field
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function _lengthGte($field, $value) {
+		return is_array($field) && count($field) >= $value;
 	}
 	
 	//======================================= Searching logic ==================================
@@ -225,5 +326,31 @@ class Billrun_Utils_Arrayquery_Expression {
 	 */
 	protected function _callback($field, $value) {
 		return empty($value['callback']) ? FALSE : call_user_func_array($value['callback'],array($field,$value['arguments']));
+	}
+
+	public static function in_array_custom($needle, $haystack, $nonStrictPairs=[]) {
+		foreach ($haystack as $value) {
+			if(static::equal_custom($needle, $value, $nonStrictPairs)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	public static function equal_custom($field, $value, $nonStrictPairs=[]){
+		if(empty($nonStrictPairs)){
+			return ($field === $value);
+		}else{
+			foreach ($nonStrictPairs as $nonStrictPair){
+					$typeA = gettype($field);
+					$typeB = gettype($value);
+					if(($typeA == $nonStrictPair[0] && $typeB == $nonStrictPair[1])||
+					 ($typeB == $nonStrictPair[0] && $typeA==$nonStrictPair[1])){
+						 return $field == $value;
+					}
+			}
+			return ($field === $value);
+		}
 	}
 }

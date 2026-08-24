@@ -32,7 +32,8 @@ def test_update_services():
     params_to_upd = {
         'description': get_random_str(),
         'prorated': get_true_or_false(),
-        'quantitative': get_true_or_false()
+        'quantitative': get_true_or_false(),
+        'Billing_Frequency': 'Monthly',
     }
     service.compose_create_payload().create()
     assertion_steps.validate_create_response_is_correct()

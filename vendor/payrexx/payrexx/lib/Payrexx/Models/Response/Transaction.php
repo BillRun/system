@@ -27,6 +27,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     private $contact;
     private $pageUuid;
     private $payrexxFee;
+    private $fee;
     private $refundable;
     private $partiallyRefundable;
 
@@ -248,6 +249,22 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     public function setPayrexxFee(int $payrexxFee)
     {
         $this->payrexxFee = $payrexxFee;
+    }
+
+    /**
+     * @return integer
+     */
+    public function getFee()
+    {
+        return $this->fee;
+    }
+
+    /**
+     * @param int $fee
+     */
+    public function setFee(int $fee)
+    {
+        $this->fee = $fee;
     }
 
     /**

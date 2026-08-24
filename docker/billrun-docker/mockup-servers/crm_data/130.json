@@ -1,0 +1,100 @@
+{
+    "status":1,
+    "data":[
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "130",
+        "firstname": "yossi",
+        "lastname": "test",
+        "email": "test@gmail.com",
+        "country": "Israel",
+        "address": "hshalom 7",
+        "zip_code": "123ab",
+        "payment_gateway": "",
+        "salutation": "",
+        "type": "account",
+        "to": "2173-11-28T09:52:14",
+        "creation_time": "2024-11-27 22:00:00"
+    },
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "130",
+        "sid": "1301",
+        "plan": "PLAN_A",
+        "services": [],
+        "play": "Default",
+        "firstname": "yossi",
+        "lastname": "test",
+        "address": "hshalom 7",
+        "country": "Israel",
+        "type": "subscriber",
+        "plan_activation": "2020-11-27 22:00:00",
+        "to": "2173-11-28T09:52:35",
+        "deactivation_date": "2173-11-28T09:52:35",
+        "creation_time": "2020-11-27 22:00:00",
+        "activation_date": "2020-11-27 22:00:00",
+        "discounts" : [
+            {
+                "priority" : "",
+                "params" : {
+                    "conditions" : [ ]
+                },
+                "from" : "2020-11-28 02:00:00",
+                "subject" : {
+                    "plan" : {
+                        "PLAN_A" : {
+                            "value" : 5
+                        }
+                    }
+                },
+                "proration" : "inherited",
+                "type" : "monetary",
+                "to" : "2025-10-18 00:00:00",
+                "description" : "discount_subscriber",
+                "key" : "SUBSCRIBER_DISCOUNT_acf"
+            }
+        ],
+        "plan_deactivation": "2173-11-28T09:52:35"
+    },
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "130",
+        "sid": "1302",
+        "plan": "PLAN_A",
+        "services": [],
+        "play": "Default",
+        "firstname": "yossi",
+        "lastname": "test",
+        "address": "hshalom 7",
+        "country": "Israel",
+        "type": "subscriber",
+        "plan_activation": "2020-11-27 22:00:00",
+        "to": "2173-11-28T09:52:35",
+        "deactivation_date": "2173-11-28T09:52:35",
+        "creation_time": "2020-11-27 22:00:00",
+        "activation_date": "2020-11-27 22:00:00",
+        "plan_deactivation": "2173-11-28T09:52:35",
+        "discounts" : [
+            {
+                "priority" : "",
+                "params" : {
+                    "conditions" : [ ]
+                },
+                "from" : "2020-11-28 02:00:00",
+                "subject" : {
+                    "plan" : {
+                        "PLAN_A" : {
+                            "value" : 10
+                        }
+                    }
+                },
+                "proration" : "inherited",
+                "type" : "monetary",
+                "to" : "2025-10-18 00:00:00",
+                "description" : "discount_subscriber",
+                "key" : "SUBSCRIBER_DISCOUNT_c85"
+            }
+        ]
+    }
+]
+}

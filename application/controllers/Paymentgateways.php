@@ -22,6 +22,7 @@ class PaymentGatewaysController extends ApiController {
 	
 	public function init() {
 		parent::init();
+		Billrun_Util::setHttpSessionTimeout(null, 'Lax');
 	}
 
 	public function listAction() {
@@ -82,9 +83,9 @@ class PaymentGatewaysController extends ApiController {
 			$requestData['fail_page'] = urlencode($requestData['fail_page']);
 		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
-            $ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
-            $ex->logLevel = Zend_Log::DEBUG;
-            throw $ex;
+			$ex = new Billrun_Exceptions_Api(999, array(), "Failed to authenticate");
+			$ex->logLevel = Zend_Log::DEBUG;
+			throw $ex;
 		} else {
 			$data = $originalRequestData;
 			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
@@ -202,6 +203,7 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
+		Billrun_Factory::log("OKPage request is: " . json_encode($request->getRequest()), Zend_Log::DEBUG);
 		$name = urldecode($request->get("name"));
 		if (is_null($name)) {
 			return $this->setError("Missing payment gateway name", $request);
@@ -241,7 +243,7 @@ class PaymentGatewaysController extends ApiController {
 			$output = array(
 				'status' => 1,
 				'desc' => 'success',
-				'details' => array('credit_card' => $res['creditCard'], 'expiration_date' => $res['expirationDate']),
+				'details' => $paymentGateway->getTransactionDetails($res),
 			);
 			$this->setOutput(array($output));
 		} else {

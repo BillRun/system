@@ -1,22 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable';
-import { Form, Panel, Col, FormGroup } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { FormGroup, Panel } from '@/common/BootstrapCompat';
 import CustomFieldForeignCondition from './CustomFieldForeignCondition';
 import { EntityField } from '@/components/Entity';
 import { CreateButton } from '@/components/Elements';
 
-
 const CustomFieldForeignForm = ({
-  item, mode,
-  onChangeTitle, isErrorTitle,
-  onChangeEntity, isErrorForeigEntity, foreignEntities,
-  onChangeField, isErrorForeignField, foreignFields,
-  onChangeTranslateType, isErrorForeignTranslateType, translateTypes,
-  onChangeTranslateFormat, translateTypeFormats, foreignFieldsConditionsOperators,
-  onAddCondition, onUpdateCondition, onRemoveCondition, isErrorConditions,
+  item = Map(), mode = 'create',
+  onChangeTitle, isErrorTitle = false,
+  onChangeEntity, isErrorForeigEntity = false, foreignEntities = [],
+  onChangeField, isErrorForeignField = false, foreignFields = [],
+  onChangeTranslateType, isErrorForeignTranslateType = false, translateTypes = [],
+  onChangeTranslateFormat, translateTypeFormats = [], foreignFieldsConditionsOperators = [],
+  onAddCondition, onUpdateCondition, onRemoveCondition, isErrorConditions = Map(),
 }) => (
-  <Form horizontal>
+  <Form className="form-horizontal">
     <EntityField
       field={Map({ title: 'Title', field_name: 'title', mandatory: true })}
       entity={item}
@@ -83,9 +83,9 @@ const CustomFieldForeignForm = ({
         {!item.get('conditions', List()).isEmpty() && (
         <Col sm={12} className="form-inner-edit-rows">
           <FormGroup className="form-inner-edit-row">
-            <Col sm={4} xsHidden><label htmlFor="field_field">Field</label></Col>
-            <Col sm={2} xsHidden><label htmlFor="operator_field">Operator</label></Col>
-            <Col sm={4} xsHidden><label htmlFor="value_field">Value</label></Col>
+            <Col sm={4} className="d-none d-sm-block"><label htmlFor="field_field">Field</label></Col>
+            <Col sm={2} className="d-none d-sm-block"><label htmlFor="operator_field">Operator</label></Col>
+            <Col sm={4} className="d-none d-sm-block"><label htmlFor="value_field">Value</label></Col>
           </FormGroup>
         </Col>
         )}
@@ -153,22 +153,5 @@ CustomFieldForeignForm.propTypes = {
   onUpdateCondition: PropTypes.func.isRequired,
   onRemoveCondition: PropTypes.func.isRequired,
 };
-
-
-CustomFieldForeignForm.defaultProps = {
-  item: Map(),
-  mode: 'create',
-  foreignEntities: [],
-  foreignFields: [],
-  translateTypes: [],
-  translateTypeFormats: [],
-  foreignFieldsConditionsOperators: [],
-  isErrorTitle: false,
-  isErrorForeigEntity: false,
-  isErrorForeignField: false,
-  isErrorForeignTranslateType: false,
-  isErrorConditions: Map(),
-};
-
 
 export default CustomFieldForeignForm;

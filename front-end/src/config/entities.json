@@ -35,7 +35,8 @@
     "itemName": "prepaid plan",
     "itemsName": "prepaid plans",
     "itemType": "prepaid_plan",
-    "itemsType": "prepaid_plans"
+    "itemsType": "prepaid_plans",
+    "settingsKey": "plans"
   },
   "prepaid_include": {
     "collection": "prepaidincludes",
@@ -54,7 +55,8 @@
     "itemsName": "products",
     "itemType": "product",
     "itemsType": "products",
-    "settingsKey": "rates"
+    "settingsKey": "rates",
+    "defaultListFields": ["description", "key", "rates"]
   },
   "discount": {
     "collection": "discounts",
@@ -84,7 +86,8 @@
     "itemsName": "subscribers",
     "itemType": "subscription",
     "itemsType": "subscriptions",
-    "settingsKey": "subscribers.subscriber"
+    "settingsKey": "subscribers.subscriber",
+    "defaultListFields": ["sid", "firstname", "lastname", "plan", "plan_activation", "services"]
   },
   "customer": {
     "collection": "accounts",
@@ -94,7 +97,8 @@
     "itemsName": "customers",
     "itemType": "customer",
     "itemsType": "customers",
-    "settingsKey": "subscribers.account"
+    "settingsKey": "subscribers.account",
+    "defaultListFields": ["aid", "firstname", "lastname"]
   },
   "report": {
     "collection": "reports",
@@ -114,6 +118,24 @@
     "itemType": "usage",
     "itemsType": "usages"
   },
+  "rebalance_queue": {
+    "collection": "rebalance_queue",
+    "settingsKey": "rebalance_queue",
+    "uniqueField": "conditions_hash",
+    "itemName": "Rebalance Queue",
+    "itemsName": "Rebalances Queue",
+    "itemType": "rebalance_queue",
+    "itemsType": "rebalances_queue"
+  },
+  "usage_archive": {
+    "collection": "archive",
+    "settingsKey": "lines",
+    "uniqueField": "stamp",
+    "itemName": "usage (archive)",
+    "itemsName": "usages (archive)",
+    "itemType": "usage_archive",
+    "itemsType": "usages_archive"
+  },
   "queue": {
     "collection": "queue",
     "uniqueField": "stamp",
@@ -130,7 +152,8 @@
     "itemsName": "tax rates",
     "itemType": "tax",
     "itemsType": "taxes",
-    "settingsKey": "taxes"
+    "settingsKey": "taxes",
+    "defaultListFields": ["key", "description", "rate"]
   },
   "logFile": {
     "collection": "log",
@@ -167,8 +190,8 @@
   "paymentsFiles" : {
     "collection": "log",
     "uniqueField": "stamp",
-    "itemName": "transactions request file",
-    "itemsName": "transactions request file",
+    "itemName": "payment file",
+    "itemsName": "payments files",
     "itemType": "payment_files",
     "itemsType": "payments_files"
   },
@@ -180,11 +203,27 @@
     "itemType": "event",
     "itemsType": "events"
   },
+  "suggestions": {
+    "collection": "suggestions",
+    "itemName": "suggestion",
+    "itemsName": "suggestions",
+    "itemType": "suggestion",
+    "itemsType": "suggestions"
+  },
   "auto_renew": {
     "collection": "autorenew",
     "itemName": "recurring charge",
     "itemsName": "recurring charges",
     "itemType": "auto_renew",
     "itemsType": "auto_renews"
+  },
+  "jobs_queue": {
+    "collection": "jobs_messages",
+    "audited": true,
+    "uniqueField": "md5",
+    "itemName": "Job",
+    "itemsName": "Jobs",
+    "itemType": "job",
+    "itemsType": "jobs"
   }
 }

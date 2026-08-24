@@ -24,16 +24,18 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZoneField = null, $timeZoneLiteral = null) {
 		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
 		$timeZoneValue = null;
 		if (is_null($dateValue)) {
 			return null;
 		}
-		if (!empty($timeZone)) {
-			if (!empty($value = billrun_util::getIn($userFields, $timeZone))) {
+		if (!empty($timeZoneLiteral)) {
+			$timeZoneValue = new DateTimeZone($timeZoneLiteral);
+		} else if (!empty($timeZoneField)) {
+			if (!empty($value = billrun_util::getIn($userFields, $timeZoneField))) {
 				$timeZoneValue = new DateTimeZone($value);
-			} else $timeZoneValue = null;
+			}
 		}
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
@@ -66,5 +68,85 @@ class Billrun_Processor_Util {
 			return $datetime;
 		}
 		return null;
+	}
+	
+	public static function getCalculatedFields($type, $linet = null) {
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $linet);
+		$calculated_fields = $fileTypeConfig['processor']['calculated_fields'] ?? [];
+		$cf = array_map(function($field){
+			return $field['target_field'];
+		}, $calculated_fields);
+		return $cf;
+	}
+	
+	public static function getUserFields($type, $linet = null) {
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $linet);
+		$uf = $fileTypeConfig['parser']['custom_keys'] ?? [];
+		return $uf;
+	}
+	
+	/**
+	 *  Get all user fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user field names
+	 */
+	public static function getCustomerAndRateUfByUsaget($type, $lineType = null) {
+		$customerAndRateUf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType) ?? [];
+		$uf = self::getUserFields($type, $lineType);
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $uf)){
+					$customerAndRateUf[$usaget][] = 'uf.' . $field;
+				}
+			}
+		}
+		return $customerAndRateUf;
+	}
+	
+	
+	/**
+	 *  Get all calcualted fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - calculated field names
+	 */
+	public static function getCustomerAndRateCfByUsaget($type, $lineType = null) {
+		$customerAndRateCf = [];
+		$fieldsByUsaget = self::getCustomerAndRateUfAndCfByUsaget($type, $lineType);
+		$cf = self::getCalculatedFields($type, $lineType);
+		foreach ($fieldsByUsaget as $usaget => $fields){
+			foreach ($fields as $field){
+				if(in_array($field, $cf)){
+					$customerAndRateCf[$usaget][] = 'cf.' . $field;
+				}
+			}
+		}
+		return $customerAndRateCf;
+	}
+
+	
+	/**
+	 *  Get all user fields and calculator fields that are used in calculator and rating stages.
+	 * @param string $type - input processor name
+	 * @return array - user and calculated field names
+	 */
+	public static function getCustomerAndRateUfAndCfByUsaget($type, $lineType = null) {
+		$customerFieldNames = [];
+		$rateFieldNames = [];
+		$fileTypeConfig = Billrun_Factory::config()->getLineTypeConfigByName($type, true, $lineType);
+		$customerIdentificationFields = $fileTypeConfig['customer_identification_fields'] ?? [];
+		foreach ($customerIdentificationFields as $customerUsaget => $fields) {
+			$customerFieldNames[$customerUsaget] = array_column($fields, 'src_key');
+		}
+		$rateCalculators = $fileTypeConfig['rate_calculators'] ?? [];
+		foreach ($rateCalculators as $rateByUsaget) {
+			foreach ($rateByUsaget as $rateUsaget => $priorityByUsaget) {
+                                $rateFieldNames[$rateUsaget] = array();
+				foreach ($priorityByUsaget as $priority) {
+					$rateFieldNames[$rateUsaget] = array_unique(array_merge($rateFieldNames[$rateUsaget], array_column($priority, 'line_key')));
+				}
+			}
+		}
+		return array_merge_recursive($customerFieldNames, $rateFieldNames);
 	}
 }

@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import Field from '@/components/Field';
-import { Button, FormGroup, Col, HelpBlock } from 'react-bootstrap';
+import { Button, Col } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { parseConfigSelectOptions } from '@/common/Util';
 import ConditionValue from './ConditionValue';
 
@@ -17,6 +18,7 @@ class Condition extends Component {
     operators: PropTypes.instanceOf(Immutable.List),
     customValueOptions: PropTypes.instanceOf(Immutable.List),
     fields: PropTypes.instanceOf(Immutable.List),
+    conditionsSize:  PropTypes.number,
     error: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.bool,
@@ -25,6 +27,8 @@ class Condition extends Component {
     onChangeOperator: PropTypes.func,
     onChangeValue: PropTypes.func,
     onRemove: PropTypes.func,
+    removeButtonVariant: PropTypes.string,
+    removeButtonClass: PropTypes.string,
   }
 
   static defaultProps = {
@@ -33,6 +37,7 @@ class Condition extends Component {
     disabled: false,
     editable: true,
     fields: Immutable.List(),
+    conditionsSize: 0,
     operators: Immutable.List(),
     customValueOptions: Immutable.List(),
     error: false,
@@ -40,14 +45,17 @@ class Condition extends Component {
     onChangeOperator: () => {},
     onChangeValue: () => {},
     onRemove: () => {},
+    removeButtonVariant: 'default',
+    removeButtonClass: 'pull-left btn-xs',
   }
 
   shouldComponentUpdate(nextProps) {
-    const { item, index, disabled, fields, operators, editable, error } = this.props;
+    const { item, index, disabled, fields, conditionsSize, operators, editable, error } = this.props;
     return (
       !Immutable.is(item, nextProps.item)
       || !Immutable.is(fields, nextProps.fields)
       || !Immutable.is(operators, nextProps.operators)
+      || conditionsSize !== nextProps.conditionsSize
       || index !== nextProps.index
       || disabled !== nextProps.disabled
       || editable !== nextProps.editable
@@ -151,7 +159,7 @@ class Condition extends Component {
   }
 
   render() {
-    const { item, disabled, editable, error } = this.props;
+    const { item, conditionsSize, disabled, editable, error, removeButtonVariant, removeButtonClass } = this.props;
     const config = this.getConfig();
     const operator = this.getOperator();
     const fieldOptions = this.getFieldOptions();
@@ -161,9 +169,6 @@ class Condition extends Component {
     const disableVal = disabled || item.get('op', '') === '' || disableOp;
     return (
       <FormGroup className="form-inner-edit-row" validationState={error ? 'error' : null}>
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="field_field">Field</label>
-        </Col>
         <Col sm={4} className="pl0">
           <Field
             fieldType="select"
@@ -176,9 +181,6 @@ class Condition extends Component {
           />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="operator_field">Operator</label>
-        </Col>
         <Col sm={3}>
           <Field
             fieldType="select"
@@ -191,14 +193,12 @@ class Condition extends Component {
           />
         </Col>
 
-        <Col smHidden mdHidden lgHidden>
-          <label htmlFor="value_field">Value</label>
-        </Col>
         <Col sm={4}>
           <ConditionValue
             field={item}
             config={config}
             operator={operator}
+            conditionsSize={conditionsSize}
             customValueOptions={customValueOptions}
             disabled={disableVal}
             editable={editable}
@@ -207,7 +207,7 @@ class Condition extends Component {
         </Col>
         {editable && (
           <Col sm={1} className="actions">
-            <Button onClick={this.onRemove} bsSize="small" className="pull-left" disabled={disabled}>
+            <Button onClick={this.onRemove} size="sm" variant={removeButtonVariant} className={removeButtonClass} disabled={disabled}>
               <i className="fa fa-trash-o danger-red" />
             </Button>
           </Col>

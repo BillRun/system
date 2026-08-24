@@ -4,11 +4,10 @@ import ReactSelect from 'react-select';
 import Creatable from 'react-select/creatable';
 import AsyncSelect from 'react-select/async';
 
-
 const Select = ({
-  value, onChange, editable, disabled,
-  multi, clearable, noResultsText, options, allowCreate, addLabelText, placeholder,
-  isAsync, loadAsyncOptions,
+  value = '', onChange = () => {}, editable = true, disabled = false,
+  multi = false, clearable = true, noResultsText = undefined, options = [], allowCreate = false, addLabelText = undefined, placeholder = undefined,
+  isAsync = false, isControlled = true, loadAsyncOptions = () => {},
   ...otherProps
 }) => {
   const fixBoolValues = (value) => {
@@ -20,8 +19,13 @@ const Select = ({
     }
     return value;
   }
+  const notEmptyValue = value => 
+    value !== ''
+    && value !== null
+    && typeof value !== 'undefined';
+
   /* Support old existing Select fileds from v0.9.x*/
-  const legacyValues = ((multi) ? value.split(',').map(fixBoolValues) : [value]).filter(val => val !== '');
+  const legacyValues = ((multi && typeof value === 'string') ? value.split(',').map(fixBoolValues) : [value]).filter(notEmptyValue);
 
   if (!editable) {
     const displayValue = options
@@ -47,7 +51,6 @@ const Select = ({
     formatCreateLabel = (label) => addLabelText.replace('{label}', label);
   }
 
-
   const onChangeValue = (option, { action, removedValue, name }) => {
     let newValue = '';
     if (action !== 'clear' && option !== null) {
@@ -63,12 +66,32 @@ const Select = ({
       return (index !== -1) ? options[index] : { value: legacyValue, label: legacyValue };
     });
   } else {
-    if (value !== '') {
+    if (isAsync) {
+      selectValue = value;
+    }
+    else if (value !== '') {
       const index = options.findIndex(option => value === option.value);
       selectValue = (index !== -1) ? options[index] : { value, label: value };
     } else {
       selectValue = null;
     }
+  }
+  if (isAsync && !isControlled) {
+    return (
+      <AsyncSelect
+        {...otherProps}
+        placeholder={placeholder}
+        classNamePrefix="react-select"
+        onChange={onChangeValue}
+        captureMenuScroll={false}
+        isMulti={isMulti}
+        isClearable={isClearable}
+        isDisabled={isDisabled}
+        noOptionsMessage={noOptionsMessage}
+        formatCreateLabel={formatCreateLabel}
+        loadOptions={loadAsyncOptions}
+      />
+    );
   }
 
   if (isAsync) {
@@ -79,6 +102,7 @@ const Select = ({
         value={selectValue}
         classNamePrefix="react-select"
         onChange={onChangeValue}
+        captureMenuScroll={false}
         isMulti={isMulti}
         isClearable={isClearable}
         isDisabled={isDisabled}
@@ -98,6 +122,7 @@ const Select = ({
         value={selectValue}
         classNamePrefix="react-select"
         onChange={onChangeValue}
+        captureMenuScroll={false}
         isMulti={isMulti}
         isClearable={isClearable}
         isDisabled={isDisabled}
@@ -115,6 +140,7 @@ const Select = ({
       value={selectValue}
       classNamePrefix="react-select"
       onChange={onChangeValue}
+      captureMenuScroll={false}
       isMulti={isMulti}
       isClearable={isClearable}
       isDisabled={isDisabled}
@@ -123,34 +149,19 @@ const Select = ({
   );
 };
 
-Select.defaultProps = {
-  value: '',
-  disabled: false,
-  editable: true,
-  multi: false,
-  isAsync: false,
-  clearable: true,
-  allowCreate:false,
-  noResultsText: undefined,
-  placeholder: undefined,
-  addLabelText: undefined,
-  options: [],
-  inputProps: {},
-  onChange: () => {},
-  loadAsyncOptions: () => {},
-};
-
 Select.propTypes = {
   value: PropTypes.oneOfType([
     PropTypes.string,
     PropTypes.number,
     PropTypes.bool,
+    PropTypes.object,
   ]),
   allowCreate: PropTypes.bool,
   disabled: PropTypes.bool,
   editable: PropTypes.bool,
   multi: PropTypes.bool,
   isAsync: PropTypes.bool,
+  isUncontrolled: PropTypes.bool,
   clearable: PropTypes.bool,
   noResultsText: PropTypes.string,
   options: PropTypes.array,

@@ -1,13 +1,16 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import withRouter from '@/common/withRouter';
 import moment from 'moment';
 import Immutable from 'immutable';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 /* COMPONENTS */
 import Pager from '../Pager';
 import Filter from '../Filter';
 import List from '../List';
+import { Actions } from '@/components/Elements';
 /* ACTIONS */
 import { getList, clearList } from '@/actions/listActions';
 import { getConfig } from '@/common/Util';
@@ -78,6 +81,10 @@ class InvoicesList extends Component {
     this.setState({ sort }, this.fetchItems);
   }
 
+  onCreateImmediateInvoice = () => {
+    this.props.router.push('/immediate-invoice-charge');
+  }
+
   fetchItems = () => {
     this.props.dispatch(getList('invoices', this.buildQuery()));
     this.props.dispatch(getList('billrun', this.buildQuery()));
@@ -88,9 +95,10 @@ class InvoicesList extends Component {
 
   renderMainPanelTitle = () => (
     <div>
-      <span>
-        List of all invoices
-      </span>
+      List of all invoices
+      <div className="pull-right">
+          <Actions actions={this.getListActions()} />
+        </div>
     </div>
   );
 
@@ -128,6 +136,14 @@ class InvoicesList extends Component {
     }
     return moment.unix(sentDate).format(getConfig('datetimeFormat', 'DD/MM/YYYY HH:mm'));
   };
+
+  getListActions = () => [{
+    type: 'list',
+    label: 'Create Immediate Invoice',
+    onClick: this.onCreateImmediateInvoice,
+    actionStyle: 'primary',
+    actionSize: 'xsmall'
+  }]
 
   getTableFields = () => ([
     { id: 'invoice_id', title: 'Invoice Id', sort: true },
@@ -177,4 +193,4 @@ const mapStateToProps = (state, props) => ({
   items: state.list.get('invoices'),
 });
 
-export default connect(mapStateToProps)(InvoicesList);
+export default connect(mapStateToProps)(withRouter(InvoicesList));

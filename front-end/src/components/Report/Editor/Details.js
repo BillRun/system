@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { ControlLabel, FormGroup, Col } from 'react-bootstrap';
-import { titleCase } from 'change-case';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
+import { upperCaseFirst } from 'change-case';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import Help from '../../Help';
 import Field from '@/components/Field';
@@ -60,7 +61,7 @@ class Details extends Component {
     const { entities } = this.props;
     return entities.map(option => Immutable.Map({
       value: option,
-      label: titleCase(getConfig(['systemItems', option, 'itemName'], option)),
+      label: upperCaseFirst(getConfig(['systemItems', option, 'itemName'], option)),
     }))
     .map(formatSelectOptions)
     .toArray();
@@ -83,7 +84,7 @@ class Details extends Component {
       <div>
         <Col sm={12}>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Name
             </Col>
             <Col sm={7}>
@@ -97,7 +98,7 @@ class Details extends Component {
         </Col>
         <Col sm={12}>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Entity
             </Col>
             <Col sm={7}>
@@ -113,7 +114,7 @@ class Details extends Component {
         </Col>
         <Col sm={12}>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Report Type
             </Col>
             <Col sm={3} key="pricing-method-1">

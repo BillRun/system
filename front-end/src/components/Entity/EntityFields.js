@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
-import { MenuItem, DropdownButton, InputGroup } from 'react-bootstrap';
+import { DropdownButton, Dropdown } from 'react-bootstrap';
+import { InputGroupButton, Panel } from '@/common/BootstrapCompat';
 import classNames from 'classnames';
 import { titleCase } from 'change-case';
 import { EntityField } from './index';
@@ -142,30 +143,43 @@ class EntityFields extends Component {
     return isFieldOfPlay;
   }
 
-  renderField = (field, key) => {
+  renderField = (fields, category) => {
     const { entity, editable, onChangeField, onRemoveField, errors } = this.props;
-    const isFieldEditable = editable && field.get('editable', false);
-    return (
+
+    const rows = fields.map((field, key) => (
       <EntityField
         key={`key_${field.get('field_name', key)}`}
         field={field}
         entity={entity}
-        editable={isFieldEditable}
+        editable={editable && field.get('editable', false)}
         onChange={onChangeField}
         onRemove={onRemoveField}
         error={errors.get(field.get('field_name', ''), false)}
       />
+    ))
+
+    return category === 'uncategorized' ? rows : (
+      <Panel header={category} key={`panel-${category}`} collapsible className="collapsible">
+        {rows}
+      </Panel>
     );
   };
 
   renderFields = () => {
     const { fields, fieldsFilter } = this.props;
     const fieldFilterFunction = fieldsFilter !== null ? fieldsFilter : this.filterPrintableFields;
-    return fields
+    const updatedFields = fields
       .filter(this.filterPlayFields)
       .filter(fieldFilterFunction)
       .filter(this.filterParamsFields)
-      .map(this.renderField);
+
+    // Group fields by category
+    const fieldsByCategory = updatedFields.reduce((acc, field) => {
+      const category = field.get('category', '') || 'uncategorized';
+      return acc.update(category, Immutable.List(), cat => cat.push(field));
+    }, Immutable.Map());
+
+    return fieldsByCategory.map(this.renderField).toList();
   }
 
   renderAddParamButton = (options) => {
@@ -178,15 +192,17 @@ class EntityFields extends Component {
       });
       const onSelect = () => { this.onAddParam(option.value); };
       return (
-        <MenuItem key={option.value} eventKey={option.value} onSelect={onSelect}>
+        <Dropdown.Item key={option.value} eventKey={option.value} onSelect={onSelect}>
           <span className={menuItemClass}>{option.label}</span>
-        </MenuItem>
+        </Dropdown.Item>
       );
     });
     return (
-      <DropdownButton id="add-param-input" componentClass={InputGroup.Button} className="btn-primary btn btn-xs btn-default" title="Add parameter" >
-        { menuItems }
-      </DropdownButton>
+      <InputGroupButton>
+        <DropdownButton id="add-param-input" title="Add parameter" className="btn-xs">
+          { menuItems }
+        </DropdownButton>
+      </InputGroupButton>
     );
   }
 

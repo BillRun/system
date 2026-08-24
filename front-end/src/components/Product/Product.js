@@ -3,10 +3,11 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { connect } from 'react-redux';
 import { sentenceCase } from 'change-case';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel, HelpBlock } from '@/common/BootstrapCompat';
 import Help from '../Help';
 import Field from '@/components/Field';
-import { CreateButton } from '@/components/Elements';
+import { CreateButton, RoundingRules } from '@/components/Elements';
 import ProductPrice from './components/ProductPrice';
 import { ProductDescription } from '@/language/FieldDescriptions';
 import { EntityFields } from '../Entity';
@@ -23,7 +24,6 @@ import {
   usageTypesDataSelector,
   propertyTypeSelector,
 } from '@/selectors/settingsSelector';
-import { object } from 'bfj/src/events';
 
 
 class Product extends Component {
@@ -43,8 +43,6 @@ class Product extends Component {
     onProductRateRemove: PropTypes.func.isRequired,
     onToUpdate: PropTypes.func.isRequired,
     onUsagetUpdate: PropTypes.func.isRequired,
-    roundingTypeOptions: PropTypes.array,
-    roundingDecimalsOptions: PropTypes.array,
   }
 
   static defaultProps = {
@@ -59,12 +57,6 @@ class Product extends Component {
         allowedCharacters: 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)',
       },
     },
-    roundingTypeOptions: [
-      { value: 'down', label: 'Down' },
-      { value: 'up', label: 'Up' },
-      { value: 'nearest', label: 'Nearest' }
-    ],
-    roundingDecimalsOptions:[...Array(11)].map((_, i) => ({value: i , label: i }))
   };
 
   state = {
@@ -88,7 +80,7 @@ class Product extends Component {
   onChangeName = (e) => {
     const { errorMessages: { name: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onFieldUpdate(['key'], value);
@@ -172,24 +164,6 @@ class Product extends Component {
     this.props.onFieldUpdate(field, value);
   }
 
-  onChangeRoundingType = (value) => {
-    if(value === ""){
-      this.props.onFieldUpdate(['rounding_rules', 'rounding_type'], 'None');
-      this.props.onFieldUpdate(['rounding_rules', 'rounding_decimals'], undefined);
-      return;
-    }
-    this.props.onFieldUpdate(['rounding_rules', 'rounding_type'], value);
-    this.props.onFieldUpdate(['rounding_rules', 'rounding_decimals'], 2);
-  }
-
-  onChangeRoundingDecimals = (value) => {
-    if(value === ""){
-      this.props.onFieldUpdate(['rounding_rules', 'rounding_decimals'], undefined);
-      return;
-    }
-    this.props.onFieldUpdate(['rounding_rules', 'rounding_decimals'], value);
-  }
-
   onRemoveAdditionalField = (field) => {
     this.props.onFieldRemove(field);
   }
@@ -250,17 +224,15 @@ class Product extends Component {
 
   render() {
     const { errors } = this.state;
-    const { product, usaget, mode, ratingParams, roundingTypeOptions, roundingDecimalsOptions } = this.props;
+    const { product, usaget, mode, ratingParams } = this.props;
     const unit = this.getUnit();
     const pricingMethod = product.get('pricing_method', '');
-    const roundingType = product.getIn(['rounding_rules', 'rounding_type'], '');
-    const roundingDecimals = product.getIn(['rounding_rules', 'rounding_decimals'], '');
     const editable = (mode !== 'view');
 
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
 
               <PlaysSelector
@@ -270,7 +242,7 @@ class Product extends Component {
               />
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
                   <span className="danger-red"> *</span>
                   <Help contents={ProductDescription.description} />
@@ -282,7 +254,7 @@ class Product extends Component {
 
               { ['clone', 'create'].includes(mode) &&
                 <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('key', getFieldNameType('service'), sentenceCase('key'))}
                     <span className="danger-red"> *</span>
                     <Help contents={ProductDescription.key} />
@@ -305,7 +277,7 @@ class Product extends Component {
 
               { !this.isRetailRate() &&
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('add_to_retail', getFieldNameType('product'), sentenceCase('add to retail'))}
                     <Help contents={ProductDescription.addToRetail} />
                   </Col>
@@ -321,7 +293,7 @@ class Product extends Component {
               }
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('usage_type', getFieldNameType('product'), 'Unit Type')}
                   <span className="danger-red"> *</span>
                 </Col>
@@ -338,7 +310,7 @@ class Product extends Component {
                     : (
                       <div>
                         <Col sm={3} style={{ paddingTop: 7 }}>{usaget}</Col>
-                        <Col sm={4} componentClass={ControlLabel} className="pr0 pl0">
+                        <Col sm={4} as={ControlLabel} className="pr0 pl0">
                           Units of Measure
                         </Col>
                         <Col sm={5} className="pr0">
@@ -431,38 +403,13 @@ class Product extends Component {
                 onFieldRemove={this.props.onFieldRemove}
                 />
             </Panel>
-          )}
-            <Panel header={<h3>Rounding Rules</h3>} collapsible className="collapsible">
-            <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
-                  Final charge rounding type
-                </Col>
-                <Col sm={4}>
-                  <Field
-                    fieldType="select"
-                    options={roundingTypeOptions}
-                    onChange={this.onChangeRoundingType}
-                    value={roundingType}
-                    editable={editable}
-                  />
-                </Col>
-              </FormGroup>
-              {(roundingType && roundingType !== 'None') && <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
-                Final charge rounding Decimals
-                </Col>
-                <Col sm={4}>
-                  <Field
-                    fieldType="select"
-                    options={roundingDecimalsOptions}
-                    onChange={this.onChangeRoundingDecimals}
-                    value={roundingDecimals}
-                    editable={editable}
-                  />
-                </Col>
-              </FormGroup>}
+            )}
 
-            </Panel>
+            <RoundingRules
+              item={product}
+              editable={editable}
+              onChangeFieldValue={this.props.onFieldUpdate}
+            />
 
           </Form>
         </Col>

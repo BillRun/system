@@ -11,7 +11,7 @@
  *
  */
 class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
-	
+	   
 	/*
 	 * see Billrun_EmailSender_Base::shouldNotify
 	 */
@@ -30,20 +30,30 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getEmailBody
 	 */
 	protected function getEmailBody($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.content', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'content', '');
 	}
 
 	/**
 	 * see Billrun_EmailSender_Base::getEmailSubject
 	 */
 	protected function getEmailSubject($data) {
-		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
+		$template = Billrun_Util::findMatchingEmailTemplate('invoice_ready', $data);
+		return Billrun_Util::getIn($template, 'subject', '');
+	}
+        
+        /**
+	 * see Billrun_EmailSender_Base::getEmailPlaceholders
+	 */
+	protected function getEmailPlaceholders($data) { 
+		return Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.placeholders', []);
 	}
 	
 	/**
 	 * see Billrun_EmailSender_Base::translateMessage
 	 */
 	public function translateMessage($msg, $data = array()) {
+                $msg = parent::translateMessage($msg, $data);
 		$replaces = array(
 			'[[date]]' => date(Billrun_Base::base_dateformat),
 			'[[invoice_id]]' => $data['invoice_id'],
@@ -51,9 +61,10 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 			'[[invoice_due_date]]' => date(Billrun_Base::base_dateformat, $data['due_date']->sec),
 			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $data['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $data['end_date']->sec),
 			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
-			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
+			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', '')
 		);
 
+		Billrun_Factory::dispatcher()->trigger('alterMessageTranslations',[&$replaces, $data, $this]);
 //		This is currently disabled because email with embedded base64 images is not supported, but we might want it in the future
 //		// handle company logo
 //		if (is_null($this->logo)) {
@@ -129,6 +140,10 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	 * see Billrun_EmailSender_Base::getAttachments
 	 */
 	public function getAttachment($data) {
+		$sendPdf = Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.send_pdf', true);
+		if(!$sendPdf){
+			return [];
+		}
 		$dataFile = $this->getInvoicePDF($data);
 		if (!$dataFile) {
 			return FALSE;
@@ -138,6 +153,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
 		$attachment->encoding = Zend_Mime::ENCODING_BASE64;
 		$attachment->filename = $data['billrun_key'] . '_' . $data['aid'] . '_' . $data['invoice_id'] . ".pdf";
+		Billrun_Factory::dispatcher()->trigger('afterInvoiceReadyGetAttachment',[&$attachment, $data ,$this]);
 		return $attachment;
 	}
 	
@@ -177,7 +193,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$query = $this->getRelatedBillrunQuery($data);
 		$update = array(
 			'$set' => array(
-				'email_sent' => new MongoDate(),
+				'email_sent' => new Mongodloid_Date(),
 			),
 		);
 		Billrun_Factory::db()->billrunCollection()->update($query, $update);

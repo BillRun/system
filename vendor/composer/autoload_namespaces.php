@@ -7,5 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Payrexx' => array($vendorDir . '/payrexx/payrexx/lib'),
-    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
+    'OAuth2' => array($vendorDir . '/bshaffer/oauth2-server-php/src'),
 );

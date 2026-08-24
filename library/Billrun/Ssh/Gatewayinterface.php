@@ -102,4 +102,11 @@ interface Billrun_Ssh_Gatewayinterface {
 	 */
 	public function status();
 
+	/**
+	 * Create directory command.
+	 *
+	 * @return int|bool
+	 */
+	public function mkdir($path, $permissions = 0777, $recursive = 1);
+
 }

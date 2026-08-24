@@ -36,9 +36,9 @@
   }
 }
 .system-progress-indecator {
-    background-color:#2595ED;
-    height:2px;
-    box-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+    background-color: #2595ED;
+    height: 3px;
+    box-shadow: 0px 0px 5px 5px rgba(0, 136, 255, 0.4);
     animation-name: progressindicator-in-progress;
     animation-duration: 500ms;
 }

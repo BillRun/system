@@ -154,7 +154,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 //			if (empty($offset)) {
 //				$offset = '+00:00';
 //			}
-//			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
+//			$cdrLine['urt'] = new Mongodloid_Date(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
 //			$cdrLine['tzoffset'] = $offset;
 //		}
 	}

@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import withRouter from '@/common/withRouter';
 
 import { Button } from 'react-bootstrap';
 import List from '../List';
-import { ConfirmModal } from '@/components/Elements';
+import { ConfirmModal, StateIcon } from '@/components/Elements';
 
 import { getList, clearList } from '@/actions/listActions';
 import { deleteInputProcessor, updateInputProcessorEnabled } from '@/actions/inputProcessorActions';
@@ -13,6 +14,9 @@ class InputProcessorsList extends Component {
 
   static propTypes = {
     dispatch: PropTypes.func.isRequired,
+    router: PropTypes.shape({
+      push: PropTypes.func.isRequired,
+    }).isRequired,
   }
 
   constructor(props) {
@@ -60,7 +64,7 @@ class InputProcessorsList extends Component {
       query.type = 'api';
       query.format = input_processor.get('type');
     }
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'input_processor',
       query
     });
@@ -156,7 +160,7 @@ class InputProcessorsList extends Component {
   }
 
   onClickNew() {
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'select_input_processor_template',
       query: {
         action: 'new'
@@ -172,17 +176,23 @@ class InputProcessorsList extends Component {
 
   parseShowEnable = item => !item.get('enabled', true);
   parseShowDisable = item => !(this.parseShowEnable(item));
+  parseInputProcessorStatus = item => (<StateIcon status={item.get('enabled', false) ? 'active' : 'expired'} />);
 
   getListActions = () => [
-    { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickInputProcessor, show: true, onClickColumn: 'file_type' },
-    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickEnabled, show: this.parseShowEnable },
-    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickDisabled, show: this.parseShowDisable },
-    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, show: true },
+    {
+      type: 'edit',
+      showIcon: true,
+      helpText: 'Edit',
+      onClick: this.onClickInputProcessor,
+      show: true,
+      onClickColumn: 'file_type',
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    },
+    { type: 'enable', showIcon: true, helpText: 'Enable', onClick: this.onClickEnabled, show: this.parseShowEnable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'disable', showIcon: true, helpText: 'Disable', onClick: this.onClickDisabled, show: this.parseShowDisable, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'remove', showIcon: true, helpText: 'Remove', onClick: this.onClickRemove, show: true, actionStyle: 'link', actionSize: 'xsmall' },
   ];
-
-  parseInputProcessorStatus = item => (
-    item.get('enabled', true) ? 'Enabled' : 'Disabled'
-  );
 
   render() {
     const { inputProcessors } = this.props;
@@ -192,8 +202,8 @@ class InputProcessorsList extends Component {
     const enableConfirmMessage = `Are you sure you want to enable input processor "${inputProcessorName}"?`;
     const disableConfirmMessage = `Are you sure you want to disable input processor "${inputProcessorName}"?`;
     const fields = [
+      { id: 'active', title: 'Status', parser: this.parseInputProcessorStatus, cssClass: 'state' },
       { id: 'file_type', title: 'Name' },
-      { id: 'enabled', title: 'Status', parser: this.parseInputProcessorStatus, cssClass: 'list-status-col' },
     ];
     const actions = this.getListActions();
 
@@ -206,7 +216,7 @@ class InputProcessorsList extends Component {
               <div className="panel-heading">
                 All available input processors
                 <div className="pull-right">
-                  <Button bsSize="xsmall" className="btn-primary" onClick={this.onClickNew}><i className="fa fa-plus"/>&nbsp;Add New</Button>
+                  <Button size="sm" variant="primary" className="btn-xs" onClick={this.onClickNew}><i className="fa fa-plus"/>&nbsp;Add New</Button>
                 </div>
               </div>
               <div className="panel-body">
@@ -223,9 +233,6 @@ class InputProcessorsList extends Component {
   }
 }
 
-InputProcessorsList.contextTypes = {
-  router: PropTypes.object.isRequired
-};
 
 function mapStateToProps(state, props) {
   return {
@@ -233,4 +240,4 @@ function mapStateToProps(state, props) {
   };
 }
 
-export default connect(mapStateToProps)(InputProcessorsList);
+export default withRouter(connect(mapStateToProps)(InputProcessorsList));

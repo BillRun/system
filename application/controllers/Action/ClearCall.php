@@ -22,7 +22,7 @@ class ClearCallAction extends ApiAction {
 	 * and trigger clearCall event if necessary
 	 */
 	public function execute() {
-		$this->_controller->addOutput("Running ClearCall API...");
+		$this->getController()->addOutput("Running ClearCall API...");
 		$openCalls = self::getOpenCalls();
 		foreach ($openCalls as $call) {
 			$balance = $this->getBalance($call);
@@ -101,8 +101,8 @@ class ClearCallAction extends ApiAction {
 						'$nin' => array('release_call')
 					),
 					'urt' => array(
-						'$gte' => new MongoDate($startTime),
-						'$lte' => new MongoDate($endTime),
+						'$gte' => new Mongodloid_Date($startTime),
+						'$lte' => new Mongodloid_Date($endTime),
 					)
 				)
 			)

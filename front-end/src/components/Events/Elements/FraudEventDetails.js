@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, InputGroup, DropdownButton, MenuItem, HelpBlock } from 'react-bootstrap';
+import { Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, InputGroupButton } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
   gitTimeOptions,
@@ -13,8 +14,7 @@ import {
   validateFieldDateRangeValue,
 } from '@/actions/eventActions';
 
-
-const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError }) => {
+const FraudEventDetails = ({ item = Immutable.Map(), eventsSettings = Immutable.Map(), errors = Immutable.Map(), onUpdate, setError }) => {
   const recurrenceUnit = item.getIn(['recurrence', 'type'], '');
   const recurrenceUnitTitle = gitPeriodLabel(recurrenceUnit);
   const recurrenceOptions = gitTimeOptions(recurrenceUnit);
@@ -100,7 +100,7 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
   return (
     <Col sm={12}>
       <FormGroup validationState={isEventCodeError ? 'error' : null}>
-        <Col componentClass={ControlLabel} sm={3}>
+        <Col as={ControlLabel} sm={3}>
           Event Code <span className="danger-red"> *</span>
         </Col>
         <Col sm={7}>
@@ -113,8 +113,8 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
           )}
         </Col>
       </FormGroup>
-      <FormGroup>
-        <Col componentClass={ControlLabel} sm={3}>
+      <FormGroup validationState={isRecurrenceValueError ? 'error' : null}>
+        <Col as={ControlLabel} sm={3}>
           Description
         </Col>
         <Col sm={7}>
@@ -124,13 +124,13 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
           />
         </Col>
       </FormGroup>
-      <FormGroup>
-        <Col componentClass={ControlLabel} sm={3}>
+      <FormGroup validationState={isDatRangeValueError ? 'error' : null}>
+        <Col as={ControlLabel} sm={3}>
           Notify also by email
         </Col>
         <Col sm={7}>
           <InputGroup>
-            <InputGroup.Addon>
+            <InputGroup.Text>
               <Field
                 fieldType="checkbox"
                 id="computed-must-met"
@@ -138,7 +138,7 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
                 onChange={onChangeNotifyByEmailStatus}
                 label=""
               />
-            </InputGroup.Addon>
+            </InputGroup.Text>
             <Field
               allowCreate={true}
               multi={true}
@@ -155,8 +155,8 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
           </InputGroup>
         </Col>
       </FormGroup>
-      <FormGroup validationState={isRecurrenceValueError ? 'error' : null}>
-        <Col componentClass={ControlLabel} sm={3} >
+      <FormGroup>
+        <Col as={ControlLabel} sm={3} >
           Run every <span className="danger-red"> *</span>
         </Col>
         <Col sm={7}>
@@ -167,22 +167,24 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
               value={item.getIn(['recurrence', 'value'], '')}
               onChange={onChangeRecurrenceValue}
             />
-            <DropdownButton
+            <InputGroupButton>
+              <DropdownButton
               id="balance-period-unit"
-              componentClass={InputGroup.Button}
               title={recurrenceUnitTitle}
-            >
-              <MenuItem eventKey="minutely" onSelect={onChangeRecurrenceType}>Minutes</MenuItem>
-              <MenuItem eventKey="hourly" onSelect={onChangeRecurrenceType}>Hours</MenuItem>
-            </DropdownButton>
+              variant="outline-secondary"
+              >
+              <Dropdown.Item eventKey="minutely" onSelect={onChangeRecurrenceType}>Minutes</Dropdown.Item>
+              <Dropdown.Item eventKey="hourly" onSelect={onChangeRecurrenceType}>Hours</Dropdown.Item>
+              </DropdownButton>
+            </InputGroupButton>
           </InputGroup>
           { isRecurrenceValueError && (
             <HelpBlock>{isRecurrenceValueError}</HelpBlock>
           )}
         </Col>
       </FormGroup>
-      <FormGroup validationState={isDatRangeValueError ? 'error' : null}>
-        <Col componentClass={ControlLabel} sm={3} >
+      <FormGroup>
+        <Col as={ControlLabel} sm={3} >
           For the previous <span className="danger-red"> *</span>
         </Col>
         <Col sm={7}>
@@ -193,14 +195,16 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
               value={item.getIn(['date_range', 'value'], '')}
               onChange={onChangeDateRangeValue}
             />
-            <DropdownButton
+            <InputGroupButton>
+              <DropdownButton
               id="balance-period-unit"
-              componentClass={InputGroup.Button}
               title={dateRangeUnitTitle}
-            >
-              <MenuItem eventKey="minutely" onSelect={onChangeDateRangeType}>Minutely</MenuItem>
-              <MenuItem eventKey="hourly" onSelect={onChangeDateRangeType}>Hourly</MenuItem>
-            </DropdownButton>
+              variant="outline-secondary"
+              >
+              <Dropdown.Item eventKey="minutely" onSelect={onChangeDateRangeType}>Minutely</Dropdown.Item>
+              <Dropdown.Item eventKey="hourly" onSelect={onChangeDateRangeType}>Hourly</Dropdown.Item>
+              </DropdownButton>
+            </InputGroupButton>
           </InputGroup>
           { isDatRangeValueError && (
             <HelpBlock>{isDatRangeValueError}</HelpBlock>
@@ -208,7 +212,7 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
         </Col>
       </FormGroup>
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3}>Status</Col>
+        <Col as={ControlLabel} sm={3}>Status</Col>
         <Col sm={7}>
           <span>
             <span style={{ display: 'inline-block', marginRight: 20 }}>
@@ -235,7 +239,7 @@ const FraudEventDetails = ({ item, eventsSettings, errors, onUpdate, setError })
         </Col>
       </FormGroup>
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3}>
+        <Col as={ControlLabel} sm={3}>
           &nbsp;
         </Col>
         <Col sm={7} style={{ marginTop: 10, paddingLeft: 18 }}>
@@ -259,12 +263,5 @@ FraudEventDetails.propTypes = {
   onUpdate: PropTypes.func.isRequired,
   setError: PropTypes.func.isRequired,
 };
-
-FraudEventDetails.defaultProps = {
-  item: Immutable.Map(),
-  eventsSettings: Immutable.Map(),
-  errors: Immutable.Map(),
-};
-
 
 export default FraudEventDetails;

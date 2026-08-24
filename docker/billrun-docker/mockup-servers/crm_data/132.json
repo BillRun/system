@@ -1,0 +1,125 @@
+{
+    "status":1,
+    "data":[
+        {
+          
+            "from" : "2020-11-28 00:00:00",
+            "aid" : "132",
+            "invoice_language" : "en_GB",
+            "firstname" : "yossi",
+            "lastname" : "test",
+            "email" : "test@gmail.com",
+            "country" : "Israel",
+            "address" : "hshalom 7",
+            "zip_code" : "123ab",
+            "payment_gateway" : "",
+            "salutation" : "",
+            "invoice_shipping_method" : "email",
+            "invoice_detailed" : false,
+            "type" : "account",
+            "to" : "2173-11-28 15:50:20",
+            "creation_time" : "2024-11-28 00:00:00"
+        },
+        {
+         
+            "from" : "2020-11-28 00:00:00",
+            "aid" : "132",
+            "sid" : "1321",
+            "plan" : "PLAN_B",
+            "services" : [ ],
+            "play" : "Default",
+            "discounts" : [
+                {
+                    "priority" : "",
+                    "params" : {
+                        "conditions" : [ ]
+                    },
+                    "from" : "2020-11-28 02:00:00",
+                    "subject" : {
+                        "plan" : {
+                            "PLAN_B" : {
+                                "value" : 10
+                            }
+                        }
+                    },
+                    "proration" : "inherited",
+                    "type" : "monetary",
+                    "to" : "2024-10-18 00:00:00",
+                    "description" : "discount_subscriber",
+                    "key" : "SUBSCRIBER_DISCOUNT_1"
+                }
+            ],
+            "firstname" : "yossi",
+            "lastname" : "test",
+            "address" : "hshalom 7",
+            "country" : "Israel",
+            "type" : "subscriber",
+            "plan_activation" : "2020-11-28 00:00:00",
+            "to" : "2024-10-18 00:00:00",
+            "creation_time" : "2020-11-28 00:00:00",
+            "activation_date" : "2020-11-28 00:00:00",
+            "plan_deactivation" : "2173-11-28 15:52:34",
+            "deactivation_date" : "2173-11-28 15:52:34"
+        },
+        {
+      
+            "from" : "2024-10-18 00:00:00",
+            "aid" : "132",
+            "sid" : "1321",
+            "plan" : "PLAN_B",
+            "services" : [ ],
+            "play" : "Default",
+            "discounts" : [ {
+                "priority" : "",
+                "params" : {
+                    "conditions" : [ ]
+                },
+                "from" : "2020-11-28 02:00:00",
+                "subject" : {
+                    "plan" : {
+                        "PLAN_B" : {
+                            "value" : 10
+                        }
+                    }
+                },
+                "proration" : "inherited",
+                "type" : "monetary",
+                "to" : "2024-10-18 00:00:00",
+                "description" : "discount_subscriber",
+                "key" : "SUBSCRIBER_DISCOUNT_1"
+            },
+                {
+                    "priority" : "",
+                    "params" : {
+                        "conditions" : [ ]
+                    },
+                    "from" : "2024-10-18 00:00:00",
+                    "subject" : {
+                        "plan" : {
+                            "PLAN_B" : {
+                                "value" : 10
+                            }
+                        }
+                    },
+                    "proration" : "inherited",
+                    "type" : "monetary",
+                    "to" : "2025-11-01 23:59:59",
+                    "description" : "discount_subscriber",
+                    "key" : "SUBSCRIBER_DISCOUNT_2"
+                }
+            ],
+            "firstname" : "yossi",
+            "lastname" : "test",
+            "address" : "hshalom 7",
+            "country" : "Israel",
+            "type" : "subscriber",
+            "plan_activation" : "2020-11-28 00:00:00",
+            "to" : "2173-11-28 15:52:34",
+            "creation_time" : "2020-11-28 00:00:00",
+            "activation_date" : "2020-11-28 00:00:00",
+            "plan_deactivation" : "2173-11-28 15:52:34",
+            "deactivation_date" : "2173-11-28 15:52:34"
+        }
+        
+]
+}

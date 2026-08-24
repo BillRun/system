@@ -159,6 +159,19 @@
 						"generate_pdf": {
 							"v": true,
 							"t": "Boolean"
+						},
+						"invoice": {
+							"aggregate": {
+								"subscriber": {
+									"final_data": {
+										"charges_by_vat" : {
+											"pipelines": [
+												[{"$match": {"tax_data.total_tax": {"$gt": 0}}},{"$unwind":"$tax_data.taxes"}, {"$group": {"_id": "$tax_data.taxes.key", "price": {"$sum": "$aprice"}, "count": {"$sum": 1}, "usagev": {"$sum": "$usagev"}, "vat": {"$sum": "$tax_data.total_amount"}, "tax_key": { "$first": "$tax_data.taxes.key" }, "tax_precentage" : { "$first": "$tax_data.taxes.tax" }}}]
+											]
+										}
+									}
+								}
+							}
 						}
 					},
 					"subscribers": {
@@ -234,12 +247,26 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
+								
 							]
 						},
 						"account": {
 							"fields": [
+								{
+									"field_name": "invoicing_day",
+									"title": "Invoicing Day",
+									"mandatory": false,
+									"system": true,
+									"show_in_list": true,
+									"select_list": true,
+									"editable": true,
+									"display": true,
+									"select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+									"default_value": "1"
+								},
 								{
 									"field_name": "aid",
 									"generated": true,
@@ -318,6 +345,21 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
+								},
+								{
+									"system" : false,
+									"select_list" : true,
+									"display" : true,
+									"editable" : true,
+									"field_name" : "invoice_shipping_method",
+									"default_value" : "email",
+									"show_in_list" : true,
+									"title" : "Invoice shipping method",
+									"mandatory" : false,
+									"select_options" : "email",
+									"changeable_props" : [
+										"select_options"
+									]
 								}
 							]
 						}
@@ -847,24 +889,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "/application/views/invoices/theme/theme1.css",
-						"header": "",
-						"footer": "",
-						"sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
-						"details_template": "/application/views/invoices/details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [
@@ -1141,7 +1184,43 @@
 										"format": "Y-m-d H:i:s"
 									}
 								}
+							},
+							{
+								"field_name": "foreign.discount.description",
+								"title": "discount's description",
+								"foreign": {
+									"entity": "discount",
+									"field": "description"
+								},
+								"conditions": []
+							},
+							{
+								"field_name": "foreign.activation_date",
+								"foreign": {
+									"entity": "service",
+									"field": "start",
+									"translate": {
+										"type": "unixTimeToString",
+										"format": "Y-m-d H:i:s"
+									}
+								}
+							},
+							{
+								"field_name": "foreign.plan.name",
+								"title": "plan_name",
+								"foreign": {
+									"entity": "plan",
+									"field": "name"
+								}
+							}, {
+								"field_name": "foreign.service.name",
+								"title": "Service name",
+								"foreign": {
+									"entity": "service",
+									"field": "name"
+								}
 							}
+
 						]
 					}
 				}

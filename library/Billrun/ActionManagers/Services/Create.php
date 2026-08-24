@@ -130,7 +130,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 		// Translate by type.
 		if($type == 'date') {
 			$date = strtotime($data);
-			$newData = new MongoDate($date);
+			$newData = new Mongodloid_Date($date);
 			$this->setField($newData, $fieldName, null);
 		} else {
 			throw new Exception("Invalid field type");

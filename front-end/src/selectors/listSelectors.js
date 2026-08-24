@@ -1,13 +1,21 @@
 import { createSelector } from 'reselect';
 import Immutable from 'immutable';
+import moment from 'moment';
+import isNumber from 'is-number';
 import { sentenceCase } from 'change-case';
 import { getCycleName } from '@/components/Cycle/CycleUtil';
-import { getConfig, inferPropTypeFromUsageType } from '@/common/Util';
-import { propertyTypeSelector } from '@/selectors/settingsSelector';
+import {
+  getConfig,
+  inferPropTypeFromUsageType,
+  getItemDateValue,
+} from '@/common/Util';
+import { propertyTypeSelector, currencySelector } from '@/selectors/settingsSelector';
 import {
   availablePlaysLabelsSelector,
 } from './settingsSelector';
 
+
+const getSuggestionsRates = state => state.list.get('suggestions_products', null);
 
 const getEventRates = state => state.list.get('event_products', null);
 
@@ -31,19 +39,54 @@ const selectCyclesOptions = (options) => {
 
 const getAccountsOptions = state => state.list.get('available_accounts', null);
 
+const getAccountsInvoicesOptions = state => state.list.get('accounts_invoices', null);
+
+const getCreditProductsOptions = state => state.list.get('available_credit_products', null);
+
 const selectAccountsOptions = (options) => {
   if (options === null) {
     return undefined;
   }
   return options.map(option => {
     let name = '';
-    name += option.get('firstname', '').trim() !== '' ? option.get('firstname', '').trim() : '';
-    name += option.get('lastname', '').trim() !== '' ? ` ${option.get('lastname', '').trim()}` : '';
+
+    if (typeof option.get('firstname','') === 'string' ) 
+      name += option.get('firstname', '').trim() !== '' ? option.get('firstname', '').trim() : '';
+    if (typeof option.get('lastname','') === 'string' )
+      name += option.get('lastname', '').trim() !== '' ? ` ${option.get('lastname', '').trim()}` : '';
+
     return Immutable.Map({
-      title: name.trim(),
-      aid: option.get('aid', ''),
+      label: `${name.trim()} [${option.get('aid', '')}]`,
+      value: option.get('aid', ''),
+      id: option.getIn(['_id', '$id'], ''),
     })
+  }).toJS();
+}
+
+const selectInvoicesOptions = (options, currency) => {
+  if (options === null) {
+    return undefined;
+  }
+  const datetimeFormat = getConfig('dateFormat', 'DD/MM/YYYY');
+  const priceFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
   });
+  return options.map(option => {
+    const iid = option.get('invoice_id', '');
+    const amount = option.get('amount', '');
+    const amount_without_tax = option.get('due_before_vat', '');
+    let date = getItemDateValue(option, 'invoice_date', '');
+    if (moment.isMoment(date) && date.isValid()) {
+      date = date.format(datetimeFormat);
+    }
+    return Immutable.Map({
+      value: isNumber(iid) ? parseFloat(iid) : iid,
+      label: `#${iid} | ${priceFormatter.format(amount)} | ${date}`,
+      amount_without_tax: amount_without_tax,
+      date: date,
+    })
+  }).toJS();
 }
 
 const getServicesOptions = state => state.list.get('available_services', null);
@@ -173,6 +216,11 @@ export const eventRatesSelector = createSelector(
   rates => (rates === null ? undefined : rates),
 );
 
+export const suggestionsRatesSelector = createSelector(
+  getSuggestionsRates,
+  rates => (rates === null ? undefined : rates),
+);
+
 export const productsOptionsSelector = createSelector(
   getProductsOptions,
   () => 'key',
@@ -188,6 +236,18 @@ export const listByNameSelector = createSelector(
 export const accountsOptionsSelector = createSelector(
   getAccountsOptions,
   selectAccountsOptions,
+);
+
+export const accountsInvoicesOptionsSelector = createSelector(
+  getAccountsInvoicesOptions,
+  currencySelector,
+  selectInvoicesOptions,
+);
+
+export const creditProductsOptionsSelector = createSelector(
+  getCreditProductsOptions,
+  () => 'key',
+  formatSelectOptions,
 );
 
 export const servicesOptionsSelector = createSelector(

@@ -46,6 +46,7 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	public function minutelyAction() {
 		Billrun_Factory::dispatcher()->trigger('cronMinute');
+                $this->runMinutesCoreCommands();
 	}
 
 	/**
@@ -211,8 +212,8 @@ class CronController extends Yaf_Controller_Abstract {
 				'connection_type' => 'prepaid',
 				'charging_by_usaget' => 'data',
 				'to' => array(
-					'$gt' => new MongoDate(strtotime("yesterday midnight")),
-					'$lte' => new MongoDate(strtotime("midnight")),
+					'$gt' => new Mongodloid_Date(strtotime("yesterday midnight")),
+					'$lte' => new Mongodloid_Date(strtotime("midnight")),
 				),
 			),
 		);
@@ -286,8 +287,8 @@ class CronController extends Yaf_Controller_Abstract {
 		$query = array(
 			'sid' => $subscriberId,
 			'to' => array(
-				'$gte' => new MongoDate(strtotime('+' . $notification['value'] . ' days midnight')),
-				'$lte' => new MongoDate(strtotime('+' . ($notification['value'] + 1) . ' days midnight')),
+				'$gte' => new Mongodloid_Date(strtotime('+' . $notification['value'] . ' days midnight')),
+				'$lte' => new Mongodloid_Date(strtotime('+' . ($notification['value'] + 1) . ' days midnight')),
 			),
 			'pp_includes_external_id' => array('$in' => $notification['pp_includes']),
 		);
@@ -355,5 +356,9 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
-
+        
+        protected function runMinutesCoreCommands() {
+            Billrun_Compute_Suggestions_RateRecalculation::runCommand();
+    
+        }
 }

@@ -208,7 +208,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 
 		if (isset($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime($this->update['to']));
+			$this->update['to'] = new Mongodloid_Date(strtotime($this->update['to']));
 		}
 
 		return true;

@@ -32,14 +32,15 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		$query = array(
 			'source' => $this->source,
 			'stamp' => $stamp,
-			'process_time' => array('$gt' => new MongoDate(strtotime($this->orphanTime))),
+			'process_time' => array('$gt' => new Mongodloid_Date(strtotime($this->orphanTime))),
 		);
 
-		$customLog = $this->collection->query($query)->cursor();
-		if ($customLog->count() > 1) {
+		$customLog = iterator_to_array($this->collection->query($query)->cursor()->limit(2));
+		$docCount = count($customLog);
+		if ($docCount > 1) {
 			throw new Exception('Billrun_LogFile_CustomPaymentGateway: More than one log file was found');
-		} elseif ($customLog->count() == 1) {
-			$this->data = $customLog->current();
+		} elseif ($docCount == 1) {
+			$this->data = reset($customLog);
 			if (isset($this->data['process_time'])) {
 				throw new Exception('Billrun_LogFile_CustomPaymentGateway: file already created');
 			}
@@ -47,7 +48,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		} else {
 			$this->data = new Mongodloid_Entity();
 			$this->data->collection($this->collection);
-			$this->data['creation_time'] = new MongoDate();
+			$this->data['creation_time'] = new Mongodloid_Date();
 			$this->data['stamp'] = $stamp;
 			$this->data['source'] = $this->source;
                         $this->data['errors'] = [];
@@ -89,7 +90,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	 * @param array $fields - array of field_name => value - will come without "$field_name"/"$value"
 	 */
     public function updateLogFileField($field_name = null, $value = null, $fields = []) {
-		if (!empty($field_name) && !empty($value) && empty($fields)) {
+		if (!empty($field_name) && isset($value) && empty($fields)) {
 			$fields = array($field_name => $value);
 		}
 		foreach($fields as $field_name => $value) {

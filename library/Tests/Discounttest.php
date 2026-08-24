@@ -13,7 +13,7 @@
  */
 require_once( APPLICATION_PATH . '/library/Tests/discounttestData/discountData.php');
 require_once(APPLICATION_PATH . '/library/Tests/discounttestData/discountTestCases.php');
-require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
+require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Discounttest extends UnitTestCase {
@@ -38,12 +38,25 @@ class Tests_Discounttest extends UnitTestCase {
 	}
 
 	public function TestPerform() {
+
 		$this->Tests = $this->skip_tests($this->Tests ,'test_num');
+		$request = new Yaf_Request_Http;
+		$test_cases_to_run = $request->get('tests');
+
+		if ($test_cases_to_run) {
+            $test_cases_to_run = explode(',', $test_cases_to_run);
+            foreach ($this->Tests as $case) {
+                if (in_array(strval($case['test_num']), $test_cases_to_run)){
+                    $this->cases[] = $case;
+                }
+             }
+			$this->Tests =  $this->cases;
+		}
 		foreach ($this->Tests as $key => $row) {
 			$this->message .= "Test number : {$row['test_num']}<br>";
 			$aid = $row['test']['subsAccount'][0]['aid'];
 			$expectedEligibility = '<b>expected </b> </br>';
-			
+
 			foreach ($row['expected'] as $Dname => $dates) {
 				$expectedEligibility .= "<b>Eligibility for discount : <br>$Dname</b><br>";
 				foreach ($dates['eligibility'] as $date) {
@@ -58,8 +71,8 @@ class Tests_Discounttest extends UnitTestCase {
 
 			$this->message .= $expectedEligibility;
 
-			//convert dates of revisions  To MongoDates
-			$this->convertToMongoDates($row);
+			//convert dates of revisions  To MongodloidDates
+			$this->convertToMongodloidDates($row);
 			$discounts = $this->discountBuilder($row['test']['discounts']);
 			if (isset($row['SubscribersDiscount'])) {
 				$this->subscribersDiscount($row);
@@ -82,8 +95,8 @@ class Tests_Discounttest extends UnitTestCase {
 					Billrun_DiscountManager::setDiscounts($discounts, $row['test']['options']['stamp']);
 				}
 				$cycle = new Billrun_DataTypes_CycleTime($row['test']['options']['stamp']);
-				$from = new MongoDate($cycle->start());
-				$to = new MongoDate($cycle->end());
+				$from = new Mongodloid_Date($cycle->start());
+				$to = new Mongodloid_Date($cycle->end());
 				$row['test']['subsAccount'][0]['from'] = $from;
 				$row['test']['subsAccount'][0]['to'] = $to;
 				$dm = new Billrun_DiscountManager($row['test']['subsAccount'], $row['test']['subsRevisions'], $cycle);
@@ -184,6 +197,30 @@ class Tests_Discounttest extends UnitTestCase {
 			} else {
 				$pass = false;
 				$this->message .= "$discountName missing eligibility" . $this->fail;
+			}
+			if (isset($dates['subs'])) {
+				$subs = $eligibility[$discountName]['subs'];
+				$subsMissing = array_diff(array_keys($dates['subs']), array_keys($subs));
+				if (!empty($subsMissing)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are missed: " . implode(', ', $subsMissing) . $this->fail . '<br/>';
+				}
+				$subsNotExpected = array_diff(array_keys($subs), array_keys($dates['subs']));
+				if (!empty($subsNotExpected)) {
+					$pass = false;
+					$this->message .= "the following eligible subscriber revision are not expected: " . implode(', ', $subsNotExpected) . $this->fail . '<br/>';
+				}
+				foreach ($dates['subs'] as $sid => $expectedSub) {
+					$from = $expectedSub[0]['from'];
+					$to = $expectedSub[0]['to'];
+					if (isset($subs[$sid]) && $subs[$sid][0]['from'] == $from->sec && $subs[$sid][0]['to'] == $to->sec) {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->pass;
+					} else {
+						$this->message .= "$discountName subscriber revision <b>$sid</b> </br> '<b>from</b>' " . date("Y-m-d H:i:s", $from->sec)
+							. " '<b>to</b>' " . date("Y-m-d H:i:s", $to->sec) . $this->fail;
+					}
+				}
 			}
 		}
 		return $pass;
@@ -286,16 +323,16 @@ class Tests_Discounttest extends UnitTestCase {
 		return $pass;
 	}
 
-	public function convertToMongoDates(&$row) {
+	public function convertToMongodloidDates(&$row) {
 		foreach ($row as $key => &$valus) {
 
 			if (is_array($valus)) {
-				$this->convertToMongoDates($valus);
+				$this->convertToMongodloidDates($valus);
 			}
 			$valusList = ['from', 'to', 'deactivation_date', 'plan_activation', 'service_activation', 'start', 'end'];
 			foreach ($valusList as $field) {
 				if (isset($valus[$field])) {
-					$valus[$field] = new MongoDate(strtotime($valus[$field]));
+					$valus[$field] = new Mongodloid_Date(strtotime($valus[$field]));
 				}
 			}
 		}
@@ -334,6 +371,10 @@ class Tests_Discounttest extends UnitTestCase {
 				$values = $discount['params_override']['cycles'];
 				$discountsToPass[$discount['name']]['params']['cycles'] = $this->getParam('cycles', $values);
 			}
+			if (array_key_exists('simultaneous_limit', $discount)) {
+				$values = $discount['simultaneous_limit'];
+				$discountsToPass[$discount['name']]['simultaneous_limit'] = $values;
+			}
 			foreach ($discount['params_override']['condition'] as $params) {
 				$conditions = $this->conditions;
 				foreach ($params as $param) {
@@ -341,8 +382,14 @@ class Tests_Discounttest extends UnitTestCase {
 					$values = $param['values'] ? $param['values'] : null;
 					$field = $param['field'] ? $param['field'] : null;
 					$op = isset($param['op']) ? $param['op'] : 'eq';
+					$type2 = $param['type2'] ?? null;
 					if ($type == 'service') {
-						$conditions['subscriber'][0]['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+						if($type2 == 'account'){
+							$conditions['account']['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+						}else{
+							$conditions['subscriber'][0]['service']['any'][]['fields'][] = $this->getParam($type, $values, $field, $op);
+
+						}
 						continue;
 					}
 					if ($type == 'subscriber') {
@@ -360,7 +407,7 @@ class Tests_Discounttest extends UnitTestCase {
 
 	public function getParam($type, $values = null, $field = null, $op = '$eq') {
 		if ($field == 'plan_activation') {
-			$values = new MongoDate(strtotime($values));
+			$values = new Mongodloid_Date(strtotime($values));
 		}
 		switch ($type) {
 			case 'subscriber':

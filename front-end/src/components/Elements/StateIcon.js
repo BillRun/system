@@ -3,14 +3,15 @@ import PropTypes from 'prop-types';
 import moment from 'moment';
 import classNames from 'classnames';
 
-
-const StateIcon = ({ from, to, status }) => {
+const StateIcon = ({ from = '', to = '', status = '' }) => {
   let stateClass = '';
   if (status.length) {
     stateClass = classNames('cycle', {
       expired: status === 'expired',
       future: status === 'future',
       active: status === 'active',
+      removed: status === 'removed',
+      idle: status === 'idle',
     });
   } else {
     const fromTime = moment(from);
@@ -28,12 +29,6 @@ StateIcon.propTypes = {
   status: PropTypes.string,
   from: PropTypes.string,
   to: PropTypes.string,
-};
-
-StateIcon.defaultProps = {
-  from: '',
-  to: '',
-  status: '',
 };
 
 export default StateIcon;

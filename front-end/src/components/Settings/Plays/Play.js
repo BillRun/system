@@ -4,12 +4,11 @@ import Immutable from 'immutable';
 import Field from '@/components/Field';
 import { Actions, StateIcon } from '@/components/Elements';
 
-
 const Play = ({
-  play,
+  play = Immutable.Map(),
   index,
-  isDefaultDisabled,
-  showEnableAction,
+  isDefaultDisabled = false,
+  showEnableAction = true,
   onChangeDefault,
   onEdit,
   onDisable,
@@ -17,10 +16,10 @@ const Play = ({
   onRemove,
 }) => {
   const getListActions = [
-    { type: 'edit', helpText: 'Edit', onClick: onEdit },
-    { type: 'enable', helpText: 'Enable', onClick: onEnable, show: showEnableAction },
-    { type: 'disable', helpText: 'Disable', onClick: onDisable, show: !showEnableAction },
-    { type: 'remove', helpText: 'Remove', onClick: onRemove },
+    { type: 'edit', helpText: 'Edit', onClick: onEdit, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'enable', helpText: 'Enable', onClick: onEnable, show: showEnableAction, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'disable', helpText: 'Disable', onClick: onDisable, show: !showEnableAction, actionStyle: 'link', actionSize: 'xsmall' },
+    { type: 'remove', helpText: 'Remove', onClick: onRemove, actionStyle: 'link', actionSize: 'xsmall' },
   ];
   return (
     <tr key={index}>
@@ -56,13 +55,6 @@ Play.propTypes = {
   onDisable: PropTypes.func.isRequired,
   onEnable: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
-};
-
-Play.defaultProps = {
-  play: Immutable.Map(),
-  isNameEditable: false,
-  isDefaultDisabled: false,
-  showEnableAction: true,
 };
 
 export default Play;

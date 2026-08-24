@@ -59,11 +59,12 @@ class Receiver extends Component {
 
   render() {
     return (
-      <Form horizontal className="Receiver">
+      <Form className="Receiver form-horizontal">
         { this.renderReceivers() }
         <CreateButton
           onClick={this.onAddReceiver}
           label="Add Receiver"
+          buttonClass="btn-xs"
         />
       </Form>
     );

@@ -7,11 +7,12 @@
  */
 
 /**
- * Calculates a not prorated monthly upfront charge
+ * Calculates a not prorated monthly upfront charge - the regular (arrears) not prorated monthly
+ * charge of the next cycle, paid in advance (see Billrun_Plans_Charge_Upfront).
  *
  * @package  Plans
  * @since    5.2
  */
 class Billrun_Plans_Charge_Upfront_Notprorated_Month extends Billrun_Plans_Charge_Upfront_Month {
-    
+
 }

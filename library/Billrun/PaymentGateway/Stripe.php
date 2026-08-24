@@ -6,7 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once(APPLICATION_PATH . '/library/stripe-php/init.php');
+require_once(APPLICATION_PATH . '/vendor/stripe/stripe-php/init.php');
 
 /**
  * This class represents a payment gateway
@@ -61,7 +61,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new Mongodloid_Date(time())
 			)
 		);
 	}

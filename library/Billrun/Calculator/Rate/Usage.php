@@ -114,23 +114,31 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 */
 	public function updateRow($row) {
 		try {
-			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$usaget = $row['usaget'];
-			$type = $row['type'];
-			$params = [
-				'type' => $type,
-				'usaget' => $usaget,
-			];
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
+		$usaget = $row['usaget'];
+		$type = $row['type'];
+		$params = [
+			'type' => $type,
+			'usaget' => $usaget,
+		];
+			
+		$rates = $this->getMatchingEntitiesByCategories($row, $params);
+		if (empty($rates)) {
+				Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
+				return false;
+			}
 
-			$rates = $this->getMatchingEntitiesByCategories($row, $params);
-			if (empty($rates)) {
-					Billrun_Factory::dispatcher()->trigger('afterRateNotFound', array(&$row, $this));
+		if (!empty($row['realtime'])) {
+			foreach ($rates as $rate) {
+				if ($this->isRateBlockedByPlan($row, $rate)) {
+					$row['blocked_rate'] = true;
 					return false;
 				}
+			}
+		}
 
-
-			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
-			return $row;
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		return $row;
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Failed to update usage row with the following error: " . $e->getMessage(), Zend_Log::ALERT);
 			Billrun_Factory::log()->log($e->getTrace(), Zend_Log::DEBUG);
@@ -196,8 +204,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 	protected function getFilters($row = [], $params = []) {
 		$type = $params['type'] ?: '';
-		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
-		}
+		return Billrun_Factory::config()->getLineTypeConfigByName($type, true, $row['linet'] ?? null)['rate_calculators'];
+	}
 
 	protected function getBasicMatchQuery($row, $category = '', $params = []) {
 		$usaget = $params['usaget'];
@@ -257,7 +265,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		$row->setRawData($newData);
 	}
 	
-	protected function getFullEntityDataQuery($rawEntity) {
+	public function getFullEntityDataQuery($rawEntity) {
 		$query = $this->entityGetterGetFullEntityDataQuery($rawEntity);
 		if (!$query || !isset($rawEntity['key'])) {
  			return false;	

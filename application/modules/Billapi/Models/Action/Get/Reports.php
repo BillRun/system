@@ -18,18 +18,18 @@ class Models_Action_Get_Reports extends Models_Action_Get {
 	protected function runQuery() {
 		$records = parent::runQuery();
 		foreach ($records as &$record) {
-			$this->convertConditionsMongoDates($record);
+			$this->convertConditionsMongodloidDates($record);
 		}
 		return $records;
 	}
 	
-	protected function convertConditionsMongoDates(&$record) {
+	protected function convertConditionsMongodloidDates(&$record) {
 		if (empty($record['conditions'])) {
 			return;
 		}
 		foreach ($record['conditions'] as $cond_key => $condition) {
 			if(!empty($condition['value'])) {
-				$converted_date = Billrun_Utils_Mongo::convertMongoDatesToReadable($condition['value']);
+				$converted_date = Billrun_Utils_Mongo::convertMongodloidDatesToReadable($condition['value']);
 				$record['conditions'][$cond_key]['value'] = $converted_date;
 			}
 		}

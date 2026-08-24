@@ -76,7 +76,7 @@ class PaymentsAction extends ApiAction {
 		}
 		
 		if (is_array($query['urt'])) {
-			$query['urt'] = Billrun_Util::intToMongoDate($query['urt']);
+			$query['urt'] = Billrun_Util::intToMongodloidDate($query['urt']);
 		}
 		
 		return Billrun_Bill_Payment::queryPayments($query);

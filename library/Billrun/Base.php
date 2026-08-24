@@ -215,7 +215,7 @@ abstract class Billrun_Base {
 			$external_class = str_replace('Billrun_', '', $class);
 			if (($pos = strpos($external_class, "_")) !== FALSE) {
 				$namespace = substr($external_class, 0, $pos);
-				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
+				br_yaf_register_autoload($namespace, APPLICATION_PATH . '/application/helpers');
 			}
 			// TODO: We need a special indication for this case.
 			// There are places in the code that try to create clases in a loop,

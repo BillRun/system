@@ -2,12 +2,16 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { List, Map } from 'immutable'; // eslint-disable-line no-unused-vars
-import { Col, FormGroup, Form, ControlLabel, HelpBlock, InputGroup } from 'react-bootstrap';
+import { Col, Form, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import Field from '@/components/Field';
 import { ModalWrapper } from '@/components/Elements'
 import { currencySelector } from '@/selectors/settingsSelector';
+import { offlinePaymentFieldsSelector } from '@/selectors/offlinePaymentSelectors';
 import { payOffline } from '@/actions/paymentsActions';
+import { getSettings } from '@/actions/settingsActions';
+import moment from 'moment';
 
 class OfflinePayment extends Component {
   static propTypes = {
@@ -18,6 +22,7 @@ class OfflinePayment extends Component {
     methods: PropTypes.instanceOf(Map),
     currency: PropTypes.string,
     debt: PropTypes.number,
+    uf: PropTypes.instanceOf(List()),
   };
 
   static defaultProps = {
@@ -29,6 +34,7 @@ class OfflinePayment extends Component {
     }),
     currency: '',
     debt: null,
+    uf: List(),
   };
 
   state = {
@@ -38,17 +44,22 @@ class OfflinePayment extends Component {
     }),
     method: '',
     monetaryValue: '',
+    urt: moment().set({hour:0,minute:0,second:0,millisecond:0}),
     progress: false,
+    fc: true,
+    note: '',
+    additionalFields: Map()
   }
 
   componentDidMount() {
     this.initDefaultValues();
+    this.props.dispatch(getSettings(['payments']));
   }
 
   initDefaultValues = () => {
     const { debt } = this.props;
     if (debt !== null) {
-      this.onChangeMonetaryValue({ target: { value: Math.abs(debt) } });
+      this.onChangeValueById({ target: { value: Math.abs(debt), id: 'monetaryValue'} });
     }
   }
 
@@ -68,14 +79,29 @@ class OfflinePayment extends Component {
     this.onChangeValue('method', value);
   }
 
-  onChangeMonetaryValue = (e) => {
-    const { value } = e.target;
-    this.onChangeValue('monetaryValue', value);
+  onChangeUfValue = (e) => {
+    const { id, value } = e.target;
+    const { additionalFields } = this.state;
+    this.setState({additionalFields: additionalFields.set(id, value)});
   }
 
-  onChangeChequeNumValue = (e) => {
+  onChangeValueById = (e) => {
+    const { id, value } = e.target;
+    this.onChangeValue(id, value);   
+  }
+
+  onChangePaymentType = (e) => {
     const { value } = e.target;
-    this.onChangeValue('chequeNum', value);
+    if(value === 'tc'){
+      this.onChangeValue('fc', false);
+    }
+    if(value === 'fc'){
+      this.onChangeValue('fc', true);
+    }
+  }
+
+  onChangeUrtValue = (value) => {
+    this.onChangeValue('urt', value);
   }
 
   getAvailableMethods = () => {
@@ -88,9 +114,10 @@ class OfflinePayment extends Component {
 
   onPay = () => {
     const { aid, payerName } = this.props;
-    const { method, monetaryValue, chequeNum } = this.state;
+    const { method, monetaryValue, chequeNum, fc, additionalFields, note, urt } = this.state;
     this.setState(() => ({ progress: true }));
-    this.props.dispatch(payOffline(method, aid, monetaryValue, payerName, chequeNum))
+    const dir = !fc ? 'tc' : 'fc';
+    this.props.dispatch(payOffline(method, aid, monetaryValue, payerName, chequeNum, dir, additionalFields, note, urt))
       .then(this.afterPay);
   }
 
@@ -101,9 +128,28 @@ class OfflinePayment extends Component {
     }
   }
 
+ renderUserFields = () => {
+    const { additionalFields } = this.state;
+    const { uf } = this.props;
+    return (
+      <div>
+    {uf.map((userField, idx) => {
+      return (<FormGroup key={idx}>
+        <Col sm={2} as={ControlLabel}>{userField.get('title', '')}</Col>
+          <Col sm={8}>
+            <Field
+              id={userField.get('field_name', '')}
+              onChange={this.onChangeUfValue}
+              value={additionalFields.get(userField.get('field_name', ''), '')}
+            />
+        </Col>
+    </FormGroup>)
+    })}
+    </div>)
+  }
   render() {
     const { currency } = this.props;
-    const { validationErrors, method, monetaryValue, chequeNum, progress } = this.state;
+    const { validationErrors, method, monetaryValue, chequeNum, progress, fc, note, urt } = this.state;
     const availableMethods = this.getAvailableMethods();
     return (
       <ModalWrapper
@@ -114,10 +160,10 @@ class OfflinePayment extends Component {
         onCancel={this.props.onClose}
         progress={progress}
       >
-        <Form horizontal>
+        <Form className="form-horizontal">
 
           <FormGroup validationState={validationErrors.get('method', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Method</Col>
+            <Col sm={2} as={ControlLabel}>Method</Col>
             <Col sm={8}>
               <Field
                 fieldType="select"
@@ -130,18 +176,18 @@ class OfflinePayment extends Component {
           </FormGroup>
 
           <FormGroup validationState={validationErrors.get('monetaryValue', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Monetary Value</Col>
+            <Col sm={2} as={ControlLabel}>Monetary Value</Col>
             <Col sm={8}>
               <InputGroup>
                 <Field
                   id="monetaryValue"
-                  onChange={this.onChangeMonetaryValue}
+                  onChange={this.onChangeValueById}
                   value={monetaryValue}
                   fieldType="number"
                 />
-                <InputGroup.Addon>
+                <InputGroup.Text>
                   {getSymbolFromCurrency(currency)}
-                </InputGroup.Addon>
+                </InputGroup.Text>
               </InputGroup>
               { validationErrors.get('monetaryValue', '').length > 0 ? <HelpBlock>{validationErrors.get('monetaryValue', '')}</HelpBlock> : ''}
             </Col>
@@ -149,11 +195,11 @@ class OfflinePayment extends Component {
 
           {method === 'cheque' &&
             (<FormGroup>
-              <Col sm={2} componentClass={ControlLabel}>Cheque Number</Col>
+              <Col sm={2} as={ControlLabel}>Cheque Number</Col>
               <Col sm={8}>
                 <Field
                   id="chequeNum"
-                  onChange={this.onChangeChequeNumValue}
+                  onChange={this.onChangeValueById}
                   value={chequeNum}
                   fieldType="number"
                 />
@@ -161,6 +207,61 @@ class OfflinePayment extends Component {
             </FormGroup>)
           }
 
+          <FormGroup>
+              <Col sm={2} as={ControlLabel}>Payment direction</Col>
+              <Col sm={8}>
+              <span className="inline mr10">
+              <Field
+                  fieldType="radio"
+                  onChange={this.onChangePaymentType}
+                  name="payment_type"
+                  value="fc"
+                  label={
+                    <span>
+                      From Customer
+                    </span>
+                  }
+                  checked={fc}
+                />
+                 </span>
+              <span className="inline">
+              <Field
+                  fieldType="radio"
+                  onChange={this.onChangePaymentType}
+                  name="payment_type"
+                  value="tc"
+                  label={
+                    <span>
+                     To Customer
+                    </span>
+                  }
+                  checked={!fc}
+                />
+              </span>
+              </Col>
+            </FormGroup>
+            <FormGroup>
+              <Col sm={2} as={ControlLabel}>Note</Col>
+              <Col sm={8}>
+                <Field
+                  id="note"
+                  onChange={this.onChangeValueById}
+                  value={note}
+                />
+              </Col>
+            </FormGroup>
+	              <FormGroup>
+              <Col sm={2} as={ControlLabel}>Time</Col>
+                <Col sm={8}>
+                  <Field
+                    id="urt"
+                    onChange={this.onChangeUrtValue}
+                    value={urt}
+                    fieldType="datetime"
+                  />
+              </Col>
+          </FormGroup>
+	          {this.renderUserFields()}
         </Form>
       </ModalWrapper>
     );
@@ -169,6 +270,7 @@ class OfflinePayment extends Component {
 
 const mapStateToProps = (state, props) => ({
   currency: currencySelector(state, props),
+  uf: offlinePaymentFieldsSelector(state, props) || undefined,
 });
 
 export default connect(mapStateToProps)(OfflinePayment);

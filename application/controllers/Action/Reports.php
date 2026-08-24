@@ -96,7 +96,7 @@ class ReportsAction extends ApiAction {
 			
 			$match = array(
 				'urt' => array(
-					'$lt' => new MongoDate($startTime),
+					'$lt' => new Mongodloid_Date($startTime),
 				),
 			);
 
@@ -143,16 +143,16 @@ class ReportsAction extends ApiAction {
 		
 		$churnQuery = array(
 			'deactivation_date' => array(
-				'$gte' => new MongoDate($startTime),
-				'$lte' => new MongoDate($endTime),
+				'$gte' => new Mongodloid_Date($startTime),
+				'$lte' => new Mongodloid_Date($endTime),
 			),
 		);
 		$churnSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $churnQuery);
 		
 		$newQuery = array(
 			'creation_time' => array(
-				'$gte' => new MongoDate($startTime),
-				'$lte' => new MongoDate($endTime),
+				'$gte' => new Mongodloid_Date($startTime),
+				'$lte' => new Mongodloid_Date($endTime),
 			),
 			'sid' => array('$nin' => $churnSubscribers),
 		);
@@ -308,8 +308,8 @@ class ReportsAction extends ApiAction {
 			
 			$match = array(
 				'invoice_date' => array(
-					'$lte' => new MongoDate($endTime),
-					'$gte' => new MongoDate($startTime),
+					'$lte' => new Mongodloid_Date($endTime),
+					'$gte' => new Mongodloid_Date($startTime),
 				),
 			);
 

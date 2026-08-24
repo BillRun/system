@@ -22,7 +22,7 @@ class generat_discounts extends generat_test_data
     $discount = array_merge([
       
         "description" => "nn",
-        "key" => "NN",
+        "key" => self::uniqueName('DISC_'),
         "proration" => "inherited",
         "priority" => "",
         "params" => [

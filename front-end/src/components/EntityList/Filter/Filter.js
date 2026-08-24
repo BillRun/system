@@ -1,23 +1,26 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-/* COMPONENTS */
-import Multiselect from 'react-bootstrap-multiselect';
+import BS3Multiselect from '@/components/Filter/BS3Multiselect';
 
 export default class Filter extends Component {
 
   static propTypes = {
     filter: PropTypes.instanceOf(Immutable.Map),
     fields: PropTypes.array,
+    customFilters: PropTypes.array,
     base: PropTypes.object,
     children: PropTypes.element,
+    onClear: PropTypes.func,
   };
 
   static defaultProps = {
     filter: Immutable.Map(),
     fields: [],
+    customFilters: [],
     base: {},
     children: null,
+    onClear: null
   };
 
   constructor(props) {
@@ -100,22 +103,32 @@ export default class Filter extends Component {
   }
 
   onClearFilter = () => {
+    const { onClear } = this.props;
     this.setState({filter_by: [], string: ''}, () => {
       this.onClickFilterBtn();
+      if (onClear) {
+        onClear();
+      }
     });
   };
 
-  onSelectFilterField(option, checked) {
-    const value = option.val();
-    const { filter_by } = this.state;
-    const included = filter_by.includes(value);
-    if (checked && included) {
-      return;
+  onSelectFilterField(value = '') {
+    const filter_by = value === '' ? [] : value.split(',').filter(field => field !== '');
+    this.setState({ filter_by });
+  }
+
+  renderCustomFilters = () => {
+    const { customFilters } = this.props;
+    if (customFilters.length === 0) {
+      return null;
     }
-    if (!checked && included) {
-      return this.setState({filter_by: filter_by.filter(f => f !== value)});
-    }
-    return this.setState({filter_by: filter_by.concat(value)});
+    return customFilters
+      .filter(customFilter => typeof customFilter.renderFunction !== undefined)
+      .map((customFilter, idx) => (
+        <div className="pull-left" key={idx}>
+          {customFilter.renderFunction()}
+        </div>
+      ));
   }
 
   render() {
@@ -140,13 +153,14 @@ export default class Filter extends Component {
                    className="form-control"/>
           </div>
           <div className="pull-left">
-            <Multiselect data={fields_options}
-                         multiple
-                         onChange={this.onSelectFilterField}
-                         buttonWidth="100%"
-                         nonSelectedText="Search in fields"
+            <BS3Multiselect
+              data={fields_options}
+              onChange={this.onSelectFilterField}
+              buttonWidth="100%"
+              nonSelectedText="Search in fields"
             />
           </div>
+          {this.renderCustomFilters()}
           <div className="search-button pull-left">
             <button className="btn btn-default search-btn"
                     onClick={this.onClickFilterBtn}

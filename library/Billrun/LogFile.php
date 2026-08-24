@@ -59,14 +59,14 @@ class Billrun_LogFile {
 		if (is_null($time)) {
 			$time = time();
 		}
-		$this->data['start_process_time'] = new MongoDate($time);
+		$this->data['start_process_time'] = new Mongodloid_Date($time);
 	}
 
 	public function setProcessTime($time = null) {
 		if (is_null($time)) {
 			$time = time();
 		}
-		$this->data['process_time'] = new MongoDate($time);
+		$this->data['process_time'] = new Mongodloid_Date($time);
 	}
 	
 	public function setStamp() {

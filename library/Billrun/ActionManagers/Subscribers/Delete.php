@@ -30,7 +30,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	 */
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
-		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
+		$balancesUpdate = array('$set' => array('to' => new Mongodloid_Date()));
 		$balancesQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$balancesQuery['sid'] = $sid;
 		$balancesQuery['aid'] = $aid;
@@ -56,7 +56,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 				$errorCode =  15;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			} else {
-				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
+				$this->collection->updateEntity($rowToDelete, array('to' => new Mongodloid_Date()));
 			}
 
 			if (!$this->keepBalances) {

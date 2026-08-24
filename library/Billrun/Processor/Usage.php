@@ -70,13 +70,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type float
 	 */
 	protected $prepricedMapping = null;
-	
+
 	/**
-	 * 
-	 * the time zone field defined by the user
-	 * @var type string
+	 * A literal timezone value (e.g., 'UTC')
+	 * @var string
 	 */
-	protected $timeZone = null;
+	protected $timeZoneLiteral = null;
+
+	/**
+	 * The name of the field containing the timezone
+	 * @var string
+	 */
+	protected $timeZoneField = null;
 	
 	/**
 	 * 
@@ -84,42 +89,31 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var array
 	 */
 	protected $stampFields = array();
+	static protected $type = 'usage';
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if (!empty($options['processor']['default_usaget'])) {
-			$this->defaultUsaget = $options['processor']['default_usaget'];
-		}
-		if (!empty($options['processor']['default_unit'])) {
-			$this->usagevUnit = $options['processor']['default_unit'];
-		}
-		if (!empty($options['processor']['usaget_mapping'])) {
-			$this->usagetMapping = $options['processor']['usaget_mapping'];
-		}
+		$this->setConstructProcessorFields($options);
+	}
+
+	protected function setConstructProcessorFields($options){
+		
+		$this->defaultUsaget = $options['processor']['default_usaget'] ??  'general';
+		$this->usagevUnit = $options['processor']['default_unit'] ?? 'counter';
+		$this->usagetMapping = $options['processor']['usaget_mapping'] ?? null;
+		
 		if (empty($options['processor']['date_field'])) {
 			return FALSE;
 		}
-		if (!empty($options['processor']['default_volume_type'])) {
-			$this->volumeType = $options['processor']['default_volume_type'];
-		}
-		if (!empty($options['processor']['default_volume_src'])) {
-			$this->volumeSrc = $options['processor']['default_volume_src'];
-		}
-		if (!empty($options['processor']['date_format'])){
-			$this->dateFormat = $options['processor']['date_format'];
-		}
-		if (!empty($options['processor']['time_format'])){
-			$this->timeFormat = $options['processor']['time_format'];
-		}
-		if (!empty($options['processor']['time_field'])){
-			$this->timeField = $options['processor']['time_field'];
-		}
-		if (!empty($options['processor']['timezone_field'])) {
-			$this->timeZone = $options['processor']['timezone_field'];
-		}
-
-		$this->dateField = $options['processor']['date_field'];
-		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true)['pricing'];
+		$this->volumeType = $options['processor']['default_volume_type'] ?? 'field';
+		$this->volumeSrc = $options['processor']['default_volume_src'] ?? array();
+		$this->dateFormat = $options['processor']['date_format'] ?? null;
+		$this->timeFormat = $options['processor']['time_format'] ?? null;
+		$this->timeField = $options['processor']['time_field'] ?? null;
+		$this->timeZoneLiteral = $options['processor']['timezone'] ?? null;
+		$this->timeZoneField = $options['processor']['timezone_field'] ?? null;
+		$this->dateField = $options['processor']['date_field'] ?? null;
+		$this->prepricedMapping = $options['pricing'] ?? null;
 		
 	}
 
@@ -132,9 +126,14 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$processedData['trailer'] = array('trailer' => TRUE); //TODO
 		$parsedData = $parser->getDataRows();
 		$rowCount = 0;
-		foreach ($parsedData as $parsedRow) {
+		foreach ($parsedData as $lineNumber => $parsedRow) {
 			Billrun_Factory::dispatcher()->trigger('beforeLineMediation', array($this, static::$type, &$parsedRow));
-			$row = $this->getBillRunLine($parsedRow);
+			$lineTypeConfig = $this->getLineTypeConfigByRow($lineNumber);
+			$linet = $lineTypeConfig['line_type'] ?? null;
+			if(isset($linet)){
+				$this->setConstructProcessorFields($lineTypeConfig);
+			}
+			$row = $this->getBillRunLine($parsedRow, $linet);
 			Billrun_Factory::dispatcher()->trigger('afterLineMediation', array($this, static::$type, &$row));
 			if (!$row){
 				return false;
@@ -148,16 +147,17 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return true;
 	}
 
-	public function getBillRunLine($rawLine) {
-		$row['uf'] = $this->filterFields($rawLine);
-
+	public function getBillRunLine($rawLine, $linet) {
+		$row['uf'] = $this->filterFields($rawLine, $linet);
+        $row['cf'] = $this->getCalculatedFields($row['uf'], static::$type, $linet ?? null );
+                
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
 			return false;
 		}
 		
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
+		$row['eurt'] = $row['urt'] = new Mongodloid_Date($datetime->format('U'));
 		$row['timezone'] = $datetime->getOffset();
 		Billrun_Factory::dispatcher()->trigger('beforeGetLineUsageType', array(&$row, &$this->usagevUnit, &$this->volumeType, &$this->volumeSrc, &$this->stampFields, static::$type));               
 		$row['usaget'] = $row['usaget'] ?? $this->getLineUsageType($row);
@@ -176,12 +176,16 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
+		if(isset($linet)){
+			$row['linet'] = $linet;
+		}
+		Billrun_Factory::dispatcher()->trigger('afterGetLineUsageType', array(&$row, static::$type));               
 		return $row;
 	}
 	
 	protected function getRowDateTime($row) {
-		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZone);
+		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZoneField, $this->timeZoneLiteral);
 	}
 
 	/**
@@ -191,8 +195,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @return Array	the record row with filtered only the requierd fields in it  
 	 * 					or if no filter is defined in the configuration the full data record.
 	 */
-	protected function filterFields($rawRow) {
-		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type);
+	protected function filterFields($rawRow, $linet) {
+		$parserFields = Billrun_Factory::config()->getParserStructure(static::$type, $linet ?? null);
 		foreach ($parserFields as $field) {
 			if (isset($field['checked']) && $field['checked'] === false) {
 				unset($rawRow[$field['name']]); 
@@ -211,6 +215,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 
 		return $row;
+	}
+        
+        /**
+         * According to the configuration get computed fields (cf)
+         * @param Array     $uf - all the user-defined fields in the input processor
+         * @param string    $type - Input processor name
+         * @return Array    computed fields (cf)
+         */
+        protected function getCalculatedFields($uf, $type, $linet = null) {
+                $row = array();
+		$configurations = Billrun_Util::getIn(Billrun_Factory::config()-> getLineTypeConfigByName($type,true, $linet),'processor.calculated_fields', []);
+                foreach ($configurations as $calculatedConf){ 
+                    $filter = new Billrun_EntityGetter_Filters_Base(array('computed' => $calculatedConf));
+                    $targetFieldName = $calculatedConf['target_field'];
+                    Billrun_Util::setIn($row, $targetFieldName, $filter->getComputedValue($uf));
+                }
+                return $row;
 	}
 
 //	protected function buildHeader($line) {
@@ -232,7 +253,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 		return $trailer;
 	}
 
@@ -339,4 +360,16 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return !empty($this->prepricedMapping[$usaget]);
 	}
 	
+	protected function getLineTypeConfigByRow($lineNumber){
+		$parser = $this->getParser();
+		$extraData = $parser->getExtraData();
+		if(isset($extraData['linesTypesMapping'])){
+			$linet = $extraData['linesTypesMapping'][$lineNumber];
+			if(!$linet){
+				throw new Exception('Input Processor have multiple line types and Line '. $lineNumber . ' does not match any of the regex patterns.');
+			}
+			return  Billrun_Factory::config()->getLineTypeConfigByName(static::$type, true, $linet);
+		}
+		return false;
+	}
 }

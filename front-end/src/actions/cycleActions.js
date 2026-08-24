@@ -1,5 +1,7 @@
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import {
+  pushToCycleQueueQuery,
+  pushToConfirmQueueQuery,
   getRunCycleQuery,
   getResetCycleQuery,
   getConfirmCycleInvoiceQuery,
@@ -13,6 +15,15 @@ import { startProgressIndicator, finishProgressIndicator } from './progressIndic
 export const runBillingCycle = (billrunKey, rerun = false, generatePdf = true) => (dispatch) => { // eslint-disable-line import/prefer-default-export
   dispatch(startProgressIndicator());
   const query = getRunCycleQuery(billrunKey, rerun, generatePdf);
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, 'Cycle started successfully!')))
+    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
+};
+
+// eslint-disable-next-line max-len
+export const runBillingCycleWithWorkers = (billrunKey, isGeneratePdf = true, include_aids = [], exclude_aids = []) => (dispatch) => { // eslint-disable-line import/prefer-default-export
+  dispatch(startProgressIndicator());
+  const query = pushToCycleQueueQuery(billrunKey, isGeneratePdf, include_aids, exclude_aids);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Cycle started successfully!')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error running cycle')));
@@ -37,6 +48,14 @@ export const confirmCycleInvoice = (billrunKey, invoiceId) => (dispatch) => {
 export const confirmCycle = billrunKey => (dispatch) => {
   dispatch(startProgressIndicator());
   const query = getConfirmCycleAllQuery(billrunKey);
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming cycle...')))
+    .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming cycle')));
+};
+
+export const confirmCycleWithWorkers = (billrunKey, include_aids, exclude_aids) => (dispatch) => {
+  dispatch(startProgressIndicator());
+  const query = pushToConfirmQueueQuery(billrunKey, include_aids, exclude_aids);
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming cycle...')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming cycle')));

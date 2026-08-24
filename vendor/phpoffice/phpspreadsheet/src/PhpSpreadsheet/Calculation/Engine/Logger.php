@@ -48,11 +48,11 @@ class Logger
     /**
      * Enable/Disable Calculation engine logging.
      *
-     * @param bool $writeDebugLog
+     * @param bool $pValue
      */
-    public function setWriteDebugLog($writeDebugLog): void
+    public function setWriteDebugLog($pValue): void
     {
-        $this->writeDebugLog = $writeDebugLog;
+        $this->writeDebugLog = $pValue;
     }
 
     /**
@@ -68,11 +68,11 @@ class Logger
     /**
      * Enable/Disable echoing of debug log information.
      *
-     * @param bool $echoDebugLog
+     * @param bool $pValue
      */
-    public function setEchoDebugLog($echoDebugLog): void
+    public function setEchoDebugLog($pValue): void
     {
-        $this->echoDebugLog = $echoDebugLog;
+        $this->echoDebugLog = $pValue;
     }
 
     /**
@@ -87,20 +87,18 @@ class Logger
 
     /**
      * Write an entry to the calculation engine debug log.
-     *
-     * @param mixed $args
      */
-    public function writeDebugLog(string $message, ...$args): void
+    public function writeDebugLog(...$args): void
     {
         //    Only write the debug log if logging is enabled
         if ($this->writeDebugLog) {
-            $message = sprintf($message, ...$args);
+            $message = implode('', $args);
             $cellReference = implode(' -> ', $this->cellStack->showStack());
             if ($this->echoDebugLog) {
                 echo $cellReference,
-                ($this->cellStack->count() > 0 ? ' => ' : ''),
-                $message,
-                PHP_EOL;
+                    ($this->cellStack->count() > 0 ? ' => ' : ''),
+                    $message,
+                    PHP_EOL;
             }
             $this->debugLog[] = $cellReference .
                 ($this->cellStack->count() > 0 ? ' => ' : '') .

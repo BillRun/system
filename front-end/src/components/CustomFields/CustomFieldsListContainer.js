@@ -16,13 +16,13 @@ const mapStateToProps = (state, props) => ({
 });
 
 const mapDispatchToProps = (dispatch, {
-  entity, onNew, onReorder, onReorederSave, onReorederCancel, orderChanged,
+  entity, onNew, onReorder, onReorderSave, onReorderCancel, orderChanged,
 }) => ({
   onNew: () => onNew(entity),
   onReorder: e => onReorder(entity, e),
-  onReorederSave: () => onReorederSave(entity, orderChanged === true),
-  onReorederCancel: () => onReorederCancel(entity, orderChanged === true),
-  onReorederStart: () => dispatch(setPageFlag('customFields', `reorder.${entity}`, true)),
+  onReorderSave: () => onReorderSave(entity, orderChanged === true),
+  onReorderCancel: () => onReorderCancel(entity, orderChanged === true),
+  onReorderStart: () => dispatch(setPageFlag('customFields', `reorder.${entity}`, true)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(CustomFieldsList);

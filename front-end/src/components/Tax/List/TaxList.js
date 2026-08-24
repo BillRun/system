@@ -16,26 +16,18 @@ import { isPlaysEnabledSelector } from '@/selectors/settingsSelector';
 class TaxList extends Component {
 
   static propTypes = {
-    defaultListFields: PropTypes.arrayOf(PropTypes.string),
     fields: PropTypes.instanceOf(Immutable.List),
     isPlaysEnabled: PropTypes.bool,
   };
 
   static defaultProps = {
-    defaultListFields: ['key', 'description', 'rate'],
     fields: null,
     isPlaysEnabled: false,
   };
 
-  componentWillMount() {
-    this.props.dispatch(getSettings('taxes.fields'));
-  }
-
-  getFilterFields = () => [
-    { id: 'description', placeholder: 'Title' },
-    { id: 'key', placeholder: 'Key' },
-  ];
-
+  static defaultListFields = getConfig(['systemItems', 'tax', 'defaultListFields'], Immutable.List());
+  
+  
   filterPlayField = (field) => {
     const { isPlaysEnabled } = this.props;
     if (field.get('field_name', '') !== 'play') {
@@ -45,10 +37,10 @@ class TaxList extends Component {
   }
 
   getFields = () => {
-    const { fields, defaultListFields } = this.props;
+    const { fields } = this.props;
     return fields
       .filter(this.filterPlayField)
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || TaxList.defaultListFields.includes(field.get('field_name', ''))))
       .map((field) => {
         const fieldname = field.get('field_name');
         switch (fieldname) {
@@ -68,9 +60,9 @@ class TaxList extends Component {
   };
 
   getProjectFields = () => {
-    const { fields, defaultListFields } = this.props;
+    const { fields } = this.props;
     return fields
-      .filter(field => (field.get('show_in_list', false) || defaultListFields.includes(field.get('field_name', ''))))
+      .filter(field => (field.get('show_in_list', false) || TaxList.defaultListFields.includes(field.get('field_name', ''))))
       .reduce((acc, field) => acc.set(field.get('field_name'), 1), Immutable.Map({}))
       .toJS();
   };
@@ -78,6 +70,11 @@ class TaxList extends Component {
   getActions = () => [
     { type: 'edit' },
   ];
+
+  
+  componentDidMount() {
+    this.props.dispatch(getSettings('taxes.fields'));
+  }
 
   render () {
     const { fields } = this.props;
@@ -88,7 +85,6 @@ class TaxList extends Component {
       <EntityList
         itemsType={getConfig(['systemItems', 'tax', 'itemsType'], '')}
         itemType={getConfig(['systemItems', 'tax', 'itemType'], '')}
-        filterFields={this.getFilterFields()}
         tableFields={this.getFields()}
         projectFields={this.getProjectFields()}
         showRevisionBy="key"

@@ -41,7 +41,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 		$contents = $query['$set'];
 		unset($contents[$valueFieldName]);
 		if(!isset($contents['from'])) {
-			$contents['from'] = new MongoDate();
+			$contents['from'] = new Mongodloid_Date();
 		}
 		$merged = array_merge($contents, $wallet->getPartialBalance());
 		return array('$set' => $merged);

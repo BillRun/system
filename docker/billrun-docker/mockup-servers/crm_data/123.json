@@ -1,0 +1,88 @@
+{
+    "status":1,
+    "data":[
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "123",
+        "firstname": "yossi",
+        "lastname": "test",
+        "email": "test@gmail.com",
+        "country": "Israel",
+        "address": "hshalom 7",
+        "zip_code": "123ab",
+        "payment_gateway": "",
+        "salutation": "",
+        "type": "account",
+        "to": "2173-11-28T09:52:14",
+        "creation_time": "2024-11-27 22:00:00"
+    },
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "123",
+        "sid": "1230",
+        "plan": "PLAN_A",
+        "services": [],
+        "play": "Default",
+        "firstname": "yossi",
+        "lastname": "test",
+        "address": "hshalom 7",
+        "country": "Israel",
+        "type": "subscriber",
+        "plan_activation": "2020-11-27 22:00:00",
+        "to": "2173-11-28T09:52:35",
+        "deactivation_date": "2173-11-28T09:52:35",
+        "creation_time": "2020-11-27 22:00:00",
+        "activation_date": "2020-11-27 22:00:00",
+        "overrides": [
+            {
+                "type": "plan",
+                "key": "PLAN_A",
+                "value": {
+                    "price": [
+                        {
+                            "price": "100000",
+                            "from":"0",
+                            "to": "9223372036854776000"
+                        }
+                    ]
+                }
+            }
+        ],
+        "plan_deactivation": "2173-11-28T09:52:35"
+    },
+    {
+        "from": "2020-11-27 22:00:00",
+        "aid": "123",
+        "sid": "1231",
+        "plan": "PLAN_A",
+        "services": [],
+        "play": "Default",
+        "firstname": "yossi",
+        "lastname": "test",
+        "address": "hshalom 7",
+        "country": "Israel",
+        "type": "subscriber",
+        "plan_activation": "2020-11-27 22:00:00",
+        "to": "2173-11-28T09:52:35",
+        "deactivation_date": "2173-11-28T09:52:35",
+        "creation_time": "2020-11-27 22:00:00",
+        "activation_date": "2020-11-27 22:00:00",
+        "plan_deactivation": "2173-11-28T09:52:35",
+        "overrides": [
+            {
+                "type": "plan",
+                "key": "PLAN_A",
+                "value": {
+                    "price": [
+                        {
+                            "price":"50",
+                            "from": "0",
+                            "to": "9223372036854776000"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+]
+}

@@ -172,7 +172,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @param array $update the update command
 	 * 
 	 * @return array update command results
-	 * @throws MongoResultException
 	 */
 	public function update($query, $update) {
 		$skipEvents = false;
@@ -198,7 +197,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		);
 		Billrun_Factory::dispatcher()->trigger('beforeTriggerEvents', array(&$skipEvents, $this->row));
 		if (!$skipEvents) {
-			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec)));
+			Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid'], 'row' => array('usagev' => $this->row['usagev'], 'urt' => $this->row['urt']->sec, 'usaget'=> $this->row['usaget'], 'stamp'=> $this->row['stamp'], 'unit' => $this->row['usagev_unit'] ?? '')));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdate', array($this->row, $after));
 		$this->setRawData($after);
@@ -256,7 +255,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		if (empty($arateGroups)) {
 			return $usagev;
 		}
-		
+
 		$usagev = 0;
 
 		if (!empty($pricingData['over_group'])) {
@@ -266,7 +265,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		foreach ($arateGroups as $arateGroup) {
-			if ($arateGroup['balance_ref']['$id'] === $this->getId()->getMongoId()) {
+			if ($arateGroup['balance_ref']['$id'] instanceof Mongodloid_Id &&  $arateGroup['balance_ref']['$id']->__toString() === $this->getId()->__toString()) {
 				$usagev += $arateGroup['usagev'] ?? 0;
 			}
 		}
@@ -302,6 +301,22 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			'over_group' => 0,
 			$this->pricingField => 0,
 		);
+	}
+
+	public static function resetBalancesGroup($query, $group){
+		Billrun_Factory::log('Resting balances of group: ' . $group, Zend_Log::DEBUG);
+		$restingTime = new Mongodloid_Date();
+		$balancesToReset = static::getCollection()->query(array_merge($query, ['balance.groups.' . $group => ['$exists' => 1], 'balance.groups.' . $group . '.usagev' => ['$ne' => 0]]), $update);
+		foreach($balancesToReset as $balanceToReset){
+			$count =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.count', 0);
+			$left =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.left', 0);
+			$total =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.total', 0);
+			$usagev =  Billrun_Util::getIn($balanceToReset ,'balance.groups.' . $group . '.usagev', 0);
+			Billrun_Factory::log('Resting balance ' . $balanceToReset['_id'] . ', with count: ' . $count . ', with left: ' . $left. ' and with usagev: ' . $usagev , Zend_Log::DEBUG);
+			$update = ['$set' => ['balance.groups.' . $group . '.count' => 0, 'balance.groups.' . $group . '.usagev' => 0, 'balance.groups.' . $group . '.left' => $total], '$push' => ['reseting.groups.' .$group => $restingTime]];
+			static::getCollection()->update(['_id' => $balanceToReset['_id']], $update);
+		}
+
 	}
 
 }

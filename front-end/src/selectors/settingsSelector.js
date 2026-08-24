@@ -17,6 +17,9 @@ import {
 const getTaxation = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['taxation']);
 
+const getExportGenerators = (state, props) => // eslint-disable-line no-unused-vars
+  state.settings.get('export_generators');
+
 const getPluginActions = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['plugin_actions']);
 
@@ -108,6 +111,12 @@ const getPaymentGateways = (state, props) => // eslint-disable-line no-unused-va
 const getInputProcessorFields = (state, props) => // eslint-disable-line no-unused-vars
   props.settings.get('fields', Immutable.List());
 
+const getInputProcessorCalculatedFields = (state, props) => {// eslint-disable-line no-unused-vars
+  return props.settings.getIn(['processor', 'calculated_fields'], Immutable.List())
+    .map(field => field.get('target_field', '')).map(field =>({ value: field, label: `${field} (Computed)` }))
+    .sortBy(field => field.value);
+}
+
 const selectFieldNames = (fields) => {
   if (fields) {
     return fields.map(field => field.get('field_name', ''));
@@ -173,6 +182,17 @@ const selectFielteredFields = (inputProssesors) => {
   return options.toList();
 };
 
+const selectCalculatedFields = (inputProssesors) => {
+  let options = Immutable.Set();
+  inputProssesors.forEach((inputProssesor) => {
+    const filteredFields = inputProssesor
+      .getIn(['processor', 'calculated_fields'], Immutable.List())
+      .map(field => field.get('target_field', ''));
+    options = options.concat(filteredFields);
+  });
+  return options.toList();
+};
+
 const selectRatingParams = (inputProssesors) => {
   let options = Immutable.Set();
   inputProssesors.forEach((inputProssesor) => {
@@ -209,7 +229,7 @@ const selectFileType = (fileTypes) => {
   if (!fileTypes) {
     return undefined;
   }
-  return fileTypes.map(fileType => fileType.get('file_type', ''));
+  return fileTypes.map(fileType => fileType.get('file_type', '')).toList();
 };
 
 export const inputProssesorCsiOptionsSelector = createSelector(
@@ -233,6 +253,11 @@ export const inputProssesorfilteredFieldsSelector = createSelector(
   selectFielteredFields,
 );
 
+export const inputProssesorCalculatedFieldsSelector = createSelector(
+  getInputProssesors,
+  selectCalculatedFields,
+);
+
 export const inputProssesorRatingParamsSelector = createSelector(
   getInputProssesors,
   selectRatingParams,
@@ -242,6 +267,8 @@ export const taxMappingSelector = createSelector(
   getTaxation,
   (tax = Immutable.Map()) => tax.get('mapping'),
 );
+
+export const exportGeneratorsSelector = (state, props) => getExportGenerators(state, props) || Immutable.List();
 
 export const importersSelector = createSelector(
   getPluginActions,
@@ -262,35 +289,20 @@ export const importersSelector = createSelector(
     ),
 );
 
-export const importSelector = createSelector(
-  getImport,
-  importConfig => importConfig,
-);
+export const importSelector = getImport;
 
-export const taxationSelector = createSelector(
-  getTaxation,
-  taxation => taxation,
-);
+export const taxationSelector = getTaxation;
 
 export const taxationTypeSelector = createSelector(
   taxationSelector,
   (taxation = Immutable.Map()) => taxation.get('tax_type'),
 );
 
-export const pricingSelector = createSelector(
-  getPricing,
-  pricing => pricing,
-);
+export const pricingSelector = getPricing;
 
-export const systemSettingsSelector = createSelector(
-  getSystemSettings,
-  system => system,
-);
+export const systemSettingsSelector = getSystemSettings;
 
-export const playsSettingsSelector = createSelector(
-  getPlaysSettings,
-  plays => plays,
-);
+export const playsSettingsSelector = getPlaysSettings;
 
 export const playsEnabledSelector = createSelector(
   playsSettingsSelector,
@@ -315,10 +327,7 @@ export const closedCycleChangesSelector = createSelector(
   (system = Immutable.Map()) => system.get('closed_cycle_changes'),
 );
 
-export const billrunSelector = createSelector(
-  getBillrun,
-  billrun => billrun,
-);
+export const billrunSelector = getBillrun;
 
 export const minEntityDateSelector = createSelector(
   getMinEntityDate,
@@ -354,20 +363,11 @@ export const eventCodeSelector = createSelector(
   selectEventCode,
 );
 
-export const usageTypesDataSelector = createSelector(
-  getUsageType,
-  usageTypes => usageTypes,
-);
+export const usageTypesDataSelector = getUsageType;
 
-export const propertyTypeSelector = createSelector(
-  getPropertyTypes,
-  propertyTypes => propertyTypes,
-);
+export const propertyTypeSelector = getPropertyTypes;
 
-export const entityFieldSelector = createSelector(
-  getEntityFields,
-  fields => fields,
-);
+export const entityFieldSelector = getEntityFields;
 
 export const accountFieldsSelector = createSelector(
   getAccountFields,
@@ -458,11 +458,12 @@ export const billsUserFieldsSelector = createSelector(
   }
 );
 
-export const saveToBillPaymentGatewaySelector = createSelector(
+export const saveToBillTransactionsRequestPaymentGatewaySelector = createSelector(
   getPaymentGateways,
   (paymentGateways = Immutable.List()) => {
     return Immutable.List().withMutations((fieldsWithMutations) => {
       paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['transactions_request'], Immutable.List()).size > 1;
         paymentGateway.getIn(['transactions_request'], Immutable.List()).forEach((transactionRequest) => {
           transactionRequest.getIn(['generator', 'data_structure'], Immutable.List()).forEach((field) => {
             if(field.getIn(['save_to_bill'], false) === true){
@@ -471,7 +472,87 @@ export const saveToBillPaymentGatewaySelector = createSelector(
               } else {
                 fieldsWithMutations.push(field
                   .set('field_name', getFieldName(field.get('name', ''), 'bills'))
-                  .set('payment_gateway', paymentGateway.get('name', '')));
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillTransactionsResponsePaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['transactions_response'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['transactions_response'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillDenialsPaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['denials'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['denials'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
+              }
+            }
+          });
+        });
+      });
+    })
+  },
+);
+
+export const saveToBillPaymentsPaymentGatewaySelector = createSelector(
+  getPaymentGateways,
+  (paymentGateways = Immutable.List()) => {
+    return Immutable.List().withMutations((fieldsWithMutations) => {
+      paymentGateways.forEach((paymentGateway) => {
+        const isMulti = paymentGateway.getIn(['payments'], Immutable.List()).size > 1;
+        paymentGateway.getIn(['payments'], Immutable.List()).forEach((transactionRequest) => {
+          transactionRequest.getIn(['parser', 'data_structure'], Immutable.List()).forEach((field) => {
+            if(field.getIn(['save_to_bill'], false) === true){
+              if (field.get('title', '') !== '') {
+                fieldsWithMutations.push(field.set('payment_gateway', paymentGateway.get('name', '')));
+              } else {
+                fieldsWithMutations.push(field
+                  .set('field_name', getFieldName(field.get('name', ''), 'bills'))
+                  .set('payment_gateway', paymentGateway.get('name', ''))
+                  .set('file_type', transactionRequest.get('file_type', ''))
+                  .set('is_multi', isMulti));
               }
             }
           });
@@ -516,10 +597,7 @@ export const planFieldsSelector = createSelector(
   (fields = Immutable.List()) => fields.map(field => setFieldTitle(field, 'plan')),
 );
 
-export const templateTokenSettingsSelector = createSelector(
-  getTemplateTokens,
-  templateTokens => templateTokens,
-);
+export const templateTokenSettingsSelector = getTemplateTokens;
 
 export const templateTokenSettingsSelectorForEditor = createSelector(
   templateTokenSettingsSelector,
@@ -537,21 +615,9 @@ export const templateTokenSettingsSelectorForEditor = createSelector(
   }
 );
 
-export const collectionSettingsSelector = createSelector(
+export const collectionSelector = createSelector(
   getCollections,
-  collection => (collection ? collection.get('settings', Immutable.Map()) : undefined),
-);
-
-export const collectionStepsSelector = createSelector(
-  getCollections,
-  collection => (collection ? collection.get('steps', Immutable.List()) : undefined),
-);
-
-export const collectionStepsSelectorForList = createSelector(
-  collectionStepsSelector,
-  steps => (steps
-    ? steps.sortBy(item => parseFloat(item.get('do_after_days', 0)))
-    : undefined),
+  collection => (collection ? collection.get('processes', Immutable.List()) : undefined),
 );
 
 export const eventsSettingsSelector = createSelector(
@@ -581,8 +647,8 @@ export const formatFieldOptions = (fields, item = Immutable.Map()) => {
   return undefined;
 };
 
-export const addDefaultFieldOptions = (formatedFields, item = Immutable.Map()) => {
-  if (formatedFields) {
+export const addDefaultFieldOptions = (formattedFields, item = Immutable.Map()) => {
+  if (formattedFields) {
     const entity = item.get('entity', '');
     const defaultFieldsByEntity = {
       subscription: [{
@@ -616,11 +682,11 @@ export const addDefaultFieldOptions = (formatedFields, item = Immutable.Map()) =
         mandatory: true,
       }],
     };
-    return formatedFields.withMutations((fieldsWithMutations) => {
+    return formattedFields.withMutations((fieldsWithMutations) => {
       const defaultFields = defaultFieldsByEntity[entity] || [];
       defaultFields
         .filter(defaultField =>
-          formatedFields.findIndex(field => field.value === defaultField.value) === -1)
+          formattedFields.findIndex(field => field.value === defaultField.value) === -1)
         .forEach((defaultField) => {
           fieldsWithMutations.push(defaultField);
         });
@@ -662,15 +728,9 @@ export const invoiceTemplateStatusSelector = createSelector(
   (invoiceExport = Immutable.Map()) => invoiceExport.get('status'),
 );
 
-export const paymentGatewaysSelector = createSelector(
-  getPaymentGateways,
-  availablePaymentGateways => availablePaymentGateways,
-);
+export const paymentGatewaysSelector = getPaymentGateways;
 
-export const emailTemplatesSelector = createSelector(
-  getEmailTemplates,
-  emailTemplates => emailTemplates,
-);
+export const emailTemplatesSelector = getEmailTemplates;
 
 export const eventsSelector = createSelector(
   getEvents,
@@ -750,25 +810,29 @@ export const getFieldsWithPreFunctions = () => getConfig(['rates', 'preFunctions
     return Immutable.List([...acc, ...id_options]);
   }, Immutable.List());
 
-const getAdditionInputProcessorlineKeyOptions = () => {
-  const options = [
-    { value: 'type', label: 'Type' },
-    { value: 'usaget', label: 'Usage Type' },
-    { value: 'connection_type', label: 'Connection Type' },
-    { value: 'usagev', label: 'Activity Volume' },
-    { value: 'file', label: 'File name' },
-    ...getFieldsWithPreFunctions().map(formatSelectOptions),
-    { value: 'computed', label: 'Computed' },
-  ];
-  return Immutable.List(options);
-}
+// Reselect 5: input selectors must return stable references; creating a new
+// Immutable.List on every call defeats memoization. Hoist to a module-level
+// constant so the same reference is always returned.
+const ADDITION_INPUT_PROCESSOR_LINE_KEY_OPTIONS = Immutable.List([
+  { value: 'type', label: 'Type' },
+  { value: 'usaget', label: 'Usage Type' },
+  { value: 'connection_type', label: 'Connection Type' },
+  { value: 'usagev', label: 'Activity Volume' },
+  { value: 'file', label: 'File name' },
+  ...getFieldsWithPreFunctions().map(formatSelectOptions),
+  { value: 'computed', label: 'Computed' },
+]);
+const getAdditionInputProcessorlineKeyOptions = () => ADDITION_INPUT_PROCESSOR_LINE_KEY_OPTIONS;
 
 export const inputProcessorlineKeyOptionsSelector = createSelector(
   getInputProcessorFields,
+  getInputProcessorCalculatedFields,
   getAdditionInputProcessorlineKeyOptions,
-  (inputProcessorFields = Immutable.List(), additionlineKeyOptions = Immutable.List()) => inputProcessorFields
+  (inputProcessorFields = Immutable.List(), inputProcessorCalculatedFields = Immutable.List(),
+   additionlineKeyOptions = Immutable.List()) => inputProcessorFields
     .map(field => ({ value: field, label: field }))
     .sortBy(field => field.value)
+    .push(...inputProcessorCalculatedFields)
     .push(...additionlineKeyOptions)
     .map(({value, label}) => (Immutable.Map({ value, label })))
 );
@@ -801,15 +865,18 @@ export const inputProcessorComputedForeignFieldslineKeyOptionsSelector = createS
 
 export const inputProcessorComputedlineKeyOptionsSelector = createSelector(
   getInputProcessorFields,
+  getInputProcessorCalculatedFields,
   inputProcessorComputedForeignFieldslineKeyOptionsSelector,
   getAdditionInputProcessorComputedlineKeyOptions,
   (
     inputProcessorFields = Immutable.List(),
+    inputProcessorCalculatedFields = Immutable.List(),
     foreignFields = Immutable.List(),
     additionLineKeyOptions = Immutable.List(),
   ) => inputProcessorFields
     .map(field => ({ value: field, label: field }))
     .sortBy(field => field.value)
+    .push(...inputProcessorCalculatedFields)
     .push(...foreignFields)
     .push(...additionLineKeyOptions)
     .toArray()

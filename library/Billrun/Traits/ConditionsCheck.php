@@ -22,6 +22,11 @@ trait Billrun_Traits_ConditionsCheck {
 	 * @return boolean
 	 */
 	public function isConditionsMeet($entity, $conditions = [], $params = [], $logic = '$and') {
+		$query = $this->getConditionsQuery($conditions, $entity, $params, $logic);
+		return $this->isConditionMeet($entity, $query, $params);
+	}
+	
+	public function getConditionsQuery($conditions = [], $entity = [], $params = [], $logic = '$and') {
 		if (empty($conditions)) {
 			return $this->getNoConditionsResult($entity, $params);
 		}
@@ -29,15 +34,14 @@ trait Billrun_Traits_ConditionsCheck {
 		$query = [
 			$logic => [],
 		];
-
+		
 		foreach ($conditions as $condition) {
 			$cond = $this->getConditionQuery($entity, $condition, $params);
 			if (!is_null($cond)) {
 				$query[$logic][] = $cond;
 			}
 		}
-
-		return $this->isConditionMeet($entity, $query, $params);
+		return $query;
 	}
 
 	/**
@@ -127,6 +131,14 @@ trait Billrun_Traits_ConditionsCheck {
 			case '$not':
 			case '$exists':
 			case '$regex':
+			case '$lengthEq':
+			case '$lengthNe':
+			case '$lengthIn':
+			case '$lengthNin':
+			case '$lengthLt':
+			case '$lengthLte':
+			case '$lengthGt':
+			case '$lengthGte':
 				return [
 					$fieldName => [
 						$operator => $value,
@@ -254,6 +266,56 @@ trait Billrun_Traits_ConditionsCheck {
 	 */
 	protected function getNoConditionsResult($entity, $params = []) {
 		return true;
+	}
+
+	/**
+	 * Function to get complex condition result (BRCD-4569)
+	 * 
+	 * @param array $entity
+	 * @param array $conf
+	 * @return array [value, value format]
+	 */
+	public function getComplexConditionsResult($entity, $conf) {
+		$conditions_meet = true;
+		foreach ($conf['conditions'] as $condition) {
+			$conditions_meet &= $this->isComplexConditionMeet($entity, $condition);
+		}
+		$res_field = $conditions_meet ? 'on_true' : 'on_false';
+		if ($conf[$res_field]['type'] == 'hard_coded_value') {
+			return [$conf[$res_field]['value'], []];
+		} else {
+			return [$conf[$res_field]['value'], $conf[$res_field]];
+		}
+	}
+
+	/**
+	 * Function to check if a complex condition meet
+	 * 
+	 * @param array $entity
+	 * @param array $condition
+	 * @return boolean
+	 */
+	public function isComplexConditionMeet($entity, $condition = []) {
+		$field1 = $field2 = $op = "";
+		foreach ($condition as $entry_name => $object) {
+			if (in_array($entry_name, ['field1', 'field2'])) {
+				$$entry_name = $this->getComplexFieldValue($object, $entity);
+			} else {
+				$op = $this->getOperator($condition);
+			}
+		}
+		return $this->isConditionsMeet(['field1' => $field1], array(['field' => 'field1', 'op' => $op, 'value' => $field2]));
+	}
+
+	public function getComplexFieldValue($field_conf, $entity) {
+		if (isset($field_conf['path'])) {
+			$value = Billrun_Util::getIn($entity, $field_conf['path'], null);
+		} elseif (isset($field_conf['value']) && ($field_conf['type'] == 'hard_coded_value'	)) {
+			$value = $field_conf['value'];
+		} else {
+			throw new Exception("Missing both 'path' and 'value' fields in placeholder named " . $field_conf['name']);
+		}
+		return $value;
 	}
 
 }

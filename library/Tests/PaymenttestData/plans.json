@@ -1,0 +1,36 @@
+{
+	"collection": "plansCollection",
+	"data":
+			[
+				{
+					"from": "time*2018-04-26T00:00:00Z",
+					"name": "PLAN_A",
+					"price": [
+						{
+							"price": 0,
+							"from": 0,
+							"to": "UNLIMITED"
+						}
+					],
+					"description": "plan_a",
+					"recurrence": {
+						"periodicity": "month"
+					},
+					"upfront": false,
+					"connection_type": "postpaid",
+					"rates": [],
+					"tax": [
+						{
+							"type": "vat",
+							"taxation": "global"
+						}
+					],
+					"prorated_start": true,
+					"prorated_end": true,
+					"prorated_termination": true,
+					"to": "time*2170-04-25T11:40:27Z",
+					"creation_time": "time*2018-04-26T00:00:00Z"
+				}
+
+			]
+}

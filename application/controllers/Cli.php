@@ -71,7 +71,12 @@ class CliController extends Yaf_Controller_Abstract {
 				'collect' => 'Change collection state for accounts',
 				'run_collect_step' => 'Run action for accounts in collection',
 				'notify' => 'notify events on cron',
-				'cron' => 'scheduled tasks'
+				'cron' => 'scheduled tasks',
+				'compute' => 'Compute',
+				'worker' => 'Worker',
+				'send_file' => 'Send files to the configured remote directory',
+				'dbinit' => 'Run db initialization and migration',
+				'dbmigrate' => 'Run db migration',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

@@ -1,0 +1,19 @@
+{
+	"collection": "taxesCollection",
+	"data":
+			[
+				{
+					"key": "DEFAULT_VAT",
+					"from": "time*2010-01-01T00:00:00Z",
+					"creation_time": "time*2019-01-01T00:00:00Z",
+					"to": "time*2119-01-01T00:00:00Z",
+					"description": "Vat",
+					"rate": 0.17,
+					"params": {
+
+					}
+				}	
+			]
+}
+
+

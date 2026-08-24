@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Label, Panel } from 'react-bootstrap';
+import { Label, Panel } from '@/common/BootstrapCompat';
 import { CSVLink } from 'react-csv';
 import pluralize from 'pluralize';
 import isNumber from 'is-number';
@@ -9,12 +9,12 @@ import { getConfig } from '@/common/Util';
 
 
 const StepResult = (props) => {
-  const { item } = props;
+  const { item = Immutable.Map() } = props;
   const fileDelimiter = item.get('fileDelimiter', ',');
   const fileContent = item.get('fileContent', []) || [];
   const fileName = item.get('fileName', 'errors');
   const entity = item.get('entity', '');
-  const result = item.get('importType', '') === 'manual_mapping'
+  const result = ['predefined_mapping', 'manual_mapping'].includes(item.get('importType', ''))
     ? item.getIn(['result'], Immutable.Map())
     : (item.getIn(['result', 'imported_entities'], Immutable.List()) || Immutable.List());
 
@@ -36,31 +36,35 @@ const StepResult = (props) => {
 
   const rendeDetails = () => result
     .sortBy((status, key) => parseInt(key))
-    .map((status, key) => (
-      <dl className="mb5" key={`status_${key}`}>
-        <dt>
-          {isNumber(key) ? `row ${key}` : key}
-          {status === true && <Label bsStyle="success" className="ml10">Success</Label>}
-          {status === false && <Label bsStyle="info" className="ml10">No errors</Label>}
-          {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label bsStyle="danger" className="ml10">{status}</Label>}
-        </dt>
-        { Immutable.Iterable.isIterable(status) && status.map((message, type) => {
-          let messageStyle = 'default';
-          if (type === 'warning') {
-            messageStyle = 'warning';
-          } else if (type === 'error') {
-            messageStyle = 'danger';
+    .map((status, key) => {
+      if (status === true) {
+        return null;
+      }
+      return (
+        <dl className="mb5" key={`status_${key}`}>
+          <dt>
+            {isNumber(key) ? `row ${key}` : key}
+            {status === true && <Label variant="success" className="ml10">Success</Label>}
+            {status === false && <Label variant="info" className="ml10">No errors</Label>}
+            {status !== false && status !== true && !Immutable.Iterable.isIterable(status) && <Label variant="danger" className="ml10">{status}</Label>}
+          </dt>
+          { Immutable.Iterable.isIterable(status) && status.map((message, type) => {
+            let messageStyle = 'default';
+            if (type === 'warning') {
+              messageStyle = 'warning';
+            } else if (type === 'error') {
+              messageStyle = 'danger';
+            }
+            return (
+              <dd className="ml10" key={`status_error_${key}_${type}`}>
+                - <Label variant={messageStyle}>{message}</Label>
+              </dd>
+            )})
+            .toList()
+            .toArray()
           }
-          return (
-            <dd className="ml10" key={`status_error_${key}_${type}`}>
-              - <Label bsStyle={messageStyle}>{message}</Label>
-            </dd>
-          )})
-          .toList()
-          .toArray()
-        }
-      </dl>
-    ))
+        </dl>
+    )})
     .toList()
     .toArray()
 
@@ -75,7 +79,7 @@ const StepResult = (props) => {
       const errors = item.getIn(['result', 'general_errors'], Immutable.List());
       const errorsMessages = (
         <div className="mb5">
-          <Label bsStyle="danger">Errors :</Label>
+          <Label variant="danger">Errors :</Label>
           <ol className="pt0 pb0">
             {errors.map((error, idx) => (<li key={`error_${idx}`}>{error}</li>)).toArray()}
           </ol>
@@ -84,7 +88,7 @@ const StepResult = (props) => {
       const warnings = item.getIn(['result', 'general_warnings'], Immutable.List());
       const warningMessages = (
         <div className="mb5">
-          <Label bsStyle="warning">Warnings :</Label>
+          <Label variant="warning">Warnings :</Label>
           <ol className="pt0 pb0">
             {warnings.map((warning, idx) => (<li key={`warning_${idx}`}>{warning}</li>)).toArray()}
           </ol>
@@ -92,7 +96,7 @@ const StepResult = (props) => {
       );
       return (
         <div className="ml10">
-          <Label bsStyle="success">Success :</Label>
+          <Label variant="success">Success :</Label>
           <ul className="pt0 pb0" >
             <li>Created {created} {nameCreated}</li>
             <li>Updated {updated} {nameUpdated}</li>
@@ -103,13 +107,11 @@ const StepResult = (props) => {
       );
     }
 
-
-    const result = item.getIn(['result'], Immutable.Map());
-    // No resolts -> no imports
+    // No results -> no imports
     if (result.size === 0) {
       return (
         <div className="ml10">
-          <Label bsStyle="default">No records were imported</Label>
+          <Label variant="default">No records were imported</Label>
         </div>
       );
     }
@@ -118,20 +120,20 @@ const StepResult = (props) => {
     if (allSuccess) {
       return (
         <div className="ml10">
-          <Label bsStyle="success">{result.size} records were successfully imported</Label>
+          <Label variant="success">{result.size} records were successfully imported</Label>
         </div>
       );
     }
-    // All rows was faild imported
+    // All imported rows fail
     const allFails = result.every(status => status !== true);
     if (allFails) {
       return (
         <div className="ml10">
-          <Label bsStyle="danger">No records were imported. please fix the errors and try again.</Label>
+          <Label variant="danger">No records were imported. please fix the errors and try again.</Label>
         </div>
       );
     }
-    // Mixed, some pased some fails
+    // Mixed, some passed some fails
     const success = result.filter(status => status === true);
     let downlodCsvWithErrors = null;
     if (item.get('importType', ',') === 'manual_mapping') {
@@ -151,8 +153,8 @@ const StepResult = (props) => {
     return (
       <div className="ml10">
         <p>
-          <Label bsStyle="success">{success.size}</Label> rows were successfully imported.<br />
-          <Label bsStyle="danger">{result.size - success.size}</Label> rows failed to import.<br />
+          <Label variant="success">{success.size}</Label> rows were successfully imported.<br />
+          <Label variant="danger">{result.size - success.size}</Label> rows failed to import.<br />
           Please remove successfully imported rows from the file, fix the errors and try again.
         </p>
         {downlodCsvWithErrors}
@@ -170,10 +172,6 @@ const StepResult = (props) => {
       </Panel>
     </div>
   );
-};
-
-StepResult.defaultProps = {
-  item: Immutable.Map(),
 };
 
 StepResult.propTypes = {

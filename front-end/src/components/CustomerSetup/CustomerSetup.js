@@ -1,15 +1,17 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Customer from './Customer';
 import Subscriptions from './Subscriptions';
 import CustomerAllowances from './CustomerAllowances';
 import {
   ActionButtons,
   LoadingItemPlaceholder,
+  OverridePrice,
 } from '@/components/Elements';
 import PostpaidBalances from '../PostpaidBalances';
 import PrepaidBalances from '../PrepaidBalances';
@@ -29,6 +31,7 @@ import {
   getCustomer,
   getSubscription,
   setCloneSubscription,
+  getCustomerByAid,
 } from '@/actions/customerActions';
 import {
   clearItems,
@@ -43,12 +46,13 @@ import { showSuccess, showAlert } from '@/actions/alertsActions';
 import {
   modeSelector,
   itemSelector,
+  itemSourceSelector,
   idSelector,
   tabSelector,
   messageSelector,
 } from '@/selectors/entitySelector';
 import { currencySelector } from '@/selectors/settingsSelector';
-import { buildPageTitle, getConfig, getItemId } from '@/common/Util';
+import { buildPageTitle, getConfig, getItemId, getFieldName, plansOrServicesToSelectOptions } from '@/common/Util';
 
 
 class CustomerSetup extends Component {
@@ -58,13 +62,13 @@ class CustomerSetup extends Component {
     aid: PropTypes.number,
     mode: PropTypes.string,
     customer: PropTypes.instanceOf(Immutable.Map),
+    originalCustomer: PropTypes.instanceOf(Immutable.Map),
     subscription: PropTypes.instanceOf(Immutable.Map),
     settings: PropTypes.instanceOf(Immutable.Map),
     plans: PropTypes.instanceOf(Immutable.List),
     services: PropTypes.instanceOf(Immutable.List),
     currency: PropTypes.string,
     gateways: PropTypes.instanceOf(Immutable.List),
-    defaultSubsctiptionListFields: PropTypes.array,
     allowancesEnabled: PropTypes.bool,
     activeTab: PropTypes.oneOfType([
       PropTypes.string,
@@ -84,22 +88,19 @@ class CustomerSetup extends Component {
   static defaultProps = {
     activeTab: 1,
     customer: Immutable.Map(),
+    originalCustomer: Immutable.Map(),
     subscription: Immutable.Map(),
     settings: Immutable.Map(),
     gateways: Immutable.List(),
     plans: Immutable.List(),
     services: Immutable.List(),
     currency: '',
-    defaultSubsctiptionListFields: ['sid', 'firstname', 'lastname', 'plan', 'plan_activation', 'services', 'address'],
     allowancesEnabled: false,
   };
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
   componentDidMount() {
     const { mode, message, allowancesEnabled } = this.props;
+    this.fetchItem();
     this.props.dispatch(getSettings(['subscribers']));
     if (message) {
       this.props.dispatch(showAlert(message.content, message.type));
@@ -110,17 +111,26 @@ class CustomerSetup extends Component {
     } else {
       this.props.dispatch(getList('available_gateways', getPaymentGatewaysQuery()));
       this.props.dispatch(getList('available_plans', getPlansKeysQuery({ name: 1, play: 1, description: 1, 'include.services': 1 })));
-      this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     }
+    this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     if (allowancesEnabled) {
       this.props.dispatch(getList('available_subscriptions', getSubscriptionsWithAidQuery()));
       this.props.dispatch(getList('available_accounts', getAccountsQuery()));
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { customer, mode, itemId } = nextProps;
-    const { customer: oldCustomer, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  componentDidUpdate(prevProps, prevState) { // eslint-disable-line no-unused-vars
+    const { customer, mode, itemId } = this.props;
+    const { customer: oldCustomer, itemId: oldItemId, mode: oldMode } = prevProps;
+    const olgPg = oldCustomer.getIn(['payment_gateway', 'active'], Immutable.List());
+    const pg = customer.getIn(['payment_gateway', 'active'], Immutable.List());
+    // if payment gateway was removed, save customer
+    if (!olgPg.isEmpty() && pg.isEmpty()) {
+      this.onSaveCustomer();
+    }
+  
+    // migrated from UNSAFE_componentWillReceiveProps
     const modeChanged = mode !== oldMode;
     const revisionChanged = getItemId(customer) !== getItemId(oldCustomer);
     if (modeChanged || revisionChanged) {
@@ -132,24 +142,17 @@ class CustomerSetup extends Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState) { // eslint-disable-line no-unused-vars
-    const { customer } = this.props;
-    const { customer: oldCustomer } = prevProps;
-    const olgPg = oldCustomer.getIn(['payment_gateway', 'active'], Immutable.List());
-    const pg = customer.getIn(['payment_gateway', 'active'], Immutable.List());
-    // if payment gateway was removed, save customer
-    if (!olgPg.isEmpty() && pg.isEmpty()) {
-      this.onSaveCustomer();
-    }
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearCustomer());
     this.clearSubscriptions();
+    // Reset page title so it does not bleed into the next screen (regression F).
+    this.props.dispatch(setPageTitle(''));
   }
 
   fetchItem = (itemId = this.props.itemId) => {
-    if (itemId) {
+    if(this.props?.location?.query?.aid){
+      this.props.dispatch(getCustomerByAid(parseInt(this.props?.location?.query?.aid))).then(this.afterItemReceived);
+    } else if (itemId) {
       this.props.dispatch(getCustomer(itemId)).then(this.afterItemReceived);
     }
   }
@@ -177,7 +180,15 @@ class CustomerSetup extends Component {
       const action = (['clone', 'create'].includes(mode)) ? 'created' : 'updated';
       this.props.dispatch(showSuccess(`The customer was ${action}`));
       if (mode === 'create') {
-        this.handleBack();
+        let customerId;
+        if (response && response.data && response.data._id && response.data._id.$id) {
+          customerId = response.data._id.$id;
+        }
+        if (customerId) {
+          this.props.router.push(`/customers/customer/${customerId}`);
+        }
+      } else {
+        this.fetchItem();
       }
       const pageTitle = buildPageTitle(mode, 'customer', customer);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -191,7 +202,7 @@ class CustomerSetup extends Component {
 
   onClickChangePaymentGateway = (customer) => {
     const aid = customer.get('aid', null);
-    const returnUrlParam = `return_url=${encodeURIComponent(this.getReturnUrl())}`;
+    const returnUrlParam = `return_url=${encodeURIComponent(this.getReturnUrl(aid))}`;
     const aidParam = `aid=${encodeURIComponent(aid)}`;
     const action = `action=${encodeURIComponent('updatePaymentGateway')}`;
     window.location = `${getConfig(['env','serverApiUrl'], '')}/internalpaypage?${aidParam}&${returnUrlParam}&${action}`;
@@ -242,9 +253,9 @@ class CustomerSetup extends Component {
       return null;
     });
 
-  getReturnUrl = () => {
+  getReturnUrl = (aid=null) => {
     const { itemId } = this.props;
-    return `${window.location.origin}/#/customers/customer/${itemId}?tab=1`;
+    return `${window.location.origin}/#/customers/customer/${itemId}?tab=1&aid=${aid}`;
   }
 
   handleSelectTab = (tab) => {
@@ -258,7 +269,7 @@ class CustomerSetup extends Component {
   render() {
     const {
       customer,
-      defaultSubsctiptionListFields,
+      originalCustomer,
       settings,
       plans,
       services,
@@ -269,25 +280,31 @@ class CustomerSetup extends Component {
       activeTab,
       allowancesEnabled,
     } = this.props;
-    const showActionButtons = [1, 5].includes(activeTab);
-
+    
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
-
+    
+    const showActionButtons = [1, 3, 4, 7].includes(activeTab);
     const accountFields = settings.getIn(['account', 'fields'], Immutable.List());
     const subscriberFields = settings.getIn(['subscriber', 'fields'], Immutable.List());
+    const allowEdit = mode !== 'view';
+    const overrides = customer.get('overrides', Immutable.List());
+    const servicesOptions = plansOrServicesToSelectOptions(services).toJS();
+    const plansOptions = plansOrServicesToSelectOptions(plans).toJS();
 
     return (
       <div className="CustomerSetup">
         <div className="row">
           <div className="col-lg-12">
-            <Tabs defaultActiveKey={activeTab} animation={false} id="CustomerEditTabs" onSelect={this.handleSelectTab}>
+            <Tabs defaultActiveKey={activeTab} transition={false} id="CustomerEditTabs" onSelect={this.handleSelectTab}>
               { !accountFields.isEmpty() &&
                 <Tab title="Customer Details" eventKey={1} key={1}>
                   <Panel style={{ borderTop: 'none' }}>
                     <Customer
                       customer={customer}
+                      originalCustomer={originalCustomer}
+                      allServices={services}
                       action={mode}
                       supportedGateways={gateways}
                       onChange={this.onChangeCustomerField}
@@ -307,7 +324,6 @@ class CustomerSetup extends Component {
                       allPlans={plans}
                       allServices={services}
                       onSaveSubscription={this.onSaveSubscription}
-                      defaultListFields={defaultSubsctiptionListFields}
                       getSubscription={this.getSubscription}
                       clearRevisions={this.clearSubscriptionRevisions}
                       clearList={this.clearSubscriptions}
@@ -316,21 +332,47 @@ class CustomerSetup extends Component {
                 </Tab>
               }
               { (mode !== 'create') &&
-                <Tab title="Postpaid Counters" eventKey={3}>
+                <Tab title={getFieldName('subscriber_price_override_panel_title', 'service')} eventKey={3}>
+                  <Panel style={{ borderTop: 'none' }}>
+                    <OverridePrice
+                      type='service'
+                      overrides={overrides}
+                      options={servicesOptions}
+                      onChange={this.onChangeCustomerField}
+                      editable={allowEdit}
+                    />
+                  </Panel>
+                </Tab>
+              }
+              { (mode !== 'create') &&
+                <Tab title={getFieldName('subscriber_price_override_panel_title', 'plan')} eventKey={4}>
+                  <Panel style={{ borderTop: 'none' }}>
+                    <OverridePrice
+                      type='plan'
+                      overrides={overrides}
+                      options={plansOptions}
+                      onChange={this.onChangeCustomerField}
+                      editable={allowEdit}
+                    />
+                  </Panel>
+                </Tab>
+              }
+              { (mode !== 'create') &&
+                <Tab title="Postpaid Counters" eventKey={5}>
                   <Panel style={{ borderTop: 'none' }}>
                     <PostpaidBalances aid={aid} />
                   </Panel>
                 </Tab>
               }
               { (mode !== 'create') &&
-                <Tab title="Prepaid Counters" eventKey={4}>
+                <Tab title="Prepaid Counters" eventKey={6}>
                   <Panel style={{ borderTop: 'none' }}>
                     <PrepaidBalances aid={aid} />
                   </Panel>
                 </Tab>
               }
               {allowancesEnabled && (
-                <Tab title="Allowances" eventKey={5}>
+                <Tab title="Allowances" eventKey={7}>
                   <Panel style={{ borderTop: 'none' }}>
                     <CustomerAllowances
                       customer={customer}
@@ -355,6 +397,7 @@ class CustomerSetup extends Component {
 const mapStateToProps = (state, props) => ({
   itemId: idSelector(state, props, 'customer'),
   customer: itemSelector(state, props, 'customer'),
+  originalCustomer: itemSourceSelector(state, props, 'customer'),
   subscription: itemSelector(state, props, 'subscription'),
   mode: modeSelector(state, props, 'customer'),
   activeTab: tabSelector(state, props),

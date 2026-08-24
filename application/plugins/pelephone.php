@@ -153,7 +153,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'$in' => array(1, 2, 9, 10), // @TODO change to config values
 			),
 			'urt' => array(
-				'$gte' => new MongoDate($startTime),
+				'$gte' => new Mongodloid_Date($startTime),
 			),
 		);
 		$group = array(
@@ -530,7 +530,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$saveData = array(
 			'source' => 'pelephonePlugin',
 			'type' => 'sendRequest',
-			'process_time' => new MongoDate(),
+			'process_time' => new Mongodloid_Date(),
 			'request' => $request,
 			'response' => array(),
 			'server_host' => Billrun_Util::getHostName(),
@@ -574,13 +574,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
 					'in_data_slowness' => true,
-					'data_slowness_enter' => new MongoDate()
+					'data_slowness_enter' => new Mongodloid_Date()
 					)
 				);
 			} else {
 				$updateQuery = array(
 					'$unset' => array('in_data_slowness' => 1),
-					'$set' => array('data_slowness_exit' => new MongoDate()),
+					'$set' => array('data_slowness_exit' => new Mongodloid_Date()),
 				);
 			}
 			$subscribersColl->update($findQuery, $updateQuery);

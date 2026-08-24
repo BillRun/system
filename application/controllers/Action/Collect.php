@@ -22,7 +22,7 @@ class CollectAction extends ApiAction {
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		if (RUNNING_FROM_CLI) {
-			$extraParams = $this->_controller->getParameters();
+			$extraParams = $this->getController()->getParameters();
 			if (!empty($extraParams) && isset($extraParams['aids'])) {
 				$aids = $extraParams['aids'];
 			}
@@ -40,17 +40,19 @@ class CollectAction extends ApiAction {
 			}
 			$collection = Billrun_Factory::collection();
 			Billrun_Factory::log()->log("Started collecting", Zend_Log::DEBUG);
-			$result = $collection->collect($aids);
+			$results = $collection->collect($aids);
 			Billrun_Factory::log()->log("Processing collector response", Zend_Log::DEBUG);
 			if (RUNNING_FROM_CLI) {
-				foreach ($result as $colection_state => $aids) {
-					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
+				foreach ($results as $process_name => $result) {
+					foreach ($result as $colection_state => $aids) {
+						$this->getController()->addOutput($process_name . ": aids " . $colection_state . " : " . implode(", ", $aids));
+					}
 				}
 			} else {
 				$this->getController()->setOutput(array(array(
 						'status' => 1,
 						'desc' => 'success',
-						'details' => $result,
+						'details' => $results,
 						'input' => $request->getRequest(),
 				)));
 			}

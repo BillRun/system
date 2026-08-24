@@ -32,7 +32,40 @@ class PluginsController extends Yaf_Controller_Abstract {
 	 */
 	public function indexAction() {
 		$trigger = preg_replace("/[^A-Za-z0-9]/", '', ucfirst(strtolower($this->args['params']['action'])));
-		Billrun_Factory::dispatcher()->trigger('api' . $trigger, $this->args);
+		$ret = Billrun_Factory::dispatcher()->trigger('api' . $trigger, $this->args);
+		if (!$this->isTriggered($ret)) {
+			$this->responseNotFound();
+		}
+	}
+	
+	/**
+	 * Was the API triggered by one of the plugins
+	 *
+	 * @param  array $pluginsResponses
+	 * @return boolean
+	 */
+	protected function isTriggered($pluginsResponses) {
+		foreach ($pluginsResponses as $pluginsResponse) {
+			if (!empty($pluginsResponse)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	/**
+	 * Handles response in case the API was not found
+	 *
+	 * @param  int $statusCode
+	 * @param  string $contentType
+	 * @return void
+	 */	
+	protected function responseNotFound($statusCode = 404, $contentType = 'application/json') {
+		$request = $this->getRequest();
+		$response = $this->getResponse();
+		$response->setHeader($request->getServer('SERVER_PROTOCOL'), $statusCode);
+		$response->setHeader('Content-Type', $contentType);
 	}
 
 	protected function getPermissionLevel() {

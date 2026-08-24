@@ -25,7 +25,16 @@ class Models_Discounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->validateCycles();
+		$this->validateSimultaneousLimit();
 	}
+
+	public function applyCacheChange($new = null, $old = null) {
+
+		$old = $old ?? (!is_null($this->before) ? $this->before->getRawData() : null);
+		$new = $new ?? (!is_null($this->after) ? $this->after->getRawData() : null);
+		$res = Billrun_DiscountManager::applyEntityCacheChange($new, $old);
+	}
+	
 
 	/**
 	 * Return the key field
@@ -34,6 +43,19 @@ class Models_Discounts extends Models_Entity {
 	 */
 	protected function getKeyField() {
 		return 'key';
+	}
+
+	/**
+	 * Verify that simultaneous_limit is numbers below 1 or non-integers.
+	 */
+	protected function validateSimultaneousLimit() {
+		$simultaneousLimit = Billrun_Util::getIn($this->update, 'simultaneous_limit', null);
+		if (!is_null($simultaneousLimit )) {
+			if (!is_numeric($simultaneousLimit) || $simultaneousLimit < 1 || $simultaneousLimit != round($simultaneousLimit)) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Simultaneous limit must be a positive integer');
+			}
+		}
+		return true;
 	}
 
 	/**

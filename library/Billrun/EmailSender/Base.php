@@ -12,6 +12,7 @@
  */
 abstract class Billrun_EmailSender_Base {
 	
+	use Billrun_Traits_ConditionsCheck;
 	protected $type = '';
 	protected $params = array();
 	
@@ -96,7 +97,12 @@ abstract class Billrun_EmailSender_Base {
 	 * gets email subject
 	 */
 	protected abstract function getEmailSubject($data);
-	
+        
+        /**
+	 * gets email placeholders
+	 */
+	protected abstract function getEmailPlaceholders($data);
+        
 	/**
 	 * translate email message
 	 * 
@@ -105,7 +111,40 @@ abstract class Billrun_EmailSender_Base {
 	 * @return string
 	 */
 	public function translateMessage($msg, $data = array()) {
-		return $msg;
+                $placeholders = $this->getEmailPlaceholders($data);
+                usort($placeholders, function ($placeholder1, $placeholder2) {//sort placeholders by system field 
+                    if(!isset($placeholder1['system'])){
+                        return -1;
+                    }
+                    if(!isset($placeholder2['system'])){
+                        return 1;
+                    }
+                    if ($placeholder1['system'] === $placeholder2['system']) {
+                        return 0;
+                    }
+                    return $placeholder1['system'] == true ? -1 : 1;
+                });
+                $replaces = [];            
+                foreach($placeholders as $placeholder){
+                    $name = $placeholder['name'];
+                    $system = $placeholder['system'] ?? true;
+                    if(isset($replaces["[[". $name ."]]"]) && !$system){//if system placeholder with same name already exists ->  alert
+                        Billrun_Factory::log("translateMessage - error translate message for placeholder: " . print_r($placeholder, 1) . ", there's already placeholder with the same name.", Billrun_Log::ALERT);
+                        continue; 
+                    }
+					$value_format = [];
+					if (isset($placeholder['conditions'])) {
+						list($value, $value_format) = $this->getComplexConditionsResult($data, $placeholder);
+					} else {
+						$value = Billrun_Util::getIn($data, $placeholder['path']);
+						$value_format = $placeholder;
+					}
+                    if(!empty($value) || is_numeric($value)){
+                        $warningMessages = [];
+                        $replaces["[[". $name ."]]"] = Billrun_Util::formattingValue($value_format, $value, $warningMessages, Billrun_Base::base_dateformat);
+                    }
+                }
+                return str_replace(array_keys($replaces), array_values($replaces), $msg);
 	}
 	
 	protected function afterSend($data, $callback = false) {
@@ -134,10 +173,10 @@ abstract class Billrun_EmailSender_Base {
 		$attachments = is_array($attachment) ? $attachment : array($attachment);
 		$email = $this->getEmailAddress($data);
 		$emails = is_array($email) ? $email : array($email);
-		$msg = $this->translateMessage($this->getEmailBody($data), $data);
-		$subject = $this->translateMessage($this->getEmailSubject($data), $data);
-		$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 		try {
+			$msg = $this->translateMessage($this->getEmailBody($data), $data);
+			$subject = $this->translateMessage($this->getEmailSubject($data), $data);
+			$encodedSubject = '=?UTF-8?B?'.base64_encode($subject).'?=';
 			if (!Billrun_Util::sendMail($encodedSubject, $msg, $emails, $attachments, true)) {
 				Billrun_Factory::log('sendEmail - error sending email. Data: ' . print_R($data, 1), Billrun_Log::ERR);
 			}

@@ -39,7 +39,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	protected function getReportCandiateMatchQuery() {
 		return array('$and' => array(
 				array('$or' => array(
-						array('urt' => array('$gt' => new MongoDate($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)), 'record_type' => array('$ne' => 'release_call')),
+						array('urt' => array('$gt' => new Mongodloid_Date($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)), 'record_type' => array('$ne' => 'release_call')),
 						array('urt' => array('$gt' => $this->getLastRunDate(static::$type)))
 					))
 			)
@@ -47,7 +47,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('disconnect_time' => array('$lt' => new MongoDate($this->startTime), '$gte' => $this->getLastRunDate(static::$type)));
+		return array('disconnect_time' => array('$lt' => new Mongodloid_Date($this->startTime), '$gte' => $this->getLastRunDate(static::$type)));
 	}
 
 	// ------------------------------------ Helpers -----------------------------------------

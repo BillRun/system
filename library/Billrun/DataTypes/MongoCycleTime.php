@@ -16,13 +16,13 @@ class Billrun_DataTypes_MongoCycleTime {
 	
 	/**
 	 * Cycle start time
-	 * @var MongoDate
+	 * @var Mongodloid_Date
 	 */
 	private $start;
 	
 	/**
 	 * Cycle end time
-	 * @var MongoDate 
+	 * @var Mongodloid_Date 
 	 */
 	private $end;
 	
@@ -38,13 +38,13 @@ class Billrun_DataTypes_MongoCycleTime {
 	 */
 	public function __construct(Billrun_DataTypes_CycleTime $cycleTime) {
 		$this->key = $cycleTime->key();
-		$this->start = new MongoDate($cycleTime->start());
-		$this->end = new MongoDate($cycleTime->end());
+		$this->start = new Mongodloid_Date($cycleTime->start());
+		$this->end = new Mongodloid_Date($cycleTime->end());
 	}
 
 	/**
 	 * Get the cycle start date
-	 * @return MongoDate
+	 * @return Mongodloid_Date
 	 */
 	public function start() {
 		return $this->start;
@@ -52,7 +52,7 @@ class Billrun_DataTypes_MongoCycleTime {
 	
 	/**
 	 * Get the cycle end date
-	 * @return MongoDate
+	 * @return Mongodloid_Date
 	 */
 	public function end() {
 		return $this->end;

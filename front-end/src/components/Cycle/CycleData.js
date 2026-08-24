@@ -1,18 +1,29 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Label, Button, FormGroup, HelpBlock } from 'react-bootstrap';
+import { Button, Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Label } from '@/common/BootstrapCompat';
 import { List, Map } from 'immutable';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import moment from 'moment';
-import { getAllInvoicesQuery } from '../../common/ApiQueries';
+import { getAllInvoicesQuery } from '@/common/ApiQueries';
 import EntityList from '../EntityList';
-import { getList } from '@/actions/listActions';
-import { getConfig } from '@/common/Util';
-import { confirmCycleInvoice, confirmCycle, getConfirmationAllStatus, getConfirmationInvoicesStatus } from '@/actions/cycleActions';
-import { ConfirmModal } from '@/components/Elements';
-import { currencySelector } from '@/selectors/settingsSelector';
 import { getDateToDisplay } from './CycleUtil';
+import PartialConfirmForm from './PartialConfirmForm';
+import { getConfig } from '@/common/Util';
+import { currencySelector } from '@/selectors/settingsSelector';
+import { getList } from '@/actions/listActions';
+import {
+  confirmCycleInvoice,
+  confirmCycle,
+  confirmCycleWithWorkers,
+  getConfirmationAllStatus,
+  getConfirmationInvoicesStatus,
+} from '@/actions/cycleActions';
+import {
+  showFormModal,
+  showConfirmModal,
+} from "@/actions/guiStateActions/pageActions";
 
 class CycleData extends Component {
 
@@ -25,6 +36,7 @@ class CycleData extends Component {
     reloadCycleData: PropTypes.func,
     showConfirmAllButton: PropTypes.bool,
     isCycleConfirmed: PropTypes.bool,
+    isWorkers: PropTypes.bool,
     currency: PropTypes.string,
     invoicesNum: PropTypes.number,
   };
@@ -34,7 +46,8 @@ class CycleData extends Component {
     reloadCycleData: () => {},
     baseFilter: {},
     showConfirmAllButton: true,
-    isCycleConfirmed:false,
+    isCycleConfirmed: false,
+    isWorkers: false,
     currency: '',
     invoicesNum: 0,
   };
@@ -45,14 +58,6 @@ class CycleData extends Component {
   }
 
   state = {
-    confirmationModalData: {
-      show: false,
-      title: '',
-      message: '',
-      warningMessage: 'This action is irreversible',
-      onClick: () => {},
-      refreshString: '',
-    },
     confirmingInvoices: List(),
     confirmingAll: false,
   }
@@ -62,10 +67,12 @@ class CycleData extends Component {
     this.updateInvoicesNum(billrunKey);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { billrunKey } = this.props;
-    if (nextProps.billrunKey !== billrunKey) {
-      this.updateInvoicesNum(nextProps.billrunKey);
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { billrunKey } = prevProps;
+    if (this.props.billrunKey !== billrunKey) {
+      this.updateInvoicesNum(this.props.billrunKey);
     }
   }
 
@@ -155,7 +162,6 @@ class CycleData extends Component {
       .then(
         (response) => {
           if (response.status) {
-            this.closeConfirmationModal();
             this.setState({
               refreshString: moment().format(),
               confirmingInvoices: confirmingInvoices.push(entity.get('invoice_id')),
@@ -168,64 +174,121 @@ class CycleData extends Component {
   }
 
   onClickConfirmAll = () => {
-    const { selectedCycle, invoicesNum } = this.props;
-    const { confirmationModalData } = this.state;
-    confirmationModalData.show = true;
-    confirmationModalData.title = 'Confirm all invoices';
-    confirmationModalData.message = `Are you sure you want to confirm all the invoices for the cycle of
-      ${getDateToDisplay(selectedCycle, 'start_date')} - ${getDateToDisplay(selectedCycle, 'end_date')}?
-      ${invoicesNum} invoices will be confirmed after this action`;
-    confirmationModalData.onClick = this.onClickConfirmAllConfirm;
-    this.setState({ confirmationModalData });
+    const { selectedCycle, invoicesNum, isWorkers } = this.props;
+    if (isWorkers) {
+      return this.props.dispatch(showFormModal(Map({
+        include: [],
+        exclude: [],
+        selectedCycle,
+        invoicesNum,
+      }), PartialConfirmForm, {
+        title: `Confirm Invoices`,
+        skipConfirmOnClose: false,
+        onOk: this.onClickPartialConfirmAllConfirm,
+        labelOk: 'Confirm',
+      }));
+    }
+
+    return this.props.dispatch(showConfirmModal({
+      type: 'confirm',
+      onOk: this.onClickConfirmAllConfirm,
+      labelOk: 'Yes',
+      message: 'Are you sure you want to confirm all the invoices?',
+      children: <Form className="form-horizontal">
+        <FormGroup>
+          <Col sm={6} as={ControlLabel} className="pt5"><strong>All the invoices for the cycle:</strong></Col>
+          <Col sm={6}>{getDateToDisplay(selectedCycle, 'start_date')} - {getDateToDisplay(selectedCycle, 'end_date')}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={6} as={ControlLabel} className="pt5"><strong>Invoices will be confirmed after this action:</strong></Col>
+          <Col sm={6}>{invoicesNum}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={6} as={ControlLabel}><Label variant="danger">This action is irreversible</Label></Col>
+          <Col sm={6}></Col>
+        </FormGroup>
+      </Form>,
+    }));
   }
 
   onClickConfirmAllConfirm = () => {
     const { billrunKey } = this.props;
     this.props.dispatch(confirmCycle(billrunKey))
-      .then(
-        (response) => {
-          if (response.status) {
-            this.closeConfirmationModal();
-            this.setState({
-              refreshString: moment().format(),
-              confirmingInvoices: List(),
-              confirmingAll: true,
-            });
-            setTimeout(this.props.reloadCycleData, 1000);
-            setTimeout(this.autoRefreshConfirmationStatus, 1000);
-          }
-        },
-      );
+      .then((response) => {
+        if (response.status) {
+          this.setState({
+            refreshString: moment().format(),
+            confirmingInvoices: List(),
+            confirmingAll: true,
+          });
+          setTimeout(this.props.reloadCycleData, 1000);
+          setTimeout(this.autoRefreshConfirmationStatus, 1000);
+        }
+      });
+  }
+
+  onClickPartialConfirmAllConfirm = (settings) => {
+    const { billrunKey } = this.props;
+    const include = settings.get('include', []);
+    const exclude = settings.get('exclude', []);
+    this.props.dispatch(confirmCycleWithWorkers(billrunKey, include, exclude))
+      .then((response) => {
+        if (response.status) {
+          this.setState({
+            refreshString: moment().format(),
+            confirmingInvoices: List(),
+            confirmingAll: true,
+          });
+          setTimeout(this.props.reloadCycleData, 1000);
+          setTimeout(this.autoRefreshConfirmationStatus, 1000);
+        }
+      });
+  }
+
+  onClickConfirmInvoice = (entity) => {
+    const { currency } = this.props;
+    this.props.dispatch(showConfirmModal({
+      type: 'confirm',
+      onOk: () => this.onClickInvoiceConfirm(entity),
+      labelOk: 'Yes',
+      message: 'Are you sure you want to confirm invoice?',
+      children: <Form className="form-horizontal">
+        <FormGroup>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Invoice ID:</strong></Col>
+          <Col sm={6} >{entity.get('invoice_id')}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Customer Number:</strong></Col>
+          <Col sm={6} >{entity.get('aid')}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Customer Name:</strong></Col>
+          <Col sm={6} >{this.parseCycleDataFirstName(entity)} {this.parseCycleDataLastName(entity)}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={5} as={ControlLabel} className="pt5"><strong>Total Due:</strong></Col>
+          <Col sm={6} >{this.parseCycleDataInvoiceTotal(entity)}{getSymbolFromCurrency(currency)}</Col>
+        </FormGroup>
+        <FormGroup>
+          <Col sm={5} as={ControlLabel}></Col>
+          <Col sm={6} ><Label variant="danger">This action is irreversible</Label></Col>
+        </FormGroup>
+      </Form>,
+    }));
   }
 
   parseCycleDataConfirm = (entity) => {
     const { confirmingInvoices, confirmingAll } = this.state;
-
-    const onConfirm = () => {
-      this.onClickInvoiceConfirm(entity);
-    };
-
-    const onClick = () => {
-      const { confirmationModalData } = this.state;
-      const { currency } = this.props;
-      confirmationModalData.show = true;
-      confirmationModalData.title = 'Confirm Invoice';
-      confirmationModalData.message = `Are you sure you want to confirm invoice #${entity.get('invoice_id')} for
-        customer #${entity.get('aid')} (${this.parseCycleDataFirstName(entity)} ${this.parseCycleDataLastName(entity)})
-        with a total due of ${this.parseCycleDataInvoiceTotal(entity)}${getSymbolFromCurrency(currency)}?`;
-      confirmationModalData.onClick = onConfirm;
-      this.setState({ confirmationModalData });
-    };
-
     if (entity.get('billed', false)) {
-      return (<Label bsStyle={'success'} className={'non-editable-field'}>CONFIRMED</Label>);
+      return (<Label variant="success" className="non-editable-field">CONFIRMED</Label>);
     }
-
     if (confirmingAll || confirmingInvoices.includes(entity.get('invoice_id'))) {
-      return (<Label bsStyle={'info'} className={'non-editable-field'}>CONFIRMING...</Label>);
+      return (<Label variant="info" className="non-editable-field">CONFIRMING...</Label>);
     }
-
-    return (<Button onClick={onClick}>confirm</Button>);
+    const onClickConfirm = () => {
+      this.onClickConfirmInvoice(entity);
+    }
+    return (<Button variant="primary" size="sm" onClick={onClickConfirm}>Confirm</Button>);
   };
 
   parseCycleDataEmailSent = (entity) => {
@@ -244,7 +307,7 @@ class CycleData extends Component {
     const downloadUrl = this.downloadTaxURL( billrunKey );
     return (
       <form method="post" action={downloadUrl} target="_blank">
-        <Button className={entity.actionClass} bsStyle={entity.actionStyle} bsSize={entity.actionSize} type="submit">
+        <Button className={entity.actionClass} variant={entity.actionStyle} size={entity.actionSize} type="submit">
             {entity.label}
         </Button>
       </form>
@@ -252,9 +315,9 @@ class CycleData extends Component {
   };
 
   getListActions = () => {
-    const { showConfirmAllButton, isCycleConfirmed } = this.props;
+    const { showConfirmAllButton, isCycleConfirmed, isWorkers } = this.props;
     return [{
-        label: 'Confirm All',
+        label: isWorkers ? 'Confirm' : 'Confirm All',
         actionStyle: 'primary',
         show :showConfirmAllButton,
         showIcon: false,
@@ -268,31 +331,6 @@ class CycleData extends Component {
         renderFunc : this.parseTaxDownload,
         actionSize: 'xsmall',
     }];
-  }
-
-  onCloseConfirmationModal = () => {
-    this.closeConfirmationModal();
-  }
-
-  closeConfirmationModal = () => {
-    const { confirmationModalData } = this.state;
-    confirmationModalData.show = false;
-    confirmationModalData.title = '';
-    confirmationModalData.message = '';
-    confirmationModalData.onClick = () => {};
-    this.setState({ confirmationModalData });
-  }
-
-  renderConfirmationModal = () => {
-    const { confirmationModalData } = this.state;
-    return (
-      <ConfirmModal onOk={confirmationModalData.onClick} onCancel={this.onCloseConfirmationModal} show={confirmationModalData.show} message={confirmationModalData.title} labelOk="Yes">
-        <FormGroup validationState="error">
-          {confirmationModalData.message}
-          <HelpBlock>{confirmationModalData.warningMessage}</HelpBlock>
-        </FormGroup>
-      </ConfirmModal>
-    );
   }
 
   render() {
@@ -332,8 +370,6 @@ class CycleData extends Component {
           listActions={this.getListActions()}
           refreshString={refreshString}
         />
-
-        {this.renderConfirmationModal()}
       </div>
     );
   }

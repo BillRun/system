@@ -31,7 +31,7 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
 				$this->reportError(15, Zend_Log::NOTICE);
 			} else {
-				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
+				$this->collection->updateEntity($rowToDelete, array('to' => new Mongodloid_Date()));
 				$details = $rowToDelete->getRawData();
 			}
 

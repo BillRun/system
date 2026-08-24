@@ -32,7 +32,7 @@ class OperationsAction extends ApiAction {
 		$query = array(
 			'action' => $action,
 			'filtration' => $filtration,
-			'start_time' => array('$gt' => new MongoDate(strtotime($this->orphanTime))),
+			'start_time' => array('$gt' => new Mongodloid_Date(strtotime($this->orphanTime))),
 			'end_time' => array('$exists' => false),
 		);
 		$operationsColl = Billrun_Factory::db()->operationsCollection();

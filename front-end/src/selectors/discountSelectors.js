@@ -90,7 +90,7 @@ export const discountAccountFieldsSelector = createSelector(
   mergeBillRunAndConfigFields,
 );
 
-export const discountSubscriberServicesFieldsSelector = createSelector(
+export const discountServicesFieldsSelector = createSelector(
   () => Immutable.List(),
   getDiscountsConditionsConfigFields,
   getType,

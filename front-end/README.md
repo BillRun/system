@@ -17,7 +17,7 @@ To enbale BE (Netbeans) xdebug, set global varibale serverApiDebug value to `tru
 
 ## Requirements
 Make sure you are on the last node LTS version, if not install it by `sudo n lts`
-To resolve problem with node-sass run `sudo npm install -g node-sass --unsafe-perm=true --allow-root`
+To resolve problem with node-sass run `sudo npm install -g node-sass@4.12.0 --unsafe-perm=true --allow-root`
 
 
 ## Available environment configuration
@@ -37,7 +37,7 @@ console.log(url);
 Output in development environment: **_http://billrun_**<br>
 Output in production environment:<br>
 
-All valuables in enviermets files must start with `REACT_APP_` for example `REACT_APP_serverApiUrl=http://billrun`
+All valuables in environment files must start with `REACT_APP_` for example `REACT_APP_serverApiUrl=http://billrun`
 
 ### General environment file
 

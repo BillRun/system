@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, Row, Panel, Button } from 'react-bootstrap';
+import { Col, Row, Button } from 'react-bootstrap';
+import { FormGroup, Panel } from '@/common/BootstrapCompat';
 import changeCase from 'change-case';
 import ComputedRate from './ComputedRate';
 import Field from '@/components/Field';
@@ -119,9 +120,12 @@ class RateMapping extends Component {
 
   getRateCalculatorFields = () => {
     const { lineKeyOptions } = this.props;
-    return lineKeyOptions.map((field, key) => (
-      <option value={field.get('value', '')} key={key}>{field.get('label', '')}</option>
-    ));
+    return lineKeyOptions
+      .map(field => ({
+        value: field.get('value', ''),
+        label: field.get('label', ''),
+      }))
+      .toJS();
   }
 
   addNewRatingCustomField = (fieldName, title, type) => {
@@ -175,13 +179,12 @@ class RateMapping extends Component {
     this.props.dispatch(removeRatingPriorityField(rateCategory, usaget, priority));
   }
 
-  onSetLineKey = (e) => {
-    const { dataset: { ratecategory, usaget, index, priority }, value } = e.target;
-    this.props.dispatch(setLineKey(ratecategory, usaget, priority, index, value));
+  onSetLineKey = (rateCategory, usaget, priority, index, value) => {
+    this.props.dispatch(setLineKey(rateCategory, usaget, priority, index, value));
   }
 
-  onSetComputedLineKey = (paths, values) => {
-    this.props.dispatch(setComputedLineKey(paths, values));
+  onSetComputedLineKey = (rateCategory, usaget, priority, index, paths, values) => {
+    this.props.dispatch(setComputedLineKey(rateCategory, usaget, priority, index, paths, values));
   }
 
   onUnsetComputedLineKey = (rateCategory, usaget, priority, index) => {
@@ -213,17 +216,16 @@ class RateMapping extends Component {
     })
   );
 
-  onChangeLineKey = (e) => {
-    const { dataset: { ratecategory, usaget, index, priority }, value } = e.target;
+  onChangeLineKey = (rateCategory, usaget, priority, index) => (value) => {
     if (value === 'computed') {
       this.setState({
-        computedLineKey: this.getComputedLineKeyObject(ratecategory, usaget, priority, index),
+        computedLineKey: this.getComputedLineKeyObject(rateCategory, usaget, priority, index),
       });
     } else {
       this.setState({ computedLineKey: null });
-      this.onUnsetComputedLineKey(ratecategory, usaget, priority, index);
+      this.onUnsetComputedLineKey(rateCategory, usaget, priority, index);
     }
-    this.onSetLineKey(e);
+    this.onSetLineKey(rateCategory, usaget, priority, index, value);
   }
 
   onEditComputedLineKey = (calc, rateCategory, usaget, priority, index) => () => {
@@ -234,7 +236,7 @@ class RateMapping extends Component {
 
   onSaveComputedLineKey = () => {
     const { computedLineKey } = this.state;
-    const basePath = [computedLineKey.get('rateCategory'), computedLineKey.get('usaget'), computedLineKey.get('priority'), computedLineKey.get('index'), 'computed'];
+    const basePath = ['computed'];
     const paths = [
       [...basePath, 'line_keys'],
       [...basePath, 'operator'],
@@ -249,7 +251,7 @@ class RateMapping extends Component {
       computedLineKey.get('must_met', false),
       computedLineKey.get('projection', Immutable.Map()),
     ];
-    this.onSetComputedLineKey(paths, values);
+    this.onSetComputedLineKey(computedLineKey.get('rateCategory'), computedLineKey.get('usaget'), computedLineKey.get('priority'), computedLineKey.get('index'), paths, values);
     this.setState({ computedLineKey: null });
   }
 
@@ -365,7 +367,7 @@ class RateMapping extends Component {
       <h4>
         <small>
           {`${lineKeyLabel_first} ${opLabel} ${defaultLabelSecond}`}
-          <Button onClick={this.onEditComputedLineKey(calc, rateCategory, usaget, priority, index)} bsStyle="link">
+          <Button onClick={this.onEditComputedLineKey(calc, rateCategory, usaget, priority, index)} variant="link">
             <i className="fa fa-fw fa-pencil" />
           </Button>
         </small>
@@ -400,7 +402,6 @@ class RateMapping extends Component {
   }
 
   getRateCalculatorsForPriority = (rateCategory, usaget, priority, calcs) => {
-    const availableFields = this.getRateCalculatorFields();
     return calcs.map((calc, calcKey) => {
       let selectedRadio = 3;
       if (calc.get('rate_key', '') === 'key') {
@@ -413,18 +414,12 @@ class RateMapping extends Component {
           <Row key={`rate-calc-row-${rateCategory}-${priority}-${calcKey}`}>
             <Col sm={3} style={{ paddingRight: 0 }}>
               <FormGroup style={{ margin: 0 }}>
-                <select
-                  className="form-control"
-                  id={usaget}
-                  onChange={this.onChangeLineKey}
-                  data-ratecategory={rateCategory}
-                  data-usaget={usaget}
-                  data-index={calcKey}
-                  data-priority={priority}
+                <Field
+                  fieldType="select"
+                  onChange={this.onChangeLineKey(rateCategory, usaget, priority, calcKey)}
                   value={this.getLineKeyValue(calc)}
-                >
-                  { availableFields }
-                </select>
+                  options={this.getRateCalculatorFields()}
+                />
                 { this.renderComputedLineKeyDesc(calc, rateCategory, usaget, priority, calcKey) }
               </FormGroup>
             </Col>
@@ -506,7 +501,7 @@ class RateMapping extends Component {
               { calcKey > 0 &&
                 <FormGroup style={{ margin: 0 }}>
                   <div style={{ width: '100%', height: 39 }}>
-                    <Button onClick={this.onRemoveRating} data-ratecategory={rateCategory} data-usaget={usaget} data-index={calcKey} data-priority={priority} bsSize="small" className="pull-left" ><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>
+                    <Button onClick={this.onRemoveRating} data-ratecategory={rateCategory} data-usaget={usaget} data-index={calcKey} data-priority={priority} size="sm" variant="outline-secondary" className="pull-left" ><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>
                   </div>
                 </FormGroup>
               }
@@ -519,9 +514,10 @@ class RateMapping extends Component {
   }
 
   getAddRatingButton = (rateCategory, usaget, priority) => (
-    <Button
-      bsSize="xsmall"
-      className="btn-primary"
+    <Button variant="primary"
+      size="sm"
+      className="btn-xs"
+      
       data-ratecategory={rateCategory}
       data-usaget={usaget}
       data-priority={priority}
@@ -532,9 +528,10 @@ class RateMapping extends Component {
   );
 
   getAddRatingPriorityButton = (rateCategory, usaget) => (
-    <Button
-      bsSize="xsmall"
-      className="btn-primary"
+    <Button variant="primary"
+      size="sm"
+      className="btn-xs"
+      
       onClick={this.onAddRatingPriority(rateCategory, usaget)}
     >
       <i className="fa fa-plus" />&nbsp;Add Next Priority
@@ -543,8 +540,8 @@ class RateMapping extends Component {
 
   getRemoveRatingPriorityButton = (rateCategory, usaget, priority) => (
     <Button
-      bsStyle="link"
-      bsSize="xsmall"
+      variant="link"
+      size="sm"
       onClick={this.onRemoveRatingPriority(rateCategory, usaget, priority)}
     >
       <i className="fa fa-fw fa-trash-o danger-red" />
@@ -582,6 +579,7 @@ class RateMapping extends Component {
         { rateCalculators.map((calcs, priority) => {
           const showRemove = priority > 0;
           const actionsStyle = showRemove ? {} : noRemoveStyle;
+          const filters = calcs.get('filters', Immutable.List());
           return (
             <div key={`rate-calculator-${usaget}-${priority}`}>
               <Row>
@@ -589,18 +587,18 @@ class RateMapping extends Component {
                 <Col sm={2} style={actionsStyle}>
                   {showRemove && this.getRemoveRatingPriorityButton(rateCategory, usaget, priority)}
                   {openRateCalculators.includes(priority) ? (
-                    <Button onClick={this.closeRateCalculator(priority)} bsStyle="link">
+                    <Button onClick={this.closeRateCalculator(priority)} variant="link">
                       <i className="fa fa-fw fa-minus" />
                     </Button>
                   ) : (
-                    <Button onClick={this.openRateCalculator(priority)} bsStyle="link">
+                    <Button onClick={this.openRateCalculator(priority)} variant="link">
                       <i className="fa fa-fw fa-plus" />
                     </Button>
                   )}
                 </Col>
               </Row>
               <Panel collapsible expanded={this.state.openRateCalculators.includes(priority)}>
-                { this.getRateCalculatorsForPriority(rateCategory, usaget, priority, calcs) }
+                { this.getRateCalculatorsForPriority(rateCategory, usaget, priority, filters) }
                 { this.getAddRatingButton(rateCategory, usaget, priority) }
               </Panel>
             </div>
@@ -613,7 +611,7 @@ class RateMapping extends Component {
 
 const mapStateToProps = (state, props) => ({
   plays: customerIdentificationFieldsPlaySelector(state, props),
-  rateCalculators: props.settings.getIn(['rate_calculators', props.rateCategory, props.usaget]),
+  rateCalculators: props.settings.getIn(['rate_calculators', props.rateCategory, props.usaget, 'priorities']),
   lineKeyOptions: inputProcessorlineKeyOptionsSelector(state, props),
   computedlineKeyOptions: inputProcessorComputedlineKeyOptionsSelector(state, props),
 });

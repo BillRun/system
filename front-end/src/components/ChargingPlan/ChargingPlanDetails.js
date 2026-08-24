@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, HelpBlock, Col } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { PlanDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
@@ -40,7 +41,7 @@ export default class ChargingPlanDetails extends Component {
   onChangeName = (e) => {
     const { errorMessages: { name: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onChangeField(['name'], value);
@@ -72,10 +73,10 @@ export default class ChargingPlanDetails extends Component {
 
     return (
       <div className="PrepaidPlanDetails">
-        <Form horizontal>
+        <Form className="form-horizontal">
 
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               Title
               <Help contents={PlanDescription.description} />
             </Col>
@@ -86,7 +87,7 @@ export default class ChargingPlanDetails extends Component {
 
           {['clone', 'create'].includes(mode) &&
             <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                 Key
                 <Help contents={PlanDescription.name} />
               </Col>
@@ -98,7 +99,7 @@ export default class ChargingPlanDetails extends Component {
           }
 
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Operation</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Operation</Col>
             <Col sm={4}>
               <Field
                 fieldType="select"
@@ -110,7 +111,7 @@ export default class ChargingPlanDetails extends Component {
           </FormGroup>
 
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Charging value</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Charging value</Col>
             <Col sm={4}>
               <Field value={item.get('charging_value', 0)} fieldType="number" onChange={this.onChangeChargingValue} editable={editable} />
             </Col>

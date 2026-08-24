@@ -4,37 +4,20 @@ namespace PhpOffice\PhpSpreadsheet\Reader\Xls;
 
 class MD5
 {
-    /**
-     * @var int
-     */
+    // Context
     private $a;
 
-    /**
-     * @var int
-     */
     private $b;
 
-    /**
-     * @var int
-     */
     private $c;
 
-    /**
-     * @var int
-     */
     private $d;
-
-    /**
-     * @var int
-     */
-    private static $allOneBits;
 
     /**
      * MD5 stream constructor.
      */
     public function __construct()
     {
-        self::$allOneBits = self::signedInt(0xffffffff);
         $this->reset();
     }
 
@@ -44,8 +27,8 @@ class MD5
     public function reset(): void
     {
         $this->a = 0x67452301;
-        $this->b = self::signedInt(0xEFCDAB89);
-        $this->c = self::signedInt(0x98BADCFE);
+        $this->b = 0xEFCDAB89;
+        $this->c = 0x98BADCFE;
         $this->d = 0x10325476;
     }
 
@@ -73,9 +56,8 @@ class MD5
      *
      * @param string $data Data to add
      */
-    public function add(string $data): void
+    public function add($data): void
     {
-        // @phpstan-ignore-next-line
         $words = array_values(unpack('V16', $data));
 
         $A = $this->a;
@@ -83,10 +65,10 @@ class MD5
         $C = $this->c;
         $D = $this->d;
 
-        $F = [self::class, 'f'];
-        $G = [self::class, 'g'];
-        $H = [self::class, 'h'];
-        $I = [self::class, 'i'];
+        $F = ['self', 'f'];
+        $G = ['self', 'g'];
+        $H = ['self', 'h'];
+        $I = ['self', 'i'];
 
         // ROUND 1
         self::step($F, $A, $B, $C, $D, $words[0], 7, 0xd76aa478);
@@ -160,51 +142,43 @@ class MD5
         self::step($I, $C, $D, $A, $B, $words[2], 15, 0x2ad7d2bb);
         self::step($I, $B, $C, $D, $A, $words[9], 21, 0xeb86d391);
 
-        $this->a = ($this->a + $A) & self::$allOneBits;
-        $this->b = ($this->b + $B) & self::$allOneBits;
-        $this->c = ($this->c + $C) & self::$allOneBits;
-        $this->d = ($this->d + $D) & self::$allOneBits;
+        $this->a = ($this->a + $A) & 0xffffffff;
+        $this->b = ($this->b + $B) & 0xffffffff;
+        $this->c = ($this->c + $C) & 0xffffffff;
+        $this->d = ($this->d + $D) & 0xffffffff;
     }
 
-    private static function f(int $X, int $Y, int $Z): int
+    private static function f($X, $Y, $Z)
     {
         return ($X & $Y) | ((~$X) & $Z); // X AND Y OR NOT X AND Z
     }
 
-    private static function g(int $X, int $Y, int $Z): int
+    private static function g($X, $Y, $Z)
     {
         return ($X & $Z) | ($Y & (~$Z)); // X AND Z OR Y AND NOT Z
     }
 
-    private static function h(int $X, int $Y, int $Z): int
+    private static function h($X, $Y, $Z)
     {
         return $X ^ $Y ^ $Z; // X XOR Y XOR Z
     }
 
-    private static function i(int $X, int $Y, int $Z): int
+    private static function i($X, $Y, $Z)
     {
         return $Y ^ ($X | (~$Z)); // Y XOR (X OR NOT Z)
     }
 
-    /** @param float|int $t may be float on 32-bit system */
-    private static function step(callable $func, int &$A, int $B, int $C, int $D, int $M, int $s, $t): void
+    private static function step($func, &$A, $B, $C, $D, $M, $s, $t): void
     {
-        $t = self::signedInt($t);
-        $A = ($A + call_user_func($func, $B, $C, $D) + $M + $t) & self::$allOneBits;
+        $A = ($A + call_user_func($func, $B, $C, $D) + $M + $t) & 0xffffffff;
         $A = self::rotate($A, $s);
-        $A = ($B + $A) & self::$allOneBits;
+        $A = ($B + $A) & 0xffffffff;
     }
 
-    /** @param float|int $result may be float on 32-bit system */
-    private static function signedInt($result): int
-    {
-        return is_int($result) ? $result : (int) (PHP_INT_MIN + $result - 1 - PHP_INT_MAX);
-    }
-
-    private static function rotate(int $decimal, int $bits): int
+    private static function rotate($decimal, $bits)
     {
         $binary = str_pad(decbin($decimal), 32, '0', STR_PAD_LEFT);
 
-        return self::signedInt(bindec(substr($binary, $bits) . substr($binary, 0, $bits)));
+        return bindec(substr($binary, $bits) . substr($binary, 0, $bits));
     }
 }

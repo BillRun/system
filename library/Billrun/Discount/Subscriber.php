@@ -45,7 +45,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
-	public static function getByNameAndTime($name, $time) {
+	public static function getByNameAndTime($name, $time, $subscriber = null) {
+		if(isset($subscriber)){
+			foreach($subscriber['discounts'] as $discount){
+				if($discount['description'] ==  $name  && $discount['from']->sec <= $time->sec  && $discount['to']->sec > $time->sec){
+					return $discount;
+				}		
+			}
+		}
 		if (isset(static::$cache['by_key'][$name])) {
 			foreach (static::$cache['by_key'][$name] as $revision) {
 				if ($revision['from'] <= $time && (!isset($revision['to']) || is_null($revision['to']) || $revision['to'] >= $time)) {
@@ -112,7 +119,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
 		
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
-		$cover = [ 'start' => new MongoDate($this->billrunStartDate), 'end' => new MongoDate($this->billrunDate-1) ];
+		$cover = [ 'start' => new Mongodloid_Date($this->billrunStartDate), 'end' => new Mongodloid_Date($this->billrunDate-1) ];
 		if($eligible && !empty($this->discountData['prorated'])) {
 			$arrayArggregator = new Billrun_Utils_Arrayquery_Aggregate();
 			$matchedDocs = $arrayArggregator->aggregate([ ['$unwind' => '$breakdown.flat'],['$unwind' => '$breakdown.service'],['$project' => ['flat'=> ['$push'=>'$breakdown.flat'],'service'=>['$push'=>'$breakdown.service']]] ], [$subscriberData]);
@@ -136,7 +143,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 			}
         }
         $startDate = $cover['start'];
-        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Plan::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
+        $multiplier = !empty($this->discountData['prorated']) ? Billrun_Utils_Time::getMonthsDiff(date('Ymd',$cover['start']->sec) ,date('Ymd',$cover['end']->sec)) : 1;
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 

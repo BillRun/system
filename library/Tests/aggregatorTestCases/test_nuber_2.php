@@ -8,6 +8,7 @@ class Test_Case_2 {
         'aid' => 3,
         'function' => [
             'basicCompare',
+            'checkInvoiceId',
             'invoice_exist',
             'lineExists',
             'passthrough',

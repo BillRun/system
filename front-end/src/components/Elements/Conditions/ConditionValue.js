@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import moment from 'moment';
 import isNumber from 'is-number';
-import { InputGroup, DropdownButton, MenuItem } from 'react-bootstrap';
+import { InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
 import Field from '@/components/Field';
 import {
   formatSelectOptions,
@@ -26,6 +26,7 @@ class ConditionValue extends Component {
     operator: PropTypes.instanceOf(Immutable.Map),
     dynamicSelectOptions: PropTypes.instanceOf(Immutable.List),
     customValueOptions: PropTypes.instanceOf(Immutable.List),
+    conditionsSize:  PropTypes.number,
     disabled: PropTypes.bool,
     editable: PropTypes.bool,
     onChange: PropTypes.func,
@@ -38,6 +39,7 @@ class ConditionValue extends Component {
     operator: Immutable.Map(),
     dynamicSelectOptions: Immutable.List(),
     customValueOptions: Immutable.List(),
+    conditionsSize: 0,
     disabled: false,
     editable: true,
     onChange: () => {},
@@ -49,19 +51,20 @@ class ConditionValue extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { field, config, operator, dynamicSelectOptions, disabled, editable } = this.props;
+    const { field, config, conditionsSize, operator, dynamicSelectOptions, disabled, editable } = this.props;
     return (
       !Immutable.is(field, nextProps.field)
       || !Immutable.is(config, nextProps.config)
       || !Immutable.is(dynamicSelectOptions, nextProps.dynamicSelectOptions)
       || !Immutable.is(operator, nextProps.operator)
+      || conditionsSize !== nextProps.conditionsSize
       || disabled !== nextProps.disabled
       || editable !== nextProps.editable
     );
   }
 
   componentDidUpdate(prevProps) {
-    const { config, dynamicSelectOptions, operator, customValueOptions } = this.props;
+    const { config, conditionsSize, dynamicSelectOptions, operator, customValueOptions } = this.props;
     if (!Immutable.is(prevProps.config, config)) {
       this.initFieldOptions(config, dynamicSelectOptions);
     }
@@ -75,16 +78,12 @@ class ConditionValue extends Component {
       customValueOptions: prevProps.customValueOptions
     }));
     const isSelectOptionsChanged = !oldOptions.isEmpty()
-      && !newOptions
-        .map(option => option.get('value'))
-        .sort()
-        .equals(
-          oldOptions
-          .map(option => option.get('value'))
-          .sort()
-        );
+      && conditionsSize >= prevProps.conditionsSize
+      // options was removed 
+      && !oldOptions.every(element => newOptions.includes(element));
 
-    const isTypeChanged = prevProps.config.get('type', '') !== ''
+    const isTypeChanged = conditionsSize >= prevProps.conditionsSize
+      && prevProps.config.get('type', '') !== ''
       && prevProps.config.get('type', '') !== config.get('type', '');
 
     // If type of value changed or select options, reset the value
@@ -381,15 +380,15 @@ class ConditionValue extends Component {
           <DropdownButton
             disabled={disabled}
             onSelect={this.onChangeDateOption}
-            componentClass={InputGroup.Button}
             id="date-select-options"
             title={actionTitle}
+            variant="outline-secondary"
             className="full-width"
           >
-            <MenuItem key="date" eventKey="date">Select Date:</MenuItem>
-            <MenuItem divider />
+            <Dropdown.Item key="date" eventKey="date">Select Date:</Dropdown.Item>
+            <Dropdown.Divider />
             { options.map(option => (
-                <MenuItem key={option.value} eventKey={option.value}>{option.label}</MenuItem>
+                <Dropdown.Item key={option.value} eventKey={option.value}>{option.label}</Dropdown.Item>
             )) }
           </DropdownButton>
           {selectedOptionIdx === -1 && (
@@ -511,7 +510,7 @@ class ConditionValue extends Component {
     if (operator.has('prefix')) {
       return (
         <InputGroup>
-          <InputGroup.Addon>{operator.get('prefix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('prefix', '')}</InputGroup.Text>
           {input}
         </InputGroup>
       );
@@ -520,7 +519,7 @@ class ConditionValue extends Component {
       return (
         <InputGroup>
           {input}
-          <InputGroup.Addon>{operator.get('suffix', '')}</InputGroup.Addon>
+          <InputGroup.Text>{operator.get('suffix', '')}</InputGroup.Text>
         </InputGroup>
       );
     }

@@ -119,7 +119,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 			'type' => 'balance',
 			'usaget' => 'balance',
 			'charging_type' => $this->updateType,
-			'urt' => new MongoDate(),
+			'urt' => new Mongodloid_Date(),
 			'source_ref' => Billrun_Factory::db()->prepaidgroupsCollection()->createRefByEntity($this->chargingGroup),
 			'aid' => $this->subscriber['aid'],
 			'sid' => $this->subscriber['sid'],

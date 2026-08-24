@@ -122,7 +122,7 @@ trait Billrun_Traits_ValueTranslator {
 	 * @return string
 	 */
 	protected function formatDate($date, $mapping) {
-		if ($date instanceof MongoDate) {
+		if ($date instanceof Mongodloid_Date) {
 			$date = $date->sec;
 		} else if (is_string($date)) {
 			$date = strtotime($date);

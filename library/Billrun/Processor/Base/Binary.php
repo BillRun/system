@@ -33,7 +33,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 
-		$header['process_time'] = new MongoDate();
+		$header['process_time'] = new Mongodloid_Date();
 
 		return $header;
 	}
@@ -55,7 +55,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$newRowStruct['source'] = self::$type;
 			$newRowStruct['file'] = basename($this->filePath);
 			$newRowStruct['log_stamp'] = $this->getFileStamp();
-			$newRowStruct['process_time'] = new MongoDate();
+			$newRowStruct['process_time'] = new Mongodloid_Date();
 		}
 		return $newRowStruct;
 	}
@@ -72,7 +72,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = isset($this->data['header']['stamp']) ? $this->data['header']['stamp'] : 'no_header_stamp';
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = new MongoDate();
+		$trailer['process_time'] = new Mongodloid_Date();
 
 		return $trailer;
 	}

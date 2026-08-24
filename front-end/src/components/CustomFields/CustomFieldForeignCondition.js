@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable';
-import { FormGroup, Col, Button, HelpBlock } from 'react-bootstrap';
+import { Col, Button } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '../Field';
 import ConditionValue from '../Report/Editor/ConditionValue';
 import { formatSelectOptions } from '@/common/Util';
 
-
 const CustomFieldForeignCondition = ({
-  condition, index, onRemove, onUpdate, error,
-  conditionsFields,
-  conditionsOperatorsSelectOptions,
-  conditionField, conditionOperator,
+  condition = Map(), index, onRemove, onUpdate, error = '',
+  conditionsFields = [],
+  conditionsOperatorsSelectOptions = [],
+  conditionField = Map(), conditionOperator = Map(),
 }) => {
   const isValueArray = op => ['nin', 'in', '$nin', '$in'].includes(op);
 
@@ -57,9 +57,6 @@ const CustomFieldForeignCondition = ({
   const conditionsFieldSelectOptions = conditionsFields.map(formatSelectOptions);
   return (
     <FormGroup className="form-inner-edit-row" validationState={error ? 'error' : null}>
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_field">field</label>
-      </Col>
       <Col sm={4}>
         <Field
           id="condition_field"
@@ -70,9 +67,6 @@ const CustomFieldForeignCondition = ({
         />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_operator">Operator</label>
-      </Col>
       <Col sm={3}>
         <Field
           id="condition_operator"
@@ -84,9 +78,6 @@ const CustomFieldForeignCondition = ({
         />
       </Col>
 
-      <Col smHidden mdHidden lgHidden>
-        <label htmlFor="condition_value">Value</label>
-      </Col>
       <Col sm={4}>
         <ConditionValue
           field={conditionForValue}
@@ -97,7 +88,7 @@ const CustomFieldForeignCondition = ({
         />
       </Col>
       <Col sm={1} className="actions">
-        <Button onClick={onRemoveCondition} bsSize="small" className="pull-left">
+        <Button onClick={onRemoveCondition} size="sm" variant="outline-secondary" className="pull-left">
           <i className="fa fa-trash-o danger-red" />
         </Button>
       </Col>
@@ -111,7 +102,6 @@ const CustomFieldForeignCondition = ({
     </FormGroup>
   );
 };
-
 
 CustomFieldForeignCondition.propTypes = {
   condition: PropTypes.instanceOf(Map),
@@ -127,16 +117,5 @@ CustomFieldForeignCondition.propTypes = {
     PropTypes.bool,
   ]),
 };
-
-
-CustomFieldForeignCondition.defaultProps = {
-  condition: Map(),
-  conditionField: Map(),
-  conditionsFields: [],
-  conditionOperator: Map(),
-  conditionsOperatorsSelectOptions: [],
-  error: '',
-};
-
 
 export default CustomFieldForeignCondition;

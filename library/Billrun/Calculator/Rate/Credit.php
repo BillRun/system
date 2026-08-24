@@ -70,6 +70,9 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		}
 		$newData['rates'][] = $this->getRateData('retail', $rate);
 		$row->setRawData($newData);
+		if(isset($rate['rounding_rules'])){
+			$row['rounding_rules'] = $rate['rounding_rules'];
+		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;

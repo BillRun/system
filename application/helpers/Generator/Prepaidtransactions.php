@@ -48,7 +48,7 @@ class Generator_Prepaidtransactions extends Billrun_Generator_ConfigurableCDRAgg
 
 	protected function flattenArray($array, $parameters, &$line) {
 		foreach ($array as $idx => $val) {
-			if ($val instanceof MongoDBRef) {
+			if ($val instanceof Mongodloid_Ref) {
 				$val = Billrun_DBRef::getEntity($val);
 			}
 			foreach ($parameters['mapping'] as $dataKey => $lineKey) {

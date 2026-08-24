@@ -1,6 +1,11 @@
 .form-inner-edit-row {
   margin-bottom: 10px;
-
+  &.header {
+    height: 20px;
+  }
+  &.body {
+    height: 40px;
+  }
   .btn-link {
     padding: 0;
   }

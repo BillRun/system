@@ -39,7 +39,7 @@ class Billrun_EventsManager {
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
-
+	protected $eventsSettingsCache = [];
 	/**
 	 *
 	 * @var Mongodloid_Collection
@@ -59,13 +59,18 @@ class Billrun_EventsManager {
 	}
 	
 	public function getEventsSettings($type, $activeOnly = true) {
-		$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
-		if (!$activeOnly) {
-			return $events;
+		$cacheKey = $type.$activeOnly;
+		if(empty($this->eventsSettingsCache[$cacheKey])) {
+			$events = Billrun_Util::getIn($this->eventsSettings, $type, []);
+			if (!$activeOnly) {
+				$this->eventsSettingsCache[$cacheKey] = $events;
+			} else {
+				$this->eventsSettingsCache[$cacheKey] = array_filter($events, function ($event) {
+					return isset($event['active']) ? !empty($event['active']) : true;
+				});
+			}
 		}
-		return array_filter($events, function ($event) {
-			return Billrun_Util::getIn($event, 'active', true);
-		});
+		return $this->eventsSettingsCache[$cacheKey];
 	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
@@ -76,7 +81,7 @@ class Billrun_EventsManager {
 		
 		foreach ($eventSettings as $event) {
 			$conditionSettings = [];
-			foreach ($event['conditions'] as $rawsEventSettings) {
+			foreach ($event['conditions'] as $conditionsIndex => $rawsEventSettings) {
 				$conditionSettings = [];
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'] ?? '',
@@ -86,16 +91,24 @@ class Billrun_EventsManager {
 					'value' => $rawsEventSettings['value'] ?? '',
 				);
 				$pathsMatched = [];
-				
-				if (!isset($rawsEventSettings['paths'])) { // BC
-					$path = isset($rawsEventSettings['path']) ? $rawsEventSettings['path'] : '';
-					$rawsEventSettings['paths'] = [
+				if(isset($rawsEventSettings['all_groups']) && $rawsEventSettings['all_groups'] === true && $eventType == 'balance') {
+					Billrun_Factory::log('Create All Groups Event, code: ' . $event['event_code'] . ' description : ' .  $event['event_description'], Billrun_Log::DEBUG);
+					$rawsEventSettingsPaths = $this->createPathsByBalance($rawsEventSettings, $extraParams, $entityBefore, $entityAfter);
+					unset($event['conditions'][$conditionsIndex]['paths']);
+					unset($event['conditions'][$conditionsIndex]['unit']);
+					unset($event['conditions'][$conditionsIndex]['usaget']);
+				}else{
+					$rawsEventSettingsPaths = $rawsEventSettings['paths'];
+				}
+				if (!isset($rawsEventSettingsPaths)) { // BC
+					$path = isset($rawsEventSettingsPaths) ? $rawsEventSettingsPaths : '';
+					$rawsEventSettingsPaths = [
 						['path' => $path],
 					];
-					unset($rawsEventSettings['path']);
+					unset($rawsEventSettingsPaths);
 				}
-				
-				foreach($rawsEventSettings['paths'] as $rawEventSettings) {
+		
+				foreach($rawsEventSettingsPaths as $rawEventSettings) {
 					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
 					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
 						$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
@@ -108,6 +121,11 @@ class Billrun_EventsManager {
 						$path_data = ['event_settings' => $rawEventSettings, 'extra_values' => $extraValues];
 						$path_stamp = Billrun_Util::generateArrayStamp($path_data);
 						$pathsMatched[$path_stamp] = $path_data;
+						$event['matched_path'] = [
+							'path' => $rawEventSettings['path'], 
+							'total_path' => $rawEventSettings['total_path'],
+							'related_entities' => $rawEventSettings['related_entities']
+						];
 					}
 				}
 				
@@ -121,6 +139,46 @@ class Billrun_EventsManager {
 			}
 		}
 
+	}
+
+	/**
+	 * Create groups paths by the balance entity 
+	 * @param array $rawEventSettings
+	 * @param array $extraParams
+	 * @param array $entityBefore
+	 * @param array $entityAfter
+	 * @return array paths.
+	 */
+	protected function createPathsByBalance($rawEventSettings, $extraParams, $entityBefore, $entityAfter){
+		$paths = [];
+		$eventPropertyType =  $rawEventSettings['property_type'];
+		if(!isset($eventPropertyType)){
+			Billrun_Factory::log('Event property type empty '. print_R($rawEventSettings, 1), Billrun_Log::NOTICE);
+			return $paths;
+		}
+		$entity = $this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter);
+		if(!isset($entity)){
+			Billrun_Factory::log('Event balance not found. before: ' . print_R($entityBefore, 1) . ' after: '  . print_R($entityAfter, 1) , Billrun_Log::NOTICE);
+			return $paths;
+		}
+		$serviceName = $entity['service_name'];
+		$groups = 	$entity['balance']['groups'];
+		$rowUsaget = $extraParams['row']['usaget'];
+		$rowPropertyType = Billrun_Utils_Units::getPropertyTypeByUsaget($rowUsaget);
+		Billrun_Factory::log('Finding relevant groups of property type: '  . $rowPropertyType . ' by balance id: ' .$entity['_id'] , Billrun_Log::DEBUG);
+		$groupKeys = [];
+		foreach ($groups as $groupKey => $group) {
+			$groupPath = [];
+			if($eventPropertyType === $rowPropertyType){
+				$groupPath['path'] = 'balance.groups.' . $groupKey . '.usagev';
+				$groupPath['total_path'] = 'balance.groups.' . $groupKey . '.total';
+				$groupPath['related_entities'] = [['type' => 'service', 'key' => $serviceName], ['type' => 'group', 'key' => $groupKey]];
+				$paths[] = $groupPath;
+				$groupKeys [] = $groupKey;
+			}
+		}
+		Billrun_Factory::log('Find relevant groups: '  . implode($groupKeys, ", ") , Billrun_Log::DEBUG);
+		return $paths;
 	}
 
 	protected function getValuesPerCondition($condition, $rawEventSettings, $entityBefore, $entityAfter) {
@@ -207,7 +265,7 @@ class Billrun_EventsManager {
 				if (intval($valueBefore) == intval($valueAfter)) {
 					return false;
 				}
-				$thresholdIncreasing = $rawValueAfter - ($rawValueAfter % $eventValue);
+				$thresholdIncreasing = $rawValueAfter - fmod($rawValueAfter, $eventValue);
 				$extraValues['reached_constant'] = ($rawValueBefore < $rawValueAfter) ? $thresholdIncreasing : $thresholdIncreasing + $eventValue;
 				
 				return $extraValues;
@@ -262,7 +320,7 @@ class Billrun_EventsManager {
 	public function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array(), $extraValues = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
-		$event['creation_time'] = new MongoDate();
+		$event['creation_time'] = new Mongodloid_Date();
 //		$event['value_before'] = $valueBefore;
 //		$event['value_after'] = $valueAfter;
 		foreach ($extraParams as $key => $value) {
@@ -343,7 +401,7 @@ class Billrun_EventsManager {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);
@@ -363,10 +421,10 @@ class Billrun_EventsManager {
 			'notify_time' => array('$exists' => false),
 			'$or' => array(
 				array('start_notify_time' => array('$exists' => false)),
-				array('start_notify_time' => array('$lte' => new MongoDate(strtotime('-' . $notifyOrphanTime))))
+				array('start_notify_time' => array('$lte' => new Mongodloid_Date(strtotime('-' . $notifyOrphanTime))))
 			)
 		);
-		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
+		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new Mongodloid_Date())), array('multiple' => true));
 	}
 	
 	
@@ -456,7 +514,7 @@ class Billrun_EventsManager {
 	protected function sendEmailNotification($emailNotifications) {
 		foreach ($emailNotifications as $eventType => $eventTypeEmailNotification) {
 			$emailTemplateName = "{$eventType}_notification";
-			$emailTemplateConfig = Billrun_Factory::config()->getConfigValue('email_templates.' . $emailTemplateName, []);
+			$emailTemplateConfig = Billrun_Util::findMatchingEmailTemplate($emailTemplateName);
 			$subject = Billrun_Util::getIn($emailTemplateConfig, 'subject', '');
 			$body = Billrun_Util::getIn($emailTemplateConfig, 'content', '');
 			foreach ($eventTypeEmailNotification as $eventCode => $eventCodeEmailNotification) {
@@ -466,7 +524,7 @@ class Billrun_EventsManager {
 					$fraudEventDetails[] = "Account id: {$aid}, Subscriber ids: {$sids}, {$eventCodeEmailNotification['desc']}";
 				}
 				$subjectTranslations = [
-					'event_code' => $eventCode,	
+					'event_code' => $eventCode,
 				];
 				$bodyTranslations = [
 					'fraud_event_details' => implode(PHP_EOL, $fraudEventDetails),
@@ -513,5 +571,5 @@ class Billrun_EventsManager {
 			$this->sendEmailNotification($emailNotifications);
 		}
 	}
-	
+
 }

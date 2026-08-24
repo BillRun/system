@@ -13,6 +13,7 @@ import {
   EDIT_FORM_UPDATE_ITEM_FIELD,
   EDIT_FORM_DELETE_ITEM_FIELD,
   SET_PAGE_FLAG,
+  SET_PAGE_ERROR,
   onBoardingStates,
 } from '@/actions/guiStateActions/pageActions';
 import { LOGIN } from '@/actions/userActions';
@@ -91,6 +92,17 @@ const pageReducer = (state = defaultState, action) => {
       return state.setIn(['formModalData', 'errors', fieldId], message);
     }
 
+    case SET_PAGE_ERROR: {
+      const { page, fieldId = null, message = null } = action;
+      if (fieldId === null) {
+        return state.deleteIn(['formModalData', 'errors', page]);
+      }
+      if (message === null) {
+        return state.deleteIn(['formModalData', 'errors', page, fieldId]);
+      }
+      return state.setIn(['formModalData', 'errors', page, fieldId], message);
+    }
+
     case EDIT_FORM_UPDATE_ITEM_FIELD: {
       const { path, value } = action;
       const arrayPath = Array.isArray(path) ? path : [path];
@@ -104,7 +116,7 @@ const pageReducer = (state = defaultState, action) => {
     }
 
     case SET_PAGE_FLAG: {
-      const { page, flag, value } = action;
+      const { page, flag = null, value = null } = action;
       if (flag === null) {
         return state.deleteIn(['flag', page]);
       }

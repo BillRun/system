@@ -18,7 +18,7 @@
       "account": [
         { "id": "aid", "type": "number" }
       ],
-      "subscriber_services": [
+      "services": [
         { "id": "name", "title": "Name", "type": "string", "inputConfig": { "inputType": "select", "callback": "getServicesOptions" } },
         { "id": "from", "title": "From", "type": "date" },
         { "id": "to", "title": "To", "type": "date" },

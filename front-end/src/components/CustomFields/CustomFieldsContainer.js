@@ -128,13 +128,14 @@ const mapDispatchToProps = (dispatch, props) => ({ // eslint-disable-line no-unu
     return dispatch(showFormModal(newField, CustomFieldFormContainer, config));
   },
 
-  onReorder: (entity, { oldIndex, newIndex }) => {
+  onReorder: (entity, { oldIndex, newIndex, collection}) => {
     if (oldIndex === newIndex) {
       return true;
     }
     dispatch(setFlag(`orderChanged.${entity}`, true));
-    const path = getSettingsPath(entity, true, ['fields']);
-    return dispatch(setFieldPosition(oldIndex, newIndex, path));
+    const path = getSettingsPath(entity, true, ['fields']);    
+    const category = collection === "uncategorized" ? "" : collection;
+    return dispatch(setFieldPosition(oldIndex, newIndex, category, path));
   },
 
   onCancel: (entity, save = false) => {

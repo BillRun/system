@@ -25,19 +25,19 @@ class AlertAction extends Action_Base {
 			'type' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
+		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
 
-		$this->_controller->addOutput("Loading handler");
+		$this->getController()->addOutput("Loading handler");
 		$handler = Billrun_Handler::getInstance($options);
 
 		if (!$handler) {
-			$this->_controller->addOutput("Aggregator cannot be loaded");
+			$this->getController()->addOutput("Aggregator cannot be loaded");
 			return;
 		}
 
-		$this->_controller->addOutput("Handler loaded");
+		$this->getController()->addOutput("Handler loaded");
 		$handler->execute();
 	}
 

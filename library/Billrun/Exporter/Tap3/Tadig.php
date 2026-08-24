@@ -1,0 +1,710 @@
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2018 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+/**
+ * Billing TAP3 exporter
+ * According to Specification Version Number 3, Release Version Number 12 (3.12)
+ *
+ * @package  Billing
+ * @since    2.8
+ */
+class Billrun_Exporter_Tap3_Tadig extends Billrun_Exporter_Asn1 {
+
+	static protected $type = 'tap3';
+	
+	static protected $LINE_TYPE_DATA = 'data';
+	static protected $LINE_TYPE_CALL = 'call';
+	static protected $LINE_TYPE_INCOMING_CALL = 'incoming_call';
+	static protected $LINE_TYPE_SMS = 'sms';
+	static protected $LINE_TYPE_INCOMING_SMS = 'incoming_sms';
+
+	static protected $LINE_TYPE_CHARGE = 'charge';
+
+	protected $vpmnTadig = '';
+	protected $stamps = '';
+	protected $startTime = null;
+	protected $timeZoneOffset = '';
+	protected $timeZoneOffsetCode = '';
+	protected $startTimeStamp = '';
+	protected $numOfDecPlaces;
+	protected $logStamp = null;
+	protected $recEntities = array();
+	protected $currencyCodes = array();
+	
+	public function __construct($options = array()) {
+		$this->vpmnTadig = $options['tadig'];
+
+		$this->startTime = time();
+		
+		parent::__construct($options);
+		$this->stamps = !empty($this->rowsToExport) ? array_map(function($l){return $l['stamp'];},$this->rowsToExport) : [];
+		$this->timeZoneOffset = gmdate($this->getConfig('datetime_offset_format', 'O'), $this->startTime);
+		$this->timeZoneOffsetCode = intval($this->getConfig('datetime_offset_code', 0));
+		$this->startTimeStamp = gmdate($this->getConfig('datetime_format', 'YmdHis'), $this->startTime);
+		$this->numOfDecPlaces = intval($this->getConfig('header.num_of_decimal_places'));
+	}
+	
+	/**
+	 * see parent::getFieldsMapping
+	 */
+	protected function getFieldsMapping($row) {
+		$callEventDetail = $this->getCallEventDetail($row);
+		return [
+				'base' => $this->getConfig(array('fields_mapping', $callEventDetail), array()),
+				'custom' => Billrun_Util::getIn($this->options, 'configByType.generator.data_structure.'.$callEventDetail, [])
+			];
+	}
+	
+	/**
+	 * see parent::beforeExport
+	 * TAP3 should handle locking
+	 */
+	function beforeExport() {
+
+		//$this->createLogDB($this->getLogStamp());
+	}
+	
+	/**
+	 * see parent::afterExport
+	 * TAP3 should handle locking
+	 */
+	function afterExport() {
+		//$this->logDB($this->getLogStamp(), $this->getLogData());
+	}
+	
+	/**
+	 * gets stamp in use for the log
+	 * 
+	 * @return type
+	 */
+	protected function getLogStamp() {
+		if (empty($this->logStamp)) {
+			$stampArr = array(
+				'export_stamp' => $this->exportStamp,
+				'vpmn' => $this->getVpmnTadig(),
+			);
+			$this->logStamp = Billrun_Util::generateArrayStamp($stampArr);
+		}
+		return $this->logStamp;
+	}
+	
+	/**
+	 * gets data to log after export is done
+	 * 
+	 * @return array
+	 */
+	protected function getLogData() {
+		$logData = parent::getLogData();
+		$logData['tadig'] = $this->getVpmnTadig();
+		
+		return $logData;
+	}
+	
+	/**
+	 * see parent::getNextLogSequenceNumberQuery()
+	 */
+	protected function getNextLogSequenceNumberQuery() {
+		$query = parent::getNextLogSequenceNumberQuery();
+		$query['tadig'] = $this->getVpmnTadig();
+		
+		return $query;
+	}
+	
+	/**
+	 * gets call event details to get correct mapping according to usage type
+	 * 
+	 * @param array $row
+	 * @return string one of: MobileOriginatedCall/MobileTerminatedCall/SupplServiceEvent/ServiceCentreUsage/GprsCall/ContentTransaction/LocationService/MessagingEvent/MobileSession
+	 * @todo implement for all types
+	 */
+	protected function getCallEventDetail($row) {
+		$type = $this->getLineType($row);
+		$callEventTypeMapping =  $this->getConfig('call_event_type_mapping');
+		if(!empty($callEventTypeMapping[$type])) {
+			return $callEventTypeMapping[$type];
+		}
+		switch ($type) {
+			case self::$LINE_TYPE_DATA:
+				return 'GprsCall';
+			case self::$LINE_TYPE_CALL:
+				return 'MobileOriginatedCall';
+			case self::$LINE_TYPE_INCOMING_CALL:
+				return 'MobileTerminatedCall';
+			case self::$LINE_TYPE_INCOMING_SMS:
+			case self::$LINE_TYPE_SMS:
+				return 'MessagingEvent';
+			case self::$LINE_TYPE_CHARGE;
+				return 'SupplServiceEvent';
+			default:
+				return '';
+		}
+	}
+		
+	/**
+	 * gets the current receiver (VPMN) TADIG
+	 * 
+	 * @return string
+	 */
+	protected function getVpmnTadig() {
+		return $this->vpmnTadig;
+	}
+	
+	/**
+	 * gets the sender (HPMN) TADIG
+	 * 
+	 * @return string
+	 */
+	protected function getHpmnTadig() {
+		return $this->getConfig('hmpn_tadig', '');
+	}
+	
+	/**
+	 * gets file path for export
+	 *
+	 * @return string
+	 */
+	protected function getExportFilePath() {
+		return $this->options['parent_exporter']->getFilePathForTadig($this->getVpmnTadig());
+	}
+
+
+	/**
+	 * see parent::getFileName
+	 */
+	protected function getFileName() {
+
+		return $this->options['parent_exporter']->getFileNameForTadig($this->getVpmnTadig());
+	}
+
+	/**
+	 * see parent::getHeader
+	 */
+	protected function getHeader() {
+		return array(
+			'BatchControlInfo' => $this->getInfo(),
+			'AccountingInfo' => array(
+				'LocalCurrency' => $this->getConfig('header.local_currency'),
+				'TapCurrency' => $this->getConfig('header.tap_currency'),
+				'CurrencyConversionList' => $this->getCurrencyConversionList(),
+				'TapDecimalPlaces' => $this->numOfDecPlaces,
+			),
+			'NetworkInfo' => array(
+				'UtcTimeOffsetInfoList' => array(
+					array(
+						'UtcTimeOffsetInfo' => array(
+							'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
+							'UtcTimeOffset' => $this->timeZoneOffset,
+						),
+					),
+				),
+				'RecEntityInfoList' => $this->getRecEntityInfoList(),
+			),
+		);
+	}
+
+	protected function getInfo(){
+		$retVal =  [
+			'Sender' => $this->getHpmnTadig(),
+			'Recipient' => $this->getVpmnTadig(),
+			'FileSequenceNumber' => $this->getSequenceNumber(),
+			'FileCreationTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'TransferCutOffTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'FileAvailableTimeStamp' => array(
+				'LocalTimeStamp' => $this->startTimeStamp,
+				'UtcTimeOffset' => $this->timeZoneOffset,
+			),
+			'SpecificationVersionNumber' => intval($this->getConfig('header.version_number')),
+			'ReleaseVersionNumber' => intval($this->getConfig('header.release_version_number')),
+
+		];
+		if (!empty($this->options['is_test_file'])) {
+			$retVal['FileTypeIndicator'] = $this->getConfig('header.file_type_indicator');
+		}
+
+		return $retVal;
+	}
+	
+	protected function getCurrencyConversionList() {
+		$currencyConversionList = array();
+		$numberOfDecimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
+		foreach ($this->rowsToExport as $row) {
+			$currencyCode = intval($this->getCurrencyCode($row));
+			$found = false;
+			foreach ($currencyConversionList as $currencyConversion) {
+				if ($currencyConversion['CurrencyConversion']['ExchangeRateCode'] == $currencyCode) {
+					$found = true;
+					break;
+				}
+			}
+			if (!$found) {
+				$currencyConversionList[] = array(
+					'CurrencyConversion' => array(
+						'ExchangeRateCode' => $currencyCode,
+						'NumberOfDecimalPlaces' => $numberOfDecimalPlaces,
+						'ExchangeRate' => $this->roundValue($this->getExchangeRate($row) * pow(10, $numberOfDecimalPlaces)),
+					),
+				);
+			}
+		}
+		
+		return $currencyConversionList;
+	}
+	
+	protected function getCurrencyParams($row) {
+		$currency = $this->getCurrency($row);
+		if (!isset($this->currencyCodes[$currency])) {
+			$fromCurrency = 'SDR';
+			$urt = $row['urt']->sec;
+			$exchangeRate = Billrun_Utils_Currency_Converter::convertCurrency(1, $fromCurrency, $currency, $urt);
+			$this->currencyCodes[$currency] = array(
+				'code' => count($this->currencyCodes),
+				'exchange_rate' => $exchangeRate ? $exchangeRate : $this->getConfig('header.currency_conversion.exchange_rate',1),
+			);
+		}
+		return $this->currencyCodes[$currency];
+	}
+	
+	protected function getExchangeRate($row) {
+		return Billrun_Util::getIn($this->getCurrencyParams($row), 'exchange_rate', 1);
+	}
+	
+	protected function getCurrencyCode($row) {
+		return Billrun_Util::getIn($this->getCurrencyParams($row), 'code', '');
+	}
+
+	/**
+	 * see parent::getFooter
+	 */
+	protected function getFooter() {
+		$totalCharge = 0;
+		$totalTax = 0;
+		$totalDiscount = 0;
+		$earliestUrt = null;
+		$latestUrt = null;
+		$dateFormat = $this->getConfig('datetime_format', 'YmdHis');
+		foreach ($this->rowsToExport as $row) {
+			$totalCharge += $this->getSdrPrice($row);
+			$totalTax += isset($row['tax']) ? floatval($row['tax']) * pow(10, $this->numOfDecPlaces) : 0;
+			$urt = $row['urt']->sec;
+			if (is_null($earliestUrt) || $urt < $earliestUrt) {
+				$earliestUrt = $urt;
+			}
+			if (is_null($latestUrt) || $urt > $latestUrt) {
+				$latestUrt = $urt;
+			}
+		}
+		return array(
+			'AuditControlInfo' => array(
+				'EarliestCallTimeStamp' => array(
+					'LocalTimeStamp' => gmdate($dateFormat, $earliestUrt),
+					'UtcTimeOffset' => $this->timeZoneOffset,
+				),
+				'LatestCallTimeStamp' => array(
+					'LocalTimeStamp' => gmdate($dateFormat, $latestUrt),
+					'UtcTimeOffset' => $this->timeZoneOffset,
+				),
+				'TotalCharge' => $this->roundValue($totalCharge),
+				'TotalTaxValue' => $this->roundValue($totalTax),
+				'TotalDiscountValue' => $totalDiscount,
+				'CallEventDetailsCount' => count($this->rowsToExport),
+			),
+		);
+	}
+	
+
+	protected function mapCDRs($rows) {
+		$mappedRows =[];
+		foreach($rows as $row) {
+			$mappedRows[] = $this->getRecordData($row);
+		}
+		return $mappedRows;
+	}
+	/**
+	 * see parent::getDataToExport
+	 */
+	protected function getDataToExport() {
+		if (empty($this->rowsToExport)){
+			return $this->getNotification();
+		}else{
+			return $this->getTransferBatch();
+		}
+	}
+
+	protected function getTransferBatch()
+	{
+		$dataToExport = [ 	'CallEventDetailList' => $this->mapCDRs( $this->rowsToExport ) ];
+		$header = $this->getHeader();
+		$footer = $this->getFooter();
+
+		if (!empty($header)) {
+			$dataToExport = array_merge($header, $dataToExport);
+		}
+		if (!empty($footer)) {
+			$dataToExport = array_merge($dataToExport, $footer);
+		}
+		return array(
+			'TransferBatch' => $dataToExport,
+		);
+	}
+	protected function getNotification()
+	{
+		return array(
+			'Notification' => $this->getInfo()
+		);
+	}
+	
+	protected function getRecEntityInfoList() {
+		$ret = array();
+		foreach ($this->rowsToExport as $row) {
+			$recEntityInfos = $this->getRecEntityInformation($row);
+			$serializedRecEntityInfos = array_map('serialize', $recEntityInfos);
+      $serializedRet = array_map('serialize', $ret);
+			$missingEnitities = array_diff($serializedRecEntityInfos, $serializedRet);
+
+			if ( !empty($missingEnitities) ) {
+				$missingEnitities = array_map('unserialize', $missingEnitities);
+				$ret = array_merge( $missingEnitities, $ret );
+			}
+		}
+		return  $ret  ;
+	}
+	
+	protected function getRecEntityInformation($row) {
+		$tapRecordType = $this->getLineType($row);
+		$recIdFields=  Billrun_Util::getIn($this->config,
+										  'helper_field_mappings.'.$tapRecordType.'.RecEntityId', $this->config,
+										  'helper_field_mappings.common.RecEntityId');
+		foreach($recIdFields as  $recIdField) {
+			if( !empty($recFieldConfig = (is_array($recIdField) ? $recIdField:  @json_decode($recIdField,JSON_OBJECT_AS_ARRAY))  ) ) {
+				$recIdField = $recFieldConfig['value'];
+				if(empty( array_filter($recFieldConfig['conditions'],function($c) use($row) { return Billrun_Util::isConditionMet($row,$c);	}) ) ) {
+					// entity field id does *not* apply  for this record
+					continue;
+				}
+			}
+			if(false === Billrun_Util::getIn($row,$recIdField, false)){
+				continue;
+			}
+			$recEntityType = $this->getConfig('record_entity.sub_field_type.mapping.'.$tapRecordType.'.'.$recIdField,
+										$this->getConfig('record_entity.type.mapping.'.$tapRecordType,0));
+
+			$recEntityId = Billrun_Util::getIn($row, $recIdField, '');
+			$recEntityCode = $this->getRecEntityCodeByRecEntityId($recEntityId);
+			Billrun_Factory::dispatcher()->trigger('afterRecEntityInformation', array(&$recEntityType, &$recEntityId, &$recEntityCode, $row, $this));
+
+			$recEntityArr[] = ['RecEntityInformation' => [
+				'RecEntityCode' => intval($recEntityCode),
+				'RecEntityType' => intval($recEntityType),
+				'RecEntityId' => $recEntityId,
+			] ];
+		}
+		return  $recEntityArr ?? [];
+
+	}
+	
+	protected function getRecEntityCodeByRecEntityId($recEntityId) {
+		if (!isset($this->recEntities[$recEntityId])) {
+			$this->recEntities[$recEntityId] = count($this->recEntities);
+		}
+		return $this->recEntities[$recEntityId];
+	}
+
+	protected function getServingBID($row) {
+		//unimplemented -supplay by the plugin for now
+		Billrun_Factory::dispatcher()->trigger('afterGetServingBID', array(&$servingBID, $row, $this));
+		return $servingBID;
+	}
+
+	protected function getRecEntityCode($row) {
+		return reset($this->getRecEntityCodesForRow($row));
+	}
+
+	protected function getRecEntityCodesForRow($row) {
+		$entityList = $this->getRecEntityInformation($row);
+		$surfacedEntityValues = array_column($entityList,'RecEntityInformation');
+		return array_column($surfacedEntityValues,'RecEntityCode');
+	}
+	
+	protected function getTeleServiceCode($row) {
+		$type = $this->getLineType($row);
+		$teleServiceCodes =  $this->getConfig('tele_service_codes');
+		if(!empty( $teleServiceCodes[$type])) {
+			return $teleServiceCodes[$type];
+		}
+		return '';
+	}
+	
+	protected function getUtcTimeOffsetCode($row, $fieldMapping) {
+		return $this->timeZoneOffsetCode;
+	}
+	
+	protected function getRecEntityCodeList($row, $fieldMapping) {
+		$recEnitiiesCodes = array_map(function($val) { return ['RecEntityCode' => $val]; }, $this->getRecEntityCodesForRow($row));
+		return $recEnitiiesCodes;
+	}
+
+	protected function getCallTypeGroup( $row ) {
+		//TODO refactoring to support sub types
+		Billrun_Factory::dispatcher()->trigger('beforeGetCallTypeGroup', array($row, $this));
+		$type = $this->getLineType($row);
+		$callTypeLevel1 = $this->getConfig('call_type_level_1')[$type] ?? 0;
+		$callTypeLevel2 = $this->getConfig('call_type_level_2')[$type] ?? 0;
+		$callTypeLevel3 = $this->getConfig('call_type_level_3')[$type] ?? 0;
+		$callTypeLevels =   [
+			'CallTypeLevel1' => intval($callTypeLevel1),
+			'CallTypeLevel2' => intval($callTypeLevel2),
+			'CallTypeLevel3' => intval($callTypeLevel3),
+		];
+		Billrun_Factory::dispatcher()->trigger('afterGetCallTypeGroup', array(&$callTypeLevels, $row, $this));
+		return $callTypeLevels;
+	}
+	
+	protected function getChargeInformationList($row, $fieldMapping) {
+		return array( array (
+			'ChargeInformation' => 
+				$this->getChargeInformation($row, $fieldMapping)
+			)
+		);
+	}
+	protected function getChargeInformation($row, $fieldMapping) {
+		$chargeType = $this->getConfig('charge_type.total_charge');
+		$charge = $this->getSdrPrice($row);
+		$chargeableUnits = isset($row['usagev']) ? $row['usagev'] : 0;
+		$rate =  empty($row['arate']) ? [] : Billrun_Rates_Util::getRateByRef($row['arate'], true);
+		$interval = @$rate['rates'][$row['usaget']]['BASE']['rate'][0]['interval'] ?? 1;
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_DATA:
+				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+				$chargedUnits = ceil($chargeableUnits / $interval) * $interval; // TODO: currentlty, no "rounded" volume field
+				break;
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+				$chargedItem = $this->getConfig('charged_item.duration_based_charge');
+				$chargedUnits = ceil($chargeableUnits / $interval) * $interval; // TODO: currentlty, no "rounded" volume field
+				break;
+			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
+				$chargedItem = $this->getConfig('charged_item.event_based_charge');
+				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
+				$chargeableUnits = null;
+				break;
+			case self::$LINE_TYPE_CHARGE:
+				$chargedItem = $this->getConfig('charged_item.fixed_charge');
+				$chargedUnits = $chargeableUnits; // TODO: currentlty, no "rounded" volume field
+				$chargeableUnits = 1;
+				break;
+			default:
+				$chargedItem = $this->getConfig('charged_item.volume_total_based_charge');
+				$chargedUnits = $chargeableUnits;
+		}
+		
+		$callTypeGroup = $this->getCallTypeGroup($row);
+		
+		$chargeDetail = array(
+			'ChargeType' => $chargeType,
+			'Charge' => $charge,
+		);
+		
+		if (!is_null($chargeableUnits)) {
+			$chargeDetail['ChargeableUnits'] = $chargeableUnits;
+		}
+		
+		$chargeDetail['ChargedUnits'] = $chargedUnits;
+		$chargeDetail['ChargeDetailTimeStamp'] = array(
+			'LocalTimeStamp' => $this->getCallEventStartTimeStamp($row),
+			'UtcTimeOffsetCode' => $this->timeZoneOffsetCode,
+		);
+		Billrun_Factory::dispatcher()->trigger('afterGetChargeDetail', array(&$chargeDetail, $row));
+
+		$chargeDetailList = array(
+			array(
+				'ChargeDetail' => $chargeDetail,
+			),
+		);
+
+		return
+			 array(
+					'ChargedItem' => $chargedItem,
+					'ExchangeRateCode' => $this->getCurrencyCode($row),
+					'CallTypeGroup' => $callTypeGroup,
+					'ChargeDetailList' => $chargeDetailList,
+			 );
+	}
+	
+	protected function getSdrPrice($row) {
+		if (!isset($row['aprice'])) {
+			return 0;
+		}
+		$price = $row['aprice'];
+		$decimalPlaces = intval($this->getConfig('header.currency_conversion.num_of_decimal_places'));
+		$sdrPrice = $price / $this->getExchangeRate($row);
+		$sdrPrice = $this->roundValue($sdrPrice * pow(10, $decimalPlaces));
+		Billrun_Factory::dispatcher()->trigger('afterGetSdrPrice', array(&$sdrPrice, $row));
+		return $sdrPrice;
+	}
+	
+	protected function getTotalCallEventDuration($row) {
+		$durationField=  Billrun_Util::getIn($this->config,
+										  'helper_field_mappings.'.$this->getLineType($row).'.TotalCallEventDuration',
+										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.TotalCallEventDuration',''));
+		$startField=  Billrun_Util::getIn($this->config,
+										  'helper_field_mappings.'.$this->getLineType($row).'.StartTime',
+										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.StartTime',''));
+		$endField=  Billrun_Util::getIn($this->config,
+										  'helper_field_mappings.'.$this->getLineType($row).'.EndTime',
+										  Billrun_Util::getIn($this->config,'helper_field_mappings.common.EndTime',''));
+		switch ($this->getLineType($row)) {
+			case self::$LINE_TYPE_SMS:
+			case self::$LINE_TYPE_INCOMING_SMS:
+				return 0;
+
+			case self::$LINE_TYPE_CHARGE:
+				return 1;
+			
+			case self::$LINE_TYPE_CALL:
+			case self::$LINE_TYPE_INCOMING_CALL:
+			case self::$LINE_TYPE_DATA:	
+			default:
+				if(!empty($durationField)) {
+					return Billrun_Util::getIn($row, $durationField, 0);
+				}
+				if( !empty($startField) && !empty($endField) ) {
+					if(is_string($startField) && is_string($endField))
+						return strtotime( Billrun_Util::getIn($row, $endField, 0)) - strtotime( Billrun_Util::getIn($row, $startField, 0) );
+					else
+						return Billrun_Util::getIn($row, $endField, 0) - Billrun_Util::getIn($row, $startField, 0);
+				}
+		}
+	}
+	
+	protected function getCurrency($row) {
+		$defaultCurrency = $this->getConfig('header.local_currency', $this->getConfig('header.tap_currency', 'SDR'));
+		if (!isset($row['arate'])) {
+			return $defaultCurrency;
+		}
+		
+		$rate = Billrun_DBRef::getEntity($row['arate']);
+		if (!$rate || $rate->isEmpty()) {
+			return $defaultCurrency;
+		}
+
+		return isset($rate['rates'][$row['usaget']]['currency'])
+			? $rate['rates'][$row['usaget']]['currency']
+			: $defaultCurrency;
+	}
+	
+	protected function getOperatorSpecInfoList($row, $fieldMapping) {
+		$retInfo= [];
+		$operatorSpecInfo = Billrun_Util::getIn($this->config, 'operator_spec_info.'.$this->getLineType($row), Billrun_Util::getIn($this->config, 'operator_spec_info.common', []));
+		$stamp = Billrun_Util::getIn($row, 'stamp', '');
+		if(isset($stamp)){
+			$retInfo[] = [ 'OperatorSpecInformation' => 'STAMP: ' . $stamp ];
+		}
+		foreach($operatorSpecInfo as $key => $mapping) {
+			$infoEntry = $key. ": " .Billrun_Util::getIn($row, $mapping, '');
+			$retInfo[] = [ 'OperatorSpecInformation' => $infoEntry ];
+		}
+		return $retInfo;
+	}
+	
+	protected function getLineType($row) {
+		switch ($row['usaget']) {
+			case 'data':
+				return self::$LINE_TYPE_DATA;
+			case 'call':
+			case 'incoming_call':
+				if ($row['usaget'] == 'incoming_call') {
+					return self::$LINE_TYPE_INCOMING_CALL;
+				}
+				return self::$LINE_TYPE_CALL;
+			default:
+				return $row['usaget'];
+		}
+	}
+	
+	/**
+	 * gets urt
+	 * 
+	 * @return string
+	 */
+	protected function getCallEventStartTimeStamp($row) {
+		return $this->formatDate($row['urt']);
+	}
+
+	
+	/**
+	 * format date to file format
+	 * 
+	 * @param mixed $datetime
+	 * @return string
+	 */
+	protected function formatDate($datetime) {
+		if ($datetime instanceof Mongodloid_Date) {
+			$datetime = $datetime->sec;
+		} else if (is_string($datetime)) {
+			$datetime = strtotime($datetime);
+		}
+		$dateFormat = $this->getConfig('date_format', 'YmdHis');
+		return gmdate($dateFormat, $datetime);
+	}
+
+	// /**
+	//  * see parent::getRecordData
+	//  */
+	// protected function getRecordData($row) {
+	// 	// return $row;
+	// 	$fieldsMapping = $this->getFieldsMapping($row);
+	// 	return $this->mapFields($fieldsMapping, $row);
+	// }
+
+	/**
+	 * gets current sequence number for the file
+	 *
+	 * @return string - number in the range of 00001-99999
+	 */
+	protected function getSequenceNumber() {
+		if (is_null($this->sequenceNum)) {
+			$sequenceNumber = 0 ;
+			if(!empty($this->options['parent_exporter'])) {
+				$sequenceNumber = $this->options['parent_exporter']->getSequenceNumber();
+			} else {
+				$nextSequenceNum = $this->getNextLogSequenceNumber();
+				$sequenceNumber = sprintf('%0' . $seqNumLength . 'd', $nextSequenceNum % pow(10, $seqNumLength));
+			}
+			$seqNumLength = $this->getConfig('sequence_num_length', 5);
+			 $this->sequenceNum = sprintf('%0' . $seqNumLength . 'd', $sequenceNumber % pow(10, $seqNumLength));
+
+		}
+		return $this->sequenceNum;
+	}
+
+	protected function roundValue($value, $precision = 0) {
+		$roundingLogic = $this->getConfig('rounding_logic');
+		switch(@$roundingLogic['method']) {
+			case 'floor':
+					$value = floor($value);
+				break;
+
+			case 'ceil':
+					$value =  ceil($value);
+				break;
+
+			case 'round':
+			default:
+					$value =  round($value, $precision);
+		}
+		return $value;
+	}
+
+}

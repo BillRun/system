@@ -41,7 +41,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
-				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
+				$returnData[] = Billrun_Utils_Mongo::convertRecordMongodloidDatetimeFields($rawItem);
 			}
 		} catch (\MongoException $e) {
 			$errorCode =  20;
@@ -83,15 +83,15 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$from = $input->get('from');
 		$this->queryInRange = true;
 		if ($from) {
-			$this->subscriberQuery['from'] = array('$lte' => new MongoDate(strtotime($from)));
+			$this->subscriberQuery['from'] = array('$lte' => new Mongodloid_Date(strtotime($from)));
 		} else {
-			$this->subscriberQuery['from']['$lte'] = new MongoDate();
+			$this->subscriberQuery['from']['$lte'] = new Mongodloid_Date();
 			$this->queryInRange = false;
 		}
 		if ($to) {
-			$this->subscriberQuery['to'] = array('$gte' => new MongoDate(strtotime($to)));
+			$this->subscriberQuery['to'] = array('$gte' => new Mongodloid_Date(strtotime($to)));
 		} else {
-			$this->subscriberQuery['to']['$gte'] = new MongoDate();
+			$this->subscriberQuery['to']['$gte'] = new Mongodloid_Date();
 			$this->queryInRange = false;
 		}
 	}

@@ -8,11 +8,17 @@ class Test_Case_10 {
         'aid' => 21,
         'sid' => 20,
         'function' => [
+            'checkForeignFileds',
             'basicCompare',
             'totalsPrice',
             'lineExists',
             'linesVSbillrun',
             'rounded',
+        ],
+        'checkForeignFileds' => [
+            'discount' => [
+                'foreign.discount.description' => 'ttt',
+            ],
         ],
         'options' => [
             'stamp' => '201806',

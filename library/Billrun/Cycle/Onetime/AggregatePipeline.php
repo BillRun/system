@@ -44,6 +44,8 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 				'vatable' => 1,
 				'price' => 1,
 				'recurrence.periodicity' => 1,
+				'recurrence.frequency' => 1,
+				'recurrence.start' => 1,
 				'plan_activation' => 1,
 				'plan_deactivation' => 1,
 				'include' => 1

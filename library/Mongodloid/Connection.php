@@ -8,7 +8,13 @@
 class Mongodloid_Connection {
 
 	protected $_connected = false;
+	
+	/**
+	 * the db connection class
+	 * @var MongoDB\Client
+	 */
 	protected $_connection = null;
+	
 	protected $_persistent = false;
 	protected $_server = '';
 	protected $_dbs = array();
@@ -16,11 +22,11 @@ class Mongodloid_Connection {
 	protected $username = '';
 	protected $password = '';
 	static public $availableReadPreferences = array(
-		MongoClient::RP_PRIMARY,
-		MongoClient::RP_PRIMARY_PREFERRED,
-		MongoClient::RP_SECONDARY,
-		MongoClient::RP_SECONDARY_PREFERRED,
-		MongoClient::RP_NEAREST,
+		MongoDB\Driver\ReadPreference::PRIMARY ,
+		MongoDB\Driver\ReadPreference::PRIMARY_PREFERRED ,
+		MongoDB\Driver\ReadPreference::SECONDARY,
+		MongoDB\Driver\ReadPreference::SECONDARY_PREFERRED,
+		MongoDB\Driver\ReadPreference::NEAREST,
 	);
 
 	/**
@@ -41,7 +47,12 @@ class Mongodloid_Connection {
 				}
 			}
 		}
-		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
+		if (!empty($options['refresh'])) {
+			$this->_connected = false;
+			$this->_dbs[$db] = null;
+		}
+		
+		if (empty($this->_dbs[$db]) || !$this->_dbs[$db]) {
 			if ($user) {
 				$this->username = $user;
 			}
@@ -50,7 +61,7 @@ class Mongodloid_Connection {
 			}
 			$options['db'] = $db;
 			$this->forceConnect($options);
-			$newDb = $this->_connection->selectDB($db);
+			$newDb = $this->_connection->selectDatabase($db);
 
 			$this->_dbs[$db] = $this->createInstance($newDb);
 		}
@@ -84,19 +95,24 @@ class Mongodloid_Connection {
 			$options['password'] = $this->password;
 		}
 
-		if (isset($options['readPreference'])) {
+		if (!empty($options['readPreference'])) {
 			$readPreference = $options['readPreference'];
+			if (substr($readPreference, 0, strlen('RP_')) == 'RP_') {
+				$readPreference = substr($readPreference, strlen('RP_'));
+			}
 			unset($options['readPreference']);
 		}
-
-		if (isset($options['tags'])) {
-			$tags = (array) $options['tags'];
-			unset($options['tags']);
-		} else {
-			$tags = array();
+		
+		if (!empty($readPreference) && defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
+			$options['readPreference'] = constant('MongoDB\Driver\ReadPreference::' . $readPreference);
 		}
 
-		if (isset($options['context'])) {
+		if (!empty($options['tags'])) {
+			$options['readPreferenceTags'] = (array) $options['tags'];
+			unset($options['tags']);
+		}
+
+		if (!empty($options['context'])) {
 			$driver_options = array(
 				'context' => @stream_context_create($options['context'])
 			);
@@ -105,13 +121,13 @@ class Mongodloid_Connection {
 		} else {
 			$driver_options = array();
 		}
-
-		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
-
-		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
-			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		
+		if(!empty($this->_server) && false === strpos($this->_server, '://')){
+			$this->_server = 'mongodb://' . $this->_server;
 		}
+		
+		// this can throw an Exception
+		$this->_connection = new MongoDB\Client($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
 		$this->_connected = true;
 	}
@@ -144,7 +160,7 @@ class Mongodloid_Connection {
 
 		settype($persistent, 'boolean');
 
-		if (!isset(self::$instances[$server_port]) || !self::$instances[$server_port]) {
+		if (empty(self::$instances[$server_port]) || !self::$instances[$server_port]) {
 			self::$instances[$server_port] = new static($server_port, $persistent);
 		}
 
@@ -160,4 +176,43 @@ class Mongodloid_Connection {
 		$this->_server = (string) $server;
 	}
 
+	/**
+	 * get PHP Mongodb client driver
+	 * @return MongoDB\Client
+	 */
+	protected function getClient() {
+		return $this->_connection;
+	}
+	
+	/**
+	 * method to start session and retrieve it
+	 * 
+	 * @return MongoDB\Driver\Session
+	 */
+	public function startSession() {
+		return $this->getClient()->getManager()->startSession();
+	}
+	
+	/**
+	 * method to get the MongoDB servers
+	 *
+	 * @return array of MongoDB\Driver\Server instances to which this manager is connected.
+	 */
+	public function getServers() {
+		return $this->getClient()->getManager()->getServers();
+ 	}
+
+}
+
+// deprecated classes; will be remove on version 6.0
+if (!class_exists('MongoRegex', false)) {
+	Class MongoRegex extends Mongodloid_Regex {}
+}
+
+if (!class_exists('MongoId', false)) {
+	Class MongoId extends Mongodloid_Id {}
+}
+
+if (!class_exists('MongoDate', false)) {
+	Class MongoDate extends Mongodloid_Date {}
 }

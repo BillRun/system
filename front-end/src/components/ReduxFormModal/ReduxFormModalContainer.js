@@ -68,7 +68,7 @@ const mapDispatchToProps = dispatch => ({
 const mergeProps = (stateProps, dispatchProps, ownProps) => {
   let dispatchPropsOverrides = {};
   if (stateProps.config && stateProps.config.get('skipConfirmOnClose', false)) {
-    dispatchPropsOverrides.closeModal = dispatchProps.hideModal();
+    dispatchPropsOverrides.closeModal = dispatchProps.hideModal(stateProps.config.get('onHide'));
   }  
   return ({
     ...stateProps,

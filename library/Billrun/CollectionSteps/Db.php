@@ -15,6 +15,11 @@
 class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	/**
+	 * default maximum number of aids sent per collection state change request
+	 */
+	const CHANGE_STATE_DEFAULT_BATCH_SIZE = 500;
+
+	/**
 	 * The instance of the DB collection.
 	 */
 	protected $collection;
@@ -86,18 +91,21 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$triggerDate = strtotime($do_after_days);
 		$triggerDate = $this->getClosestValidTime($triggerDate, $on_hours);
 		$triggerDate = $this->getClosestValidDate($triggerDate, $on_holidays, $on_days);
-		return new MongoDate($triggerDate);
+		return new Mongodloid_Date($triggerDate);
 	}
 
-	public function createCollectionSteps($aid) {
-		$steps = Billrun_Factory::config()->getConfigValue('collection.steps', Array());
-		$create_date = new MongoDate();
+	public function createCollectionSteps($aid, $process) {
+		$steps = $process['steps'] ?? [];
+		$processName = $process ['name'] ?? null;
+
+		$create_date = new Mongodloid_Date();
 		$newSteps = array();
 		foreach ($steps as $step) {
 			if ($step['active']) {
 				unset($step['active']);
 				$trigger_date = $this->getStepTriggerTime($step);
 				$newStep = array();
+				$newStep['process_name'] = $processName;
 				$newStep['step_code'] = $step['name'];
 				$newStep['step_type'] = $step['type'];
 				if(!empty($step['content'])){
@@ -124,12 +132,21 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 	}
 
-	public function removeCollectionSteps($aid) {
-		$query = array(
-			'extra_params.aid' => $aid,
-			'notify_time' => array('$exists' => false)
-		);
-		$this->collection->remove($query);
+	public function removeCollectionSteps($aidsQuery) {
+		try {
+			$query = array(
+				'extra_params.aid' => $aidsQuery,
+				'notify_time' => array('$exists' => false)
+			);
+			$res = $this->collection->remove($query);
+			if($res['n'] > 0){
+				Billrun_Factory::log('Removed '.$res['n'].' collection steps for query ' .  print_r($query, 1), Zend_Log::DEBUG);
+			}
+			return true;
+		} catch (Exception $e) {
+            Billrun_Factory::log('removeCollectionSteps failed for query: ' . print_r($query, 1) . '. Error: ' . $e->getCode() . " : " . $e->getMessage(), Zend_Log::NOTICE);
+			return false;
+		}
 	}
 
 	public function runCollectStep($aids = array()) {
@@ -155,8 +172,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$step_ttl = "-{$ttl_value} {$ttl_type}";
 		$query = array(
 			'trigger_date' => array(
-				'$lte' => new MongoDate(),
-				'$gte' => new MongoDate(strtotime($step_ttl)),
+				'$lte' => new Mongodloid_Date(),
+				'$gte' => new Mongodloid_Date(strtotime($step_ttl)),
 			),
 			'notify_time' => array('$exists' => false),
 		);
@@ -188,7 +205,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		);
 		$update = array(
 			'$set' => array(
-				'notify_time' => new MongoDate(),
+				'notify_time' => new Mongodloid_Date(),
 				'returned_value' => $response,
 			),
 		);
@@ -201,26 +218,45 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 
 	}
 	
-	public function runCollectionStateChange($aids, $in = true) {
+	public function runCollectionStateChange($aids, $in = true, $process) {
 		if (empty($aids)) {
 			return true;
 		}
-		$url = Billrun_Factory::config()->getConfigValue('collection.settings.change_state_url', '');
-		$method = Billrun_Factory::config()->getConfigValue('collection.settings.change_state_method', 'POST');
-		$step = array(
-			'step_code' => "collection state change",
-			'step_type' => "httpnoack",
-			'step_config' => array(
-				'url' => $url,
-				'method' => $method,
-			),
-			'extra_params'=> array(
-				'state' => $in ? 'in_collection' : 'out_of_collection',
-				'aids' => $aids,
-			),
-			'creation_time' => date('c')
-		);
-		return $this->runStep($step);
+		$url = $process['settings']['change_state_url'] ?? '';
+		$method = $process['settings']['change_state_method'] ?? 'POST';
+		$batchSize = intval($process['settings']['change_state_batch_size'] ??
+			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_batch_size', self::CHANGE_STATE_DEFAULT_BATCH_SIZE));
+		if ($batchSize <= 0) {
+			$batchSize = self::CHANGE_STATE_DEFAULT_BATCH_SIZE;
+		}
+		$state = $in ? 'in_collection' : 'out_of_collection';
+		$processName = $process['name'] ?? '';
+		$batches = array_chunk($aids, $batchSize);
+		$batchesCount = count($batches);
+		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
+		$result = true;
+		foreach ($batches as $index => $batchAids) {
+			Billrun_Factory::log('Collection state change: sending batch ' . ($index + 1) . '/' . $batchesCount . ' with ' . count($batchAids) . ' accounts (state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
+			$step = array(
+				'step_code' => "collection state change",
+				'step_type' => "httpnoack",
+				'step_config' => array(
+					'url' => $url,
+					'method' => $method,
+				),
+				'extra_params'=> array(
+					'state' => $state,
+					'aids' => $batchAids,
+					'process_name' => $processName
+				),
+				'creation_time' => date('c')
+			);
+			if ($this->runStep($step) === false) {
+				Billrun_Factory::log('Collection state change: batch ' . ($index + 1) . '/' . $batchesCount . ' failed (' . count($batchAids) . ' accounts, state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::ERR);
+				$result = false;
+			}
+		}
+		return $result;
 	}
 	
 	

@@ -96,7 +96,7 @@ class Billrun_Processor_Csv extends Billrun_Processor {
 								($row[$this->date_offset] > 0 ? "+" : "" ) . $row[$this->date_offset] : "00" ) . ':00';
 						$datetime = DateTime::createFromFormat($this->date_format, $row[$this->date_field] . $offset);
 					}
-					$row['urt'] = new MongoDate($datetime->format('U'));
+					$row['urt'] = new Mongodloid_Date($datetime->format('U'));
 					$row = array_merge($row, $parsed_row);
 					$this->data['data'][] = $row;
 
@@ -118,7 +118,7 @@ class Billrun_Processor_Csv extends Billrun_Processor {
 		$row['type'] = self::$type;
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = new MongoDate();
+		$row['process_time'] = new Mongodloid_Date();
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 
 		return $row;

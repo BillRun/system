@@ -21,11 +21,11 @@ class generat_plans extends generat_test_data
     //http://billrun/billapi/plans/create
     $plan = array_merge(
       [
-        "price" => [ json_encode(["price" => 1, "from" => 0, "to" => "UNLIMITED"])],
+        "price" => [ ["price" => 1, "from" => 0, "to" => "UNLIMITED"]],
         "from" => "2023-05-12",
-        "name" => "AA",
+        "name" => self::uniqueName('PLAN_'),
         "tax" => [["type" => "vat", "taxation" => "global"]],
-        "upfront" => true,
+        "upfront" => false,
         "recurrence" => ["frequency" => 1, "start" => 1],
         "prorated_end" => false,
         "rates" => [],

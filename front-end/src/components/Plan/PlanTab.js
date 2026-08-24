@@ -3,11 +3,12 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
 import isNumber from 'is-number';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import { PlanDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
-import { CreateButton } from '@/components/Elements';
+import { CreateButton, RecurrenceFrequency, RoundingRules } from '@/components/Elements';
 import PlanPrice from './components/PlanPrice';
 import { EntityFields } from '../Entity';
 import PlaysSelector from '../Plays/PlaysSelector';
@@ -21,22 +22,19 @@ export default class Plan extends Component {
 
   static propTypes = {
     plan: PropTypes.instanceOf(Immutable.Map).isRequired,
+    originalPlan: PropTypes.instanceOf(Immutable.Map).isRequired,
     mode: PropTypes.string.isRequired,
     onChangeFieldValue: PropTypes.func.isRequired,
     onRemoveField: PropTypes.func.isRequired,
     onPlanCycleUpdate: PropTypes.func.isRequired,
     onPlanTariffAdd: PropTypes.func.isRequired,
     onPlanTariffRemove: PropTypes.func.isRequired,
-    periodicityOptions: PropTypes.array,
     chargingModeOptions: PropTypes.array,
     errorMessages: PropTypes.object,
   }
 
   static defaultProps = {
-    periodicityOptions: [
-      { value: 'month', label: 'Monthly' },
-      { value: 'year', label: 'Yearly' }
-    ],
+    originalPlan: Immutable.Map(),
     chargingModeOptions: [
       { value: 'true', label: 'Upfront' },
       { value: 'false', label: 'Arrears' }
@@ -54,14 +52,7 @@ export default class Plan extends Component {
     },
   }
 
-  componentWillMount() {
-    const { plan } = this.props;
-    const count = plan.get('price', Immutable.List()).size;
-    if (count === 0) {
-      this.props.onPlanTariffAdd();
-    }
-  }
-
+  
   onPlanTrailTariffInit = (e) => {
     this.props.onPlanTariffAdd(true);
   }
@@ -73,7 +64,7 @@ export default class Plan extends Component {
   onChangePlanName = (e) => {
     const { errorMessages: { name: { allowedCharacters } } } = this.props;
     const { errors } = this.state;
-    const value = e.target.value.toUpperCase();
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
     const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
     this.setState({ errors: Object.assign({}, errors, { name: newError }) });
     this.props.onChangeFieldValue(['name'], value);
@@ -99,15 +90,6 @@ export default class Plan extends Component {
     }
   }
 
-  onChangePlanEach = (e) => {
-    let value = parseInt(e.target.value);
-    value = isNaN(value) ? '' : value;
-    this.props.onChangeFieldValue(['recurrence', 'unit'], value);
-  }
-
-  onChangePeriodicity = (value) => {
-    this.props.onChangeFieldValue(['recurrence', 'periodicity'], value);
-  }
 
   onPlanPriceUpdate = (index, value) => {
     const newValue = isNumber(value) ? parseFloat(value) : value;
@@ -183,17 +165,39 @@ export default class Plan extends Component {
     return prices;
   }
 
+  getProrationLabel = () => {
+    const { plan } = this.props;
+    let label = [];
+    if (plan.get('prorated_start', '') !== '') {
+      label.push(getFieldName('prorated_start', 'plan', ''));
+    }
+    if (plan.get('prorated_end', '') !== '') {
+      label.push(getFieldName('prorated_end', 'plan', ''));
+    }
+    if (plan.get('prorated_termination', '') !== '') {
+      label.push(getFieldName('prorated_termination', 'plan', ''));
+    }
+    return label.join(', ');
+  }
+  
+  componentDidMount() {
+    const { plan } = this.props;
+    const count = plan.get('price', Immutable.List()).size;
+    if (count === 0) {
+      this.props.onPlanTariffAdd();
+    }
+  }
+
   render() {
     const { errors } = this.state;
-    const { plan, mode, periodicityOptions, chargingModeOptions } = this.props;
-    const periodicity = plan.getIn(['recurrence', 'periodicity']) || '';
+    const { plan, mode, originalPlan, chargingModeOptions } = this.props;
     const upfront = typeof plan.get('upfront') !== 'boolean' ? '' : plan.get('upfront', '').toString();
     const editable = (mode !== 'view');
 
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
 
               <PlaysSelector
@@ -204,7 +208,7 @@ export default class Plan extends Component {
               />
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
                   <span className="danger-red"> *</span>
                   <Help contents={PlanDescription.description} />
@@ -216,7 +220,7 @@ export default class Plan extends Component {
 
               {['clone', 'create'].includes(mode) &&
                 <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('name', getFieldNameType('service'), sentenceCase('key'))}
                     <span className="danger-red"> *</span>
                     <Help contents={PlanDescription.name} />
@@ -228,24 +232,17 @@ export default class Plan extends Component {
                 </FormGroup>
               }
 
-              <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
-                  Billing Frequency
-                  <span className="danger-red"> *</span>
-                </Col>
-                <Col sm={4}>
-                  <Field
-                    fieldType="select"
-                    options={periodicityOptions}
-                    onChange={this.onChangePeriodicity}
-                    value={periodicity}
+              <RecurrenceFrequency
+                item={plan}
+                sourceItem={originalPlan}
+                itemName="plan"
                     editable={editable}
+                onChange={this.props.onChangeFieldValue}
+                onRemove={this.props.onRemoveField}
                   />
-                </Col>
-              </FormGroup>
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   Charging Mode
                   <span className="danger-red"> *</span>
                 </Col>
@@ -261,15 +258,14 @@ export default class Plan extends Component {
               </FormGroup>
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration‎</Col>
+                <Col as={ControlLabel} sm={3} lg={2}>Proration</Col>
                 <Col sm={8} lg={9} className="pt5">
                   <Field
                     fieldType="checkbox"
                     value={plan.get('prorated_start', '')}
                     onChange={this.onChangeProrated}
                     className="mr10 inline"
-                    label="Prorated start"
-                    editable={editable}
+                      label={getFieldName('prorated_start', 'plan', '')}
                     id="prorated_start"
                   />
                   <Field
@@ -277,8 +273,7 @@ export default class Plan extends Component {
                     value={plan.get('prorated_end', '')}
                     onChange={this.onChangeProrated}
                     className="mr10 inline"
-                    label="Prorate old plan charge on plan change"
-                    editable={editable}
+                      label={getFieldName('prorated_end', 'plan', '')}
                     id="prorated_end"
                   />
                   <Field
@@ -286,11 +281,15 @@ export default class Plan extends Component {
                     value={plan.get('prorated_termination', '')}
                     onChange={this.onChangeProrated}
                     className="inline"
-                    label="Prorate charge on termination"
-                    editable={editable}
+                      label={getFieldName('prorated_termination', 'plan', '')}
                     id="prorated_termination"
                   />
                 </Col>
+                {!editable && (
+                  <Col sm={8} lg={9} className="non-editable-field">
+                    {this.getProrationLabel()}
+                  </Col>
+                )}
               </FormGroup>
 
               <EntityFields
@@ -312,6 +311,12 @@ export default class Plan extends Component {
               <br />
               { editable && this.getAddPriceButton(false) }
             </Panel>
+
+            <RoundingRules
+              item={plan}
+              editable={editable}
+              onChangeFieldValue={this.props.onChangeFieldValue}
+            />
 
           </Form>
         </Col>

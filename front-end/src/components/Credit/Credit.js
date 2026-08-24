@@ -3,11 +3,12 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import moment from 'moment';
 import { Map, List } from 'immutable';
-import { Col, FormGroup, HelpBlock, Form, ControlLabel } from 'react-bootstrap';
+import { Col, Form } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { ModalWrapper } from '@/components/Elements';
 import Field from '@/components/Field';
-import { getRetailProductsWithRatesQuery, getSubscribersQuery } from '../../common/ApiQueries';
+import { getRetailProductsWithRatesQuery, getSubscribersByAidQuery } from '../../common/ApiQueries';
 import { getList } from '@/actions/listActions';
 import { getSettings } from '@/actions/settingsActions';
 import { creditCharge } from '@/actions/creditActions';
@@ -46,22 +47,22 @@ class Credit extends Component {
   };
 
   state = {
+    progress: false,
+    rateBy: 'fix',
     validationErrors: Map({
-      aprice: 'required',
+      aprice: '',
       usagev: '',
-      rate: 'required',
-      subscriber: 'required',
+      rate: '',
+      subscriber: '',
     }),
     helperMsg: Map({
       aprice: '',
     }),
-    paramKeyError: '',
-    rateBy: 'fix',
+    subscriber: '',
     aprice: '',
     usagev: 1,
     rate: '',
-    progress: false,
-    subscriber: '',
+    date: moment(),
   }
 
   componentDidMount() {
@@ -69,24 +70,36 @@ class Credit extends Component {
 
     this.props.dispatch(getList('all_retail_rates', getRetailProductsWithRatesQuery()));
     this.props.dispatch(getSettings('usage_types'));
-    this.props.dispatch(getList('subscribers_for_aid', getSubscribersQuery(aid)));
+    this.props.dispatch(getList('subscribers_for_aid', getSubscribersByAidQuery(aid)));
   }
 
   onChangeValue = (field, value) => {
-    const { validationErrors } = this.state;
-    const newState = {};
-    newState[field] = value;
-    if (value.length === 0) {
-      newState.validationErrors = validationErrors.set(field, 'required');
-    } else {
-      newState.validationErrors = validationErrors.set(field, '');
-    }
-    this.setState(newState);
+    this.validateValue(value, field);
+    this.setState(() => ({ [field] : value }));
   };
+
+
+  getFormValues = () => {
+    const { aprice, usagev, rate, subscriber } = this.state;
+    return Map({ subscriber, aprice, usagev, rate });
+  }
+
+  validateValue = (value, key) => {
+    const { rateBy } = this.state;
+    const isValid = value.length !== 0 || (key === 'aprice' && rateBy !== 'fix');
+    const error = isValid ? '' : 'Field is required';
+    this.setState((prevState) => ({ validationErrors : prevState.validationErrors.set(key, error) }));
+    return isValid;
+  }
+
+  validateForm = () => {
+    const values = this.getFormValues();
+    return values.every((value, key) => this.validateValue(value, key))
+  }
 
   updateChargingMessage = (usagev, aprice) => {
     const { currency } = this.props;
-    const { helperMsg, rateBy } = this.state;
+    const { rateBy } = this.state;
     if (rateBy !== 'fix') {
       return;
     }
@@ -95,7 +108,7 @@ class Credit extends Component {
     const msg = costValue >= 0
       ? `Subscriber will be charged by ${displayCost}`
       : `${displayCost} will be refunded to the subscriber`;
-    this.setState({ helperMsg: helperMsg.set('aprice', msg) });
+    this.setState((prevState) => ({ helperMsg: prevState.helperMsg.set('aprice', msg) }));
   }
 
   onChangeCreditUsagevValue = (e) => {
@@ -110,6 +123,10 @@ class Credit extends Component {
     const { usagev } = this.state;
     this.onChangeValue('aprice', value);
     this.updateChargingMessage(usagev, value);
+  }
+
+  onChangeDate = (value) => {
+    this.onChangeValue('date', value);
   }
 
   onChangeRateValue = (value) => {
@@ -128,7 +145,7 @@ class Credit extends Component {
       newState = {
         rateBy: value,
         usagev: 1,
-        validationErrors: validationErrors.set('aprice', 'required').set('usagev', ''),
+        validationErrors: validationErrors.set('usagev', ''),
         helperMsg: helperMsg.set('aprice', ''),
       };
     } else {
@@ -136,7 +153,7 @@ class Credit extends Component {
         rateBy: value,
         aprice: '',
         usagev: '',
-        validationErrors: validationErrors.set('aprice', '').set('usagev', 'required'),
+        validationErrors: validationErrors.set('aprice', ''),
         helperMsg: helperMsg.set('aprice', 'The refund amount will be calculated based on the volume'),
       };
     }
@@ -145,29 +162,28 @@ class Credit extends Component {
 
   onCreditCharge = () => {
     const { aid, propertyTypes, usageTypesData } = this.props;
-    const { rateBy, aprice, usagev, rate, validationErrors, subscriber } = this.state;
-    if (validationErrors.valueSeq().includes('required')) {
+    const { rateBy, aprice, usagev, rate, subscriber, date } = this.state;
+    this.setState({ progress: true });
+    if (!this.validateForm()) {
+      this.setState({ progress: false });
       return;
     }
-    const sid = (subscriber === 'account_level') ? 0 : subscriber;
 
     let params = [
       { aid },
-      { sid },
+      { sid: subscriber === 'account_level' ? 0 : subscriber },
       { rate },
-      { credit_time: moment().toISOString() },
+      { credit_time: date.toISOString() },
     ];
     if (rateBy === 'fix') {
-      params = [...params, { aprice }, { usagev }];
+      params.push({ aprice });
+      params.push({ usagev });
     } else {
       const selectedRate = this.getSelectedRate(rate);
       const usaget = getRateUsaget(selectedRate);
       const unit = getRateUnit(selectedRate, usaget);
-      params = [...params,
-        { usagev: getValueByUnit(propertyTypes, usageTypesData, usaget, unit, usagev) },
-      ];
+      params.push({ usagev: getValueByUnit(propertyTypes, usageTypesData, usaget, unit, usagev) });
     }
-    this.setState({ progress: true });
     this.props.dispatch(creditCharge(params)).then(this.afterCharge);
   };
 
@@ -181,23 +197,38 @@ class Credit extends Component {
   getAvailableRates = () => {
     const { allRates } = this.props;
     return allRates
-      .map(rate => ({ value: rate.get('key'), label: rate.get('key') }))
+      .map(rate => {
+        const key = rate.get('key', '');
+        const label = rate.get('description', rate.get('key', ''));
+        return ({
+          value: key,
+          label: key === label ? key : `${label} [${key}]`
+        })
+      })
       .toArray();
   }
 
   getSubscribersBySid = () => {
     const { subscribers } = this.props;
-    const sidsArray = subscribers
-      .map(subscriber => ({
-        value: subscriber.get('sid'),
-        label: subscriber.get('sid').toString()
-      }))
+    return subscribers
+      .map(subscriber => {
+        const sid = subscriber.get('sid', '')
+        const label = [
+            subscriber.get('firstname', ''),
+            subscriber.get('lastname', ''),
+          ]
+          .filter(val => val.length > 0)
+          .join(' ');
+        return ({
+          value: sid,
+          label: label.length > 0 ? `${label} [${sid}]` : `${sid}`,
+        })
+      })
+      .unshift({
+        value: 'account_level',
+        label: 'Account level'
+      })
       .toArray();
-    return [{
-      value: 'account_level',
-      label: 'account level' },
-      ...sidsArray
-    ];
   }
 
   getSelectedRate = rateKey => getRateByKey(this.props.allRates, rateKey);
@@ -212,7 +243,7 @@ class Credit extends Component {
   }
 
   render() {
-    const { rateBy, aprice, usagev, rate, validationErrors, helperMsg, progress, subscriber } = this.state;
+    const { rateBy, aprice, usagev, rate, validationErrors, helperMsg, progress, subscriber, date } = this.state;
     const availableRates = this.getAvailableRates();
     const subscribersForAid = this.getSubscribersBySid();
 
@@ -226,9 +257,9 @@ class Credit extends Component {
         onOk={this.onCreditCharge}
         onCancel={this.props.onClose}
       >
-        <Form horizontal>
-          <FormGroup>
-            <Col sm={2} componentClass={ControlLabel}>Rate By</Col>
+        <Form className="form-horizontal">
+          <FormGroup validationState={validationErrors.get('subscriber', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Rate By</Col>
             <Col sm={10}>
               <Col sm={3}>
                 <Field
@@ -255,8 +286,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('subscriber', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Subscriber</Col>
+          <FormGroup validationState={validationErrors.get('aprice', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Subscriber<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 fieldType="select"
@@ -268,8 +299,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('aprice', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Charge</Col>
+          <FormGroup validationState={validationErrors.get('usagev', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>Charge<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 onChange={this.onChangeCreditApriceValue}
@@ -285,8 +316,8 @@ class Credit extends Component {
             </Col>
           </FormGroup>
 
-          <FormGroup validationState={validationErrors.get('usagev', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>{rateBy === 'usagev' ? `Volume ${this.getRateUnitLabel(rate)}` : 'Quantity'}</Col>
+          <FormGroup validationState={validationErrors.get('rate', '').length > 0 ? 'error' : null}>
+            <Col sm={2} as={ControlLabel}>{rateBy === 'usagev' ? `Volume ${this.getRateUnitLabel(rate)}` : 'Quantity'} <span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 onChange={this.onChangeCreditUsagevValue}
@@ -298,7 +329,7 @@ class Credit extends Component {
           </FormGroup>
 
           <FormGroup validationState={validationErrors.get('rate', '').length > 0 ? 'error' : null}>
-            <Col sm={2} componentClass={ControlLabel}>Product</Col>
+            <Col sm={2} as={ControlLabel}>Product<span className="danger-red"> *</span></Col>
             <Col sm={10}>
               <Field
                 fieldType="select"
@@ -309,6 +340,19 @@ class Credit extends Component {
               { validationErrors.get('rate', '').length > 0 ? <HelpBlock>{validationErrors.get('rate', '')}</HelpBlock> : ''}
             </Col>
           </FormGroup>
+
+          <FormGroup>
+            <Col sm={2} as={ControlLabel}>Date<span className="danger-red"> *</span></Col>
+            <Col sm={10}>
+              <Field
+                fieldType="datetime"
+                value={date}
+                onChange={this.onChangeDate}
+                />
+              { validationErrors.get('date', '').length > 0 ? <HelpBlock>{validationErrors.get('date', '')}</HelpBlock> : ''}
+            </Col>
+          </FormGroup>
+
         </Form>
       </ModalWrapper>
     );

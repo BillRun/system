@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { Panel, Tabs, Tab } from 'react-bootstrap';
+import withRouter from '@/common/withRouter';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import moment from 'moment';
 import PlanTab from './PlanTab';
@@ -33,7 +34,7 @@ import {
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import { clearItems, getRevisions, clearRevisions } from '@/actions/entityListActions';
 import { showSuccess } from '@/actions/alertsActions';
-import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector } from '@/selectors/entitySelector';
+import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector, itemSourceSelector } from '@/selectors/entitySelector';
 
 
 class PlanSetup extends Component {
@@ -41,6 +42,7 @@ class PlanSetup extends Component {
   static propTypes = {
     itemId: PropTypes.string,
     item: PropTypes.instanceOf(Immutable.Map),
+    originalPlan: PropTypes.instanceOf(Immutable.Map),
     revisions: PropTypes.instanceOf(Immutable.List),
     mode: PropTypes.string,
     activeTab: PropTypes.oneOfType([
@@ -55,6 +57,7 @@ class PlanSetup extends Component {
 
   static defaultProps = {
     item: Immutable.Map(),
+    originalPlan: Immutable.Map(),
     revisions: Immutable.List(),
     activeTab: 1,
   };
@@ -66,11 +69,10 @@ class PlanSetup extends Component {
     progress: false,
   }
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, PlanSetup.entityName);
@@ -80,9 +82,19 @@ class PlanSetup extends Component {
   }
 
 
-  componentWillReceiveProps(nextProps) {
-    const { item, itemId, mode } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  shouldComponentUpdate(nextProps, nextState) {
+    return !Immutable.is(this.props.item, nextState.item)
+      || !Immutable.is(this.props.revisions, nextState.revisions)
+      || this.props.activeTab !== nextProps.activeTab
+      || this.props.itemId !== nextProps.itemId
+      || this.props.mode !== nextProps.mode;
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, itemId, mode } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, PlanSetup.entityName, item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -92,16 +104,9 @@ class PlanSetup extends Component {
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !Immutable.is(this.props.item, nextState.item)
-      || !Immutable.is(this.props.revisions, nextState.revisions)
-      || this.props.activeTab !== nextProps.activeTab
-      || this.props.itemId !== nextProps.itemId
-      || this.props.mode !== nextProps.mode;
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearPlan());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -222,7 +227,7 @@ class PlanSetup extends Component {
 
   render() {
     const { progress, activeTab } = this.state;
-    const { item, mode, revisions } = this.props;
+    const { item, mode, revisions, originalPlan } = this.props;
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
     }
@@ -249,12 +254,13 @@ class PlanSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} animation={false} id="PlanTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="PlanTab" onSelect={this.handleSelectTab}>
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>
               <PlanTab
                 mode={mode}
                 plan={item}
+                originalPlan={originalPlan}
                 onChangeFieldValue={this.onChangeFieldValue}
                 onRemoveField={this.onRemoveFieldValue}
                 onPlanCycleUpdate={this.onPlanCycleUpdate}
@@ -332,5 +338,6 @@ const mapStateToProps = (state, props) => ({
   mode: modeSelector(state, props, PlanSetup.entityName),
   activeTab: tabSelector(state, props, PlanSetup.entityName),
   revisions: revisionsSelector(state, props, PlanSetup.entityName),
+  originalPlan: itemSourceSelector(state, props, PlanSetup.entityName),
 });
 export default withRouter(connect(mapStateToProps)(PlanSetup));

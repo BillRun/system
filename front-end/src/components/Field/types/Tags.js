@@ -1,15 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import TagsInput from 'react-tagsinput';
+import TagsInput from './TagsInput';
 import Field from '@/components/Field';
 
 const Tags = (props) => {
-  const { editable, value, disabled, placeholder, onChange, inputProps, onlyUnique, ...otherProps } = props;
+  const { editable, value, disabled, placeholder, onChange, inputProps, onlyUnique, lineBreaks, ...otherProps } = props;
   const valueArr = Array.isArray(value) ? value : [value];
   if (!editable) {
-    const displayValue = valueArr.join(', ');
+    const displayValue = lineBreaks ? valueArr.join('.\n') : valueArr.join(', ');
     return (
-      <div className="non-editable-field">
+      <div className="non-editable-field" style={{ whiteSpace: 'pre-line' }}>
         {displayValue}
       </div>
     );
@@ -47,17 +47,6 @@ const Tags = (props) => {
   );
 };
 
-Tags.defaultProps = {
-  value: [],
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  inputProps: {},
-  onChange: () => {},
-  getTagDisplayValue: null,
-  onlyUnique: false,
-};
 
 Tags.propTypes = {
   value: PropTypes.oneOfType([

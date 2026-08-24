@@ -39,8 +39,16 @@ class Models_Users extends Models_Entity {
 				'$in' => array("admin")
 			),
 		);
+
+		$pipeline = [
+			['$match' => $adminQuery],
+			['$limit' => 2],
+			['$count' => 'numAdmins'],
+		];
+
+		$result = $usersColl->aggregate($pipeline)->current();
+		$numOfAdmin = isset($result['numAdmins']) ? $result['numAdmins'] : 0;
 		
-		$numOfAdmin = $usersColl->query($adminQuery)->cursor()->count();
 		if ($numOfAdmin <= 1 && $this->getOverrideAdminCondition($userToDelete)) {
 			throw new Exception("Can't delete the last active admin user");
 		}
