@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        procps \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.19.4 \
     && pecl install memcached \
