@@ -11,12 +11,15 @@ class AggregatorTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
+      //  $this->tester->enableDBModeSettings();
     }
+
+    
     public $defaultOptions = array(
         "type" => "customer",
         "stamp" => "202410",
@@ -322,6 +325,132 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         $this->assertEqualsWithDelta(117, $billrun['totals']['after_vat'],$this->epsilon);
     }
 
+
+      /**
+       * Summary of testServiceOverridesWith2Revisions
+       * overide service price only on the first revision ,the service exists in both revisions 
+       * @return void
+       */
+      public function testServiceOverridesWith2Revisions()
+  {
+
+        foreach (['A', 'B'] as $planName) {
+            $this->tester->generatePlan([
+                'name' => $planName,
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+
+        foreach (['SERVICE_A', 'SERVICE_B', 'SERVICE_C', 'SERVICE_D'] as $serviceName) {
+            $this->tester->generateService([
+                'name' => $serviceName,
+                'description' => "Service $serviceName",
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+        $this->defaultOptions['force_accounts'] = [5472];
+        $this->defaultOptions["stamp"] = "202608";
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => 5472));
+        $this->assertEqualsWithDelta(21.451612903225808, $billrun['totals']['before_vat'], $this->epsilon);
+  }
     
+ 
+      /**
+       * Summary of testServiceOverridesWith2RevisionsServicesOnlyInFirstRevision
+       * overide service price only on the first revision ,the service exists in firstrevisions 
+       * @return void
+       */
+      public function testServiceOverridesWith2RevisionsServicesOnlyInFirstRevision()
+  {
+
+        foreach (['A', 'B'] as $planName) {
+            $this->tester->generatePlan([
+                'name' => $planName,
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+
+        foreach (['SERVICE_A', 'SERVICE_B', 'SERVICE_C', 'SERVICE_D'] as $serviceName) {
+            $this->tester->generateService([
+                'name' => $serviceName,
+                'description' => "Service $serviceName",
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+        $this->defaultOptions['force_accounts'] = [5473];
+        $this->defaultOptions["stamp"] = "202608";
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => 5473));
+        $this->assertEqualsWithDelta(21.451612903225808, $billrun['totals']['before_vat'], $this->epsilon);
+  }
+
+
+
+      /**
+       * Summary of testServiceOverridesWith2RevisionServicesOnBothRevisionsOverrideOnlyOne
+       * overide 2 services price on the first revision and in second revision override only one,
+       * the service exists in both revisions 
+       * @return void
+       */
+      public function testServiceOverridesWith2RevisionServicesOnBothRevisionsOverrideOnlyOne()
+  {
+
+        foreach (['A', 'B'] as $planName) {
+            $this->tester->generatePlan([
+                'name' => $planName,
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+
+        foreach (['SERVICE_A', 'SERVICE_B', 'SERVICE_C', 'SERVICE_D'] as $serviceName) {
+            $this->tester->generateService([
+                'name' => $serviceName,
+                'description' => "Service $serviceName",
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+        $this->defaultOptions['force_accounts'] = [5474];
+        $this->defaultOptions["stamp"] = "202608";
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => 5474));
+        $this->assertEqualsWithDelta(26.451612903225808, $billrun['totals']['before_vat'], $this->epsilon);
+  }
     
 }
