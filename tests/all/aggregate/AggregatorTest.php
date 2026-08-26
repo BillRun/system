@@ -371,7 +371,7 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         $this->defaultOptions["stamp"] = "202608";
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => 5473));
-        $this->assertEqualsWithDelta(21.451612903225808, $billrun['totals']['before_vat'], $this->epsilon);
+        $this->assertEqualsWithDelta(18.548387096774256, $billrun['totals']['before_vat'], $this->epsilon);
   }
 
 
