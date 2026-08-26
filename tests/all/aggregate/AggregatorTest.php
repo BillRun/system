@@ -11,12 +11,15 @@ class AggregatorTest extends \Codeception\Test\Unit
     {
         ini_set('error_reporting', E_ALL & ~E_WARNING & ~E_NOTICE);
         $this->tester->enableExternalModeSettings();
-
+        $this->tester->cleanDB();
     }
 
     protected function _after()
     {
+      $this->tester->enableDBModeSettings();
     }
+
+    
     public $defaultOptions = array(
         "type" => "customer",
         "stamp" => "202410",
@@ -322,6 +325,56 @@ public function testDifferentDiscountAmountsForTheSamePlanDifferentSubs()
         $this->assertEqualsWithDelta(117, $billrun['totals']['after_vat'],$this->epsilon);
     }
 
-    
+
+  
+ 
+      /**
+       * Test 5473 - service and override exist only in the first revision.
+       * Subscriber has 2 revisions (plan A until 2026-07-10, then plan B).
+       * SERVICE_A and its price override exist only in the first revision
+       * (service "to" is ~100 years ahead); the second revision has neither.
+       * Expected: the service IS priced by the override, and the charge is
+       * prorated. (Before the fix it was priced without the override, also
+       * prorated - proration applies either way.)
+       * @return void
+       */
+      public function testServiceOverridesWith2RevisionsServicesOnlyInFirstRevision()
+  {
+
+        foreach (['A', 'B'] as $planName) {
+            $this->tester->generatePlan([
+                'name' => $planName,
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+
+        foreach (['SERVICE_A', 'SERVICE_B', 'SERVICE_C', 'SERVICE_D'] as $serviceName) {
+            $this->tester->generateService([
+                'name' => $serviceName,
+                'description' => "Service $serviceName",
+                "price" => [
+                    [
+                        "price" => 100,
+                        "from" => 0,
+                        "to" => "UNLIMITED"
+                    ]
+                ]
+            ]);
+        }
+        $this->defaultOptions['force_accounts'] = [5473];
+        $this->defaultOptions["stamp"] = "202608";
+        $this->tester->runCycle($this->defaultOptions);
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => 5473));
+        $this->assertEqualsWithDelta(18.548387096774256, $billrun['totals']['before_vat'], $this->epsilon);
+  }
+
+
+
     
 }
