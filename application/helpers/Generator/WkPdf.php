@@ -764,7 +764,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					$this->{$path} = !empty($options[$path]) ? $this->view_path . $options[$path] : $this->{$path};
 				}
 			} else {
-				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::ERR);
+				Billrun_Factory::log($segment . "_path / " . $segment . "_content wasn't set in config, checking if '" . $segment . "' field is set..", Zend_Log::DEBUG);
 				if (isset($options[$segment])) {
 					if ($enableCustomSegment) {
 						$options[$segment] = str_replace('<p>', "", $options[$segment]);

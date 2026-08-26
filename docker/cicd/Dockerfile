@@ -11,6 +11,7 @@ RUN apt-get update && \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        procps \
         python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
     && pecl install mongodb-2.3.1 \

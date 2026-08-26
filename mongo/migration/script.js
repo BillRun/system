@@ -132,8 +132,8 @@ lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 for (var i in lastConfig['file_types']) {
 	var rc = lastConfig['file_types'][i]['rate_calculators'];
 	if (!rc || typeof rc !== 'object') {
-		continue;
-	}
+				continue;
+			}
 
 	var firstKeys = Object.keys(rc);
 	if (firstKeys.length === 0) {
@@ -410,7 +410,7 @@ for (var field_key in fields) {
 	}
 	if (fields[field_key].field_name === "invoicing_day") {
 		fields[field_key].default_value = null;
-	}
+}
 }
 if (!found) {
 	fields.push({
@@ -2292,6 +2292,10 @@ runOnce(lastConfig, 'BRCD-4915', function () {
 // BRCD-5421: upfront reconciliation - load the previous cycle upfront lines.
 runOnce(lastConfig, 'BRCD-5421', function () {
 	db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1 }, { unique: false, sparse: false, background: true, partialFilterExpression: { 'is_upfront': true }});
+});
+
+runOnce(lastConfig, 'BRCD-4748', function () {
+	db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
 });
 
 db.config.insertOne(lastConfig);
