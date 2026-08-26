@@ -113,6 +113,7 @@ const Email = ({ data, onChange }) => {
                 label="Connect Mailer"
                 editable={true}
                 value={oauthData}
+                configPath="mailer.transport"
                 onChange={onOAuthChange}
               />
             </Col>

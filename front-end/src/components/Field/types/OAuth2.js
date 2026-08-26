@@ -10,14 +10,14 @@ import { saveOAuth2SettingsQuery } from '../../../common/ApiQueries';
 import { showSuccess, showDanger } from '../../../actions/alertsActions';
 
 const OAuth2 = (props) => {
-    const { value: propValue, onChange, editable = true, dispatch } = props;
+    const { value: propValue, onChange, editable = true, dispatch, configPath = '' } = props;
     const value = Immutable.Map.isMap(propValue) ? propValue : Immutable.fromJS(propValue || {});
     const [showModal, setShowModal] = useState(false);
     const [tempValue, setTempValue] = useState(value);
     const [tokenStatus, setTokenStatus] = useState(null);
     const [requestId, setRequestId] = useState(null);
     const REDIRECT_URI = `${window.location.origin}/api/oauth2refresh`;
-    const isDirty = !Immutable.is(value || Immutable.Map(), tempValue);
+    const isDirty = !Immutable.is((value || Immutable.Map()).delete('config_path'), tempValue.delete('config_path'));
 
     useEffect(() => {
         if (!requestId) return;
@@ -38,7 +38,8 @@ const OAuth2 = (props) => {
     }, [requestId]);
 
     const openModal = () => {
-        const val = Immutable.Map.isMap(value) ? value : Immutable.fromJS(value || {});
+        let val = Immutable.Map.isMap(value) ? value : Immutable.fromJS(value || {});
+        val = val.set('config_path', configPath || val.get('config_path', ''));
         setTempValue(val);
         setTokenStatus(null);
         setShowModal(true);
@@ -50,7 +51,7 @@ const OAuth2 = (props) => {
         const settingsData = tempValue.toJS();
 
         if (!settingsData.config_path) {
-            dispatch(showDanger('Missing Database Config Key. Cannot save.'));
+            dispatch(showDanger('OAuth2 field is missing a config path. Cannot save.'));
             return;
         }
 
@@ -91,7 +92,7 @@ const OAuth2 = (props) => {
             : (extraParams || {});
 
         if (!clientId || !authUrl || !configPath) {
-            dispatch(showDanger("Error: Auth URL, Client ID, and Config Key are required."));
+            dispatch(showDanger("Error: Auth URL, Client ID, and config path are required."));
             return;
         }
         const nonce = crypto.randomUUID();
@@ -158,12 +159,6 @@ const OAuth2 = (props) => {
                         />
                     </FormGroup>
 
-                    <Field
-                        value={tempValue.get('config_path', '')}
-                        onChange={(e) => onFieldChange('config_path', e)}
-                        style={{ display: 'none' }}
-                    />
-
                     <FormGroup>
                         <ControlLabel>Scope (Seperate by spaces)</ControlLabel>
                         <Field
@@ -223,6 +218,7 @@ OAuth2.propTypes = {
     value: PropTypes.instanceOf(Immutable.Map),
     onChange: PropTypes.func.isRequired,
     editable: PropTypes.bool,
+    configPath: PropTypes.string,
     dispatch: PropTypes.func.isRequired,
 };
 
