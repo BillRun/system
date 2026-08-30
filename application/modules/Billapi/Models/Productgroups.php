@@ -74,7 +74,8 @@ class Models_Productgroups extends Models_Entity {
 	}
 
 	/**
-	 * Abort the save when another products group contains exactly the same products.
+	 * Abort the save when another products group with the same property type
+	 * contains exactly the same products.
 	 *
 	 * @throws Billrun_Exceptions_Api
 	 */
@@ -92,6 +93,7 @@ class Models_Productgroups extends Models_Entity {
 		$to = isset($this->update['to']) ? $this->update['to'] : (isset($this->before['to']) ? $this->before['to'] : new Mongodloid_Date(strtotime(self::UNLIMITED_DATE)));
 		$query = array(
 			'key' => array('$ne' => $key),
+			'property_type' => $this->getUpdatedPropertyType(),
 			'rates' => array('$all' => $rates, '$size' => count($rates)),
 			'from' => array('$lt' => $to),
 			'to' => array('$gt' => $from),
@@ -100,6 +102,23 @@ class Models_Productgroups extends Models_Entity {
 		if (!$existing->isEmpty()) {
 			throw new Billrun_Exceptions_Api(2, array(), 'Products group "' . $existing['key'] . '" already contains exactly the same products');
 		}
+	}
+
+	/**
+	 * The property type the group will have after the current change.
+	 * null for a group without activity types - in a query it matches
+	 * documents without the property_type field.
+	 *
+	 * @return string|null
+	 */
+	protected function getUpdatedPropertyType() {
+		if (array_key_exists('property_type', $this->update)) {
+			return $this->update['property_type'];
+		}
+		if (array_key_exists('usage_types', $this->update)) {
+			return null;
+		}
+		return isset($this->before['property_type']) ? $this->before['property_type'] : null;
 	}
 
 	/**

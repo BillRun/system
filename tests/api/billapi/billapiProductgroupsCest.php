@@ -7,7 +7,7 @@ use function PHPUnit\Framework\assertArrayNotHasKey;
  * BRCD-5428 - products groups billapi entity:
  * - the group property type is derived from the first chosen activity type
  *   and all activity types must share it
- * - a group whose products are exactly the same as an existing group cannot be saved
+ * - a group whose products and property type are exactly the same as an existing group cannot be saved
  * - the property type cannot be changed after the group was saved
  */
 class billapiProductgroupsCest
@@ -135,6 +135,28 @@ class billapiProductgroupsCest
             'key' => $this->uniqueKey('PG'),
             'usage_types' => ['call'],
             'rates' => [$rate2, $rate1, $rate1],
+        ]);
+        $I->dontSeeResponseContains('"status":1');
+        $I->seeResponseContains('already contains exactly the same products');
+        // the same products under a different property type are a different group
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => ['data'],
+            'rates' => [$rate2, $rate1],
+        ]);
+        $I->seeResponseContains('"status":1');
+        // the same products with no activity types (null property type) are a different group
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => [],
+            'rates' => [$rate1, $rate2],
+        ]);
+        $I->seeResponseContains('"status":1');
+        // but two groups without a property type and the same products do collide
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => [],
+            'rates' => [$rate2, $rate1],
         ]);
         $I->dontSeeResponseContains('"status":1');
         $I->seeResponseContains('already contains exactly the same products');
@@ -330,6 +352,47 @@ class billapiProductgroupsCest
         // updating to a products set no other group has is allowed
         $I->sendBillapiUpdate('productgroups', ['_id' => $id], [
             'rates' => [$rate2],
+        ]);
+        $I->seeResponseContains('"status":1');
+    }
+
+    public function testRatesOnlyUpdateComparedUnderStoredPropertyType(ApiTester $I)
+    {
+        // an update that changes only the products carries no usage_types, so the
+        // duplicate check must use the group's stored property type - not null
+        $rate1 = $this->createProduct($I, 'call');
+        $rate2 = $this->createProduct($I, 'call');
+        $rate3 = $this->createProduct($I, 'call');
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => ['call'],
+            'rates' => [$rate1, $rate2],
+        ]);
+        $I->seeResponseContains('"status":1');
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => ['call'],
+            'rates' => [$rate3],
+        ]);
+        $I->seeResponseContains('"status":1');
+        $id = $this->getEntityId($I->getLastEntity());
+        // a rates-only update into the exact products set of another group with the
+        // same property type must not succeed
+        $I->sendBillapiUpdate('productgroups', ['_id' => $id], [
+            'rates' => [$rate2, $rate1],
+        ]);
+        $I->dontSeeResponseContains('"status":1');
+        $I->seeResponseContains('already contains exactly the same products');
+        // while the same products set held only by a group without a property type
+        // is not a duplicate for this "time" group
+        $I->generateProductsGroup([
+            'key' => $this->uniqueKey('PG'),
+            'usage_types' => [],
+            'rates' => [$rate1, $rate3],
+        ]);
+        $I->seeResponseContains('"status":1');
+        $I->sendBillapiUpdate('productgroups', ['_id' => $id], [
+            'rates' => [$rate3, $rate1],
         ]);
         $I->seeResponseContains('"status":1');
     }
