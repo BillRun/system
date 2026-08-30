@@ -93,8 +93,12 @@ class Billrun_Account_Db extends Billrun_Account {
 		];
 		$activeAidsRevs = $this->collection->aggregate($pipeline);
 		$activeAids = array_values(array_map(function($ar) { return $ar['aid'];},iterator_to_array($activeAidsRevs)));
-		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ], 'type' => ['$exists' => true]], $subsActiveQuery);
-		Billrun_Factory::dispatcher()->trigger('alterBillableDBSubcriberRevisionsQuery',[&$finalQuery, $accountsQuery , $page, $size, $aids, $invoicing_days, $subsActiveQuery ]);
+		// the billable accounts are selected by the current cycle only - the (possibly extended,
+		// see getBillableWindowEnd) revisions window below only adds the next cycle revisions of
+		// these accounts
+		$revisionsActiveQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $cycle->start()->sec, $this->getBillableWindowEnd($cycle));
+		$finalQuery = array_merge(['aid'=> ['$in' =>$activeAids ], 'type' => ['$exists' => true]], $revisionsActiveQuery);
+		Billrun_Factory::dispatcher()->trigger('alterBillableDBSubcriberRevisionsQuery',[&$finalQuery, $accountsQuery , $page, $size, $aids, $invoicing_days, $revisionsActiveQuery ]);
 		$results = $this->collection->query($finalQuery)->cursor()->setRawReturn(true)->sort([	'from' => -1]);
 		return iterator_to_array($results);
 

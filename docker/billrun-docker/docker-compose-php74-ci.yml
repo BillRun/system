@@ -32,13 +32,15 @@ services:
             - ${PLUGIN_PATH:-/dev/null}:/plugin
             - ./billrun-php74/composer.json:/billrun/composer.json:ro
             - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
+            # persistent composer cache, avoids GitHub rate limits (BRDO-192)
+            - /srv/ci-composer-cache:/tmp/composer
         healthcheck:
             test: ["CMD-SHELL", "test -f /tmp/composer-install-done || exit 1"]
             interval: 3s
             timeout: 3s
             retries: 5
-            start_period: 180s
-        command: sh -c "rm -f /tmp/composer-install-done; composer install --no-interaction --no-progress --prefer-dist && touch /tmp/composer-install-done && php-fpm"
+            start_period: 300s
+        command: sh -c "rm -f /tmp/composer-install-done; (composer install --no-interaction --no-progress --prefer-dist || (sleep 30 && composer install --no-interaction --no-progress --prefer-dist)) && touch /tmp/composer-install-done && exec php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb

@@ -326,12 +326,12 @@ class Segmentation extends Component {
                 id="frequency-unit"
                 title={sentenceCase(frequencyType)}
                 variant="outline-secondary"
+                onSelect={this.onSelectFrequencyUnit}
                 >
                 {frequencyOptions.map((option, idx) => (
                 <Dropdown.Item
                 key={idx}
                 eventKey={option}
-                onSelect={this.onSelectFrequencyUnit}
                 >
                 {sentenceCase(option)}
                 </Dropdown.Item>

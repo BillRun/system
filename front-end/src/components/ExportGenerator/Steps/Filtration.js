@@ -129,12 +129,12 @@ class Filtration extends Component {
               id="balance-period-unit"
               title={timeRangeSuffix}
               variant="outline-secondary"
+              onSelect={this.onSelectTimeRangeUnit}
               >
               {timeRangeOptions.map((timeRangeOption, idx) => (
               <Dropdown.Item
               key={idx}
               eventKey={timeRangeOption}
-              onSelect={this.onSelectTimeRangeUnit}
               >
               {sentenceCase(timeRangeOption)}
               </Dropdown.Item>

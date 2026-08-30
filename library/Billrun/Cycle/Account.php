@@ -105,7 +105,28 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$subscribersRevisions[$revSid] = $subRevisions;
 			}
 		}
-		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle());
+		$params = [];
+		if ($this->hasUpfrontLines($flatLines)) {
+			// BRCD-5421 - upfront plan lines are discounted over the next (upfront paid) cycle -
+			// build its revisions as well, for the next cycle eligibility
+			$upfrontCycle = Billrun_Plans_Charge_Upfront::getUpfrontCycle($this->cycleAggregator->getCycle());
+			$upfrontSubscribersRevisions = [];
+			foreach ($this->revisions as $revSid => $subscriberRevArr) {
+				$subRevisions = [];
+				foreach ($subscriberRevArr as $subscriberRev) {
+					if($subscriberRev['sid'] == 0) {
+						continue;
+					}
+					$subRevisions = array_merge( $subRevisions,
+								self::expandSubRevisions($subscriberRev, $upfrontCycle->start(), $upfrontCycle->end(), $services) );
+				}
+				if(!empty($subRevisions)) {
+					$upfrontSubscribersRevisions[$revSid] = $subRevisions;
+				}
+			}
+			$params['upfront_subscribers_revisions'] = $upfrontSubscribersRevisions;
+		}
+		$dm = new Billrun_DiscountManager($accountRevs, $subscribersRevisions, $this->cycleAggregator->getCycle(), $params);
 		$this->discounts = $dm->generateCdrs($flatLines);
 		foreach ($this->discounts as &$cdr) {
 			$cdr = is_array($cdr) ? new Mongodloid_Entity($cdr) : $cdr;
@@ -114,6 +135,21 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 
 	//---------------------------------- Protected ------------------------------------
+
+	/**
+	 * Does the account have upfront plan lines in the current run? (BRCD-5421)
+	 * @param array $flatLines
+	 * @return boolean
+	 */
+	protected function hasUpfrontLines($flatLines) {
+		foreach ($flatLines as $flatLine) {
+			if (!empty($flatLine['is_upfront'])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Break revision to sub-revisions  based on changes in dated fields such as services / plans
 	 */

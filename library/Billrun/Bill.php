@@ -153,7 +153,44 @@ abstract class Billrun_Bill {
 		return NULL;
 	}
 
+	/**
+	 * Whether the given raw bill data represents a voided bill - rejected,
+	 * cancelled or denied. This is the logical complement of
+	 * getNotRejectedOrCancelledQuery().
+	 *
+	 * @param array $rawData
+	 * @return bool
+	 */
+	public static function isVoidedBill(array $rawData) {
+		return (($rawData['rejected'] ?? null) === true)
+			|| (($rawData['rejection'] ?? null) === true)
+			|| (($rawData['cancelled'] ?? null) === true)
+			|| array_key_exists('cancel', $rawData)
+			|| (($rawData['is_denial'] ?? null) === true)
+			|| array_key_exists('denied_by', $rawData);
+	}
+
+	/**
+	 * Zero left / left_to_pay on a voided bill, so it carries no
+	 * positive balance; no-op otherwise. Call where the void flag is set.
+	 *
+	 * @return $this
+	 */
+	public function zeroVoidedBalance() {
+		$rawData = $this->getRawData();
+		if (self::isVoidedBill($rawData)) {
+			foreach (array('left', 'left_to_pay') as $field) {
+				if (array_key_exists($field, $rawData) && $rawData[$field] > 0) {
+					$this->data[$field] = 0;
+				}
+			}
+		}
+		return $this;
+	}
+
 	public function save() {
+		// A voided bill must never keep a positive left / left_to_pay.
+		$this->zeroVoidedBalance();
 		try{
 			$res = $this->data->save(1);
 			if(!$res){
@@ -1215,15 +1252,16 @@ abstract class Billrun_Bill {
 		return (isset($this->data['pending']) && $this->data['pending']);
 	}
 	
-	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null, $afterGroupMatch = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
-		$filters = array_merge($filters, $nonRejectedOrCanceled);
+		$match = array('$match' => array());
 		if (!empty($filters)) {
-			$match = array(
-				'$match' => $filters
-			);
+			$match['$match'] = $filters;
 		}
+		// $and (not array_merge) so the not-rejected/cancelled conditions never
+		// overwrite a caller filter that uses one of the voided fields.
+		$match['$match']['$and'][] = $nonRejectedOrCanceled;
 		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
@@ -1233,23 +1271,42 @@ abstract class Billrun_Bill {
 				array('left' => array('$gt' => 0)),
 		));
 		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'charge.not_before' => -1,
-			),
-		);
+		
 		$pipelines[] = array(
 			'$addFields' => array(
 				'method' => 'automatic',
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
-		
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => 'automatic',
+				// We concatenate with an empty string to force everything to become a String type
+				'unique_id_str' => array(
+					'$concat' => array(
+						array('$substr' => array(array('$ifNull' => array('$invoice_id', '$txid')), 0, -1)),
+						""
+					)
+				),
+			),
+		);
+
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
 
+		// Keyset pagination: resume strictly after the previous batch. See TransactionsRequest::getAlreadyLoadedQuery.
+		if (!is_null($afterGroupMatch)) {
+			$pipelines[] = array('$match' => $afterGroupMatch);
+		}
+
+		// The chargeability filter below (non-zero due, no suspend_debit) must run
+		// BEFORE the $sort/$limit stages: with a $limit (max_records_per_batch) in
+		// place, a group dropped only after the $limit would still consume a batch
+		// slot, so the caller would get back a partial batch while chargeable
+		// bills remain - and the batched loader (TransactionsRequest::load, which
+		// keeps pulling only while a batch comes back full) would wrongly conclude
+		// the bills are exhausted and stop charging early.
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 1,
@@ -1273,6 +1330,7 @@ abstract class Billrun_Bill {
 				'invoice_id' => 1,
 				'txid' => 1,
 				'unique_id' => 1,
+				'unique_id_str' => 1,
 			),
 		);
 		
@@ -1285,6 +1343,22 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
+
+		// Order by the max invoice_id / txid (unique_id_str) of the group, newest
+		// first. txid is left zero-padded (leading '0') while invoice_id is an
+		// unpadded number (leading '1'-'9'), so this also keeps invoice groups
+		// ahead of txid groups without an explicit 'type' key. invoice_id and txid
+		// are each unique auto-increment sequences, so unique_id_str is a total
+		// order on its own - which the keyset pagination above relies on.
+		$pipelines[] = [
+			'$sort' => array('unique_id_str' => -1)
+		];
+		if(!is_null($limit)){
+			$pipelines[] = array(
+				'$limit' => $limit
+			);
+		}
+
 		
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
@@ -1347,7 +1421,12 @@ abstract class Billrun_Bill {
                                                 'urt' => '$urt'
 					)
 				),
-			);	
+				// max invoice_id / txid (as string) of the grouped bills - used to
+				// order the aggregate result for both pay modes.
+				'unique_id_str' => array(
+					'$max' => '$unique_id_str',
+				),
+			);
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
 			$group['unique_id'] = array('$first' => '$unique_id');
