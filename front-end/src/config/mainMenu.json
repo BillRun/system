@@ -1,18 +1,18 @@
 {
   "products": {
     "title": "Products",
-    "icon": "fa-book",
+    "icon": "",
     "route": "products",
     "show": true,
     "roles": [],
-    "order":1,
-    "parent": "root"
+    "order": 0,
+    "parent": "postpaid"
   },
   "prepaid": {
     "title": "Prepaid",
     "icon": "fa-cubes",
     "route": "",
-    "show": true,
+    "show": false,
     "roles": [],
     "order":2,
     "parent": "root"
@@ -54,7 +54,7 @@
     "parent":"prepaid"
   },
   "postpaid": {
-    "title": "Postpaid",
+    "title": "Product Catalog",
     "icon": "fa-puzzle-piece",
     "route": "",
     "show": true,
@@ -69,7 +69,7 @@
     "route": "plans",
     "show": true,
     "roles": [],
-    "order": 0,
+    "order": 1,
     "parent": "postpaid"
   },
   "services": {
@@ -78,7 +78,7 @@
     "route": "services",
     "show": true,
     "roles": [],
-    "order": 1,
+    "order": 2,
     "parent": "postpaid"
   },
   "discounts": {
@@ -87,7 +87,7 @@
     "route": "discounts",
     "show": true,
     "roles": [],
-    "order": 2,
+    "order": 3,
     "parent": "postpaid"
   },
   "charges": {
@@ -96,7 +96,7 @@
     "route": "charges",
     "show": true,
     "roles": [],
-    "order": 2,
+    "order": 4,
     "parent": "postpaid"
   },
   "customers": {
