@@ -114,21 +114,28 @@ class Models_Services extends Models_Entity {
 			return;
 		}
 		$entries = $this->update['include']['products_groups'];
-		if (!is_array($entries)) {
+		// a list is expected - an associative or gapped array is unexpected input and is
+		// rejected rather than silently reindexed, so a caller sending the wrong shape
+		// is told about it instead of having it stored as a mongo object
+		if (!is_array($entries) || $entries !== array_values($entries)) {
 			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'include.products_groups must be a list of products groups');
 		}
-		$entries = array_values($entries);
-		$this->update['include']['products_groups'] = $entries;
+		// array_column drops entries that are not an array or carry no key, so a count
+		// mismatch means at least one entry has no products group to reference
+		$keys = array_column($entries, 'key');
+		if (count($keys) !== count($entries) || in_array('', $keys, true)) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Each included products group must have a key');
+		}
 		$usedKeys = array();
 		foreach ($entries as $entry) {
-			if (!is_array($entry) || empty($entry['key']) || !is_string($entry['key'])) {
-				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Each included products group must have a key');
-			}
 			$key = $entry['key'];
-			if (in_array($key, $usedKeys)) {
+			// including the same products group more than once does not seem to be needed,
+			// so it is deliberately limited to a single entry per group - this is a product
+			// decision and not a technical constraint, it can be relaxed if a need comes up
+			if (isset($usedKeys[$key])) {
 				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '" cannot be included more than once');
 			}
-			$usedKeys[] = $key;
+			$usedKeys[$key] = true;
 			$productsGroup = $this->getReferencedProductsGroup($key);
 			if ($productsGroup->isEmpty()) {
 				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Unknown products group: ' . $key);
@@ -200,14 +207,16 @@ class Models_Services extends Models_Entity {
 		if (!is_array($beforeEntries)) {
 			return;
 		}
+		// the saved entries indexed by their products group key, to look each new entry
+		// up directly instead of scanning the saved list for every one of them
+		$beforeByKey = array_column($beforeEntries, null, 'key');
 		foreach ($entries as $entry) {
-			foreach ($beforeEntries as $beforeEntry) {
-				if (!is_array($beforeEntry) || !isset($beforeEntry['key']) || $beforeEntry['key'] !== $entry['key']) {
-					continue;
-				}
-				if (array_key_exists('cost', $entry) !== array_key_exists('cost', $beforeEntry)) {
-					throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $entry['key'] . '": the quota cannot be changed from usage based to monetary based or vice versa');
-				}
+			$key = $entry['key'];
+			if (!isset($beforeByKey[$key])) {
+				continue;
+			}
+			if (array_key_exists('cost', $entry) !== array_key_exists('cost', $beforeByKey[$key])) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": the quota cannot be changed from usage based to monetary based or vice versa');
 			}
 		}
 	}

@@ -79,7 +79,9 @@ class Models_Productgroups extends Models_Entity {
 	 * The products picker offers only products of the chosen activity types, but that
 	 * filter is bypassed by clearing the activity types, picking products of another
 	 * property type and choosing the original activity types again before saving.
-	 * Products that do not exist are left to the entity validation.
+	 * Only revisions of the product overlapping the group revision are considered, so a
+	 * product with no revision priced for the property type during the group revision -
+	 * including a product that does not exist at all - is reported too.
 	 *
 	 * @throws Billrun_Exceptions_Api
 	 */
@@ -101,13 +103,22 @@ class Models_Productgroups extends Models_Entity {
 			// the property type has no activity types to price a product by
 			return;
 		}
-		$ratesCollection = Billrun_Factory::db()->ratesCollection();
-		$existing = $ratesCollection->distinct('key', array('key' => array('$in' => $rates)));
-		$matching = $ratesCollection->distinct('key', array(
-			'key' => array('$in' => $rates),
-			'$or' => $usagetConditions,
-		));
-		$mismatched = array_values(array_diff($existing, $matching));
+		list($from, $to) = $this->getRevisionBounds();
+		// the products priced for at least one activity type of the group property type,
+		// in a revision overlapping the group revision
+		$pipeline = array(
+			array('$match' => array(
+				'key' => array('$in' => $rates),
+				'from' => array('$lt' => $to),
+				'to' => array('$gt' => $from),
+				'$or' => $usagetConditions,
+			)),
+			array('$group' => array('_id' => '$key')),
+		);
+		// setRawReturn so the cursor yields plain arrays that array_column can read
+		$results = Billrun_Factory::db()->ratesCollection()->aggregate($pipeline)->setRawReturn(true);
+		$priced = array_column(iterator_to_array($results, false), '_id');
+		$mismatched = array_values(array_diff($rates, $priced));
 		if (!empty($mismatched)) {
 			$plural = count($mismatched) > 1;
 			throw new Billrun_Exceptions_Api(3, array(), ($plural ? 'Products "' : 'Product "') . implode('", "', $mismatched) . ($plural ? '" are' : '" is') . ' not of the products group property type "' . $propertyType . '"');
@@ -130,8 +141,7 @@ class Models_Productgroups extends Models_Entity {
 			return;
 		}
 		$key = isset($this->update['key']) ? $this->update['key'] : (isset($this->before['key']) ? $this->before['key'] : '');
-		$from = isset($this->update['from']) ? $this->update['from'] : (isset($this->before['from']) ? $this->before['from'] : new Mongodloid_Date());
-		$to = isset($this->update['to']) ? $this->update['to'] : (isset($this->before['to']) ? $this->before['to'] : new Mongodloid_Date(strtotime(self::UNLIMITED_DATE)));
+		list($from, $to) = $this->getRevisionBounds();
 		$query = array(
 			'key' => array('$ne' => $key),
 			'property_type' => $this->getUpdatedPropertyType(),
@@ -162,6 +172,18 @@ class Models_Productgroups extends Models_Entity {
 			return null;
 		}
 		return isset($this->before['property_type']) ? $this->before['property_type'] : null;
+	}
+
+	/**
+	 * The revision boundaries the current change will have, used to compare
+	 * the group only against revisions of other entities overlapping it.
+	 *
+	 * @return array [$from, $to]
+	 */
+	protected function getRevisionBounds() {
+		$from = isset($this->update['from']) ? $this->update['from'] : (isset($this->before['from']) ? $this->before['from'] : new Mongodloid_Date());
+		$to = isset($this->update['to']) ? $this->update['to'] : (isset($this->before['to']) ? $this->before['to'] : new Mongodloid_Date(strtotime(self::UNLIMITED_DATE)));
+		return array($from, $to);
 	}
 
 	/**
