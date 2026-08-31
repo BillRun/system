@@ -558,6 +558,61 @@ export const getGroupUnit = group => (isGroupMonetaryBased(group)
   ? 'cost'
   : group.get('usage_types', Immutable.Map()).valueSeq().get(0, Immutable.Map()).get('unit', false));
 
+export const getUomByPropertyType = (propertyTypes, propertyType) =>
+  (propertyTypes.find(prop => prop.get('type', '') === propertyType) || Immutable.Map()).get('uom', Immutable.List());
+
+export const getUnitLabelByPropertyType = (propertyTypes, propertyType, unit) =>
+  (getUomByPropertyType(propertyTypes, propertyType)
+    .find(uom => uom.get('name', '') === unit) || Immutable.Map()).get('label', unit);
+
+/**
+ * Convert the include.products_groups references of a service fetched from the API
+ * into the include.groups shape the Events / Reports screens consume.
+ * The products of the group and its activity types are taken from the referenced
+ * products group, keyed by its key.
+ * There is no backward compatibility to the old include.groups structure - of the
+ * groups stored there only the service counters, which were not moved to products
+ * groups, are kept.
+ * Operates on the plain (not immutable) service object.
+ */
+export const mergeServiceProductsGroupsIncludes = (service, productsGroupsByKey) => {
+  const include = service.include || {};
+  const entries = Array.isArray(include.products_groups) ? include.products_groups : [];
+  const oldGroups = (include.groups && !Array.isArray(include.groups)) ? include.groups : {};
+  const groups = {};
+  Object.keys(oldGroups).forEach((groupName) => {
+    if (oldGroups[groupName] && oldGroups[groupName].counter_only) {
+      groups[groupName] = oldGroups[groupName];
+    }
+  });
+  entries.forEach((entry) => {
+    if (!entry || !entry.key) {
+      return;
+    }
+    const productsGroup = productsGroupsByKey[entry.key] || {};
+    const group = {
+      account_shared: entry.account_shared || false,
+      account_pool: entry.account_pool || false,
+      quantity_affected: entry.quantity_affected || false,
+      rates: productsGroup.rates || [],
+    };
+    if (Object.prototype.hasOwnProperty.call(entry, 'cost')) {
+      group.cost = entry.cost;
+    } else {
+      group.value = entry.value;
+      group.unit = entry.unit;
+      group.usage_types = {};
+      (productsGroup.usage_types || []).forEach((usageType) => {
+        group.usage_types[usageType] = { unit: entry.unit };
+      });
+    }
+    groups[entry.key] = group;
+  });
+  return Object.assign({}, service, {
+    include: Object.assign({}, include, { groups }),
+  });
+};
+
 export const getPlanConvertedIncludes = (propertyTypes, usageTypes, item, toBaseUnit = true) => {
   const convertedIncludes = item.get('include', Immutable.Map()).withMutations((includesWithMutations) => {
     includesWithMutations.get('groups', Immutable.Map()).forEach((include, group) => {

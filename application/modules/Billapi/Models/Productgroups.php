@@ -19,6 +19,7 @@ class Models_Productgroups extends Models_Entity {
 		if (in_array($this->action, array('create', 'update', 'closeandnew', 'permanentchange'))) {
 			$this->validateUsageTypes();
 			$this->validatePropertyTypeUnchanged();
+			$this->validateRatesPropertyType();
 			$this->validateUniqueRates();
 		}
 	}
@@ -74,6 +75,46 @@ class Models_Productgroups extends Models_Entity {
 	}
 
 	/**
+	 * Every product of the group must be priced for the group's property type.
+	 * The products picker offers only products of the chosen activity types, but that
+	 * filter is bypassed by clearing the activity types, picking products of another
+	 * property type and choosing the original activity types again before saving.
+	 * Products that do not exist are left to the entity validation.
+	 *
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function validateRatesPropertyType() {
+		if (!array_key_exists('rates', $this->update)) {
+			return;
+		}
+		$rates = array_values(array_unique((array) $this->update['rates']));
+		$propertyType = $this->getUpdatedPropertyType();
+		if (empty($rates) || empty($propertyType)) {
+			// a group without a property type is not limited to products of one property type
+			return;
+		}
+		$usagetConditions = array();
+		foreach (Billrun_Utils_Units::getUsagetsByPropertyType($propertyType) as $usaget) {
+			$usagetConditions[] = array('rates.' . $usaget => array('$exists' => true));
+		}
+		if (empty($usagetConditions)) {
+			// the property type has no activity types to price a product by
+			return;
+		}
+		$ratesCollection = Billrun_Factory::db()->ratesCollection();
+		$existing = $ratesCollection->distinct('key', array('key' => array('$in' => $rates)));
+		$matching = $ratesCollection->distinct('key', array(
+			'key' => array('$in' => $rates),
+			'$or' => $usagetConditions,
+		));
+		$mismatched = array_values(array_diff($existing, $matching));
+		if (!empty($mismatched)) {
+			$plural = count($mismatched) > 1;
+			throw new Billrun_Exceptions_Api(3, array(), ($plural ? 'Products "' : 'Product "') . implode('", "', $mismatched) . ($plural ? '" are' : '" is') . ' not of the products group property type "' . $propertyType . '"');
+		}
+	}
+
+	/**
 	 * Abort the save when another products group with the same property type
 	 * contains exactly the same products.
 	 *
@@ -100,7 +141,9 @@ class Models_Productgroups extends Models_Entity {
 		);
 		$existing = $this->collection->query($query)->cursor()->limit(1)->current();
 		if (!$existing->isEmpty()) {
-			throw new Billrun_Exceptions_Api(2, array(), 'Products group "' . $existing['key'] . '" already contains exactly the same products');
+			$propertyType = $this->getUpdatedPropertyType();
+			$propertyTypeLabel = empty($propertyType) ? 'without a property type' : 'of property type "' . $propertyType . '"';
+			throw new Billrun_Exceptions_Api(2, array(), 'Products group "' . $existing['key'] . '" ' . $propertyTypeLabel . ' already contains exactly the same products');
 		}
 	}
 

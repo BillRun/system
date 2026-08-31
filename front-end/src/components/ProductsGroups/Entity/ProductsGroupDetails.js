@@ -76,6 +76,23 @@ class ProductsGroupDetails extends Component {
     return item.get('property_type', '');
   }
 
+  /**
+   * the activity types the products are searched by: the chosen ones, or - while none
+   * is chosen - all the activity types of the group property type, so that clearing the
+   * activity types can not be used to add products of another property type.
+   */
+  getProductsUsageTypes = () => {
+    const { usageTypesData } = this.props;
+    const selectedUsageTypes = this.getSelectedUsageTypes();
+    const propertyType = this.getPropertyType();
+    if (!selectedUsageTypes.isEmpty() || propertyType === '') {
+      return selectedUsageTypes;
+    }
+    return usageTypesData
+      .filter(usageType => usageType.get('property_type', '') === propertyType)
+      .map(usageType => usageType.get('usage_type', ''));
+  }
+
   onChangeUsageType = index => (usageType) => {
     const usageTypes = this.getUsageTypes();
     if (index === 0 && this.isNew()) {
@@ -184,7 +201,7 @@ class ProductsGroupDetails extends Component {
     const { errors } = this.state;
     const { item, mode } = this.props;
     const editable = (mode !== 'view');
-    const selectedUsageTypes = this.getSelectedUsageTypes();
+    const productsUsageTypes = this.getProductsUsageTypes();
     return (
       <Form className="form-horizontal">
         <FormGroup>
@@ -220,7 +237,7 @@ class ProductsGroupDetails extends Component {
           <Col sm={8} lg={9}>
             <ProductSearchByUsagetype
               products={item.get('rates', Immutable.List())}
-              usages={selectedUsageTypes}
+              usages={productsUsageTypes}
               onChangeGroupRates={this.onChangeProducts}
               disabled={!editable}
             />

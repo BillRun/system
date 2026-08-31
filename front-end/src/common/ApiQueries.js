@@ -356,6 +356,27 @@ export const getGroupsQuery = collection => ({
   ],
 });
 
+// include.groups is matched for the service counters that are still stored there,
+// not for backward compatibility to the old include groups structure
+export const getServicesGroupsQuery = () => ({
+  action: 'uniqueget',
+  entity: 'services',
+  params: [
+    { query: JSON.stringify({
+      $or: [
+        { 'include.groups': { $exists: true } },
+        { 'include.products_groups': { $exists: true } },
+      ],
+    }) },
+    { project: JSON.stringify({
+      name: 1,
+      include: 1,
+    }) },
+    { page: 0 },
+    { size: 9999 },
+  ],
+});
+
 export const getPlaysQuery = () => ({
   action: 'uniqueget',
   entity: 'subscribers',
@@ -456,9 +477,16 @@ export const getIncludedServicesKeysQuery = () => getEntitesQuery('services', { 
 });
 export const getPlansKeysQuery = (project = { name: 1, description: 1 }, query = {}, sort = { name: 1 }) => getEntitesQuery('plans', project, query, sort);
 export const getUserKeysQuery = () => getEntitesQuery('users', { username: 1 });
+export const getProductsGroupsOptionsQuery = () => getEntitesQuery(
+  'productgroups',
+  { key: 1, description: 1, property_type: 1, usage_types: 1, rates: 1 },
+  {},
+  { key: 1 },
+);
 export const getAllGroupsQuery = () => ([
   getGroupsQuery('plans'),
-  getGroupsQuery('services'),
+  getServicesGroupsQuery(),
+  getProductsGroupsOptionsQuery(),
 ]);
 export const getBucketGroupsQuery = () => getEntitesQuery('prepaidgroups');
 export const getTaxRatesQuery = getEntitesQuery('taxes', { key: 1, description: 1 });
