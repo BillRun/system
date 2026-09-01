@@ -27,10 +27,16 @@ class ProductsGroupDetails extends Component {
     onFieldRemove: PropTypes.func.isRequired,
     usageTypesData: PropTypes.instanceOf(Immutable.List),
     errorMessages: PropTypes.object,
+    // a monetary based group is not limited to a property type: the activity types
+    // cannot be chosen and the products are not filtered by them
+    monetaryBased: PropTypes.bool,
+    plays: PropTypes.string,
   }
 
   static defaultProps = {
     usageTypesData: Immutable.List(),
+    monetaryBased: false,
+    plays: '',
     errorMessages: {
       key: {
         allowedCharacters: 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)',
@@ -82,7 +88,10 @@ class ProductsGroupDetails extends Component {
    * activity types can not be used to add products of another property type.
    */
   getProductsUsageTypes = () => {
-    const { usageTypesData } = this.props;
+    const { usageTypesData, monetaryBased } = this.props;
+    if (monetaryBased) {
+      return Immutable.List();
+    }
     const selectedUsageTypes = this.getSelectedUsageTypes();
     const propertyType = this.getPropertyType();
     if (!selectedUsageTypes.isEmpty() || propertyType === '') {
@@ -133,7 +142,8 @@ class ProductsGroupDetails extends Component {
   }
 
   renderUsageTypes = (editable) => {
-    const { mode } = this.props;
+    const { monetaryBased } = this.props;
+    const usageTypesEditable = editable && !monetaryBased;
     // a saved group with no activity types has a null property type,
     // which can not be changed after the group was saved
     const lockedWithoutUsageTypes = !this.isNew() && this.getPropertyType() === '' && this.getSelectedUsageTypes().isEmpty();
@@ -165,12 +175,13 @@ class ProductsGroupDetails extends Component {
                   usaget={usageType}
                   onChangeUsaget={this.onChangeUsageType(index)}
                   showUnits={false}
-                  showAddButton={index === 0 && this.isNew()}
+                  showAddButton={index === 0 && this.isNew() && !monetaryBased}
                   usagetFilter={this.filterUsageTypes(index)}
                   editable={editable}
+                  enabled={!monetaryBased}
                 />
               </Col>
-              { index !== 0 && editable && (
+              { index !== 0 && usageTypesEditable && (
                 <Col sm={1} className="pr0 pl0">
                   <Button onClick={this.onRemoveUsageType(index)} variant="link" className="pl0">
                     <i className="fa fa-fw danger-red fa-trash-o" />
@@ -181,7 +192,7 @@ class ProductsGroupDetails extends Component {
           </FormGroup>
         ))
         }
-        { editable && (
+        { usageTypesEditable && (
           <FormGroup>
             <Col sm={3} lg={2} />
             <Col sm={8} lg={9}>
@@ -199,7 +210,7 @@ class ProductsGroupDetails extends Component {
 
   render () {
     const { errors } = this.state;
-    const { item, mode } = this.props;
+    const { item, mode, plays } = this.props;
     const editable = (mode !== 'view');
     const productsUsageTypes = this.getProductsUsageTypes();
     return (
@@ -240,6 +251,7 @@ class ProductsGroupDetails extends Component {
               usages={productsUsageTypes}
               onChangeGroupRates={this.onChangeProducts}
               disabled={!editable}
+              plays={plays}
             />
           </Col>
         </FormGroup>
