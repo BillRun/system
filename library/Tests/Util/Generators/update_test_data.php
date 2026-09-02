@@ -21,16 +21,26 @@ class update_test_data{
   }
 
   public static function convertTimestamps(&$array) {
-    foreach ($array['update']['services'] as &$service) {
-        if (isset($service['from']['sec'])) {
-            $service['from']= date('Y-m-d H:i:s', $service['from']['sec']);
+    if (!isset($array['update']) || !is_array($array['update'])) {
+        return;
+    }
+    foreach ($array['update'] as $key => &$val) {
+        if (is_array($val) && isset($val['sec']) && is_numeric($val['sec'])) {
+            $val = date('Y-m-d H:i:s', $val['sec']);
         }
-        if (isset($service['to']['sec'])) {
-          $service['to']= date('Y-m-d H:i:s', $service['to']['sec']);
-      }
-        
-        if (isset($service['creation_time']['sec'])) {
-            $service['creation_time'] = date('Y-m-d H:i:s', $service['creation_time']['sec']);
+    }
+    unset($val);
+    if (!empty($array['update']['services']) && is_array($array['update']['services'])) {
+        foreach ($array['update']['services'] as &$service) {
+            if (isset($service['from']['sec'])) {
+                $service['from'] = date('Y-m-d H:i:s', $service['from']['sec']);
+            }
+            if (isset($service['to']['sec'])) {
+                $service['to'] = date('Y-m-d H:i:s', $service['to']['sec']);
+            }
+            if (isset($service['creation_time']['sec'])) {
+                $service['creation_time'] = date('Y-m-d H:i:s', $service['creation_time']['sec']);
+            }
         }
     }
 }

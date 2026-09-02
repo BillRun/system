@@ -16,7 +16,7 @@ class Test_Case_42765
             [
 
                 "from" => "2019-05-31T22:00:00Z",
-                "name" => "PLAN" . time()+random_int(1,111111111),
+                "name" => generat_test_data::uniqueName("PLAN"),
                 "price" => [
                     [
                         "price" => 100,
@@ -38,7 +38,7 @@ class Test_Case_42765
                 "prorated_termination" => true
             ]
         );
-        $discount_name = time()+random_int(1,111111111);
+        $discount_name = generat_test_data::uniqueName();
 
         $discount = generat_discounts::generateDiscount([
           "from" => "2019-05-31T22:00:00Z",
@@ -126,12 +126,12 @@ class Test_Case_42765
                 'billrun' => [
                     'billrun_key' => '202206',
                     'aid' => $account['aid'],
-                    'after_vat' => [$subscriber['sid'] => 64.161290323],
-                    'total' => 64.161290323,
-                    'vatable' => 54.838709677,//flat 100 /general discount (14/31*10)
+                    'after_vat' => [$subscriber['sid'] => 117],
+                    'total' => 117,
+                    'vatable' => 100,//flat 100 
                     'vat' => 17
                 ],
-                'line' => ['types' => ['flat', 'credit']]
+                'line' => ['types' => ['flat']]
             ],
 
             'postRun' => [

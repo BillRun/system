@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Col } from 'react-bootstrap';
-import { SortableElement } from 'react-sortable-hoc';
 import EditMenuItem from './EditMenuItem';
 import { DragHandle } from '@/components/Elements';
 
@@ -25,4 +24,4 @@ SortableMenuItem.propTypes = {
   data: PropTypes.instanceOf(Immutable.Record).isRequired,
 };
 
-export default SortableElement(SortableMenuItem);
+export default SortableMenuItem;

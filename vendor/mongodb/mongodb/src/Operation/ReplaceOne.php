@@ -17,28 +17,26 @@
 
 namespace MongoDB\Operation;
 
+use MongoDB\Codec\DocumentCodec;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
 use MongoDB\UpdateResult;
 
-use function is_array;
-use function is_object;
+use function MongoDB\is_document;
 use function MongoDB\is_first_key_operator;
 use function MongoDB\is_pipeline;
 
 /**
  * Operation for replacing a single document with the update command.
  *
- * @api
  * @see \MongoDB\Collection::replaceOne()
  * @see https://mongodb.com/docs/manual/reference/command/update/
  */
 class ReplaceOne implements Executable
 {
-    /** @var Update */
-    private $update;
+    private Update $update;
 
     /**
      * Constructs an update command.
@@ -47,6 +45,9 @@ class ReplaceOne implements Executable
      *
      *  * bypassDocumentValidation (boolean): If true, allows the write to
      *    circumvent document level validation.
+     *
+     *  * codec (MongoDB\Codec\DocumentCodec): Codec used to encode PHP objects
+     *    into BSON.
      *
      *  * collation (document): Collation specification.
      *
@@ -82,24 +83,20 @@ class ReplaceOne implements Executable
      */
     public function __construct(string $databaseName, string $collectionName, $filter, $replacement, array $options = [])
     {
-        if (! is_array($replacement) && ! is_object($replacement)) {
-            throw InvalidArgumentException::invalidType('$replacement', $replacement, 'array or object');
+        if (isset($options['codec']) && ! $options['codec'] instanceof DocumentCodec) {
+            throw InvalidArgumentException::invalidType('"codec" option', $options['codec'], DocumentCodec::class);
         }
 
-        if (is_first_key_operator($replacement)) {
-            throw new InvalidArgumentException('First key in $replacement argument is an update operator');
-        }
-
-        if (is_pipeline($replacement)) {
-            throw new InvalidArgumentException('$replacement argument is a pipeline');
+        if (isset($options['codec'], $options['typeMap'])) {
+            throw InvalidArgumentException::cannotCombineCodecAndTypeMap();
         }
 
         $this->update = new Update(
             $databaseName,
             $collectionName,
             $filter,
-            $replacement,
-            ['multi' => false] + $options
+            $this->validateReplacement($replacement, $options['codec'] ?? null),
+            ['multi' => false] + $options,
         );
     }
 
@@ -114,5 +111,35 @@ class ReplaceOne implements Executable
     public function execute(Server $server)
     {
         return $this->update->execute($server);
+    }
+
+    /**
+     * @param array|object $replacement
+     * @return array|object
+     */
+    private function validateReplacement($replacement, ?DocumentCodec $codec)
+    {
+        if ($codec) {
+            $replacement = $codec->encode($replacement);
+        }
+
+        if (! is_document($replacement)) {
+            throw InvalidArgumentException::expectedDocumentType('$replacement', $replacement);
+        }
+
+        // Treat empty arrays as replacement documents for BC
+        if ($replacement === []) {
+            $replacement = (object) $replacement;
+        }
+
+        if (is_first_key_operator($replacement)) {
+            throw new InvalidArgumentException('First key in $replacement is an update operator');
+        }
+
+        if (is_pipeline($replacement, true /* allowEmpty */)) {
+            throw new InvalidArgumentException('$replacement is an update pipeline');
+        }
+
+        return $replacement;
     }
 }

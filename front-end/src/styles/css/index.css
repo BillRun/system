@@ -35,8 +35,498 @@ fieldset[disabled] .btn {
 .modal {
   z-index: 2000;
 }
+
+/* ─── Bootstrap 3 → Bootstrap 5 / react-bootstrap v2 compatibility ─────────
+ * yeti.css ships Bootstrap 3 CSS (.fade.in = visible) but react-bootstrap v2
+ * uses .show instead of .in.  Without these rules every modal and tab-pane
+ * stays at opacity:0 (invisible), and the backdrop stays solid black.
+ *
+ * IMPORTANT: .modal-backdrop is intentionally excluded from the opacity:1 rule
+ * so it keeps its own 0.5 semi-transparent value (see below).
+ */
+
+/* Make all fade-able elements visible when .show is applied — but NOT the
+   backdrop (which has its own opacity below). */
+.fade.show:not(.modal-backdrop) {
+  opacity: 1;
+}
+
+/* Modal dialog position — Bootstrap 3 CSS translates the dialog upward on
+   .modal.fade; Bootstrap 5 resets it when .show is present. */
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+/* Backdrop: semi-transparent dark overlay (0.5 opacity, not solid black).
+   Must be explicit here because yeti.css uses .modal-backdrop.in, not .show. */
+.modal-backdrop {
+  opacity: 0;          /* start transparent (before transition) */
+}
+.modal-backdrop.show,
+.modal-backdrop.fade.show {
+  opacity: 0.5;        /* standard semi-transparent backdrop */
+}
+
+/* Ensure the modal itself is visible when shown (react-bootstrap v2 sets
+   display:block inline, but belt-and-suspenders for any overrides). */
+.modal.show {
+  display: block;
+}
+
+/* Modal open animation — react-bootstrap v2's JS Fade transition does not reliably
+   play on open in this hybrid setup (yeti.css Bootstrap 3 theme + React 19), so the
+   Bootstrap-3 slide+fade is driven from CSS keyframes instead. These run deterministically
+   on every fresh mount of the shown dialog/backdrop, independent of react-transition-group
+   / `appear` timing — reproducing the customer_portal (RB 0.31) behaviour. */
+@keyframes brModalDialogIn {
+  from { opacity: 0; transform: translate(0, -25%); }
+  to   { opacity: 1; transform: translate(0, 0); }
+}
+.modal.show .modal-dialog {
+  animation: brModalDialogIn 0.3s ease-out;
+}
+
+@keyframes brModalBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 0.5; }
+}
+.modal-backdrop.show {
+  animation: brModalBackdropIn 0.15s linear;
+}
+
+/* RB2 close button compatibility on top of BS3 theme.
+   RB2 renders .btn-close, but BS3 theme has no styles for it. Recreate
+   BS5 close-button rendering via background SVG (no text symbol fallback). */
+.modal-header .btn-close {
+  box-sizing: content-box;
+  width: 1em;
+  height: 1em;
+  padding: .25em .25em;
+  margin: -.25em -.25em -.25em auto;
+  color: #000;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23000' d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1em;
+  border: 0;
+  border-radius: .375rem;
+  opacity: .5;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.modal-header .btn-close:hover,
+.modal-header .btn-close:focus {
+  color: #000;
+  text-decoration: none;
+  opacity: .75;
+  outline: 0;
+  box-shadow: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Dropdown toggle open-state: BS5 uses .show, yeti.css targets .open ──────
+ * react-bootstrap v2 adds .show on both the wrapper and the toggle button when
+ * the dropdown is open.  yeti.css uses .open>.dropdown-toggle.btn-* which no
+ * longer fires.  Mirror those rules here for every button variant.
+ */
+.show > .dropdown-toggle.btn-default,
+.dropdown-toggle.btn-default.show {
+  color: #333333;
+  background-color: #cecece;
+  border-color: #adadad;
+  background-image: none;
+}
+.show > .dropdown-toggle.btn-default:hover,
+.show > .dropdown-toggle.btn-default:focus,
+.dropdown-toggle.btn-default.show:hover,
+.dropdown-toggle.btn-default.show:focus {
+  color: #333333;
+  background-color: #bcbcbc;
+  border-color: #8c8c8c;
+}
+.show > .dropdown-toggle.btn-primary,
+.dropdown-toggle.btn-primary.show {
+  color: #ffffff;
+  background-color: #006a8e;
+  border-color: #005f7f;
+  background-image: none;
+}
+.show > .dropdown-toggle.btn-success,
+.dropdown-toggle.btn-success.show {
+  color: #ffffff;
+  background-color: #398439;
+  border-color: #255625;
+  background-image: none;
+}
+.show > .dropdown-toggle.btn-info,
+.dropdown-toggle.btn-info.show {
+  color: #ffffff;
+  background-color: #23527c;
+  border-color: #1a3957;
+  background-image: none;
+}
+.show > .dropdown-toggle.btn-warning,
+.dropdown-toggle.btn-warning.show {
+  color: #ffffff;
+  background-color: #d58512;
+  border-color: #985f0d;
+  background-image: none;
+}
+.show > .dropdown-toggle.btn-danger,
+.dropdown-toggle.btn-danger.show {
+  color: #ffffff;
+  background-color: #ac2925;
+  border-color: #761c19;
+  background-image: none;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Grid offset compat: react-bootstrap v2 generates offset-sm-* / offset-md-* /
+ * offset-lg-* (Bootstrap 5 naming), but yeti.css only defines col-sm-offset-* etc.
+ * (Bootstrap 3 naming).  Add aliases so Col sm={{ span, offset }} props work. */
+@media (min-width: 768px) {
+  .offset-sm-0  { margin-left: 0; }
+  .offset-sm-1  { margin-left: 8.33333333%; }
+  .offset-sm-2  { margin-left: 16.66666667%; }
+  .offset-sm-3  { margin-left: 25%; }
+  .offset-sm-4  { margin-left: 33.33333333%; }
+  .offset-sm-5  { margin-left: 41.66666667%; }
+  .offset-sm-6  { margin-left: 50%; }
+  .offset-sm-7  { margin-left: 58.33333333%; }
+  .offset-sm-8  { margin-left: 66.66666667%; }
+  .offset-sm-9  { margin-left: 75%; }
+  .offset-sm-10 { margin-left: 83.33333333%; }
+  .offset-sm-11 { margin-left: 91.66666667%; }
+  .offset-sm-12 { margin-left: 100%; }
+}
+@media (min-width: 992px) {
+  .offset-md-0  { margin-left: 0; }
+  .offset-md-1  { margin-left: 8.33333333%; }
+  .offset-md-2  { margin-left: 16.66666667%; }
+  .offset-md-3  { margin-left: 25%; }
+  .offset-md-4  { margin-left: 33.33333333%; }
+  .offset-md-5  { margin-left: 41.66666667%; }
+  .offset-md-6  { margin-left: 50%; }
+  .offset-md-7  { margin-left: 58.33333333%; }
+  .offset-md-8  { margin-left: 66.66666667%; }
+  .offset-md-9  { margin-left: 75%; }
+  .offset-md-10 { margin-left: 83.33333333%; }
+  .offset-md-11 { margin-left: 91.66666667%; }
+  .offset-md-12 { margin-left: 100%; }
+}
+@media (min-width: 1200px) {
+  .offset-lg-0  { margin-left: 0; }
+  .offset-lg-1  { margin-left: 8.33333333%; }
+  .offset-lg-2  { margin-left: 16.66666667%; }
+  .offset-lg-3  { margin-left: 25%; }
+  .offset-lg-4  { margin-left: 33.33333333%; }
+  .offset-lg-5  { margin-left: 41.66666667%; }
+  .offset-lg-6  { margin-left: 50%; }
+  .offset-lg-7  { margin-left: 58.33333333%; }
+  .offset-lg-8  { margin-left: 66.66666667%; }
+  .offset-lg-9  { margin-left: 75%; }
+  .offset-lg-10 { margin-left: 83.33333333%; }
+  .offset-lg-11 { margin-left: 91.66666667%; }
+  .offset-lg-12 { margin-left: 100%; }
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── InputGroup button compat: RB2 places Button/DropdownButton directly inside
+ * InputGroup without the BS3 .input-group-btn wrapper that yeti.css expects.
+ * InputGroupButton shim (BootstrapCompat) renders .input-group-btn explicitly;
+ * these rules also handle DropdownButton (.btn-group) placed directly by RB2. */
+.input-group > .btn-group,
+.input-group > .dropdown {
+  position: relative;
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  font-size: 0; /* collapse inline-block gaps, like .input-group-btn */
+}
+.input-group > .btn-group > .btn,
+.input-group > .btn-group > .dropdown-toggle,
+.input-group > .dropdown > .btn {
+  font-size: 14px;
+  position: relative;
+}
+.input-group > .btn-group:last-child > .btn:last-child,
+.input-group > .btn-group:last-child > .dropdown-toggle,
+.input-group > .dropdown:last-child > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.input-group > .btn-group:first-child > .btn:first-child,
+.input-group > .dropdown:first-child > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bootstrap 5 input-group-text compatibility on top of Bootstrap 3 theme.
+   RB2 renders .input-group-text while yeti.css styles only .input-group-addon. */
+.input-group-text {
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  color: #555;
+  text-align: center;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 0;
+}
+.input-group > .input-group-text:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group > .input-group-text:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* Align with BS3 behavior: addon next to .form-control shares border side. */
+.input-group > .input-group-text + .form-control {
+  margin-left: -1px;
+}
+
+/* Plan notifications: stacked labels above fields (customer_portal uses plain
+ * <Form> here). If `.form-horizontal` is used, yeti wins with a more specific rule:
+ *   .form-horizontal .control-label { padding-top: 9px } (md+)
+ * which misaligns these labels — neutralize only inside this block. */
+.PlanNotifications .control-label,
+.PlanNotifications label.form-label {
+  margin-top: 0;
+  padding-top: 0 !important;
+  margin-bottom: 5px;
+}
+
+/* Bootstrap 5 button variants not present in yeti.css (Bootstrap 3 theme).
+   Without these, btn-secondary / btn-light render with no background/border. */
+.btn-secondary {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+.btn-secondary:hover,
+.btn-secondary:focus {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+.btn-secondary:active,
+.btn-secondary.active {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+.btn-light {
+  color: #333;
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+.btn-light:hover,
+.btn-light:focus {
+  color: #333;
+  background-color: #e2e6ea;
+  border-color: #b0b8c1;
+}
+/* btn-outline-secondary: used in ConfirmModal cancel button (replaces removed btn-default).
+   Matches BS3 btn-default appearance: white bg, grey border. */
+.btn-outline-secondary {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+.btn-outline-secondary:active,
+.btn-outline-secondary.active {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+
+/* btn-xs compact padding for outline-secondary (replaces BS3 btn-default + bsSize="xsmall") */
+.btn-outline-secondary.btn-xs {
+  padding: 4px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Tab nav: react-bootstrap v2 renders button.nav-link, yeti.css targets li > a ──
+ * Without these rules tabs are unstyled (buttons without tab borders/backgrounds).
+ * We replicate yeti's Bootstrap 3 tab appearance on the .nav-item / .nav-link structure. */
+.nav-tabs > .nav-item {
+  float: left;
+  margin-bottom: -1px;
+}
+.nav-tabs > .nav-item > .nav-link {
+  display: block;
+  padding: 10px 15px;
+  line-height: 1.42857143;
+  margin-right: 2px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: #222222;
+  text-decoration: none;
+  background-color: #e7e7e7;
+  cursor: pointer;
+}
+.nav-tabs > .nav-item > .nav-link:hover,
+.nav-tabs > .nav-item > .nav-link:focus {
+  border-color: #eee #eee #ddd;
+  background-color: #eee;
+  outline: none;
+}
+.nav-tabs > .nav-item > .nav-link.active {
+  color: #555;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+  cursor: default;
+}
+.nav-tabs > .nav-item > .nav-link.disabled,
+.nav-tabs > .nav-item > .nav-link:disabled {
+  color: #777;
+  cursor: not-allowed;
+  background-color: transparent;
+  border-color: transparent;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Caret: RB v2 dropped <span class="caret">; yeti.css expects it.
+ * Draw the same triangle via ::after so dropdown arrows are preserved. ── */
+.dropdown-toggle:not(.no-caret)::after {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+  content: "";
+  border-top: 4px dashed;
+  border-right: 4px solid transparent;
+  border-bottom: 0;
+  border-left: 4px solid transparent;
+}
+.dropup .dropdown-toggle:not(.no-caret)::after {
+  border-top: 0;
+  border-bottom: 4px dashed;
+}
+
+/* Yeti styles `.btn-group .dropdown-toggle.btn-primary~.dropdown-menu` (blue
+ * background, white text) only when the menu items are `<li><a>`. RB v2 emits
+ * `.dropdown-item` directly — mirror the colors for that markup too. */
+.btn-group .dropdown-toggle.btn-primary ~ .dropdown-menu .dropdown-item,
+.btn-group .dropdown-toggle.btn-primary ~ .dropdown-menu .dropdown-item:focus {
+  color: #fff;
+}
+.btn-group .dropdown-toggle.btn-primary ~ .dropdown-menu .dropdown-item:hover,
+.btn-group .dropdown-toggle.btn-primary ~ .dropdown-menu .dropdown-item.active,
+.btn-group .dropdown-toggle.btn-primary ~ .dropdown-menu .dropdown-item:active {
+  color: #fff;
+  background-color: #006d91;
+}
+
+/* ─── Dropdown items: RB v2 renders <a class="dropdown-item"> instead of BS3 <li><a>.
+ * Mirror yeti's final computed values onto the new markup. ─────────────────────── */
+.dropdown-menu .dropdown-item {
+  display: block;
+  padding: 12px 15px;
+  clear: both;
+  font-weight: 400;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+}
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+  color: #262626;
+  text-decoration: none;
+  background-color: #eeeeee;
+  outline: none;
+}
+.dropdown-menu .dropdown-item.active,
+.dropdown-menu .dropdown-item:active {
+  color: #fff;
+  text-decoration: none;
+  background-color: #008cba;
+  outline: 0;
+}
+.dropdown-menu .dropdown-item.disabled,
+.dropdown-menu .dropdown-item:disabled {
+  color: #777;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+/* RB v2 renders the divider as <hr class="dropdown-divider"> rather than
+ * the BS3 <li class="divider">. Mirror yeti.css:2655 (.dropdown-menu .divider). */
+.dropdown-menu .dropdown-divider {
+  height: 1px;
+  margin: 9.5px 0;
+  overflow: hidden;
+  background-color: #e5e5e5;
+  border: 0;
+  padding: 0;
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* User menu in top navbar (Admin: About/Logout) — force legacy BS3 look */
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item {
+  color: #008cba !important;
+  padding: 3px 20px !important;
+  line-height: 1.42857143 !important;
+  font-size: 14px !important;
+  border-radius: 0 !important;
+}
+
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:hover,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:focus,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item.active,
+#nav-user-menu + .dropdown-menu.dropdown-user .dropdown-item:active,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item:hover,
+.navbar-top-links #nav-user-menu + .dropdown-menu .dropdown-item:focus {
+  color: #008cba !important;
+  background-color: #eeeeee !important;
+  text-decoration: none !important;
+  font-weight: bold !important;
+}
 .tooltip{
   z-index: 2001;
+}
+/* ─── BS3Multiselect: yeti.css supplies all hover/active/padding on ul>li>a.
+ * We only add what yeti doesn't: label layout and checkbox positioning. */
+.bs3-multiselect-menu {
+  margin-top: 0 !important;  /* kill any residual Popper margin */
+}
+/* label.checkbox — block layout so it fills the <a> padding box */
+.bs3-multiselect-menu > li > a > label.checkbox {
+  display: block;
+  margin: 0;
+  height: 100%;
+  padding: 3px 20px 3px 40px;
+  font-weight: normal;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bs3-multiselect-menu > li > a > label.checkbox input[type="checkbox"] {
+  margin-left: -20px;
+  margin-right: 0;
+  margin-bottom: 5px;
+  vertical-align: middle;
 }
 .input-min-line-height {
   line-height: 39px;
@@ -76,6 +566,15 @@ fieldset[disabled] .btn {
 .actions button.btn-sm {
   height: 39px;
   padding: 9px 12px;
+}
+/* Variant: when the action button is a DIRECT child of `.actions`
+ * (ProductPrice: `<Col className="text-left actions"><Button …/></Col>`),
+ * add a small gap from the preceding field. Does NOT affect PlanPrice,
+ * where the button sits inside an inner `<div className="text-left">`.
+ * Skip `.pull-left` buttons (InvoiceLine row remove) — those float left
+ * inside their own column and need to hug it without an extra gap. */
+.actions > button.btn-sm:not(.pull-left) {
+  margin-left: 4px;
 }
 .inline {
   display: inline-block;
@@ -144,6 +643,46 @@ fieldset[disabled] .btn {
 .ml20{ margin-left: 20px!important; }
 
 .full-width{ width: 100%!important; }
+
+/* Yeti's .input-group uses BS3 layout: `display: table`. In the etalon
+ * <DropdownButton componentClass={InputGroup.Button}> rendered a real
+ * <span class="input-group-btn full-width"> table-cell wrapper, which
+ * stretched via width:100%. RB2 drops that wrapper, so the toggle
+ * <button> lands directly in the table container and stays content-sized.
+ * Make the toggle itself behave like a 100%-wide table-cell. */
+.input-group:has(> #date-select-options.dropdown-toggle) {
+  width: 100%;
+}
+.input-group > #date-select-options.dropdown-toggle {
+  display: table-cell !important;
+  width: 100% !important;
+  vertical-align: middle;
+  float: none;
+}
+
+/* Date preset dropdown menu (ConditionValue). The etalon wraps the toggle in
+ * <div class="btn-group"> with .btn-default, which triggers yeti.css:5950–5956:
+ *   .btn-group .dropdown-toggle.btn-default ~ .dropdown-menu { bg #e7e7e7 }
+ *   .btn-group .dropdown-toggle.btn-default ~ .dropdown-menu>li>a { color #333 }
+ * In RB v2 the .btn-group wrapper is stripped inside <InputGroup> and the
+ * variant is `outline-secondary`, so that cascade never fires. Mirror it for
+ * the specific toggle id, so the menu visually matches the etalon. */
+.input-group > #date-select-options.dropdown-toggle ~ .dropdown-menu {
+  background-color: #ffffff;
+  border-color: #cccccc;
+  font-size: 12px;            /* yeti.css:6144 */
+  padding: 0;                 /* yeti.css:6144 */
+  margin-top: 0;              /* yeti.css:6144 */
+}
+.input-group > #date-select-options.dropdown-toggle ~ .dropdown-menu .dropdown-item {
+  color: #333333;             /* yeti.css:5954 */
+  font-size: inherit;
+}
+.input-group > #date-select-options.dropdown-toggle ~ .dropdown-menu .dropdown-item:hover,
+.input-group > #date-select-options.dropdown-toggle ~ .dropdown-menu .dropdown-item:focus {
+  background-color: #d3d3d3;  /* yeti.css:5957 */
+  color: #333333;
+}
 
 .text-left { text-align: left !important; }
 .text-right { text-align: right !important; }
@@ -258,21 +797,95 @@ fieldset[disabled] .btn {
 .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
     font-size: 14px;
 }
+/* Events: Settings tab aligned to the right of the tab bar (BS3-style) */
+#events-tabs-page [role='tablist'] {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+#events-tabs-page [role='tablist'] > *:last-child {
+  margin-left: auto;
+}
+
+/* react-bootstrap v2 has no native `xs` size — yeti.css already defines `.btn-xs`
+   (padding 4px 6px / font 12px). Propagate the same rule to cases where the
+   `btn-xs` class lives on the parent .btn-group / .dropdown instead of the
+   inner .btn (e.g. DropdownButton, ButtonGroup). Do NOT override .btn-xs on a
+   plain .btn — that would change the size away from the etalon. */
+.btn-group.btn-xs > .btn,
+.dropdown.btn-xs > .btn {
+  padding: 4px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* BS2/legacy look: square corners everywhere on buttons */
+.btn,
+.btn-group > .btn,
+.btn-group > .btn-group > .btn,
+.btn-group > .dropdown-toggle,
+.dropdown-toggle,
+.input-group > .btn-group > .btn,
+.input-group > .btn-group > .dropdown-toggle,
+.input-group-btn > .btn,
+.modal-header .btn-close {
+  border-radius: 0 !important;
+}
 .panel-heading .btn-xs{
     margin-top: -2px;
     padding: 2px 4px;
 }
-.panel.collapsible .panel-heading .panel-title > a{
+
+.panel-heading .btn-group.btn-xs > .btn,
+.panel-heading .dropdown.btn-xs > .btn {
+  margin-top: -2px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+/* Panel headers: keep action buttons compact (BS2/BS3), even if RB2 emits .btn-sm */
+.panel-heading .btn.btn-sm,
+.panel-heading .btn-group > .btn.btn-sm,
+.panel-heading .btn-group > .dropdown-toggle.btn-sm,
+.panel-heading .dropdown-toggle.btn-sm {
+  margin-top: -2px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  height: auto;
+}
+.panel.collapsible .panel-heading .panel-title > a,
+.panel.collapsible .panel-heading .panel-title > button {
   cursor: pointer;
   text-decoration: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  display: inline;
+  /* Yeti: `<h1>–<h6>` inherit `font-family: "Noto Sans"…; font-weight: 300`
+   * and `.panel-title` adds `font-size: 17px`. In the etalon the toggle was
+   * `<a>` inside `<h3 class="panel-title">`, which natively inherits all
+   * font-* — so the heading reads in 17px Noto Sans **light (300)**.
+   * `<button>`, on the other hand, doesn't inherit `font-weight` by default
+   * (only `font-family`/`font-size`/`line-height` per yeti.css:110-116), so
+   * pin the full font stack here. Use 300 to match the etalon (light). */
+  font-family: "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.1;
+  color: inherit;
 }
-.panel.collapsible .panel-heading .panel-title > a:before {
+.panel.collapsible .panel-heading .panel-title > a:before,
+.panel.collapsible .panel-heading .panel-title > button:before {
     font-family: "FontAwesome";
     content: "\f107";
     margin-right: 10px;
     color: grey;
 }
-.panel.collapsible .panel-heading .panel-title > a.collapsed:before {
+.panel.collapsible .panel-heading .panel-title > a.collapsed:before,
+.panel.collapsible .panel-heading .panel-title > button.collapsed:before {
     content: "\f105";
     padding: 0 3px 0 2px
 }
@@ -280,6 +893,42 @@ fieldset[disabled] .btn {
   color: #8a6d3b;
   background-color: #fcf8e3;
 }
+
+/* Dunning / Collections: the outermost `<Panel bsStyle="warning|default">` wrap
+ * (rendered from Collections.js) only exists to provide the dirty-state yellow
+ * border around the entire processes list. yeti applies `padding: 15px` to its
+ * `.panel-body`, which — combined with the inner `<Col sm={12}>` 15px padding —
+ * pushed each "Process #N" panel ~30px inward on every side. We zero the
+ * `Col` padding (in JSX, `pr0 pl0`) and set the outer panel-body horizontal
+ * padding to 15px so the gutter matches the etalon (single 15px layer). */
+.collections-outer > .panel-body {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+
+/* RB v2 `<FormControl type="file">` adds .form-control to the native file
+ * input. In Bootstrap 5 .form-control has border/padding/min-height which
+ * draws the unwanted box around the “Выберите файл” button on
+ * Settings/Company > Logo (and every other file input in the app).
+ * Yeti (BS3) only set `display: block` on input[type="file"] — restore that
+ * look so the input renders as the bare native control like in the etalon. */
+.form-control[type="file"] {
+  display: block;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  height: auto;
+  min-height: 0;
+  line-height: normal;
+  border-radius: 0;
+}
+.form-control[type="file"]:focus {
+  border: 0;
+  box-shadow: none;
+}
+
 #page-wrapper{
   padding-top: 50px;
   margin-bottom: -30px;
@@ -330,6 +979,32 @@ fieldset[disabled] .btn {
 }
 .actions-buttons button.btn-link {
   text-decoration: none;
+}
+
+/* Forms/editors: `remove` next to selects/inputs should be a square outlined button.
+   Scope to `.actions` (not `.td-actions`) to avoid affecting table row action icons. */
+.form-horizontal .actions .actions-buttons .action-button .btn.btn-link,
+.form-horizontal .actions .actions-buttons .action-button .btn.btn-link.btn-xs {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 9px 12px;
+  height: 39px;
+}
+/* Same treatment for plain remove buttons (not rendered through <Actions />). */
+.form-horizontal .form-inner-edit-row .actions > .btn.btn-link {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 9px 12px;
+  height: 39px;
+}
+/* Row-action icons in table cells are 15px on the etalon.
+   FontAwesome's .fa { font-size: inherit } would otherwise pick up the 12px
+   from .btn-xs, so we set it explicitly here.
+   Scope is .td-actions only — panel-header buttons (Export/Import/Refresh/
+   Add New) keep .btn-xs's 12px and don't get upscaled. */
+.td-actions .actions-buttons .action-button .btn.btn-link.btn-xs .fa {
+  font-size: 15px;
+  line-height: 1;
 }
 .td-ellipsis{
   white-space: nowrap;
@@ -468,16 +1143,100 @@ ul.revision-history-list li.active .cycle {
   margin-bottom: 0;
 }
 
-#move-entity .nav-tabs li,
-#move-entity .nav-pills li {
+/*
+ * Move revision modal tabs: RB2 Tabs puts id on the ul.nav-pills itself, so
+ * "#move-entity .nav-pills …" (descendant) never matched — only nested BS3 markup would.
+ */
+#move-entity.nav.nav-pills {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+#move-entity.nav-pills > li,
+#move-entity.nav-pills > .nav-item,
+#move-entity .nav-pills > li,
+#move-entity .nav-pills > .nav-item {
+  flex: 1 1 50%;
+  max-width: 50%;
+  width: 50%;
+  text-align: center;
+  background-color: #eeeeee;
+  float: none;
+}
+
+#move-entity .nav-tabs li {
   width: 50%;
   text-align: center;
   background-color: #eeeeee;
 }
-#move-entity .nav-pills>li+li {
-     margin-left: 0;
+
+#move-entity.nav-pills > li > .nav-link,
+#move-entity.nav-pills > .nav-item > .nav-link,
+#move-entity .nav-pills > li > .nav-link,
+#move-entity .nav-pills > .nav-item > .nav-link,
+#move-entity .nav-tabs .nav-item .nav-link {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  color: #008cba;
+  background-color: transparent;
+  /* Match yeti.css .nav>li>a and .nav-tabs shim — BS5 button.nav-link defaults are much shorter */
+  padding: 10px 15px;
+  line-height: 1.42857143;
 }
-#move-entity .nav-pills li.disabled {
+
+#move-entity.nav-pills > li > .nav-link:hover,
+#move-entity.nav-pills > .nav-item > .nav-link:hover,
+#move-entity .nav-pills > li > .nav-link:hover,
+#move-entity .nav-pills > .nav-item > .nav-link:hover,
+#move-entity.nav-pills > li > .nav-link:focus,
+#move-entity.nav-pills > .nav-item > .nav-link:focus,
+#move-entity .nav-pills > li > .nav-link:focus,
+#move-entity .nav-pills > .nav-item > .nav-link:focus {
+  color: #006687;
+  background-color: transparent;
+}
+
+#move-entity.nav-pills > li > .nav-link:focus-visible,
+#move-entity.nav-pills > .nav-item > .nav-link:focus-visible,
+#move-entity .nav-pills > li > .nav-link:focus-visible,
+#move-entity .nav-pills > .nav-item > .nav-link:focus-visible {
+  box-shadow: none;
+}
+
+/* Mirror yeti.css .nav-pills>li.active>a for RB2 button.nav-link */
+#move-entity.nav-pills > li > .nav-link.active,
+#move-entity.nav-pills > .nav-item > .nav-link.active,
+#move-entity .nav-pills > li > .nav-link.active,
+#move-entity .nav-pills > .nav-item > .nav-link.active,
+#move-entity.nav-pills > li > .nav-link.active:hover,
+#move-entity.nav-pills > .nav-item > .nav-link.active:hover,
+#move-entity .nav-pills > li > .nav-link.active:hover,
+#move-entity .nav-pills > .nav-item > .nav-link.active:hover,
+#move-entity.nav-pills > li > .nav-link.active:focus,
+#move-entity.nav-pills > .nav-item > .nav-link.active:focus,
+#move-entity .nav-pills > li > .nav-link.active:focus,
+#move-entity .nav-pills > .nav-item > .nav-link.active:focus {
+  color: #ffffff;
+  background-color: #008cba;
+}
+
+#move-entity.nav-pills > li + li,
+#move-entity.nav-pills > .nav-item + .nav-item,
+#move-entity .nav-pills > li + li,
+#move-entity .nav-pills > .nav-item + .nav-item {
+  margin-left: 0;
+}
+
+#move-entity.nav-pills > li.disabled,
+#move-entity .nav-pills > li.disabled {
+  cursor: not-allowed;
+}
+
+#move-entity.nav-pills > .nav-item > .nav-link.disabled,
+#move-entity .nav-pills > .nav-item > .nav-link.disabled,
+#move-entity .nav-tabs .nav-item .nav-link.disabled {
   cursor: not-allowed;
 }
 

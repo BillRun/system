@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col, InputGroup } from 'react-bootstrap';
+import { Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { getFieldName } from '@/common/Util';
 import Field from '@/components/Field';
@@ -71,7 +72,7 @@ class DiscountPlanValue extends Component {
     const showSequential = isPercentage;
     return (
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           { label }
         </Col>
         <Col sm={8} lg={9}>
@@ -84,17 +85,17 @@ class DiscountPlanValue extends Component {
               suffix={this.getSuffix()}
             />
             {showSequential && (
-              <InputGroup.Addon className="input-group-space pr0 pl5"> </InputGroup.Addon>
+              <InputGroup.Text className="input-group-space pr0 pl5"> </InputGroup.Text>
             )}
             {showSequential && (
-              <InputGroup.Addon>
+              <InputGroup.Text>
                 <Field
                   value={plan.get('sequential', false)}
                   onChange={this.onChangeSequential}
                   fieldType="checkbox"
                   label={this.renderSequentialLabel()}
                 />
-              </InputGroup.Addon>
+              </InputGroup.Text>
             )}
           </InputGroup>
         </Col>

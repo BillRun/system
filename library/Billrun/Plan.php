@@ -76,10 +76,13 @@ class Billrun_Plan extends Billrun_Service {
 	 */
 	protected function constructWithActivePlan($params) {
 		$date = new Mongodloid_Date($params['time']);
-		$plan = static::getByNameAndTime($params['name'], $date);
-		if ($plan) {
-			$this->data = $plan;
-			return;
+		
+		if (empty($params['disable_cache_plan'])) {
+			$plan = static::getByNameAndTime($params['name'], $date);
+			if ($plan) {
+				$this->data = $plan;
+				return;
+			}
 		}
 
 		$planQuery = array(
@@ -279,12 +282,10 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::WARN);
 			return false;
 		}
 		return true;

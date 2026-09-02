@@ -21,7 +21,6 @@ const PrepaidPlansList = () => {
 
   const baseFilter = {
     connection_type: { $regex: '^prepaid$' },
-    type: { $regex: '^customer$' },
   };
 
   const actions = [

@@ -37,14 +37,43 @@ class Billrun_Http_Authentication_Oauth2 extends Billrun_Http_Authentication_Bas
         $request = new Billrun_Http_Request($url);
         $request->setHeaders(['Cache-Control' => 'no-store', 'Content-Type' => 'application/x-www-form-urlencoded']);
         $request->setParameterPost($data);
-        $response = json_decode((string)$request->request(Billrun_Http_Request::POST)->getBody(), JSON_OBJECT_AS_ARRAY);
-        $accessToken = $response['access_token'] ?? '';
+		$httpResponse = $request->request(Billrun_Http_Request::POST);
+		$response = json_decode((string) $httpResponse->getBody(), JSON_OBJECT_AS_ARRAY);
 
-        if (empty($accessToken)) {
-            unset($data['client_secret']);
-            Billrun_Factory::log("OAuth 2.0 - failed to generate access token. URL: {$url}, Data: " . $data, Zend_Log::ERR);
-            throw new Exception("Failed to generate access token for OAuth 2.0");
-        }
+		$accessToken = is_array($response) ? ($response['access_token'] ?? '') : '';
+
+		if (empty($accessToken)) {
+			$errorMessage = 'Failed to generate access token for OAuth 2.0';
+
+			if (is_array($response)) {
+				$messageFields = array(
+					'error_description',
+					'message',
+					'error',
+					'desc',
+				);
+
+				foreach ($messageFields as $field) {
+					if (
+						isset($response[$field])
+						&& is_string($response[$field])
+						&& trim($response[$field]) !== ''
+					) {
+						$errorMessage = $response[$field];
+						break;
+					}
+				}
+			}
+
+			unset($data['client_secret']);
+
+			Billrun_Factory::log(
+				"OAuth 2.0 - failed to generate access token. URL: {$url}, Data: " . $data,
+				Zend_Log::ERR
+			);
+
+			throw new Exception($errorMessage);
+		}
         
         if ($useCache && !empty($cache)) {
             $cacheKey = $this->getCacheKey();

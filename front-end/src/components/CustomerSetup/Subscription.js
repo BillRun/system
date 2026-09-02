@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Panel, Table } from 'react-bootstrap';
+import { Form, Col, Table } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import uuid from 'uuid';
 import moment from 'moment';
 import SubscriptionServicesDetails from './SubscriptionElements/SubscriptionServicesDetails';
@@ -23,6 +24,7 @@ import {
   buildPageTitle,
   toImmutableList,
   getFieldName,
+  getServiceType,
   plansOrServicesToSelectOptions,
 } from '@/common/Util';
 
@@ -70,16 +72,11 @@ class Subscription extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (!Immutable.is(this.props.subscription, nextProps.subscription)) {
-      this.setState({ subscription: nextProps.subscription });
-    }
-  }
-
+  
   initService = (serviceName) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const { subscription } = this.state;
-    const type = this.getServiceType(serviceName);
+    const type = getServiceType(allServices.find(option => option.get('name', '') === serviceName));
     const from = getItemDateValue(subscription, 'from').format('YYYY-MM-DD');
     const to = getItemDateValue(subscription, 'to').format('YYYY-MM-DD');
     const newService = Immutable.Map({ name: serviceName, from, to });
@@ -305,7 +302,7 @@ class Subscription extends Component {
   }
 
   updateServicesDates = (subscription, newFrom = null) => {
-    const { subscription: originSubscription } = this.props;
+    const { subscription: originSubscription, allServices } = this.props;
     const originServices = originSubscription.get('services', Immutable.List()) || Immutable.List();
     // const services = subscription.get('services', Immutable.List()) || Immutable.List();
     const from = newFrom || getItemDateValue(subscription, 'from').toISOString();
@@ -315,7 +312,7 @@ class Subscription extends Component {
         return Immutable.List();
       }
       return services.map((service) => {
-        const serviceType = this.getServiceType(service); // 'normal', 'quantitative', 'balance_period'
+        const serviceType = getServiceType(allServices.find(option => option.get('name', '') === service.get('name', '')));
         const existingService = originServices.find(originService => originService.getIn(['ui_flags', 'serviceId'], '') === service.getIn(['ui_flags', 'serviceId'], ''));
         const newService = service.getIn(['ui_flags', 'serviceId'], '') === '';
 
@@ -351,22 +348,6 @@ class Subscription extends Component {
 
   removeSubscriptionField = (path, value) => {
     this.setState(prevState => ({ subscription: prevState.subscription.deleteIn(path, value) }));
-  }
-
-  getServiceType = (service) => {
-    const { allServices } = this.props;
-    const serviceName = (Immutable.Map.isMap(service)) ? service.get('name', '') : service;
-    const serviceOption = allServices.find(option => option.get('name', '') === serviceName);
-    if (!serviceOption) {
-      return null;
-    }
-    if (serviceOption.get('quantitative', false)) {
-      return 'quantitative';
-    }
-    if (serviceOption.get('balance_period', 'default') !== 'default') {
-      return 'balance_period';
-    }
-    return 'normal';
   }
 
   getAvailablePlans = () => {
@@ -464,7 +445,7 @@ class Subscription extends Component {
         />
     ), (
       <FormGroup key="plan">
-        <Col componentClass={ControlLabel}sm={3} lg={2}>Plan <span className="danger-red"> *</span></Col>
+        <Col as={ControlLabel}sm={3} lg={2}>Plan <span className="danger-red"> *</span></Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -477,14 +458,14 @@ class Subscription extends Component {
       </FormGroup>
     ), (
       <FormGroup key="includedServices">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>Included Services</Col>
-        <Col sm={7}>
+        <Col as={ControlLabel} sm={3} lg={2}>Included Services</Col>
+        <Col sm={8} lg={9}>
           <Field value={this.getPlanIncludedServices(plan)} editable={false} />
         </Col>
       </FormGroup>
     ), (
       <FormGroup key="services">
-        <Col componentClass={ControlLabel} sm={3} lg={2}>Services</Col>
+        <Col as={ControlLabel} sm={3} lg={2}>Services</Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -520,6 +501,13 @@ class Subscription extends Component {
     return moment.max(subscriptionFrom, subscriptionActivation);
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (!Immutable.is(prevProps.subscription, this.props.subscription)) {
+      this.setState({ subscription: this.props.subscription });
+    }
+  }
+
   render() {
     const { progress, subscription } = this.state;
     const { revisions, mode, allServices, subscription: originSubscription } = this.props;
@@ -550,7 +538,7 @@ class Subscription extends Component {
 
           <hr />
 
-          <Form horizontal>
+          <Form className="form-horizontal">
             { this.renderSystemFields(allowEdit) }
             <SubscriptionServicesDetails
               subscriptionServices={services}

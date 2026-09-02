@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { templateTokenSettingsSelectorForEditor } from '@/selectors/settingsSelector';
 
@@ -42,7 +43,7 @@ class CollectionTypeMessage extends Component {
     return (
       <div>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Subject</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Subject</Col>
           <Col sm={8} lg={9}>
             <Field onChange={this.onChangeSubject} value={content.get('subject', '')} />
           </Col>

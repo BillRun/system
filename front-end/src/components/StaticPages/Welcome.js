@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageHeader } from 'react-bootstrap';
+import { PageHeader } from '@/common/BootstrapCompat';
 import { getConfig } from '@/common/Util'
 
 

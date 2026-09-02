@@ -17,7 +17,6 @@
 
 namespace MongoDB\Operation;
 
-use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Driver\Server;
 use MongoDB\Exception\InvalidArgumentException;
@@ -25,40 +24,33 @@ use MongoDB\Exception\UnexpectedValueException;
 use MongoDB\Exception\UnsupportedException;
 
 use function array_intersect_key;
-use function assert;
 use function count;
 use function current;
-use function is_array;
 use function is_float;
 use function is_integer;
 use function is_object;
+use function MongoDB\is_document;
 
 /**
  * Operation for obtaining an exact count of documents in a collection
  *
- * @api
  * @see \MongoDB\Collection::countDocuments()
  * @see https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#countdocuments
  */
 class CountDocuments implements Executable
 {
-    /** @var string */
-    private $databaseName;
+    private string $databaseName;
 
-    /** @var string */
-    private $collectionName;
+    private string $collectionName;
 
     /** @var array|object */
     private $filter;
 
-    /** @var array */
-    private $aggregateOptions;
+    private array $aggregateOptions;
 
-    /** @var array */
-    private $countOptions;
+    private array $countOptions;
 
-    /** @var Aggregate */
-    private $aggregate;
+    private Aggregate $aggregate;
 
     /**
      * Constructs an aggregate command for counting documents
@@ -97,8 +89,8 @@ class CountDocuments implements Executable
      */
     public function __construct(string $databaseName, string $collectionName, $filter, array $options = [])
     {
-        if (! is_array($filter) && ! is_object($filter)) {
-            throw InvalidArgumentException::invalidType('$filter', $filter, 'array or object');
+        if (! is_document($filter)) {
+            throw InvalidArgumentException::expectedDocumentType('$filter', $filter);
         }
 
         if (isset($options['limit']) && ! is_integer($options['limit'])) {
@@ -131,7 +123,6 @@ class CountDocuments implements Executable
     public function execute(Server $server)
     {
         $cursor = $this->aggregate->execute($server);
-        assert($cursor instanceof Cursor);
 
         $allResults = $cursor->toArray();
 

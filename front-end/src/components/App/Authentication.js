@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import Immutable from 'immutable';
 import { LoginForm } from '../UserForms';
 import { Forbidden403 } from '../StaticPages';
@@ -44,6 +45,12 @@ export default function (ComposedComponent) {
         return (<ComposedComponent {...composedComponentProps} location={location} />);
       }
       const pageRoute = location.pathname.substr(1);
+      const isChargingRoute = pageRoute === 'charging' || pageRoute.startsWith('charging/');
+      const isChargingPlansRoute = pageRoute === 'charging_plans' || pageRoute.startsWith('charging_plans/');
+      // Local premium-like access override for charging pages.
+      if (isChargingRoute || isChargingPlansRoute) {
+        return (<ComposedComponent {...composedComponentProps} location={location} />);
+      }
       const perms = permissions.getIn([pageRoute, action], Immutable.List());
       // If no permissions required -> return true
       if (perms.size === 0) {
@@ -65,5 +72,15 @@ export default function (ComposedComponent) {
     action: actionSelector(state, props),
   });
 
-  return connect(mapStateToProps)(Authenticate);
+  const ConnectedAuthenticate = connect(mapStateToProps)(Authenticate);
+
+  // Wrapper to inject react-router v6 location (with .query) into the class component
+  function AuthenticateWithLocation(props) {
+    const rawLocation = useLocation();
+    const query = Object.fromEntries(new URLSearchParams(rawLocation.search));
+    const location = { ...rawLocation, query };
+    return <ConnectedAuthenticate {...props} location={location} />;
+  }
+
+  return AuthenticateWithLocation;
 }

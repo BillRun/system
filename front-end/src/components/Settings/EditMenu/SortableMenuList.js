@@ -2,16 +2,22 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { Col } from 'react-bootstrap';
-import { SortableContainer } from 'react-sortable-hoc';
+import { SortableFieldsContainer } from '@/components/Elements';
 
-const SortableMenuList = ({ data: { items, renderMenu, path } }) => (
+const SortableMenuList = ({ data: { items, renderMenu, path }, onSortEnd = () => {} }) => (
   <Col lg={12} md={12} className="pr0">
-    { items.map((item, i) => renderMenu(item, i, path)) }
+    <SortableFieldsContainer
+      collection={path.join('-')}
+      items={items.map((item, i) => renderMenu(item, i, path)).toArray()}
+      onSortEnd={onSortEnd}
+    />
   </Col>
 );
 
 SortableMenuList.propTypes = {
   data: PropTypes.instanceOf(Immutable.Record).isRequired,
+  onSortEnd: PropTypes.func,
 };
 
-export default SortableContainer(SortableMenuList);
+
+export default SortableMenuList;

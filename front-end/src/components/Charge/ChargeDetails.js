@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { titleCase, paramCase } from 'change-case';
 import isNumber from 'is-number';
@@ -99,17 +100,7 @@ class ChargeDetails extends Component {
     },
   }
 
-  componentWillMount() {
-    const { availableEntities } = this.props;
-    this.props.dispatch(getSettings([
-      'subscribers.subscriber',
-      'subscribers.account',
-    ]));
-    const listsToGet = ChargeDetails.requiredEntityLists
-      .filter(entity => availableEntities.get(entity, Immutable.List()).isEmpty());
-    this.props.dispatch(getEntitiesOptions(listsToGet));
-  }
-
+  
   onChangeFiled = (path, value) => {
     const pathString = path.join('.');
     switch (pathString) {
@@ -444,6 +435,18 @@ class ChargeDetails extends Component {
       .toArray()
   }
 
+  
+  componentDidMount() {
+    const { availableEntities } = this.props;
+    this.props.dispatch(getSettings([
+      'subscribers.subscriber',
+      'subscribers.account',
+    ]));
+    const listsToGet = ChargeDetails.requiredEntityLists
+      .filter(entity => availableEntities.get(entity, Immutable.List()).isEmpty());
+    this.props.dispatch(getEntitiesOptions(listsToGet));
+  }
+
   render() {
     const { errors:onChangeErrors } = this.state;
     const { charge, mode, currency, fields, errors } = this.props;
@@ -460,7 +463,7 @@ class ChargeDetails extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
               <EntityField
                 field={fields.get('description')}
@@ -480,7 +483,7 @@ class ChargeDetails extends Component {
                 />
               }
               <FormGroup >
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('type', 'charge')}
                 </Col>
                 <Col sm={8} lg={9}>
@@ -500,7 +503,7 @@ class ChargeDetails extends Component {
                 </Col>
               </FormGroup>
               <FormGroup validationState={errors.has('params.cycles') ? 'error' : null}>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('cycles', 'charge')}
                 </Col>
                 <Col sm={8} lg={9}>
@@ -544,7 +547,7 @@ class ChargeDetails extends Component {
                 error={errors.get('simultaneous_limit', onChangeErrors.simultaneousLimit)}
               />
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   Excludes
                 </Col>
                 <Col sm={8} lg={9}>
@@ -582,7 +585,7 @@ class ChargeDetails extends Component {
             { isPercentage && (
               <Panel header={<h3>{getFieldName('panel_plan_discount', 'charge')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     {getFieldName('select_plans', 'charge')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -603,7 +606,7 @@ class ChargeDetails extends Component {
               { isPercentage && (
                 <Panel header={<h3>{getFieldName('panel_customer_service_discount', 'charge')}</h3>}>
                   <FormGroup>
-                    <Col componentClass={ControlLabel} sm={3} lg={2}>
+                    <Col as={ControlLabel} sm={3} lg={2}>
                       {getFieldName('select_services', 'charge')}
                     </Col>
                     <Col sm={8} lg={9}>
@@ -624,7 +627,7 @@ class ChargeDetails extends Component {
               { isPercentage && (
                 <Panel header={<h3>{getFieldName('panel_service_discount', 'charge')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     {getFieldName('select_services', 'charge')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -645,7 +648,7 @@ class ChargeDetails extends Component {
             { !isPercentage && (
               <Panel header={<h3>{getFieldName('charge_values', 'charge')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('subject_general', 'charge')}
                   </Col>
                   <Col sm={8} lg={9}>

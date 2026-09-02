@@ -270,6 +270,9 @@ module.exports = function(webpackEnv) {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
         'react-native': 'react-native-web',
+        // webpack 4 has issues with react-joyride ESM bundle (.mjs)
+        // and React interop; force CJS entry for compatibility.
+        'react-joyride$': path.resolve(paths.appNodeModules, 'react-joyride/dist/index.js'),
         '@': paths.appSrc
       },
       plugins: [
@@ -319,6 +322,11 @@ module.exports = function(webpackEnv) {
           // match the requirements. When no loader matches it will fall
           // back to the "file" loader at the end of the loader list.
           oneOf: [
+            {
+              test: /\.mjs$/,
+              include: /node_modules/,
+              type: 'javascript/auto',
+            },
             // "url" loader works like "file" loader except that it embeds assets
             // smaller than specified limit in bytes as data URLs to avoid requests.
             // A missing `test` is equivalent to a match.
@@ -352,6 +360,9 @@ module.exports = function(webpackEnv) {
                       },
                     },
                   ],
+                  require.resolve('@babel/plugin-proposal-class-properties'),
+                  require.resolve('@babel/plugin-proposal-optional-chaining'),
+                  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
                 ],
                 // This is a feature of `babel-loader` for webpack (not Babel itself).
                 // It enables caching results in ./node_modules/.cache/babel-loader/
@@ -376,6 +387,11 @@ module.exports = function(webpackEnv) {
                     require.resolve('babel-preset-react-app/dependencies'),
                     { helpers: true },
                   ],
+                ],
+                plugins: [
+                  require.resolve('@babel/plugin-proposal-class-properties'),
+                  require.resolve('@babel/plugin-proposal-optional-chaining'),
+                  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
                 ],
                 cacheDirectory: true,
                 cacheCompression: isEnvProduction,

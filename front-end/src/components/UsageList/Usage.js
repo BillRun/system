@@ -2,18 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, Button } from 'react-bootstrap';
+import { Form, Col, Row, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import changeCase from 'change-case';
 import { getFieldName, getConfig } from '@/common/Util';
 
-
 const Usage = ({
-  line, onClickCancel, hiddenFields, cancelLabel, enableRemove, onClickRemove, removeLabel,
+  line = Immutable.Map(), onClickCancel = () => {}, hiddenFields = ['_id', 'in_plan', 'over_plan', 'interconnect_aprice', 'out_plan', 'uf'], cancelLabel = 'Back', enableRemove = false, onClickRemove = () => {}, removeLabel = 'Remove',
 }) => {
   const renderMainPanelTitle = () => (
     <div>{line.get('type', '')}
       <div className="pull-right">
-        <Button bsSize="xsmall" onClick={onClickCancel}>{cancelLabel}</Button>
+        <Button className="btn-xs" variant="outline-secondary" onClick={onClickCancel}>{cancelLabel}</Button>
       </div>
     </div>
   );
@@ -21,7 +21,7 @@ const Usage = ({
   const renderRemove = () => (
     enableRemove &&
     <Panel className="panel-no-border">
-      <Button onClick={onClickRemove} bsSize="xsmall" className="pull-right" ><i className="fa fa-trash-o danger-red" />&nbsp;{removeLabel}</Button>
+      <Button onClick={onClickRemove} variant="outline-secondary" className="pull-right btn-xs" ><i className="fa fa-trash-o danger-red" />&nbsp;{removeLabel}</Button>
     </Panel>
   );
 
@@ -39,7 +39,7 @@ const Usage = ({
       if (!hiddenFields.includes(key)) {
         fields.push(
           <FormGroup key={key}>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>{ getFieldName(key, 'lines') }</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>{ getFieldName(key, 'lines') }</Col>
             <Col sm={8} lg={9}>
               <input disabled className="form-control" value={(formattedValue === null) ? '' : formattedValue} />
             </Col>
@@ -50,34 +50,35 @@ const Usage = ({
     return fields;
   };
 
+  const billrunFields = renderFields(line, 'billrunFields');
+  const userFields = renderFields(line.get('uf', Immutable.Map()), 'userFields');
+
   return (
     <Row>
       <Col lg={12}>
-        <Form horizontal>
+        <Form className="form-horizontal">
           <Panel header={renderMainPanelTitle()}>
             { renderRemove() }
             <Panel header={<h3>BillRun fields</h3>}>
-              { renderFields(line, 'billrunFields') }
+              { billrunFields }
             </Panel>
-            <Panel header={<h3>User fields</h3>}>
-              { renderFields(line.get('uf', Immutable.Map()), 'userFields') }
-            </Panel>
-            <Button onClick={onClickCancel}>{cancelLabel}</Button>
+            {userFields.length > 0 ? (
+              <Panel header={<h3>User fields</h3>}>
+                { userFields }
+              </Panel>
+            ) : (
+              <div className="panel panel-default">
+                <div className="panel-heading">
+                  <h3 className="panel-title">User fields</h3>
+                </div>
+              </div>
+            )}
+            <Button variant="outline-secondary" onClick={onClickCancel}>{cancelLabel}</Button>
           </Panel>
         </Form>
       </Col>
     </Row>
   );
-};
-
-Usage.defaultProps = {
-  line: Immutable.Map(),
-  hiddenFields: ['_id', 'in_plan', 'over_plan', 'interconnect_aprice', 'out_plan', 'uf'],
-  onClickCancel: () => {},
-  cancelLabel: 'Back',
-  enableRemove: false,
-  onClickRemove: () => {},
-  removeLabel: 'Remove',
 };
 
 Usage.propTypes = {

@@ -1,0 +1,137 @@
+{
+    "status": 1,
+    "data": [
+      {
+        "aid": 12423,
+        "crm_account_id": null,
+        "type": "account",
+        "from": "2024-10-23 13:02:37",
+        "to": "2200-01-01 02:00:00",
+        "firstname": "xx",
+        "lastname": "zz",
+        "title": null,
+        "email": null,
+        "invoice_shipping_method": "post",
+        "category": "RES",
+        "sub_category": "RESIDENTIAL",
+        "invoice_message": null,
+        "invoice_language": "gr_CY",
+        "invoice_detailed": false,
+        "street": "DIMITRIOU PAPANIKOLI",
+        "house_number": "",
+        "apartment": "",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
+        "po_box": "",
+        "creation_time": "2025-10-23 13:02:37",
+        "activation_date": "2024-10-23 13:04:25",
+        "deactivation_date": "2200-01-01 02:00:00"
+      },
+      {
+        "sid": 39154,
+        "aid": 12423,
+        "type": "subscriber",
+        "from": "2024-10-23 13:04:25",
+        "to": "2027-11-15 00:00:00",
+        "plan": "B2C_5GUNLIMITEDMAX_PP_INADV",
+        "play": "MOBILE",
+        "firstname": "xx",
+        "lastname": "zz",
+        "activation_date": "2024-10-23 13:04:25",
+        "deactivation_date": "2027-11-15 00:00:00",
+        "plan_activation": "2024-10-23 13:04:25",
+        "plan_deactivation": "2027-11-15 00:00:00",
+        "creation_time": null,
+        "former_plan": null,
+        "services": [
+          {
+            "name": "SERVICE",
+            "from": "2024-11-06 16:32:11",
+            "to": "2025-11-06 02:00:00",
+            "service_id": 47987,
+            "creation_time": "2025-11-06 16:32:10"
+          }
+        ],
+        "imsi": [],
+        "sub_number": "",
+        "portability_code": "",
+        "discounts": [
+          {
+            "priority": "",
+            "params": {
+                "conditions" : [
+                {
+                  "subscriber" : [
+                    {
+                      "service" : {
+                        "any" : [
+                          {
+                            "fields" : [
+                              {
+                                "field" : "name",
+                                "op" : "in",
+                                "value" : [
+                                  "SERVICE"
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "from": "2024-10-23 10:04:25",
+            "subject": {
+              "plan": {
+                "B2C_5GUNLIMITEDMAX_PP_INADV": {
+                  "value": 16.806
+                }
+              }
+            },
+            "proration": "inherited",
+            "type": "monetary",
+            "to": "2200-01-01 02:00:00",
+            "description": "5G Unlimited Max 24 month Com Sim Only Youth Discount",
+            "key": "SUBSCRIBER_DISCOUNT_937"
+          }
+        ],
+        "overrides": [
+          {
+            "type": "plan",
+            "id": null,
+            "key": "B2C_5GUNLIMITEDMAX_PP_INADV",
+            "value": {
+              "price": [
+                {
+                  "price": 33.605,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          },
+          {
+            "type": "service",
+            "id": null,
+            "key": "SERVICE",
+            "value": {
+              "price": [
+                {
+                  "price": 20,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "options": null,
+    "billableAccounts": {}
+  }

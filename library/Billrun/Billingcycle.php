@@ -871,5 +871,13 @@ class Billrun_Billingcycle {
 			return false;
 		}
 	}
+
+	/**
+	 * @deprecated kept for backward compatibility (external plugins) - use
+	 * 				Billrun_Plans_Charge_Upfront::getUpfrontCycle
+	 */
+	public static function getUpfrontCycle($regularCycle) {
+		return Billrun_Plans_Charge_Upfront::getUpfrontCycle($regularCycle);
+	}
 	
 }

@@ -2,7 +2,8 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import uuid from 'uuid';
-import { FormGroup, InputGroup, Button } from 'react-bootstrap';
+import { InputGroup, Button } from 'react-bootstrap'
+import { FormGroup, InputGroupButton } from '@/common/BootstrapCompat';
 import { CreateButton } from '@/components/Elements';
 import Range from './Range';
 
@@ -96,11 +97,11 @@ class Ranges extends PureComponent {
               disabled={disabled}
             />
             { removable && (
-              <InputGroup.Button>
+              <InputGroupButton>
                 <Button onClick={onRemoveRange} disabled={disabled} title="Remove range" className="remove-range">
                   <i className="fa fa-fw fa-trash-o danger-red" />
                 </Button>
-              </InputGroup.Button>
+              </InputGroupButton>
             ) }
           </InputGroup>
         </FormGroup>

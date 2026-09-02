@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {Button} from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import Field from '@/components/Field';
 
 
@@ -66,7 +66,7 @@ class Segments extends Component {
         </div>
 
         <div className="col-sm-2 actions">
-          <Button onClick={this.onDeleteLine} bsSize="small"><i className="fa fa-trash-o danger-red"/>
+          <Button onClick={this.onDeleteLine} size="sm"><i className="fa fa-trash-o danger-red"/>
             &nbsp;Remove</Button>
         </div>
       </div>

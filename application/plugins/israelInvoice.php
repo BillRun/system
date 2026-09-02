@@ -297,7 +297,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         $postData = array(
             'client_id' => $this->client_key,
             'client_secret' => $this->client_secret,
-            'scope' => "scope",
+            'scope' => "invoices_scope",
             'refresh_token' => $this->refresh_token,
             'grant_type' => "refresh_token"
         );

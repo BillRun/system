@@ -31,14 +31,12 @@ use function MongoDB\is_pipeline;
 /**
  * Operation for updating multiple documents with the update command.
  *
- * @api
  * @see \MongoDB\Collection::updateMany()
  * @see https://mongodb.com/docs/manual/reference/command/update/
  */
 class UpdateMany implements Executable, Explainable
 {
-    /** @var Update */
-    private $update;
+    private Update $update;
 
     /**
      * Constructs an update command.
@@ -90,7 +88,7 @@ class UpdateMany implements Executable, Explainable
         }
 
         if (! is_first_key_operator($update) && ! is_pipeline($update)) {
-            throw new InvalidArgumentException('Expected an update document with operator as first key or a pipeline');
+            throw new InvalidArgumentException('Expected update operator(s) or non-empty pipeline for $update');
         }
 
         $this->update = new Update(
@@ -98,7 +96,7 @@ class UpdateMany implements Executable, Explainable
             $collectionName,
             $filter,
             $update,
-            ['multi' => true] + $options
+            ['multi' => true] + $options,
         );
     }
 
@@ -121,8 +119,8 @@ class UpdateMany implements Executable, Explainable
      * @see Explainable::getCommandDocument()
      * @return array
      */
-    public function getCommandDocument(Server $server)
+    public function getCommandDocument()
     {
-        return $this->update->getCommandDocument($server);
+        return $this->update->getCommandDocument();
     }
 }

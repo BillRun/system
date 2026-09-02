@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Button, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Button, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getConfig } from '@/common/Util';
 
@@ -145,7 +146,7 @@ export default class PlanPrice extends Component {
                 <ControlLabel className="mb5">&nbsp;</ControlLabel>
               )}
               <div className="text-left">
-                <Button onClick={this.onPlanTariffRemove} bsSize="small">
+                <Button onClick={this.onPlanTariffRemove} size="sm" variant="outline-secondary">
                   <i className="fa fa-trash-o danger-red" />
                 </Button>
               </div>

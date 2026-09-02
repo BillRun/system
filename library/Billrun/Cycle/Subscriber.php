@@ -116,8 +116,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$aggregatedPlans = $this->generalAggregate($this->records['plans'], Billrun_Cycle_Data_Plan::class);
 		Billrun_Factory::log("Aggregating services!");
 		$aggregatedServices = $this->generalAggregate($this->records['services'], Billrun_Cycle_Data_Service::class);
-
-		$usageLines = $this->loadSubscriberLines();
+		if($this->cycleAggregator->shouldLoadSubscriberLines($this->sid)){
+			$usageLines = $this->loadSubscriberLines();
+		}
 		$results = array_merge($aggregatedPlans, $aggregatedServices);
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
 		//TODO add usage aggregation per subscriber here
@@ -141,7 +142,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		);
 		
 		// in case of expected invoice we might want to ignore usage lines
-		if ($this->cycleAggregator->ignoreCdrs) {
+		if ($this->cycleAggregator->ignoreCdrs || $this->cycleAggregator->isOneTime()) {
 			$query['type'] = 'credit';
 		}
 		
@@ -272,7 +273,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
-			$overrideData['overrides'] = array_filter($data['overrides'], function($override) use ($arrService) {
+			$revisionOverrides = isset($arrService['overrides']) ? $arrService['overrides'] : $data['overrides'];
+			$overrideData['overrides'] = array_filter($revisionOverrides, function($override) use ($arrService) {
 				return $override['type'] != 'service' || empty($override['id']) || $arrService['service_id'] == $override['id'];
 			});
 			$localMongoServices = $this->cycleAggregator->getServices($this->parentAccount,$overrideData);
@@ -472,6 +474,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 											'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
 											'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
 										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000),  $deactivationDate),
+										'overrides' => Billrun_Util::getFieldVal($subscriber['overrides'], []),
 										'compare_fields' => $srvStampFields)
 					);
 

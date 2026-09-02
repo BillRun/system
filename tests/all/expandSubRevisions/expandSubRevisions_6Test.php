@@ -8,22 +8,26 @@ class expandSubRevisions_6Test extends \Codeception\Test\Unit
      */
     protected $tester;
 
-    protected function _before()
+  protected function _before()
     {
-      $this->tester->cleanDB();
+      $this->tester->setTimezone('UTC');
+  
     }
 
-    protected function _after()
+     protected function _after()
     {
+      $this->tester->restoreTimezone();
     }
     
+    
     public function test_expandSubRevisions_6(){
+        $uniqueTs = (string) ((int) (microtime(true) * 1000000));
         //All revisions overlap – one revision
         $plan = 
         [
 
             "from" => "2024-08-03T22:00:00Z",
-            "name" => "PLAN_A" . time(),
+            "name" => "PLAN_A" . $uniqueTs,
             "price" => [
                 [
                     "price" => 0,
@@ -46,35 +50,26 @@ class expandSubRevisions_6Test extends \Codeception\Test\Unit
         $plan = json_decode($this->tester->grabResponse(), true)['entity'];
         $service1 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_1" . time(),
+            'name' => "SERVICE_1" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service1);
-        $service1 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service1['from'] =  new Mongodloid_Date($service1['from']['sec']);
-        $service1['to'] =  new Mongodloid_Date($service1['to']['sec']);
+        $service1 = $this->tester->generateService($service1);
         $services[$service1['name']] = new Mongodloid_Entity($service1);
 
         $service2 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_2" . time(),
+            'name' => "SERVICE_2" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service2);
-        $service2 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service2['from'] =  new Mongodloid_Date($service2['from']['sec']);
-        $service2['to'] =  new Mongodloid_Date($service2['to']['sec']);
+        $service2 =$this->tester->generateService($service2);
         $services[$service2['name']] = new Mongodloid_Entity($service2);
 
         $service3 = [
             'from' => '2017-07-01T04:00:00Z',
-            'name' => "SERVICE_3" . time(),
+            'name' => "SERVICE_3" . $uniqueTs,
             "price" => [["price" => 100, "from" => 0, "to" => "UNLIMITED"]],
         ];
-        $this->tester->generateService($service3);
-        $service3 = json_decode($this->tester->grabResponse(), true)['entity'];
-        $service3['from'] =  new Mongodloid_Date($service3['from']['sec']);
-        $service3['to'] =  new Mongodloid_Date($service3['to']['sec']);
+        $service3 = $this->tester->generateService($service3);
         $services[$service3['name']] = new Mongodloid_Entity($service3);        
 
         $this->tester->createAccountWithAllMandatoryCustomFields();

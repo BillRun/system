@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import TagsInput from 'react-tagsinput';
+import TagsInput from './TagsInput';
 import Field from '@/components/Field';
 
 const Tags = (props) => {
@@ -47,17 +47,6 @@ const Tags = (props) => {
   );
 };
 
-Tags.defaultProps = {
-  value: [],
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  inputProps: {},
-  onChange: () => {},
-  getTagDisplayValue: null,
-  onlyUnique: false,
-};
 
 Tags.propTypes = {
   value: PropTypes.oneOfType([

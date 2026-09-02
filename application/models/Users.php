@@ -1,7 +1,5 @@
 <?php
 
-require_once APPLICATION_PATH . '/library/password_compat/password.php';
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.

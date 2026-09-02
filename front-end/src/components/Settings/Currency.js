@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -11,9 +12,9 @@ const Currency = (props) => {
   };
   return (
     <div className="CurrencyTax">
-      <Form horizontal>
+    <Form className="form-horizontal">
         <FormGroup controlId="currency" key="currency">
-          <Col componentClass={ControlLabel} md={2}>
+          <Col as={ControlLabel} md={2}>
             Currency
           </Col>
           <Col sm={6}>
@@ -28,11 +29,6 @@ const Currency = (props) => {
       </Form>
     </div>
   );
-};
-
-Currency.defaultProps = {
-  data: '',
-  currencies: [],
 };
 
 Currency.propTypes = {

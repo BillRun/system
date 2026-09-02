@@ -35,16 +35,6 @@ const CSVFields = (props) => {
   );
 };
 
-CSVFields.defaultProps = {
-  settings: Immutable.Map(),
-  onRemoveField: () => {},
-  onSetFieldWidth: () => {},
-  onMoveFieldUp: () => {},
-  onMoveFieldDown: () => {},
-  onChangeCSVField: () => {},
-  onCheckedField: () => {},
-};
-
 CSVFields.propTypes = {
   settings: PropTypes.instanceOf(Immutable.Map),
   onRemoveField: PropTypes.func,

@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import logo from './img/logo.jpg';
 
-const Header = ({ page, total }) => (
+const Header = ({ page = 1, total = 1 }) => (
   <div className="section section-header">
     <div className="table">
       <table>
@@ -20,11 +20,6 @@ const Header = ({ page, total }) => (
     </div>
   </div>
 );
-
-Header.defaultProps = {
-  page: 1,
-  total: 1,
-};
 
 Header.propTypes = {
   page: PropTypes.node,

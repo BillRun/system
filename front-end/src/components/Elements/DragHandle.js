@@ -1,15 +1,30 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { SortableHandle } from 'react-sortable-hoc';
+import DndSortableItemContext from './DndSortableItemContext';
 
-const DragHandle = ({ element, disabled }) => (disabled
-  ? <i className="fa fa-bars fa-fw" style={{ opacity: '.05', lineHeight: '35px' }} />
-  : element
-);
+const DragHandle = ({ element = <i className="fa fa-bars fa-fw" style={{ cursor: 'row-resize', opacity: '.25', lineHeight: '35px' }} />, disabled = false }) => {
+  const {
+    attributes,
+    listeners,
+    setActivatorNodeRef,
+    disabled: dndDisabled,
+  } = React.useContext(DndSortableItemContext);
+  const isDisabled = disabled || dndDisabled;
 
-DragHandle.defaultProps = {
-  element: <i className="fa fa-bars fa-fw" style={{ cursor: 'row-resize', opacity: '.25', lineHeight: '35px' }} />,
-  disabled: false,
+  if (isDisabled) {
+    return <i className="fa fa-bars fa-fw" style={{ opacity: '.05', lineHeight: '35px' }} />;
+  }
+
+  return (
+    <span
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ display: 'inline-block', touchAction: 'none' }}
+    >
+      {element}
+    </span>
+  );
 };
 
 DragHandle.propTypes = {
@@ -17,4 +32,4 @@ DragHandle.propTypes = {
   disabled: PropTypes.bool,
 };
 
-export default SortableHandle(DragHandle);
+export default DragHandle;

@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { List, Map } from 'immutable';
 import { usageTypesDataSelector, propertyTypeSelector, currencySelector } from '@/selectors/settingsSelector';
-import { FormGroup, Col, ControlLabel, InputGroup, HelpBlock } from 'react-bootstrap';
+import { Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import isNumber from 'is-number';
 import Field from '@/components/Field';
 import { getBucketsOptions } from '@/actions/reportsActions';
@@ -154,10 +155,10 @@ class BalancePrepaidEventCondition extends Component {
       <Col sm={12}>
 
         <FormGroup validationState={isBucketError ? 'error' : null}>
-          <Col sm={4} smOffset={1} xsOffset={0} xs={12} className="text-left" componentClass={ControlLabel}>
+          <Col sm={4}   xs={12} className="text-left col-sm-offset-1 col-xs-offset-0" as={ControlLabel}>
             Bucket
           </Col>
-          <Col sm={7} smOffset={0} xsOffset={2} xs={10} className="pl40">
+          <Col sm={7}   xs={10} className="pl40 col-sm-offset-0 col-xs-offset-2">
               <Field
               fieldType="select"
               onChange={this.onChangeBucket}
@@ -171,10 +172,10 @@ class BalancePrepaidEventCondition extends Component {
         </FormGroup>
 
         <FormGroup validationState={isOperatorError ? 'error' : null}>
-          <Col sm={4} smOffset={1} xsOffset={0} xs={12} className="text-left" componentClass={ControlLabel}>
+          <Col sm={4}   xs={12} className="text-left col-sm-offset-1 col-xs-offset-0" as={ControlLabel}>
             Condition
           </Col>
-          <Col sm={7} smOffset={0} xsOffset={2} xs={10} className="pl40">
+          <Col sm={7}   xs={10} className="pl40 col-sm-offset-0 col-xs-offset-2">
             <Field
               fieldType="select"
               onChange={this.onChangeCondition}
@@ -189,10 +190,10 @@ class BalancePrepaidEventCondition extends Component {
 
         { selectedConditionData.get('extra_field', true) && (
           <FormGroup validationState={isValueError ? 'error' : null}>
-            <Col sm={4} smOffset={1} xsOffset={0} xs={12} className="text-left" componentClass={ControlLabel}>
+            <Col sm={4}   xs={12} className="text-left col-sm-offset-1 col-xs-offset-0" as={ControlLabel}>
               Value
             </Col>
-            <Col sm={7} smOffset={0} xsOffset={2} xs={10} className="pl40">
+            <Col sm={7}   xs={10} className="pl40 col-sm-offset-0 col-xs-offset-2">
               <InputGroup className="full-width">
                 {selectedConditionData.get('type', 'text') !== 'tags' ? (
                   <Field
@@ -210,7 +211,7 @@ class BalancePrepaidEventCondition extends Component {
                   />
                 )}
                 { unitLabel !== '' && (
-                  <InputGroup.Addon>{unitLabel}</InputGroup.Addon>
+                  <InputGroup.Text>{unitLabel}</InputGroup.Text>
                 )}
               </InputGroup>
               { isValueError && (

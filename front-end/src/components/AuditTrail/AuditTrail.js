@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import List from '../List'; //TODO: move to entityList
 import Pager from '../Pager'; //TODO: move to entityListPager
 import { AdvancedFilter } from '../Filter'; //TODO: move to entityListFilter
@@ -47,8 +48,10 @@ class AuditTrail extends Component {
     this.fetchUser();
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (!Immutable.is(this.props.userNames, nextProps.userNames)) {
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (!Immutable.is(prevProps.userNames, this.props.userNames)) {
       this.fetchItems();
     }
   }

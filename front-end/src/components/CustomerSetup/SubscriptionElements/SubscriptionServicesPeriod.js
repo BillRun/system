@@ -45,7 +45,7 @@ const SubscriptionServicesPeriod = (props) => {
   const badge = props.renderServiceBadge(service, 'byPeriod');
   return (
     <InputGroup style={{ width: '100%', marginTop: 5 }} >
-      <InputGroup.Addon>{idx + 1}. Start Date {badge}</InputGroup.Addon>
+      <InputGroup.Text>{idx + 1}. Start Date {badge}</InputGroup.Text>
       <Field
         style={{ width: '100%' }}
         fieldType="date"
@@ -55,7 +55,7 @@ const SubscriptionServicesPeriod = (props) => {
         editable={editable}
         highlightDates={[minStartDate]}
       />
-      <InputGroup.Addon>End Date</InputGroup.Addon>
+      <InputGroup.Text>End Date</InputGroup.Text>
       <Field
         style={{ width: '100%' }}
         fieldType="date"
@@ -64,9 +64,9 @@ const SubscriptionServicesPeriod = (props) => {
         onChange={onChangeEnd}
         editable={editable}
       />
-      <InputGroup.Addon onClick={onRemove}>
+      <InputGroup.Text onClick={onRemove}>
         <i className="fa fa-trash-o text-danger" />
-      </InputGroup.Addon>
+      </InputGroup.Text>
     </InputGroup>
   );
 }

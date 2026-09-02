@@ -33,7 +33,10 @@ const ReduxFormModal = (props) => {
   } = config.toJS();
   const onOkWithHide = () => {
     if (!allowSubmitWithError) {
-      const hasError = errors.some(error => !error || error.length > 0);
+      // `errors` is an Immutable.Map but may be undefined when the form modal
+      // state slice is not yet initialised.  Guard defensively.
+      const safeErrors = Immutable.Map.isMap(errors) ? errors : Immutable.Map();
+      const hasError = safeErrors.some(error => !error || error.length > 0);
       if (hasError) {
         return false;
       }
@@ -56,7 +59,8 @@ const ReduxFormModal = (props) => {
     >
       { form(component, {
         item,
-        errors,
+        // Always pass a valid Immutable.Map so child forms can call .has()/.get()
+        errors: Immutable.Map.isMap(errors) ? errors : Immutable.Map(),
         ...otherProps,
         ...configOtherProps,
       })}
@@ -64,13 +68,6 @@ const ReduxFormModal = (props) => {
   );
 };
 
-ReduxFormModal.defaultProps = {
-  show: false,
-  item: undefined,
-  component: undefined,
-  config: Immutable.Map(),
-  errors: Immutable.Map(),
-};
 
 ReduxFormModal.propTypes = {
   show: PropTypes.bool,

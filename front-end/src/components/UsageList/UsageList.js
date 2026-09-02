@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Pager from '../Pager';
 import Filter from '../Filter';
 import List from '../List';
@@ -175,4 +177,4 @@ const mapStateToProps = (state, props) => ({
   baseFilter: props.location.query.base ? JSON.parse(props.location.query.base) : {},
 });
 
-export default connect(mapStateToProps)(UsageList);
+export default withRouter(connect(mapStateToProps)(UsageList));

@@ -1288,24 +1288,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "/application/views/invoices/theme/theme1.css",
-						"header": "/header/header_tpl.html",
-						"footer": "/footer/footer_tpl.html",
-						"sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
-						"details_template": "/application/views/invoices/details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [
@@ -1612,8 +1613,14 @@
 					},
 					"email_templates": {
 						"invoice_ready": {
-							"subject": "Your invoice is ready",
-							"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Your invoice is ready",
+								"content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}],
 							"html_translation": [
 								"invoice_id",
 								"invoice_total",
@@ -1624,21 +1631,45 @@
 							]
 						},
 						"fraud_notification": {
-							"subject": "Event [[event_code]] was triggered",
-							"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "Event [[event_code]] was triggered",
+								"content": "<pre>\n[[fraud_event_details]]</pre>\n"
+							}]
 						},
 						"email_authentication" :{
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
 							"subject": "BillRun Customer Portal - Email Address Verification",
 							"content": "<pre>\nHello [[name]],\n\nPlease verify your E-mail address by clicking on the link below:\n[[email_authentication_link]]\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}]
 						},
-                                                "reset_password": {
-                                                        "subject": "BillRun Customer Portal - Reset Password",
-                                                        "content": "<pre>\nHello [[name]],\n\nYou recently requested a password reset.\nTo change your password, please click here:\n[[reset_password_link]]\n\nThe link will expire in [[link_expire]]\n\nIf you ignore this message, your password won't be changed.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
-                                                },
-                                                "welcome_account": {
-                                                    "subject": "BillRun Customer Portal - Welcome Account",
-                                                    "content": "<pre>\nHello [[name]],\n\na new online account has been created for you.\nFor access please use the following link [[link]].\nAfter sign up, you can access various information on your online account, including the current consumption overview and invoices, as well as update your personal data.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
-                                                }
+						"reset_password": {
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "BillRun Customer Portal - Reset Password",
+								"content": "<pre>\nHello [[name]],\n\nYou recently requested a password reset.\nTo change your password, please click here:\n[[reset_password_link]]\n\nThe link will expire in [[link_expire]]\n\nIf you ignore this message, your password won't be changed.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}]
+						},
+						"welcome_account": {
+							"templates":[{
+								"name": "default",
+								"label": "Default",
+								"conditions": [	
+								],
+								"subject": "BillRun Customer Portal - Welcome Account",
+								"content": "<pre>\nHello [[name]],\n\na new online account has been created for you.\nFor access please use the following link [[link]].\nAfter sign up, you can access various information on your online account, including the current consumption overview and invoices, as well as update your personal data.\n\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n"
+							}]
+						}
 					},
 					"taxes": {
 						"fields": [

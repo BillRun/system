@@ -1,4 +1,7 @@
-//Lines collection
+// create base db for BillRun
+// this script is deprecated since version 5.25.0, please use application/controllers/Action/Dbinit.php
+
+////Lines collection
 // Add indecies to insure that theres no duplicate lines.
 db.createCollection('lines');
 db.lines.createIndex({'stamp': 1 }, { unique: true });
@@ -6,6 +9,7 @@ db.lines.createIndex({'urt': 1 }, { unique: false , sparse: false, background: t
 db.lines.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1, 'urt' : 1}, { unique: false , sparse: true, background: true }); // index necessary for admin panel(?)
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true }); // rebalance index (might be useful by other processes)
+db.lines.createIndex({'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1}, { unique: false, sparse: false, background: true, partialFilterExpression: {'is_upfront': true}}); // BRCD-5421 - the upfront reconciliation previous cycle lines
 db.lines.createIndex({'billrun': 1, 'usaget' : 1, 'type' : 1}, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1 ,'session_id':1,'request_num':-1}, { unique: false, background: true });
 db.lines.createIndex({'session_id':1,'request_num':-1}, { unique: false, background: true });
@@ -122,7 +126,9 @@ db.cards.createIndex({ 'from':1 }, { unique: false, background: true });
 db.cards.createIndex({ 'to':1 }, { unique: false, background: true });
 
 //Subscribers
+db.createCollection('subscribers');
 db.subscribers.createIndex({'aid': 1 }, { unique: false, sparse: false, background: true });
+db.subscribers.createIndex({'aid':1,'type':1,'from': 1 , 'to': 1}, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'invoicing_day': 1 }, { unique: false, sparse: false, background: true });
 db.subscribers.createIndex({'sid': 1 }, { unique: false, sparse: true, background: true });
 db.subscribers.createIndex({'from': 1 , 'to': 1}, { unique: false, sparse: true, background: true });
@@ -142,7 +148,10 @@ db.services.createIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 db.services.createIndex({name : 1}, {unique: false});
 db.services.createIndex({ 'description': 1}, { unique: false, background: true });
 
+//Config Collection
 db.createCollection('config', {capped: true, size:104857600});
+db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
+
 db.createCollection('events');
 db.createCollection('carriers');
 
@@ -173,6 +182,7 @@ db.createCollection('reports');
 
 // Events collection
 db.events.createIndex({'creation_time': 1 }, { unique: false , sparse: true, background: true });
+db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
 
 // Auto Renew Collection
 db.createCollection('autorenew');

@@ -8,8 +8,8 @@ class Payout extends \Payrexx\Models\Request\Payout
     /** @var string */
     protected string $object = '';
 
-    /** @var float */
-    protected float $amount = 0;
+    /** @var int */
+    protected int $amount = 0;
 
     /** @var float */
     protected float $totalFees = 0;

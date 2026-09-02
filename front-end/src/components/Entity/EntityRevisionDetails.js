@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
-import { Form, FormGroup, Button, ControlLabel, Label } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Label } from '@/common/BootstrapCompat';
 import { RevisionTimeline, ModalWrapper } from '@/components/Elements';
 import RevisionList from '../RevisionList';
 import Field from '@/components/Field';
@@ -62,15 +63,7 @@ class EntityRevisionDetails extends Component {
     this.initFormDate();
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { item } = nextProps;
-    const { item: oldItem } = this.props;
-    if (getItemId(item) !== getItemId(oldItem)) {
-      this.hideManageRevisions();
-      this.initFormDate();
-    }
-  }
-
+  
   initFormDate = () => {
     const { mode } = this.props;
     if (['closeandnew'].includes(mode)) {
@@ -125,10 +118,21 @@ class EntityRevisionDetails extends Component {
   renderVerisionList = () => {
     const { itemName, revisions, item } = this.props;
     const { showList } = this.state;
+    if (!showList) {
+      return null;
+    }
     const revisionBy = toImmutableList(getConfig(['systemItems', itemName, 'uniqueField'], '')).get(0, '');
     const title = `${item.get(revisionBy, '')} - Revision History`;
     return (
-      <ModalWrapper title={title} show={showList} onCancel={this.hideManageRevisions} onHide={this.hideManageRevisions} labelCancel="Close">
+      <ModalWrapper
+        title={title}
+        show
+        animation={false}
+        onCancel={this.hideManageRevisions}
+        onHide={this.hideManageRevisions}
+        labelCancel="Close"
+        enforceFocus={false}
+      >
         <RevisionList
           items={revisions}
           itemName={itemName}
@@ -175,7 +179,7 @@ class EntityRevisionDetails extends Component {
           />
         </div>
         <div className="inline">
-          <Button bsStyle="link" className="pull-right" style={{ padding: '0 10px 15px 10px' }} onClick={this.showManageRevisions}>
+          <Button type="button" variant="link" className="pull-right" style={{ padding: '0 10px 15px 10px' }} onClick={this.showManageRevisions}>
             Manage Revisions
           </Button>
         </div>
@@ -186,7 +190,7 @@ class EntityRevisionDetails extends Component {
   renderDateViewBlock = () => {
     const { item } = this.props;
     const from = getItemDateValue(item, 'originalValue');
-    const to = getItemDateValue(item, 'to').subtract(1,'seconds');
+    const to = getItemDateValue(item, 'to').clone().subtract(1, 'seconds');
     const format = getConfig('dateFormat', 'DD/MM/YYYY');
     return (
       <div className="inline" style={{ width: 190, padding: 0, margin: '9px 10px 0 10px' }}>
@@ -265,7 +269,7 @@ class EntityRevisionDetails extends Component {
     // create / clone
     return (
       <div className="inline" style={{ width: 220, padding: 0, margin: 7 }}>
-        <Form horizontal style={{ marginBottom: 0 }}>
+        <Form className="form-horizontal" style={{ marginBottom: 0 }}>
           <FormGroup style={{ marginBottom: 0 }}>
             <div className="inline" style={{ verticalAlign: 'top', marginRight: 15 }}>
               <ControlLabel>From</ControlLabel>
@@ -304,10 +308,20 @@ class EntityRevisionDetails extends Component {
     const { mode, item } = this.props;
     if (mode === 'view' && item.getIn(['revision_info', 'status'], '') === 'active' && !item.getIn(['revision_info', 'is_last'], true)) {
       return (
-        <Label bsStyle="warning">You cannot edit the current revision because a future revision exists.</Label>
+        <Label variant="warning">You cannot edit the current revision because a future revision exists.</Label>
       );
     }
     return null;
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item } = this.props;
+    const { item: oldItem } = prevProps;
+    if (getItemId(item) !== getItemId(oldItem)) {
+      this.hideManageRevisions();
+      this.initFormDate();
+    }
   }
 
   render() {

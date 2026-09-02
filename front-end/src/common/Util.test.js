@@ -3,6 +3,8 @@ import {
   getFieldEntityKey,
   toImmutableList,
   isValueOn,
+  ucwordsStrip,
+  buildPaymentFileSource,
 } from './Util';
 
 it('getFieldEntityKey', () => {
@@ -59,4 +61,29 @@ it('isValueOn', () => {
   expect(isValueOn('NO')).toEqual(false);
   expect(isValueOn('Y')).toEqual(true);
   expect(isValueOn('N')).toEqual(false);
+});
+
+// Mirrors BE `str_replace('_', '', ucwords($str, '_'))`.
+it('ucwordsStrip', () => {
+  expect(ucwordsStrip('manual_files')).toEqual('ManualFiles');
+  expect(ucwordsStrip('credit_card')).toEqual('CreditCard');
+  expect(ucwordsStrip('payments')).toEqual('Payments');
+  expect(ucwordsStrip('transactions_response')).toEqual('TransactionsResponse');
+  // already-capitalised input is preserved (NOT lower-cased like pascalCase would)
+  expect(ucwordsStrip('ABC')).toEqual('ABC');
+  expect(ucwordsStrip('AB_data_files')).toEqual('ABDataFiles');
+  expect(ucwordsStrip('FooBar')).toEqual('FooBar');
+  // edge cases
+  expect(ucwordsStrip('')).toEqual('');
+  expect(ucwordsStrip()).toEqual('');
+  expect(ucwordsStrip('a__b')).toEqual('AB'); // empty middle segment dropped, no crash
+});
+
+// `log.source` = ucwordsStrip(payment_gateway) + ucwordsStrip(payments_file_type).
+it('buildPaymentFileSource', () => {
+  expect(buildPaymentFileSource('manual_files', 'payments')).toEqual('ManualFilesPayments');
+  expect(buildPaymentFileSource('ABC', 'payments')).toEqual('ABCPayments');
+  expect(buildPaymentFileSource('AB_data_files', 'payments')).toEqual('ABDataFilesPayments');
+  expect(buildPaymentFileSource('manual_files', 'transactions_response')).toEqual('ManualFilesTransactionsResponse');
+  expect(buildPaymentFileSource('ABC', 'transactions_response')).toEqual('ABCTransactionsResponse');
 });

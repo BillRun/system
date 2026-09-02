@@ -63,7 +63,7 @@ class Helper
     public static function validateLuhn($number)
     {
         $str = '';
-        foreach (array_reverse(str_split($number)) as $i => $c) {
+        foreach (array_reverse(str_split((string) $number)) as $i => $c) {
             $str .= $i % 2 ? $c * 2 : $c;
         }
 
@@ -79,7 +79,7 @@ class Helper
      * @param mixed $target     The object to set parameters on
      * @param array $parameters An array of parameters to set
      */
-    public static function initialize($target, array $parameters = null)
+    public static function initialize($target, ?array $parameters = null)
     {
         if ($parameters) {
             foreach ($parameters as $key => $value) {

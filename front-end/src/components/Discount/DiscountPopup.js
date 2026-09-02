@@ -4,7 +4,8 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import DiscountDetails from './DiscountDetails';
 import { currencySelector } from '@/selectors/settingsSelector';
-import { FormGroup, InputGroup, HelpBlock } from 'react-bootstrap';
+import { InputGroup } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import {
   getConfig,

@@ -12,15 +12,17 @@ class CreditguardTest extends \Codeception\Test\Unit
     
     protected function _before()
     {
-     
-        // $this->tester->enableCreditGuardPGWithSettings();
-       
+      $this->tester->setTimezone('Asia/Jerusalem');
+      $this->tester->enableDBModeSettings();
+      $this->tester->enableCreditGuardPGWithSettings();
+      $this->tester->cleanDB();
     }
 
-    protected function _after()
+     protected function _after()
     {
+      $this->tester->restoreTimezone();
     }
-
+    
     public function testEnable()
     {
         $this->tester->enableCreditGuardPGWithSettings();

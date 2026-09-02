@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { List } from 'immutable';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { Actions } from '@/components/Elements';
 
-const LimitedDestination = ({ name, rates, allRates, onChange, onRemove, editable }) => {
+const LimitedDestination = ({ name = '', rates = List(), allRates = [], onChange, onRemove, editable = true }) => {
   const onChangeValue = (value) => {
     onChange(name, List(value.split(',')));
   };
@@ -41,14 +41,6 @@ const LimitedDestination = ({ name, rates, allRates, onChange, onRemove, editabl
       </Panel>
     </div>
   );
-};
-
-LimitedDestination.defaultProps = {
-  name: '',
-  rates: List(),
-  allRates: [],
-  actions: [],
-  editable: true,
 };
 
 LimitedDestination.propTypes = {

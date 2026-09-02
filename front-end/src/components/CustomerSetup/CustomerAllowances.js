@@ -5,7 +5,8 @@ import Immutable from 'immutable';
 import isNumber from 'is-number';
 import { debounce } from 'throttle-debounce';
 import getSymbolFromCurrency from 'currency-symbol-map';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Panel } from '@/common/BootstrapCompat';
 import { Actions } from '@/components/Elements';
 import Field from '@/components/Field';
 import { showConfirmModal } from '@/actions/guiStateActions/pageActions';
@@ -238,7 +239,7 @@ class CustomerAllowances extends Component {
             const sidLabel = allSubscriptions.get(sid, '');
             return(
               <FormGroup key={`sid-${sid}`}>
-                <Col componentClass={ControlLabel} xs={12} sm={5} smOffset={1} className="pt5">
+                <Col as={ControlLabel} xs={12} sm={5}  className="pt5 col-sm-offset-1">
                   {sidLabel}<br/>{`(Subscriber ID: ${sid})` }
                 </Col>
                 <Col xs={10} sm={5}>
@@ -274,10 +275,10 @@ class CustomerAllowances extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+    <Form className="form-horizontal">
             <Panel header={getFieldName('Search Subscribers', 'Customer')}>
               <FormGroup>
-                <Col sm={10} smOffset={1}>
+                <Col sm={10} className="col-sm-offset-1" >
                   <Field
                     fieldType="select"
                     value=''

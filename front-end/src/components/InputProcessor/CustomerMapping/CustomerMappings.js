@@ -30,8 +30,8 @@ class CustomerMappings extends Component {
 
   renderAddCustomerMappingButton = usaget => (
     <Button
-      bsSize="xsmall"
-      className="btn-primary"
+      variant="primary"
+      className="btn-xs"
       onClick={this.onAddCustomerMapping(usaget)}
     >
       <i className="fa fa-plus" />&nbsp;Add
@@ -40,8 +40,8 @@ class CustomerMappings extends Component {
 
   renderRemoveCustomerMappingButton = (usaget, priority) => (
     <Button
-      bsStyle="link"
-      bsSize="xsmall"
+      variant="link"
+      size="sm"
       onClick={this.onRemoveCustomerMapping(usaget, priority)}
     >
       <i className="fa fa-fw fa-trash-o danger-red" />
@@ -52,7 +52,7 @@ class CustomerMappings extends Component {
     const { settings, subscriberFields } = this.props;
     const customerMappings = settings.get('customer_identification_fields', Immutable.Map());
     return (
-      <Form horizontal className="customerMappings">
+      <Form className="form-horizontal customerMappings">
         <div className="form-group">
           <div className="col-lg-12">
             <h4>

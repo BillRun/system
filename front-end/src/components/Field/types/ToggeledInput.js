@@ -41,18 +41,7 @@ export default class ToggeledInput extends Component {
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    const isSameValue = this.props.compare(nextProps.value, this.props.value);
-    if (!isSameValue) {
-      const off = nextProps.compare(nextProps.value, nextProps.disabledValue);
-      const value = off ? nextProps.disabledValue : nextProps.value;
-      this.setState({
-        value,
-        off,
-      });
-    }
-  }
-
+  
   onChangedState = (e) => {
     const { disabledValue } = this.props;
     const { checked } = e.target;
@@ -79,6 +68,19 @@ export default class ToggeledInput extends Component {
     }
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const isSameValue = prevProps.compare(this.props.value, prevProps.value);
+    if (!isSameValue) {
+      const off = this.props.compare(this.props.value, this.props.disabledValue);
+      const value = off ? this.props.disabledValue : this.props.value;
+      this.setState({
+        value,
+        off,
+      });
+    }
+  }
+
   render() {
     const { value, off } = this.state;
     const { label, disabled, editable, suffix, inputProps, disabledDisplayValue } = this.props;
@@ -93,7 +95,7 @@ export default class ToggeledInput extends Component {
 
     return (
       <InputGroup>
-        <InputGroup.Addon>
+        <InputGroup.Text>
           <label className="mb0">
             <input
               style={{ verticalAlign: 'bottom' }}
@@ -103,14 +105,14 @@ export default class ToggeledInput extends Component {
               disabled={disabled}
             /> {label}
           </label>
-        </InputGroup.Addon>
+        </InputGroup.Text>
         <Field
           disabled={off || disabled}
           onChange={this.onValueChanged}
-          value={off ? disabledDisplayValue : value}
+          value={off ? disabledDisplayValue : (value ?? '')}
           {...inputProps}
         />
-        { (suffix !== null) && <InputGroup.Addon>{suffix}</InputGroup.Addon> }
+        { (suffix != null) && <InputGroup.Text>{suffix}</InputGroup.Text> }
       </InputGroup>
     );
   }

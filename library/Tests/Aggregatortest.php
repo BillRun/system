@@ -10,7 +10,7 @@
   * @package  calculator
   * @since    0.5
   */
-require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
+(@include_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/autorun.php')) || require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php');
 //known isuss fails in 5.13 is : |---|30|--|61|---|62|---|63|---|65|---|71
  define('UNIT_TESTING', 'true');
 
@@ -27,8 +27,14 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
      protected $subscribersCol;
      protected $balancesCol;
      protected $billrunCol;
+     protected $billingCyclr;
      protected $BillrunObj;
      protected $returnBillrun;
+     protected $tests;
+     protected $cases;
+     protected $test_cases_to_run;
+     protected $test_cases_to_skip;
+     protected $numOffLines;
      public $ids;
      protected $shouldRunAggregate =true;
      public $message;
@@ -49,7 +55,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
 	public function test_cases() {
 
 	}
-
+ 
      public function __construct($label = false) {
          parent::__construct("test Aggregatore");
          $this->autoload_tests('aggregatorTestCases');
@@ -91,7 +97,17 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
      }
 
      /**
-      * 
+      * BRCD-5421 - the test runs a single cycle with no previous one - require a previous billing
+      * cycle for the upfront reconciliation, so nothing is reconciled and the cycle is charged as
+      * before (the flag is restored to its default before every test case).
+      * to be used as a test case preRun.
+      */
+     public function requirePreviousBillrunForReconcile($key, $row) {
+         Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', true);
+     }
+
+     /**
+      *
       * @param $query
       * @return billrun objects by query or all if query is null
       */
@@ -109,7 +125,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
         $this->tests =  $this->getTestCases();
         if (empty($this->test_cases_to_run)) {
             $this->tests = $this->skip_tests($this->tests, 'test.test_number');
-          }
+        }
         // execute test cases pass by tests or all if it empty
         $request = new Yaf_Request_Http;
         $this->test_cases_to_run = $request->get('tests');
@@ -125,6 +141,8 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
         
          foreach ($this->tests as $key => $row) {
              $this->shouldRunAggregate = true;
+             Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+             Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', false);
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
@@ -226,7 +244,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
          $aid = $row['expected']['billrun']['aid'];
          $retun_billrun_key = isset($returnBillrun['billrun_key']) ? $returnBillrun['billrun_key'] : false;
          $retun_aid = isset($returnBillrun['aid']) ? $returnBillrun['aid'] : false;
-         $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : '';
+         $jiraLink = isset($row['jiraLink']) ? (array) $row['jiraLink'] : array();
          foreach ($jiraLink as $link) {
 			$this->message .= '<br><a target="_blank" href=' . "'" . $link . "'>issus in jira :" . $link . "</a>";
          }
@@ -302,7 +320,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
       */
      public function sumSids($key, $returnBillrun, $row) {
          $this->message .= "<b> sum sid's :</b> <br>";
-         if (count($row['test']['sid']) == count($returnBillrun['subs']) - 1) {
+         $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         $subs = isset($returnBillrun['subs']) && is_array($returnBillrun['subs']) ? $returnBillrun['subs'] : array();
+         if (count($sids) == count($subs) - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {
@@ -339,7 +359,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
              }
              $this->message .= "Percentage of tax :$vat %<br>";
          }
-         $subsFieldsPaths = (isset($row['expected']['billrun']['subs']) ) ? $row['expected']['billrun']['subs'] : null;
+         $subsFieldsPaths = (isset($row['expected']['billrun']['subs']) && is_array($row['expected']['billrun']['subs'])) ? $row['expected']['billrun']['subs'] : array();
         foreach($subsFieldsPaths as $path => $expectedValue){
             $result = Billrun_Util::getIn($returnBillrun['subs'], $path, '');
             if (Billrun_Util::isEqual($result, $expectedValue, 0.00001)) {
@@ -418,7 +438,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
      public function lineExists($key, $returnBillrun, $row) {
          $passed = true;
          $this->message .= "<b> create lines: </b> <br>";
-         $types = $row['expected']['line']['types'];
+         $types = isset($row['expected']['line']['types']) && is_array($row['expected']['line']['types']) ? $row['expected']['line']['types'] : array();
          $lines = $this->getLines($row);
          $returnTypes = [];
          foreach ($lines as $line) {
@@ -451,9 +471,9 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
       * @param array $row current test case
       * @return boolean return pass if the billrun was not created
       */
-     public function billrunNotCreated($key, $returnBillrun = null, $row) {
+     public function billrunNotCreated($key, $returnBillrun, $row) {
          $passed = true;
-         $this->lineExists($key, $returnBillrun = null, $row);
+         $this->lineExists($key, $returnBillrun, $row);
          if ($this->numOffLines > 0) {
              $passed = false;
              $this->message .= "lines was created for account {$row['test']['aid']} But they should not have been formed" . $this->fail;
@@ -616,7 +636,7 @@ require_once(APPLICATION_PATH . '/vendor/simpletest/simpletest/src/autorun.php')
          $aid = $row['test']['fake_aid'];
          $stamp = $row['test']['fake_stamp'];
          $query = array('aid' => $aid, "billrun_key" => $stamp);
-         $billrun = $this->getBillruns($query)->count();
+         $sumBillruns = $this->getBillruns($query)->count();
          if ($sumBillruns > 0) {
              $this->assertTrue(false);
              $this->message .= '<b style="color:red;">aggregate run full cycle</b>' . $this->fail;
@@ -1025,9 +1045,8 @@ public function passthrough($key, $returnBillrun, $row) {
 		foreach ($billruns as $bill) {
 			$billruns_[] = $bill->getRawData();
 		}
-			
-		foreach ($billruns_ as $bill) {
 
+		foreach ($billruns_ as $bill) {
 					if ($bill['invoicing_day'] == $aid_and_days[$bill['aid']]) {
 						$this->message .= "billrun  invoicing_day for aid $aid is correct ,day : {$aid_and_days[$bill['aid']]}" . $this->pass;
 					} else {

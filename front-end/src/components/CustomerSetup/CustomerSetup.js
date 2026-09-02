@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Tabs, Tab, Panel } from 'react-bootstrap';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Customer from './Customer';
 import Subscriptions from './Subscriptions';
 import CustomerAllowances from './CustomerAllowances';
@@ -45,6 +46,7 @@ import { showSuccess, showAlert } from '@/actions/alertsActions';
 import {
   modeSelector,
   itemSelector,
+  itemSourceSelector,
   idSelector,
   tabSelector,
   messageSelector,
@@ -60,6 +62,7 @@ class CustomerSetup extends Component {
     aid: PropTypes.number,
     mode: PropTypes.string,
     customer: PropTypes.instanceOf(Immutable.Map),
+    originalCustomer: PropTypes.instanceOf(Immutable.Map),
     subscription: PropTypes.instanceOf(Immutable.Map),
     settings: PropTypes.instanceOf(Immutable.Map),
     plans: PropTypes.instanceOf(Immutable.List),
@@ -85,6 +88,7 @@ class CustomerSetup extends Component {
   static defaultProps = {
     activeTab: 1,
     customer: Immutable.Map(),
+    originalCustomer: Immutable.Map(),
     subscription: Immutable.Map(),
     settings: Immutable.Map(),
     gateways: Immutable.List(),
@@ -107,17 +111,26 @@ class CustomerSetup extends Component {
     } else {
       this.props.dispatch(getList('available_gateways', getPaymentGatewaysQuery()));
       this.props.dispatch(getList('available_plans', getPlansKeysQuery({ name: 1, play: 1, description: 1, 'include.services': 1 })));
-      this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     }
+    this.props.dispatch(getList('available_services', getServicesKeysWithInfoQuery()));
     if (allowancesEnabled) {
       this.props.dispatch(getList('available_subscriptions', getSubscriptionsWithAidQuery()));
       this.props.dispatch(getList('available_accounts', getAccountsQuery()));
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { customer, mode, itemId } = nextProps;
-    const { customer: oldCustomer, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  componentDidUpdate(prevProps, prevState) { // eslint-disable-line no-unused-vars
+    const { customer, mode, itemId } = this.props;
+    const { customer: oldCustomer, itemId: oldItemId, mode: oldMode } = prevProps;
+    const olgPg = oldCustomer.getIn(['payment_gateway', 'active'], Immutable.List());
+    const pg = customer.getIn(['payment_gateway', 'active'], Immutable.List());
+    // if payment gateway was removed, save customer
+    if (!olgPg.isEmpty() && pg.isEmpty()) {
+      this.onSaveCustomer();
+    }
+  
+    // migrated from UNSAFE_componentWillReceiveProps
     const modeChanged = mode !== oldMode;
     const revisionChanged = getItemId(customer) !== getItemId(oldCustomer);
     if (modeChanged || revisionChanged) {
@@ -129,20 +142,11 @@ class CustomerSetup extends Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState) { // eslint-disable-line no-unused-vars
-    const { customer } = this.props;
-    const { customer: oldCustomer } = prevProps;
-    const olgPg = oldCustomer.getIn(['payment_gateway', 'active'], Immutable.List());
-    const pg = customer.getIn(['payment_gateway', 'active'], Immutable.List());
-    // if payment gateway was removed, save customer
-    if (!olgPg.isEmpty() && pg.isEmpty()) {
-      this.onSaveCustomer();
-    }
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearCustomer());
     this.clearSubscriptions();
+    // Reset page title so it does not bleed into the next screen (regression F).
+    this.props.dispatch(setPageTitle(''));
   }
 
   fetchItem = (itemId = this.props.itemId) => {
@@ -265,6 +269,7 @@ class CustomerSetup extends Component {
   render() {
     const {
       customer,
+      originalCustomer,
       settings,
       plans,
       services,
@@ -292,12 +297,14 @@ class CustomerSetup extends Component {
       <div className="CustomerSetup">
         <div className="row">
           <div className="col-lg-12">
-            <Tabs defaultActiveKey={activeTab} animation={false} id="CustomerEditTabs" onSelect={this.handleSelectTab}>
+            <Tabs defaultActiveKey={activeTab} transition={false} id="CustomerEditTabs" onSelect={this.handleSelectTab}>
               { !accountFields.isEmpty() &&
                 <Tab title="Customer Details" eventKey={1} key={1}>
                   <Panel style={{ borderTop: 'none' }}>
                     <Customer
                       customer={customer}
+                      originalCustomer={originalCustomer}
+                      allServices={services}
                       action={mode}
                       supportedGateways={gateways}
                       onChange={this.onChangeCustomerField}
@@ -390,6 +397,7 @@ class CustomerSetup extends Component {
 const mapStateToProps = (state, props) => ({
   itemId: idSelector(state, props, 'customer'),
   customer: itemSelector(state, props, 'customer'),
+  originalCustomer: itemSourceSelector(state, props, 'customer'),
   subscription: itemSelector(state, props, 'subscription'),
   mode: modeSelector(state, props, 'customer'),
   activeTab: tabSelector(state, props),

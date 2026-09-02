@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Form, FormGroup, FormControl, InputGroup, Button, Alert, Panel, Col, Row } from 'react-bootstrap';
+import { Form, FormControl, InputGroup, Button, Alert, Col, Row } from 'react-bootstrap';
+import { Panel, FormGroup } from '@/common/BootstrapCompat';
 import { Conflict409 } from '../StaticPages';
-import { userDoLogin, sendResetMail } from '@/actions/userActions';
+import { userDoLogin, sendResetMail, getAuthOptions} from '@/actions/userActions';
 import ResetPassword from './ResetPassword';
 
 class LoginForm extends Component {
@@ -26,11 +27,27 @@ class LoginForm extends Component {
     progress: false,
     resetPassword: false,
     sending: false,
+    authOptions: [],
   };
 
-  componentWillReceiveProps(nextProps) {
-    if (this.state.error !== nextProps.error) {
-      this.setState({ error: nextProps.error });
+  componentDidMount() {
+    this.props.dispatch(getAuthOptions())
+      .then((response) => {
+        const options = response.data[0]?.data?.details?.protocols || [];
+
+        this.setState({ authOptions: options });
+      })
+      .catch((err) => {
+        console.error('Failed to load auth protocols', err);
+        this.setState({ authOptions: [] });
+      });
+  }
+
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (this.state.error !== this.props.error) {
+      this.setState({ error: this.props.error });
     }
   }
 
@@ -49,6 +66,10 @@ class LoginForm extends Component {
           this.setState({ progress: false });
         }
       });
+  }
+
+  clickExternalProtocol = (protocol, providerName) => {
+    this.props.dispatch(userDoLogin(null, null, protocol, providerName));
   }
 
   clickResetPassword = () => {
@@ -83,15 +104,16 @@ class LoginForm extends Component {
   }
 
   renderLoginForm = () => {
-    const { error, progress, resetPassword, sending } = this.state;
+    const { error, progress, resetPassword, sending, authOptions } = this.state;
+    const externalOptions = authOptions.filter(opt => opt.type && opt.type.toLowerCase() !== 'internal');
     return (
-      <Col md={4} mdOffset={4}>
+      <Col md={4} className="col-md-offset-4" >
         <Panel header="Please Sign In" className="login-panel">
           <Form onSubmit={this.clickLogin}>
             <fieldset>
               <FormGroup validationState={error.length > 0 ? 'error' : null}>
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-user fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-user fa-fw" /></InputGroup.Text>
                   <FormControl
                     autoFocus
                     type="text"
@@ -104,7 +126,7 @@ class LoginForm extends Component {
 
               <FormGroup validationState={error.length > 0 ? 'error' : null}>
                 <InputGroup>
-                  <InputGroup.Addon><i className="fa fa-key fa-fw" /></InputGroup.Addon>
+                  <InputGroup.Text><i className="fa fa-key fa-fw" /></InputGroup.Text>
                   <FormControl
                     type="password"
                     placeholder="Password"
@@ -113,14 +135,45 @@ class LoginForm extends Component {
                   />
                 </InputGroup>
               </FormGroup>
-              <Button type="submit" bsStyle="success" bsSize="large" block onClick={this.clickLogin} disabled={progress}>
+              <Button type="submit" variant="success" size="lg" className="btn-block" disabled={progress}>
                 { progress && (<span><i className="fa fa-spinner fa-pulse" /> &nbsp;&nbsp;&nbsp;</span>) }
                 Login
               </Button>
             </fieldset>
           </Form>
-          {(error.length > 0) && <Alert bsStyle="danger" style={{ marginTop: 15 }} className="mb0">{error}</Alert>}
-          <Button type="button" bsStyle="link" bsSize="small" block onClick={this.clickResetPassword} disabled={progress}>
+
+          {externalOptions.length > 0 && (
+             <div style={{ margin: '15px 0', textAlign: 'center' }}>
+                <span className="text-muted">- OR -</span>
+             </div>
+          )}
+          {externalOptions.map((option, index) => {
+            return (
+              <div key={option.name || index}>
+                {index > 0 && (
+                  <div style={{ margin: '10px 0', textAlign: 'center' }}>
+                    <span className="text-muted" style={{ fontSize: '0.9em' }}>- OR -</span>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '10px' }}>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    className="btn-block"
+                    onClick={() => this.clickExternalProtocol(option.type, option.name)}
+                    disabled={progress}
+                  >
+                    <i className="fa fa-key fa-fw" /> &nbsp; Login with {option.label}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+          {(error.length > 0) && <Alert variant="danger" style={{ marginTop: 15 }} className="mb0">{error}</Alert>}
+          <div style={{ borderTop: '1px solid #eee', marginTop: '15px' }}></div>
+          <Button type="button" variant="link" size="sm" className="btn-block" onClick={this.clickResetPassword} disabled={progress}>
             Forgot Your Password?
           </Button>
         </Panel>

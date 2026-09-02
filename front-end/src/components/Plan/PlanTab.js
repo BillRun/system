@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
 import isNumber from 'is-number';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import { PlanDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
@@ -51,14 +52,7 @@ export default class Plan extends Component {
     },
   }
 
-  componentWillMount() {
-    const { plan } = this.props;
-    const count = plan.get('price', Immutable.List()).size;
-    if (count === 0) {
-      this.props.onPlanTariffAdd();
-    }
-  }
-
+  
   onPlanTrailTariffInit = (e) => {
     this.props.onPlanTariffAdd(true);
   }
@@ -185,6 +179,15 @@ export default class Plan extends Component {
     }
     return label.join(', ');
   }
+  
+  componentDidMount() {
+    const { plan } = this.props;
+    const count = plan.get('price', Immutable.List()).size;
+    if (count === 0) {
+      this.props.onPlanTariffAdd();
+    }
+  }
+
   render() {
     const { errors } = this.state;
     const { plan, mode, originalPlan, chargingModeOptions } = this.props;
@@ -194,7 +197,7 @@ export default class Plan extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
 
               <PlaysSelector
@@ -205,7 +208,7 @@ export default class Plan extends Component {
               />
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
                   <span className="danger-red"> *</span>
                   <Help contents={PlanDescription.description} />
@@ -217,7 +220,7 @@ export default class Plan extends Component {
 
               {['clone', 'create'].includes(mode) &&
                 <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('name', getFieldNameType('service'), sentenceCase('key'))}
                     <span className="danger-red"> *</span>
                     <Help contents={PlanDescription.name} />
@@ -239,7 +242,7 @@ export default class Plan extends Component {
                   />
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>
+                <Col as={ControlLabel} sm={3} lg={2}>
                   Charging Mode
                   <span className="danger-red"> *</span>
                 </Col>
@@ -255,7 +258,7 @@ export default class Plan extends Component {
               </FormGroup>
 
               <FormGroup>
-                <Col componentClass={ControlLabel} sm={3} lg={2}>Proration</Col>
+                <Col as={ControlLabel} sm={3} lg={2}>Proration</Col>
                 <Col sm={8} lg={9} className="pt5">
                   <Field
                     fieldType="checkbox"

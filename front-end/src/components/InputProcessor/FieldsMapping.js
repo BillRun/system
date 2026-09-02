@@ -66,12 +66,7 @@ export default class FieldsMapping extends Component {
     };
   }
 
-  componentWillMount() {
-    if (this.props.settings.getIn(['processor', 'time_field'])) {
-      this.setState({ separateTime: true });
-    }
-  }
-
+  
   onChangePattern(index, e) {
     const { conditions } = this.state;
     const { value } = e.target;
@@ -301,10 +296,16 @@ export default class FieldsMapping extends Component {
     this.setState({ pattern: e, conditions });
   };
 
+  
+  componentDidMount() {
+    if (this.props.settings.getIn(['processor', 'time_field'])) {
+      this.setState({ separateTime: true });
+    }
+  }
+
   render() {
     const {
       separateTime,
-      separateTimeZone,
       usaget,
       unit,
       volumeType,
@@ -367,7 +368,7 @@ export default class FieldsMapping extends Component {
             <label htmlFor="date_field">Date Time</label>
             <p className="help-block">
               Date and time of record creation<br />
-              <a target="_blank" rel="noopener noreferrer" href="http://php.net/manual/en/function.date.php#refsect1-function.date-parameters">Formatting info</a>
+              <a target="_blank" rel="noopener noreferrer" href="https://www.php.net/manual/en/datetime.format.php#refsect1-datetime.format-parameters">Formatting info</a>
             </p>
           </div>
           <div className="col-lg-9">

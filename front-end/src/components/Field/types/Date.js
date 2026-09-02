@@ -3,9 +3,19 @@ import PropTypes from 'prop-types';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
 import { getConfig } from '@/common/Util';
+import {
+  adaptDateList,
+  adaptFilterDate,
+  momentToPickerDate,
+  pickerDateToMoment,
+  toDateFnsFormat,
+} from './datePickerAdapter';
 
 const Date = ({
-  editable, value, disabled, placeholder, onChange, dateFormat, message, minDate,
+  editable = true, value, disabled = false, placeholder = '', onChange = () => {}, dateFormat, message = null, minDate,
+  filterDate,
+  highlightDates,
+  excludeDates,
   ...otherProps
 }) => {
   const format = dateFormat || getConfig('dateFormat', 'DD/MM/YYYY');
@@ -16,32 +26,24 @@ const Date = ({
     );
   }
   const placeholderText = (disabled && !value) ? '' : placeholder;
-  const selected = (moment.isMoment(value) && value.isValid()) ? value : null;
-  const minDateValue = moment.isMoment(minDate) ? minDate : undefined;
 
   return (
     <DatePicker
       {...otherProps}
-      minDate={minDateValue}
+      minDate={momentToPickerDate(minDate)}
+      filterDate={adaptFilterDate(filterDate)}
+      highlightDates={adaptDateList(highlightDates)}
+      excludeDates={adaptDateList(excludeDates)}
       className="form-control"
-      dateFormat={format}
-      selected={selected}
-      onChange={onChange}
+      dateFormat={toDateFnsFormat(format)}
+      selected={momentToPickerDate(value) ?? null}
+      onChange={date => onChange(pickerDateToMoment(date))}
       disabled={disabled}
       placeholderText={placeholderText}
     >
       {message}
     </DatePicker>
   );
-};
-
-Date.defaultProps = {
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  message: null,
-  onChange: () => {},
 };
 
 Date.propTypes = {

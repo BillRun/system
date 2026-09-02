@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { List, Map } from 'immutable';
 import { titleCase } from 'change-case';
-import { Tab, Panel } from 'react-bootstrap';
+import { Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import TabsWrapper from '../Elements/TabsWrapper';
 import CustomFieldsListContainer from './CustomFieldsListContainer';
 import CustomFieldsListUsageContainer from './CustomFieldsListUsageContainer';
@@ -32,7 +33,9 @@ class CustomFields extends Component {
     orderChanged: Map(),
   };
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const { loadFields, tabs } = this.props;
     loadFields(tabs.toJS());
   }

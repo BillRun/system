@@ -1,0 +1,186 @@
+{
+    "status": 1,
+    "data": [
+      {
+        "aid": 12593,
+        "crm_account_id": null,
+        "type": "account",
+        "from": "2025-12-04 15:57:14",
+        "to": "2200-01-01 02:00:00",
+        "firstname": "",
+        "lastname": "",
+        "title": null,
+        "email": null,
+        "invoice_shipping_method": "post",
+        "category": "RES",
+        "sub_category": "RESIDENTIAL",
+        "invoice_message": null,
+        "invoice_language": "gr_CY",
+        "invoice_detailed": false,
+        "street": "",
+        "house_number": "",
+        "apartment": "",
+        "province": "",
+        "city": "",
+        "country": "",
+        "zip_code": "",
+        "po_box": "",
+        "creation_time": "2025-12-04 15:57:14",
+        "activation_date": "2025-12-04 15:59:00",
+        "deactivation_date": "2200-01-01 02:00:00"
+
+      },
+      {
+        "sid": 39280,
+        "aid": 12593,
+        "type": "subscriber",
+        "from": "2025-12-04 15:59:00",
+        "to": "2026-01-14 16:07:57",
+        "plan": "B2C_UPFRONT_1_BRCD_5093",
+        "play": "MOBILE",
+        "firstname": "",
+        "lastname": "",
+        "activation_date": "2025-12-04 15:59:00",
+        "deactivation_date": "2200-01-01 02:00:00",
+        "plan_activation": "2025-12-04 15:59:00",
+        "plan_deactivation": "2026-01-14 16:07:57",
+        "creation_time": null,
+        "former_plan": null,
+        "services": [],
+        "imsi": [],
+        "sub_number": "",
+        "portability_code": "",
+        "discounts": [
+          {
+            "priority": "",
+            "params": {},
+            "from": "2026-01-14 14:07:57",
+            "subject": {
+              "plan": {
+                "B2C_UPFRONT_1_BRCD_5093": {
+                  "value": 4.201
+                }
+              }
+            },
+            "proration": "yes",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2028-01-14 14:07:57",
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_1"
+          },
+          {
+            "priority": "",
+            "params": {},
+            "from": "2025-12-04 13:59:00",
+            "subject": {
+              "plan": {
+                "B2C_UPFRONT_1_BRCD_5093": {
+                  "value": 16.806
+                }
+              }
+            },
+            "proration": "yes",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2026-01-14 14:07:57",
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_2"
+          }
+        ],
+        "overrides": [
+          {
+            "type": "plan",
+            "id": null,
+            "key": "B2C_UPFRONT_1_BRCD_5093",
+            "value": {
+              "price": [
+                {
+                  "price": 33.605,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "sid": 39280,
+        "aid": 12593,
+        "type": "subscriber",
+        "from": "2026-01-14 16:07:57",
+        "to": "2200-01-01 02:00:00",
+        "plan": "B2C_UPFRONT_2_BRCD_5093",
+        "play": "MOBILE",
+        "firstname": "Thanasis",
+        "lastname": "TestSix",
+        "activation_date": "2025-12-04 15:59:00",
+        "deactivation_date": "2200-01-01 02:00:00",
+        "plan_activation": "2026-01-14 16:07:57",
+        "plan_deactivation": "2200-01-01 02:00:00",
+        "creation_time": null,
+        "former_plan": "B2C_UPFRONT_1_BRCD_5093",
+        "services": [],
+        "imsi": [],
+        "sub_number": "35796660319",
+        "portability_code": "P3J5Q2OB",
+        "discounts": [
+          {
+            "priority": "",
+            "params": {},
+            "from": "2026-01-14 14:07:57",
+            "subject": {
+              "plan": {
+                "B2C_UPFRONT_2_BRCD_5093": {
+                  "value": 4.201
+                }
+              }
+            },
+            "proration": "yes",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2028-01-14 14:07:57",
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_1"
+          },
+          {
+            "priority": "",
+            "params": {},
+            "from": "2025-12-04 13:59:00",
+            "subject": {
+              "plan": {
+                "B2C_UPFRONT_2_BRCD_5093": {
+                  "value": 16.806
+                }
+              }
+            },
+            "proration": "yes",
+            "cycles": 24,
+            "type": "monetary",
+            "to": "2026-01-14 14:07:57",
+            "description": "",
+            "key": "SUBSCRIBER_DISCOUNT_2"
+          }
+        ],
+        "overrides": [
+          {
+            "type": "plan",
+            "id": null,
+            "key": "B2C_UPFRONT_2_BRCD_5093",
+            "value": {
+              "price": [
+                {
+                  "price": 13.437,
+                  "from": 0,
+                  "to": "UNLIMITED"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "options": null,
+    "billableAccounts": {}
+  }

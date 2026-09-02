@@ -247,7 +247,8 @@
 								{
 									"field_name": "services",
 									"system": true,
-									"mandatory": false
+									"mandatory": false,
+									"multiple": true
 								}
 								
 							]
@@ -344,6 +345,21 @@
 									"editable": true,
 									"display": true,
 									"title": "Salutation"
+								},
+								{
+									"system" : false,
+									"select_list" : true,
+									"display" : true,
+									"editable" : true,
+									"field_name" : "invoice_shipping_method",
+									"default_value" : "email",
+									"show_in_list" : true,
+									"title" : "Invoice shipping method",
+									"mandatory" : false,
+									"select_options" : "email",
+									"changeable_props" : [
+										"select_options"
+									]
 								}
 							]
 						}
@@ -873,24 +889,25 @@
 						"website": "example.com"
 					},
 					"invoice_export": {
-						"export": "files/invoices/",
-						"generator": {
-							"type": "WkPdf"
+						"export" : "files/invoices/",
+						"onetime_view_path" : "/views/invoices/onetime/",
+						"generator" : {
+							"type" : "WkPdf"
 						},
-						"disable_stamp_export_directory": 1,
-						"theme": "/application/views/invoices/theme/theme1.css",
-						"header": "",
-						"footer": "",
-						"sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
-						"details_template": "/application/views/invoices/details/details1.phtml",
-						"decimal_mark": ".",
-						"thousands_separator": ",",
-						"date_separator": "/",
-						"move_exported": 0,
-						"html_translation": [
+						"disable_stamp_export_directory" : 1,
+						"theme" : "/application/views/invoices/theme/theme1.css",
+						"sumup_template" : "/application/views/invoices/sumup/sumup1.phtml",
+						"details_template" : "/application/views/invoices/details/details1.phtml",
+						"decimal_mark" : ".",
+						"thousands_separator" : ",",
+						"date_separator" : "/",
+						"move_exported" : 0,
+						"html_translation" : [
 							"company_name",
 							"date"
-						]
+						],
+						"header" : "/header/header_tpl.phtml",
+						"footer" : "/footer/footer_tpl.phtml"
 					},
 					"export_generators": [],
 					"payment_gateways": [

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, HelpBlock, Col } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { PlanDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
@@ -56,10 +57,10 @@ export default class PrepaidPlanDetails extends Component {
     const editable = (mode !== 'view');
     return (
       <div className="PrepaidPlanDetails">
-        <Form horizontal>
+        <Form className="form-horizontal">
 
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               Title
               <Help contents={PlanDescription.description} />
             </Col>
@@ -70,7 +71,7 @@ export default class PrepaidPlanDetails extends Component {
 
           {['clone', 'create'].includes(mode) &&
             <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-              <Col componentClass={ControlLabel} sm={3} lg={2}>
+              <Col as={ControlLabel} sm={3} lg={2}>
                 Key
                 <Help contents={PlanDescription.name} />
               </Col>

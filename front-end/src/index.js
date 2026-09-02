@@ -1,12 +1,10 @@
 import React, { Suspense, lazy } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux'
 import Routes from './routes';
 import configureStore from './configureStore'
 import * as serviceWorker from './serviceWorker';
 /* Styles */
-import 'react-bootstrap-multiselect/css/bootstrap-multiselect.css';
-import 'react-tagsinput/react-tagsinput.css'
 import 'react-datepicker/dist/react-datepicker.css';
 import 'font-awesome/css/font-awesome.min.css';
 import './styles/css/normalize.css';
@@ -19,7 +17,10 @@ const DevTools = lazy(() => import('./components/DevTools'));
 
 const store = configureStore()
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
   <Provider store={store}>
     <Routes />
     {process.env.NODE_ENV === "development" && (
@@ -27,8 +28,7 @@ ReactDOM.render(
         <DevTools />
       </Suspense>
     )}
-  </Provider>,
-  document.getElementById('root')
+  </Provider>
 );
 
 // If you want your app to work offline and load faster, you can change

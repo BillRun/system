@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
-import { Row, Col, Panel } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import isNumber from 'is-number';
 import moment from 'moment';
 import getSymbolFromCurrency from 'currency-symbol-map';

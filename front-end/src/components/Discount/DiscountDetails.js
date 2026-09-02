@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, ControlLabel, Col, Row, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { titleCase, paramCase } from 'change-case';
 import isNumber from 'is-number';
@@ -103,17 +104,7 @@ class DiscountDetails extends Component {
     },
   }
 
-  componentWillMount() {
-    const { availableEntities } = this.props;
-    this.props.dispatch(getSettings([
-      'subscribers.subscriber',
-      'subscribers.account',
-    ]));
-    const listsToGet = DiscountDetails.requiredEntityLists
-      .filter(entity => availableEntities.get(entity, Immutable.List()).isEmpty());
-    this.props.dispatch(getEntitiesOptions(listsToGet));
-  }
-
+  
   onChangeFiled = (path, value) => {
     const pathString = path.join('.');
     switch (pathString) {
@@ -428,6 +419,18 @@ class DiscountDetails extends Component {
       .toArray()
   }
 
+  
+  componentDidMount() {
+    const { availableEntities } = this.props;
+    this.props.dispatch(getSettings([
+      'subscribers.subscriber',
+      'subscribers.account',
+    ]));
+    const listsToGet = DiscountDetails.requiredEntityLists
+      .filter(entity => availableEntities.get(entity, Immutable.List()).isEmpty());
+    this.props.dispatch(getEntitiesOptions(listsToGet));
+  }
+
   render() {
     const { errors:onChangeErrors } = this.state;
     const { discount, mode, currency, fields, hideFields, errors } = this.props;
@@ -444,7 +447,7 @@ class DiscountDetails extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <Panel>
               <EntityField
                 field={fields.get('description')}
@@ -465,7 +468,7 @@ class DiscountDetails extends Component {
               )}
               { !hideFields.includes('type') && (
                 <FormGroup >
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('type', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -487,7 +490,7 @@ class DiscountDetails extends Component {
               )}
               { !hideFields.includes('params.cycles') && (
                 <FormGroup validationState={errors.has('params.cycles') ? 'error' : null}>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('cycles', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -516,7 +519,7 @@ class DiscountDetails extends Component {
               )}
               { !hideFields.includes('limit') && (
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     { getFieldName('discount_overall_limit', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -553,7 +556,7 @@ class DiscountDetails extends Component {
               )}
               { !hideFields.includes('excludes') && (
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     Excludes
                   </Col>
                   <Col sm={8} lg={9}>
@@ -592,7 +595,7 @@ class DiscountDetails extends Component {
             { !hideFields.includes('subject.plan') && (
               <Panel header={<h3>{getFieldName('panel_plan_discount', 'discount')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     {getFieldName('select_plans', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -613,7 +616,7 @@ class DiscountDetails extends Component {
             { !hideFields.includes('subject.customer_service') && (
               <Panel header={<h3>{getFieldName('panel_customer_service_discount', 'discount')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     {getFieldName('select_services', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>
@@ -634,7 +637,7 @@ class DiscountDetails extends Component {
             { !hideFields.includes('subject.service') && (
               <Panel header={<h3>{getFieldName('panel_subscriber_service_discount', 'discount')}</h3>}>
                 <FormGroup>
-                  <Col componentClass={ControlLabel} sm={3} lg={2}>
+                  <Col as={ControlLabel} sm={3} lg={2}>
                     {getFieldName('select_services', 'discount')}
                   </Col>
                   <Col sm={8} lg={9}>

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import withRouter from '@/common/withRouter';
 import List from '../List';
 import { Button } from "react-bootstrap";
 import Immutable from 'immutable';
@@ -36,7 +37,7 @@ class ExportGeneratorsList extends Component {
   }
 
   onClickExportGenerator(export_generator) {
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'export_generator',
       query: {
         name: export_generator.get('name'),
@@ -46,7 +47,7 @@ class ExportGeneratorsList extends Component {
   }
 
   onClickNew() {
-    this.context.router.push({
+    this.props.router.push({
       pathname: 'export_generator',
       query: {
         action: 'new'
@@ -77,7 +78,7 @@ class ExportGeneratorsList extends Component {
                   All available Export Generators
                 </span>
                 <div className="pull-right">
-                  <Button bsSize="xsmall" className="btn-primary" onClick={this.onClickNew}><i className="fa fa-plus"></i>&nbsp;Add New</Button>
+                  <Button size="sm" variant="primary" className="btn-xs" onClick={this.onClickNew}><i className="fa fa-plus"></i>&nbsp;Add New</Button>
                 </div>
               </div>
               <div className="panel-body">
@@ -97,9 +98,6 @@ class ExportGeneratorsList extends Component {
   }
 }
 
-ExportGeneratorsList.contextTypes = {
-  router: PropTypes.object.isRequired
-};
 
 function mapStateToProps(state, props) {
   return {
@@ -107,4 +105,4 @@ function mapStateToProps(state, props) {
   };
 }
 
-export default connect(mapStateToProps)(ExportGeneratorsList);
+export default withRouter(connect(mapStateToProps)(ExportGeneratorsList));

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { HelpBlock } from 'react-bootstrap';
+import { HelpBlock } from '@/common/BootstrapCompat';
 import List from '../List';
 import Pager from '../EntityList/Pager';
 import { ReportDescription } from '../../language/FieldDescriptions';

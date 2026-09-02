@@ -68,33 +68,34 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		Billrun_Factory::log("Parsing data...", Zend_Log::DEBUG);
 		$parser = $this->getParser();
 		$parser->resetData();
+		$this->resetInformationArray();
 		$parser->setHeaderStructure($headerStructure);
 		$parser->setDataStructure($dataStructure);
-                try{
-		$parser->parse($this->fileHandler);
-		} catch(Exception $ex) {
-                    Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
-			Billrun_Factory::log()->log('Something went wrong while processing the file', Zend_Log::ALERT);
-                    return false;
-                } 
-		Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
-		$this->headerRows = $parser->getHeaderRows();
-		$this->trailerRows = $parser->getTrailerRows();
-		$parsedData = $parser->getDataRows();
-		$rowCount = 0;
-		Billrun_Factory::log("Formating parsed data, and adding stamp field", Zend_Log::DEBUG);
-		foreach ($parsedData as $index => $line) {
-            $line = $this->formatLine($line,$dataStructure);
-			$row = $this->getBillRunLine($line, $index);
-			if (!$row){
-				return false;
+        try{
+			$parser->parse($this->fileHandler);
+			Billrun_Factory::log("Finished parsing", Zend_Log::DEBUG);
+			$this->headerRows = $parser->getHeaderRows();
+			$this->trailerRows = $parser->getTrailerRows();
+			$parsedData = $parser->getDataRows();
+			$rowCount = 0;
+			Billrun_Factory::log("Formating parsed data, and adding stamp field", Zend_Log::DEBUG);
+			foreach ($parsedData as $index => $line) {
+				$line = $this->formatLine($line,$dataStructure);
+				$row = $this->getBillRunLine($line, $index);
+				if (!$row){
+					return false;
+				}
+				$row['row_number'] = ++$rowCount;
+				$this->addDataRow($row);
 			}
-			$row['row_number'] = ++$rowCount;
-			$this->addDataRow($row);
-		}
+		} catch(Exception $ex) {
+            Billrun_Factory::log()->log($ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log()->log('Something went wrong while processing/parsing the file', Zend_Log::ALERT);
+			$this->updateLogFile();
+            return false;
+        }
 		$this->data['header'] = array('header' => TRUE); //TODO
         $this->data['trailer'] = array('trailer' => TRUE); //TODO
-		$this->resetInformationArray();
 		return true;
 	}
         
@@ -117,9 +118,6 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		if (isset($paramObj['value_mult'])) {
 			$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
 		}
-			if (isset($paramObj['value_mult'])) {
-				$row[$paramObj['name']] = floatval($row[$paramObj['name']]) * floatval($paramObj['value_mult']);
-			}
 		if(isset($paramObj['decimals'])){
 			$value = intval($row[$paramObj['name']]);
 			$row[$paramObj['name']] = (float)($value/pow(10,$paramObj['decimals']));
@@ -131,7 +129,20 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				$this->informationArray['warnings'][] = $message;
 				$paramObj['format'] = Billrun_Base::base_datetimeformat;
 			}
-			$row[$paramObj['name']] = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format'])->format(Billrun_Base::base_datetimeformat);
+			$datetime = Billrun_Processor_Util::getRowDateTime($row, $paramObj['name'], $paramObj['format']);
+			if (!($datetime instanceof DateTime)) {
+				if (!empty($this->dateField) && (Billrun_Util::getIn($this->dateField, 'source', "") == "data") && (Billrun_Util::getIn($this->dateField, 'field', "") == $paramObj["name"])) {
+					$message = $paramObj['name'] . ' field was defined as date field, but the date value "' . $row[$paramObj['name']] . '" couldn\'t be formatted. Current time will be taken instead';
+					Billrun_Factory::log($message, Zend_Log::ERR);
+					$this->informationArray['errors'][] = $message;
+				} else {
+					$message = $paramObj['name'] . ' field could not be parsed as a date using format ' . $paramObj['format'];
+					$this->informationArray['errors'][] = $message;
+					throw new Exception($message);
+				}
+			} else {
+				$row[$paramObj['name']] = $datetime->format(Billrun_Base::base_datetimeformat);
+			}
 		}
 		if (isset($paramObj['substring'])) {
 			if (!isset($paramObj['substring']['offset']) || !isset($paramObj['substring']['length'])) {
@@ -140,7 +151,16 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				throw new Exception($message);
 			}
 			$row[$paramObj['name']] = substr($row[$paramObj['name']], $paramObj['substring']['offset'], $paramObj['substring']['length']);
+		}
+		if (isset($paramObj['replace_regex'])) {
+			$value = preg_replace($paramObj['replace_regex']['regex'], $paramObj['replace_regex']['replace_with'], $row[$paramObj['name']]);
+			if(!isset($value)){
+				$message = "Field name " . $paramObj['name'] . " config was defined incorrectly for replace_regex when generating file type " . $this->configByType['file_type'];
+				throw new Exception($message);
+
 			}
+			$row[$paramObj['name']] = $value;
+		}
 		}
 		return $row;
 	}
@@ -319,7 +339,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					$no_txid_counter++;
 					continue;
 				}
-				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField] , Zend_Log::DEBUG);
+				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField['field']] , Zend_Log::DEBUG);
 				$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
 				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);
@@ -340,6 +360,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 				continue;
 			}
 			$this->billSavedFields = $this->getBillSavedFields($row, $billSavedFieldsNames);
+			Billrun_Factory::dispatcher()->trigger('beforeUpdatePayments', array($this, $row, $bill));
 			$this->updatePayments($row, $bill, $currentProcessor);
 		}
 		if ($no_txid_counter > 0) {
@@ -488,5 +509,13 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 		$query = parent::getLogFileQuery($adoptThreshold);
 		$query['pg_file_type'] = $this->fileType;
 		return $query;
+	}
+
+	public function getBillSavedFieldsData() {
+		return $this->billSavedFields;
+	}
+
+	public function setBillSavedFields($fields) {
+		$this->billSavedFields = $fields;
 	}
 }

@@ -1,10 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { InputGroup } from 'react-bootstrap';
-
-
 const Password = ({
-  onChange, value, editable, disabled, suffix, preffix, ...otherProps
+  onChange = () => {}, value = '', editable = true, disabled = false, suffix = null, preffix = null, ...otherProps
 }) => {
   if (editable) {
     const input = (
@@ -17,12 +15,14 @@ const Password = ({
         disabled={disabled}
       />
     );
-    if (suffix !== null || preffix !== null) {
+    // `suffix`/`preffix` may be `undefined` when not provided; treat both nullish
+    // values as "absent" to avoid rendering empty InputGroup.Text placeholders.
+    if (suffix != null || preffix != null) {
       return (
         <InputGroup>
-          {preffix !== null && (<InputGroup.Addon>{preffix}</InputGroup.Addon>)}
+          {preffix != null && (<InputGroup.Text>{preffix}</InputGroup.Text>)}
           {input}
-          {suffix !== null && (<InputGroup.Addon>{suffix}</InputGroup.Addon>)}
+          {suffix != null && (<InputGroup.Text>{suffix}</InputGroup.Text>)}
         </InputGroup>
       );
     }
@@ -32,24 +32,12 @@ const Password = ({
   return (
     <div className="non-editable-field">
       <span>
-        {(preffix !== null) && `${preffix} `}
+        {(preffix != null) && `${preffix} `}
         ******
-        {(suffix !== null) && ` ${suffix}`}
+        {(suffix != null) && ` ${suffix}`}
       </span>
     </div>
   );
-};
-
-
-Password.defaultProps = {
-  value: '',
-  required: false,
-  disabled: false,
-  editable: true,
-  placeholder: '',
-  suffix: null,
-  preffix: null,
-  onChange: () => {},
 };
 
 Password.propTypes = {

@@ -4,8 +4,7 @@ import Immutable from 'immutable';
 import { Button } from 'react-bootstrap';
 import { DiffModal } from '@/components/Elements';
 
-
-const DetailsParser = ({ item }) => {
+const DetailsParser = ({ item = Immutable.Map() }) => {
 
   const [showDiff, toggleDiff] = useState(false);
 
@@ -62,7 +61,7 @@ const DetailsParser = ({ item }) => {
         <p>
           {getActionLabel(item.get('type', ''))}
           &nbsp;
-          <Button bsStyle="link" onClick={openDiff} style={{ verticalAlign: 'bottom' }}>
+          <Button variant="link" onClick={openDiff} style={{ verticalAlign: 'bottom' }}>
             <i className="fa fa-compress" />
             &nbsp;
             {item.get('new', null) && item.get('old', null) ? 'Compare' : 'Details'}
@@ -73,10 +72,6 @@ const DetailsParser = ({ item }) => {
     </div>
   );
 }
-
-DetailsParser.defaultProps = {
-  item: Immutable.Map(),
-};
 
 DetailsParser.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),

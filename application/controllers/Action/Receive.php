@@ -62,7 +62,9 @@ class ReceiveAction extends Action_Base {
 							foreach ($fileTypeSettings['connections'] as $connectionDetails) {
 								$connectionDetails['file_type'] = $fileType;
 								$connectionDetails['type'] = str_replace('_', '', ucwords($options['payment_gateway'], '_')) . str_replace('_', '', ucwords($options['type'], '_'));
-								$this->getController()->addOutput("Initilazing receiver connection");
+								$connectionDetails['cpf_type'] = $options['type'];
+								$connectionDetails['payment_gateway'] = $options['payment_gateway'];
+								$this->getController()->addOutput("Initilazing receiver connection, of file type - " . $connectionDetails['file_type'] . ", cpf type - " . $connectionDetails['cpf_type'] . ", pg - " . $connectionDetails['payment_gateway'] . " and source - " . $connectionDetails['type']);
 								$connection = Billrun_Factory::paymentGatewayConnection($connectionDetails);
 								$this->getController()->addOutput("Receiving files...");
 								$files = $connection->receive();

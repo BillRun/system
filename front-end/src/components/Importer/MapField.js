@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { FormGroup, ControlLabel, Col, Label, InputGroup, HelpBlock, DropdownButton, MenuItem } from 'react-bootstrap';
+import { Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, InputGroupButton, Label } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import { sentenceCase } from 'change-case';
 import Field from '@/components/Field';
@@ -10,15 +11,15 @@ import { getConfig } from '@/common/Util';
 
 const MapField = (props) => {
   const {
-    mapFrom,
-    mapTo,
-    defaultValue,
-    options,
-    mapResult,
-    operation,
-    defaultValuesOperation,
-    entity,
-    multiFieldAction,
+    mapFrom = '',
+    mapTo = '',
+    defaultValue = null,
+    options = [],
+    mapResult = Immutable.Map(),
+    operation = '',
+    defaultValuesOperation = getConfig(['import', 'default_values_allowed_actions'], Immutable.Map()),
+    entity = '',
+    multiFieldAction = Immutable.Map(),
   } = props;
 
   const onChange = (value) => {
@@ -143,9 +144,9 @@ const MapField = (props) => {
     return actions.map((action) => {
       const isActive = multiFieldAction.get(mapFrom.value, false) === action;
       return (
-        <MenuItem eventKey={action} active={isActive} key={`${mapFrom.value}-${action}-action`} disabled={disabled && action !== 'remove'}>
+        <Dropdown.Item eventKey={action} active={isActive} key={`${mapFrom.value}-${action}-action`} disabled={disabled && action !== 'remove'}>
           {renderMultiFieldActionLabel(action)}
-        </MenuItem>
+        </Dropdown.Item>
       )
     });
   };
@@ -157,20 +158,21 @@ const MapField = (props) => {
     const fieldAction = multiFieldAction.get(mapFrom.value, false);
     const title = (<span className="control-label">{renderMultiFieldActionLabel(fieldAction)}</span>);
     return (
-      <DropdownButton
-        onSelect={onSelectMultiFieldAction}
-        id={`${mapFrom.value}-actions`}
-        componentClass={InputGroup.Button}
-        title={title}
-      >
-        {renderActionItems()}
-      </DropdownButton>
+      <InputGroupButton>
+        <DropdownButton
+          onSelect={onSelectMultiFieldAction}
+          id={`${mapFrom.value}-actions`}
+          title={title}
+        >
+          {renderActionItems()}
+        </DropdownButton>
+      </InputGroupButton>
     );
   }
 
   return (
     <FormGroup>
-      <Col sm={3} componentClass={ControlLabel}>
+      <Col sm={3} as={ControlLabel}>
         {mapFrom.label}
         {mapFrom.mandatory && defaultValue === null && operation === 'create' && (
           <span className="danger-red"> *</span>
@@ -182,9 +184,9 @@ const MapField = (props) => {
             <InputGroup>
               {renderSelectCsvFiled()}
               {mapFrom.unique && (
-                <InputGroup.Addon>
-                  <Label bsStyle="info">Unique field</Label>
-                </InputGroup.Addon>
+                <InputGroup.Text>
+                  <Label variant="info">Unique field</Label>
+                </InputGroup.Text>
               )}
               {renderMultiFieldDropDown()}
             </InputGroup>
@@ -194,10 +196,10 @@ const MapField = (props) => {
         {typeof mapFrom.help === 'string' && mapFrom.help !== '' && (
           <HelpBlock className="mb0 mt0">{mapFrom.help}</HelpBlock>
         )}
-        {defaultValue !== null && defaultValuesOperation.get(operation).includes(entity) && (
+        {defaultValue !== null && defaultValuesOperation.get(operation, Immutable.List()).includes(entity) && (
           <HelpBlock className="mb0">
             Default value if no value is selected:&nbsp;
-            <Label bsStyle="primary" style={{ padding: '1px 6px', fontWeight: 'bold' }} >
+            <Label variant="primary" style={{ padding: '1px 6px', fontWeight: 'bold' }} >
               { getDefaultValueLabel() }
             </Label>
           </HelpBlock>
@@ -205,20 +207,6 @@ const MapField = (props) => {
       </Col>
     </FormGroup>
   );
-};
-
-MapField.defaultProps = {
-  mapResult: Immutable.Map(),
-  mapFrom: '',
-  mapTo: '',
-  defaultValue: null,
-  options: [],
-  entity: '',
-  operation: '',
-  defaultValuesOperation: getConfig(['import', 'default_values_allowed_actions'], Immutable.Map()),
-  multiFieldAction: Immutable.Map(),
-  onChange: () => {},
-  onDelete: () => {},
 };
 
 MapField.propTypes = {

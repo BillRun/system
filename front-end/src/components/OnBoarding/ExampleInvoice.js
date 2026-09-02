@@ -5,8 +5,7 @@ import CloseOnEscape from 'react-close-on-escape';
 import Invoice from './Invoice';
 import { ActionButtons } from '@/components/Elements';
 
-
-const ExampleInvoice = ({ onPause, onStop }) => (
+const ExampleInvoice = ({ onPause = () => {}, onStop = () => {} }) => (
   <CloseOnEscape onEscape={onPause}>
     <div className="ExampleInvoice">
       <div className="invoice-page-modal" />
@@ -14,7 +13,7 @@ const ExampleInvoice = ({ onPause, onStop }) => (
         <div className="clearfix" style={{ marginBottom: 25 }}>
           <div className="pull-left"><h4 style={{ margin: 0 }}>Example Invoice</h4></div>
           <div className="pull-right">
-            <Button bsStyle="link" onClick={onPause} className="close">
+            <Button variant="link" onClick={onPause} className="close">
               <i className="fa fa-times" style={{ color: '#222222', fontSize: 16, marginTop: -10, marginRight: -10 }} />
             </Button>
           </div>
@@ -31,11 +30,6 @@ const ExampleInvoice = ({ onPause, onStop }) => (
     </div>
   </CloseOnEscape>
 );
-
-ExampleInvoice.defaultProps = {
-  onPause: () => {},
-  onStop: () => {},
-};
 
 ExampleInvoice.propTypes = {
   onPause: PropTypes.func,
