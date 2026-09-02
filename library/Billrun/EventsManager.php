@@ -80,10 +80,9 @@ class Billrun_EventsManager {
 		}
 		
 		foreach ($eventSettings as $event) {
-			$pathsConditionsCount = [];
-			$pathsMatched = [];
-			$pathsMatchedBefore = [];
-			foreach ($event['conditions'] as $conditionsIndex => $rawsEventSettings) {//AND
+			$conditionSettings = [];
+			foreach ($event['conditions'] as $conditionsIndex => $rawsEventSettings) {
+				$conditionSettings = [];
 				$additionalEventData = array(
 					'unit' => $rawsEventSettings['unit'] ?? '',
 					'usaget' => $rawsEventSettings['usaget'] ?? '',
@@ -91,6 +90,7 @@ class Billrun_EventsManager {
 					'type' => $rawsEventSettings['type'] ?? '',
 					'value' => $rawsEventSettings['value'] ?? '',
 				);
+				$pathsMatched = [];
 				if(isset($rawsEventSettings['all_groups']) && $rawsEventSettings['all_groups'] === true && $eventType == 'balance') {
 					Billrun_Factory::log('Create All Groups Event, code: ' . $event['event_code'] . ' description : ' .  $event['event_description'], Billrun_Log::DEBUG);
 					$rawsEventSettingsPaths = $this->createPathsByBalance($rawsEventSettings, $extraParams, $entityBefore, $entityAfter);
@@ -107,9 +107,8 @@ class Billrun_EventsManager {
 					];
 					unset($rawsEventSettingsPaths);
 				}
-
-				$conditionMatched = false;
-				foreach($rawsEventSettingsPaths as $rawEventSettings) {//OR
+		
+				foreach($rawsEventSettingsPaths as $rawEventSettings) {
 					$rawEventSettings = array_merge($rawEventSettings, $additionalEventData);
 					if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
 						$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
@@ -117,42 +116,25 @@ class Billrun_EventsManager {
 						$conditionEntityAfter = $entityAfter;
 						$conditionEntityBefore = $entityBefore;
 					}
-
-					$path = $rawEventSettings['path'];
-					$pathsConditionsCount[$path] = ($pathsConditionsCount[$path] ?? 0) + 1;
 					$extraValues = $this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter);
 					if ($extraValues !== false) {
-						$conditionMatched = true;
-						$pathsMatched[$path]['conditions'] = ($pathsMatched[$path]['conditions'] ?? 0) + 1;
-						$pathsMatched[$path]['event_settings'] = $rawEventSettings;
-						$pathsMatched[$path]['extra_values'] = $extraValues;
-					}
-					// the same condition against the pre-row state, to detect
-					// which path the current row made match
-					if ($this->getValuesPerCondition($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityBefore) !== false) {
-						$pathsMatchedBefore[$path] = ($pathsMatchedBefore[$path] ?? 0) + 1;
+						$path_data = ['event_settings' => $rawEventSettings, 'extra_values' => $extraValues];
+						$path_stamp = Billrun_Util::generateArrayStamp($path_data);
+						$pathsMatched[$path_stamp] = $path_data;
+						$event['matched_path'] = [
+							'path' => $rawEventSettings['path'], 
+							'total_path' => $rawEventSettings['total_path'],
+							'related_entities' => $rawEventSettings['related_entities']
+						];
 					}
 				}
-
-				if (!$conditionMatched) { // all the condition's paths failed - conditions are AND
+				
+				if (empty($pathsMatched)) { // all paths failed to match
 					continue 2;
 				}
+				$conditionSettings = array_merge($conditionSettings, $pathsMatched);
 			}
-			// the event is saved per path (group) that satisfies every condition
-			// listing it, and only when it did not already satisfy all of them
-			// before the row - a path the row did not affect cannot re-trigger
-			foreach ($pathsMatched as $path => $path_info) {
-				if ($path_info['conditions'] < $pathsConditionsCount[$path]) {
-					continue;
-				}
-				if (($pathsMatchedBefore[$path] ?? 0) >= $pathsConditionsCount[$path]) {
-					continue;
-				}
-				$event['matched_path'] = [
-					'path' => $path_info['event_settings']['path'],
-					'total_path' => $path_info['event_settings']['total_path'] ?? null,
-					'related_entities' => $path_info['event_settings']['related_entities'] ?? null
-				];
+			foreach ($conditionSettings as $stamp => $path_info) {
 				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $path_info['event_settings'], $extraParams, $path_info['extra_values']);
 			}
 		}

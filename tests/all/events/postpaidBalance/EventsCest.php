@@ -1,51 +1,10 @@
 <?php
 
-/**
- * EventsConditionsCest
- *
- * Regression test for the balance-events condition logic of
- * Billrun_EventsManager::trigger() (reported 2024-10-28, "events conditions
- * not working"; behaviour broken since the BRCD-4617 refactor).
- *
- * An event with several conditions requires ALL of them to hold (AND), and
- * each condition may list several paths (OR between groups). The AND must
- * hold per path: a group may trigger an event only when it satisfies every
- * condition of the event.
- *
- * Today trigger() collects each condition's matching paths independently and
- * only verifies every condition matched at least one path - never that it is
- * the same path. So for an event with conditions ">5" and "<=100" on groups
- * G1/G2 and a row adding usage to G1 only, a G2 that never crossed ">5" also
- * satisfies "<=100" and a second, spurious event is saved for it.
- *
- * Two tests cover the same defect:
- * - eventOnlyForPathMatchingAllConditions: calls trigger() directly with
- *   hand-built balances - pinpoints the broken loop.
- * - e2eEventOnlyForGroupMatchingAllConditions: full pipeline - CDR files run
- *   through an input processor (processByPath) and the customer/rate/pricing
- *   calculators against a service with two groups, so the balance group
- *   counters, the event trigger and the spurious event all come from the
- *   real flow.
- *
- * A third test covers the related duplicate defect (reported from
- * customer_portal, fixed under BRCD-4637):
- * - e2eEventForSecondGroupCreatedOnce: one event whose single condition
- *   lists both groups as paths (OR). Because the condition only checks the
- *   balance AFTER the row, a group that crossed the threshold on an earlier
- *   line keeps matching on every later line, so pushing the second group
- *   over the threshold saves the event twice.
- *
- * A fourth test combines the two shapes (the "wildcard1" event of the
- * original report): two AND conditions (">5", "<=100"), each listing both
- * groups as paths (OR):
- * - e2eEventPerGroupForAndConditionsWithOrPaths: each group must fire
- *   exactly once, on the row where it satisfies both conditions.
- */
 class EventsCest
 {
     const EVENT_CODE = 'AND_CONDITIONS_PER_PATH';
     const EVENT_CODE_OR = 'TWO_GROUPS_OR_PATHS';
-    const EVENT_CODE_AND_OR = 'AND_CONDITIONS_OR_PATHS';
+    const EVENT_CODE_OR_CHANGED = 'TWO_GROUPS_OR_PATHS_HAS_CHANGED';
     const AID = 987001;
     const SID = 987002;
     const PLAN = 'EVENTS_COND_PLAN';
@@ -67,6 +26,8 @@ class EventsCest
 
     public function _before(ApiTester $I)
     {
+        // cleanDB wipes the events collection too - leftovers from a previous
+        // run would break the exact-count assertions
         $I->cleanDB();
         Billrun_Config::getInstance()->loadDbConfig();
         $this->originalEventsConfig = Billrun_Factory::config()->getConfigValue('events', []);
@@ -90,9 +51,9 @@ class EventsCest
      * flow.
      *
      * CDR 1 puts 2 seconds in G2 - below the ">5" threshold, no event.
-     * CDR 2 puts 10 seconds in G1 - G1 satisfies both conditions, exactly
-     * one event is expected. G2 (2 <= 100, but never > 5) must not fire;
-     * with the current bug a second event is saved for it with after = 2.
+     * CDR 2 puts 10 seconds in G1 - the ">5" condition on G2 still fails,
+     * so the AND does not hold and no event may be created.
+     * CDR 3 adds 4 seconds to G2 - all conditions hold, the event exists.
      */
     public function e2eEventOnlyForGroupMatchingAllConditions(ApiTester $I)
     {
@@ -140,167 +101,145 @@ class EventsCest
     }
 
     /**
-     * Reproduces the customer_portal duplicate (BRCD-4637): one event whose
-     * single condition lists both groups as paths (OR between the groups),
-     * against a service holding the two groups on the same usage type.
+     * By design: a state condition (">90") has no memory - it is evaluated
+     * against the balance after every update of the groups balance, so an
+     * event whose condition lists both groups as paths (OR) is re-created
+     * for EVERY matching group on EVERY such row:
      *
-     * CDR 1 puts 100 seconds in G1 - crosses ">90", exactly one event.
-     * CDR 2 puts 100 seconds in G2 - crosses ">90", exactly one more event
-     * is expected. With the current bug the G1 path (unchanged at 100 since
-     * CDR 1, still ">90" after the row) matches again and the event of the
-     * second group is saved twice.
+     * CDR 1 puts 95 seconds in G1 - one event (G1).
+     * CDR 2 puts 95 seconds in G2 - two more (G2, and G1 again): 3 in total.
+     * CDR 3 adds 2 in-group seconds to G1 - two more (G1 and G2 again): 5.
+     *
+     * An event definition that wants one event per group change must add a
+     * has_changed condition - see e2eEventPerChangedGroupWithHasChanged.
      */
-    public function e2eEventForSecondGroupCreatedOnce(ApiTester $I)
+    public function e2eEventCreatedOnEveryMatchingRowWithoutHasChanged(ApiTester $I)
     {
         $this->seedCatalog($I, $this->twoGroupsOrPathsEventSettings());
 
         $I->processByPath([
             'type' => self::FILE_TYPE,
-            'path' => self::TEST_FILES_PATH . 'events_conditions_100s_g1.csv',
+            'path' => self::TEST_FILES_PATH . 'events_conditions_95s_g1.csv',
         ]);
         $I->verifyCollectionRecord('lines', [
             'uf.firstname' => self::FIRSTNAME,
             'arate_key' => self::RATE_G1,
             'sid' => $this->sid,
-            'in_group' => 100,
+            'in_group' => 95,
             'over_group' => 0,
         ]);
         $I->seeNumElementsInCollection('events', 1, ['event_code' => self::EVENT_CODE_OR]);
-
-        // the event fired for G1, pushed by the row from 0 over the ">90"
-        // threshold, for the account and subscriber under test
         $I->seeNumElementsInCollection('events', 1, [
             'event_code' => self::EVENT_CODE_OR,
-            'matched_path.path' => 'balance.groups.G1.usagev',
-            'matched_path.related_entities.key' => 'G1',
             'before' => 0,
-            'after' => 100,
+            'after' => 95,
             'extra_params.aid' => $this->aid,
             'extra_params.sid' => $this->sid,
         ]);
 
         $I->processByPath([
             'type' => self::FILE_TYPE,
-            'path' => self::TEST_FILES_PATH . 'events_conditions_100s_g2.csv',
-        ]);
-        $I->verifyCollectionRecord('lines', [
-            'uf.firstname' => self::FIRSTNAME,
-            'arate_key' => self::RATE_G2,
-            'sid' => $this->sid,
-            'in_group' => 100,
-            'over_group' => 0,
+            'path' => self::TEST_FILES_PATH . 'events_conditions_95s_g2.csv',
         ]);
         $I->verifyCollectionRecord('balances', [
             'sid' => $this->sid,
-            'balance.groups.G1.usagev' => 100,
-            'balance.groups.G2.usagev' => 100,
+            'balance.groups.G1.usagev' => 95,
+            'balance.groups.G2.usagev' => 95,
         ]);
-        // one event per group crossing the threshold; the buggy trigger()
-        // also saves one for G1, which never changed on the second row
-        $I->seeNumElementsInCollection('events', 2, ['event_code' => self::EVENT_CODE_OR]);
-        // the new event fired for G2, pushed by the row from 0 over the threshold
-        $I->seeNumElementsInCollection('events', 1, [
-            'event_code' => self::EVENT_CODE_OR,
-            'matched_path.path' => 'balance.groups.G2.usagev',
-            'matched_path.related_entities.key' => 'G2',
-            'before' => 0,
-            'after' => 100,
-            'extra_params.aid' => $this->aid,
-            'extra_params.sid' => $this->sid,
+        // G2's event, and one more for G1 - still ">90" after the row, even
+        // though the row did not change it
+        $I->seeNumElementsInCollection('events', 3, ['event_code' => self::EVENT_CODE_OR]);
+        $I->seeNumElementsInCollection('events', 1, ['event_code' => self::EVENT_CODE_OR, 'before' => 95]);
+
+        // the third row updates the groups balance (G1 95 -> 97), both
+        // groups still match ">90" after it - one more event per group
+        $I->processByPath([
+            'type' => self::FILE_TYPE,
+            'path' => self::TEST_FILES_PATH . 'events_conditions_2s_g1.csv',
         ]);
-        // G1 still has only its original event - the G2 row did not re-fire it
-        $I->seeNumElementsInCollection('events', 1, [
-            'event_code' => self::EVENT_CODE_OR,
-            'matched_path.path' => 'balance.groups.G1.usagev',
+        $I->verifyCollectionRecord('balances', [
+            'sid' => $this->sid,
+            'balance.groups.G1.usagev' => 97,
+            'balance.groups.G2.usagev' => 95,
         ]);
+        $I->seeNumElementsInCollection('events', 5, ['event_code' => self::EVENT_CODE_OR]);
     }
 
     /**
-     * The complex shape of the original report ("wildcard1"): AND between
-     * two conditions (">5" and "<=100"), OR between the two group paths
-     * inside each condition. A group may fire only on the row where it
-     * satisfies both conditions, and only once.
+     * The dedupe recipe for the scenario above: the same ">90" event plus a
+     * has_changed condition listing both groups. Conditions are AND and the
+     * event is saved per matching path of the last condition, so every row
+     * creates exactly one event, for the group the row changed:
      *
-     * CDR 1 puts 2 seconds in G2 - no group is over ">5", no event.
-     * CDR 2 puts 10 seconds in G1 - G1 satisfies both conditions, exactly
-     * one event. G2 (2 <= 100, but never > 5) must not fire; the buggy
-     * per-condition matching saves a second event for it with after = 2.
-     * CDR 3 adds 4 seconds to G2 - G2 (now 6) satisfies both conditions,
-     * exactly one more event. G1 (unchanged at 10, still matching both)
-     * must not fire again.
+     * CDR 1 puts 95 seconds in G1 - one event (G1, 0 -> 95).
+     * CDR 2 puts 95 seconds in G2 - one event (G2, 0 -> 95); G1, still over
+     * the threshold but unchanged, does not fire again.
+     * CDR 3 adds 2 in-group seconds to G1 - one event (G1, 95 -> 97): the
+     * group changed while over the threshold, so by design it fires again.
      */
-    public function e2eEventPerGroupForAndConditionsWithOrPaths(ApiTester $I)
+    public function e2eEventPerChangedGroupWithHasChanged(ApiTester $I)
     {
-        $this->seedCatalog($I, $this->andConditionsOrPathsEventSettings());
+        $this->seedCatalog($I, $this->twoGroupsOrPathsWithHasChangedEventSettings());
 
         $I->processByPath([
             'type' => self::FILE_TYPE,
-            'path' => self::TEST_FILES_PATH . 'events_conditions_2s_g2.csv',
+            'path' => self::TEST_FILES_PATH . 'events_conditions_95s_g1.csv',
         ]);
-        $I->verifyCollectionRecord('lines', [
-            'uf.firstname' => self::FIRSTNAME,
-            'arate_key' => self::RATE_G2,
-            'sid' => $this->sid,
-            'in_group' => 2,
-            'over_group' => 0,
-        ]);
-        $I->seeNumElementsInCollection('events', 0, ['event_code' => self::EVENT_CODE_AND_OR]);
-
-        $I->processByPath([
-            'type' => self::FILE_TYPE,
-            'path' => self::TEST_FILES_PATH . 'events_conditions_10s_g1.csv',
-        ]);
-        $I->verifyCollectionRecord('lines', [
-            'uf.firstname' => self::FIRSTNAME,
-            'arate_key' => self::RATE_G1,
-            'sid' => $this->sid,
-            'in_group' => 10,
-            'over_group' => 0,
-        ]);
-        $I->seeNumElementsInCollection('events', 1, ['event_code' => self::EVENT_CODE_AND_OR]);
-        // the event fired for G1 (0 -> 10), for the account and subscriber
-        // under test
+        $I->seeNumElementsInCollection('events', 1, ['event_code' => self::EVENT_CODE_OR_CHANGED]);
         $I->seeNumElementsInCollection('events', 1, [
-            'event_code' => self::EVENT_CODE_AND_OR,
+            'event_code' => self::EVENT_CODE_OR_CHANGED,
             'matched_path.path' => 'balance.groups.G1.usagev',
             'matched_path.related_entities.key' => 'G1',
             'before' => 0,
-            'after' => 10,
+            'after' => 95,
             'extra_params.aid' => $this->aid,
             'extra_params.sid' => $this->sid,
         ]);
-        // the spurious cross-path match's signature: an event for G2, whose
-        // 2 seconds satisfy "<=100" but never crossed ">5"
-        $I->seeNumElementsInCollection('events', 0, ['event_code' => self::EVENT_CODE_AND_OR, 'after' => 2]);
 
         $I->processByPath([
             'type' => self::FILE_TYPE,
-            'path' => self::TEST_FILES_PATH . 'events_conditions_more_4s_g2.csv',
+            'path' => self::TEST_FILES_PATH . 'events_conditions_95s_g2.csv',
         ]);
-        $I->verifyCollectionRecord('balances', [
-            'sid' => $this->sid,
-            'balance.groups.G1.usagev' => 10,
-            'balance.groups.G2.usagev' => 6,
-        ]);
-        $I->seeNumElementsInCollection('events', 2, ['event_code' => self::EVENT_CODE_AND_OR]);
-        // the new event fired for G2 (2 -> 6)
+        // exactly one more event, for G2; G1 (still over, unchanged) does
+        // not fire again
+        $I->seeNumElementsInCollection('events', 2, ['event_code' => self::EVENT_CODE_OR_CHANGED]);
         $I->seeNumElementsInCollection('events', 1, [
-            'event_code' => self::EVENT_CODE_AND_OR,
+            'event_code' => self::EVENT_CODE_OR_CHANGED,
             'matched_path.path' => 'balance.groups.G2.usagev',
             'matched_path.related_entities.key' => 'G2',
-            'before' => 2,
-            'after' => 6,
+            'before' => 0,
+            'after' => 95,
             'extra_params.aid' => $this->aid,
             'extra_params.sid' => $this->sid,
         ]);
-        // G1 still has only its original event - the G2 row did not re-fire it
+        // G1 still has only its original crossing event (0 -> 95)
         $I->seeNumElementsInCollection('events', 1, [
-            'event_code' => self::EVENT_CODE_AND_OR,
+            'event_code' => self::EVENT_CODE_OR_CHANGED,
             'matched_path.path' => 'balance.groups.G1.usagev',
+            'before' => 0,
+            'after' => 95,
         ]);
-        // the duplicate's signature: a G1 event fired again by a row that
-        // did not change G1
-        $I->seeNumElementsInCollection('events', 0, ['event_code' => self::EVENT_CODE_AND_OR, 'before' => 10]);
+
+        // the third row changes G1 (95 -> 97) while it is over the
+        // threshold - by design exactly one more event, for G1 only
+        $I->processByPath([
+            'type' => self::FILE_TYPE,
+            'path' => self::TEST_FILES_PATH . 'events_conditions_2s_g1.csv',
+        ]);
+        $I->seeNumElementsInCollection('events', 3, ['event_code' => self::EVENT_CODE_OR_CHANGED]);
+        $I->seeNumElementsInCollection('events', 1, [
+            'event_code' => self::EVENT_CODE_OR_CHANGED,
+            'matched_path.path' => 'balance.groups.G1.usagev',
+            'before' => 95,
+            'after' => 97,
+        ]);
+        // G2 did not change - it still has only its crossing event (0 -> 95)
+        $I->seeNumElementsInCollection('events', 1, [
+            'event_code' => self::EVENT_CODE_OR_CHANGED,
+            'matched_path.path' => 'balance.groups.G2.usagev',
+            'before' => 0,
+            'after' => 95,
+        ]);
     }
 
     /**
@@ -606,52 +545,28 @@ class EventsCest
     }
 
     /**
-     * The "wildcard1" event of the original report: AND between the two
-     * conditions, OR between the two group paths inside each condition.
+     * AND between the groups, no OR: two ">90" conditions, each holding a
+     * single group path.
      */
-    protected function andConditionsOrPathsEventSettings()
+    /**
+     * The dedupe variant of the OR event (per Shani): the same ">90"
+     * condition on both groups, plus a has_changed condition listing both
+     * groups - so the event is saved only for the group the row changed.
+     */
+    protected function twoGroupsOrPathsWithHasChangedEventSettings()
     {
-        $paths = [
-            [
-                'path' => 'balance.groups.G1.usagev',
-                'total_path' => 'balance.groups.G1.total',
-                'related_entities' => [
-                    ['type' => 'group', 'key' => 'G1'],
-                    ['type' => 'service', 'key' => self::SERVICE],
-                ],
-            ],
-            [
-                'path' => 'balance.groups.G2.usagev',
-                'total_path' => 'balance.groups.G2.total',
-                'related_entities' => [
-                    ['type' => 'group', 'key' => 'G2'],
-                    ['type' => 'service', 'key' => self::SERVICE],
-                ],
-            ],
+        $event = $this->twoGroupsOrPathsEventSettings();
+        $event['event_code'] = self::EVENT_CODE_OR_CHANGED;
+        $event['event_description'] = 'both groups as paths, has_changed per group';
+        $event['conditions'][] = [
+            'paths' => $event['conditions'][0]['paths'],
+            'unit' => 'seconds',
+            'usaget' => 'call',
+            'property_type' => 'time',
+            'type' => 'has_changed',
+            'value' => '',
         ];
-        return [
-            'active' => true,
-            'event_code' => self::EVENT_CODE_AND_OR,
-            'event_description' => 'two AND conditions, both groups as paths in each',
-            'conditions' => [
-                [
-                    'paths' => $paths,
-                    'unit' => 'seconds',
-                    'usaget' => 'call',
-                    'property_type' => 'time',
-                    'type' => 'is_greater_than',
-                    'value' => '5',
-                ],
-                [
-                    'paths' => $paths,
-                    'unit' => 'seconds',
-                    'usaget' => 'call',
-                    'property_type' => 'time',
-                    'type' => 'is_less_than_or_equal',
-                    'value' => '100',
-                ],
-            ],
-        ];
+        return $event;
     }
 
     protected function resetEventsManager()
