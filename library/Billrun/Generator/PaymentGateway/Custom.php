@@ -172,17 +172,17 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'account':
-            case 'payer.account':
+            case 'payer':
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
                 $accountAid = $params['aid'];
-                if ($entity == 'payer.account') {
+                if ($entity == 'payer') {
                     // BRCD-785: the account paying the bill - itself, or its nearest is_payer ancestor
                     if (isset($params['payer_aid'])) {
                         $accountAid = $params['payer_aid'];
                     } else {
-                        $message = 'Field "' . $field . '" is configured as a "payer.account" field, but no payer was found for aid "' . $params['aid'] . '" - using aid "' . $params['aid'] . '" own "' . $field . '" field';
+                        $message = 'Field "' . $field . '" is configured as a "payer" field, but no payer was found for aid "' . $params['aid'] . '" - using aid "' . $params['aid'] . '" own "' . $field . '" field';
                         Billrun_Factory::log($message, Zend_Log::ERR);
                         $this->logFile->updateLogFileField('errors', $message);
                     }
@@ -207,7 +207,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     }
 
     /**
-     * Value of a field on an account revision, for the account and payer.account linked entities.
+     * Value of a field on an account revision, for the account and payer linked entities.
      *
      * @param string $field full path of the field
      * @param array $accountData the account revision to read from

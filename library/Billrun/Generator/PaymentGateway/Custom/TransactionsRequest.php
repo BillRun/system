@@ -159,7 +159,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					if (!$this->handleMandatoryFields($account, 'account', "account with aid: " . $customer['aid'])) {
 						continue;
 					}
-					if (!$this->handleMandatoryFields($payerAccount, 'payer.account', "payer account with aid: " . $payerAid . ", paying for account with aid: " . $customer['aid'])) {
+					if (!$this->handleMandatoryFields($payerAccount, 'payer', "payer account with aid: " . $payerAid . ", paying for account with aid: " . $customer['aid'])) {
 						continue;
 					}
 				} else {
@@ -173,7 +173,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					continue;
 				}
 				// BRCD-785: conditions on the account paying the bill
-				$payerConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['payer.accounts']) ? $this->generatorFilters['payer.accounts'] : array();
+				$payerConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['payers']) ? $this->generatorFilters['payers'] : array();
 				if (!$this->isAccountUpholdConditions($this->payerAccountData, $payerConditions)) {
 					continue;
 				}
