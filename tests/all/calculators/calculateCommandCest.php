@@ -93,23 +93,29 @@ class calculateCommandCest
      * Process the CSV into the queue. Called before the subscriber exists, so
      * the lines land in the queue uncalculated (calc_name = false).
      */
-    private function processToQueue(ApiTester $I)
+    private function processToQueue(ApiTester $I, $csv = 'calc_e2e.csv')
     {
-        $I->processByPath(['type' => $this->fileType, 'path' => 'tests/all/calculators/test_files/calc_e2e.csv']);
+        $I->processByPath(['type' => $this->fileType, 'path' => 'tests/all/calculators/test_files/' . $csv]);
     }
 
-    /** Create the account, plan, rate and subscriber a line needs to calculate. */
-    private function seedCustomer(ApiTester $I)
+    /**
+     * Create the account, plan, rate and subscriber a line needs to calculate.
+     * With $withRate = false the rate is not created, so a processed line passes
+     * the customer stage but fails rating and parks at calc_name = 'customer'.
+     */
+    private function seedCustomer(ApiTester $I, $withRate = true)
     {
         $I->generatePlan(['name' => 'E2E_PLAN', 'from' => '2025-01-01']);
         $plan = json_decode($I->grabResponse(), true)['entity'];
-        $I->generateRate([
-            'tariff_category' => 'retail', 'key' => 'CALL', 'from' => '2025-01-01',
-            'rates' => ['call' => ['BASE' => ['rate' => [[
-                'from' => 0, 'to' => 'UNLIMITED', 'interval' => 1, 'price' => 1,
-                'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
-            ]]]]],
-        ]);
+        if ($withRate) {
+            $I->generateRate([
+                'tariff_category' => 'retail', 'key' => 'CALL', 'from' => '2025-01-01',
+                'rates' => ['call' => ['BASE' => ['rate' => [[
+                    'from' => 0, 'to' => 'UNLIMITED', 'interval' => 1, 'price' => 1,
+                    'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
+                ]]]]],
+            ]);
+        }
         $I->createAccountWithAllMandatoryCustomFields(['firstname' => 'e2e_acct']);
         $acct = json_decode($I->grabResponse(), true)['entity'];
         $I->generateSubscriber([
@@ -174,6 +180,17 @@ class calculateCommandCest
     private function setCustomerBatchLimit($limit)
     {
         $this->writeDbConfigValue(['customer', 'calculator', 'limit'], $limit);
+    }
+
+    /** Current rate-stage queue batch size (Rate_Usage.calculator.limit), or the ini default. */
+    private function getRateBatchLimit()
+    {
+        return Billrun_Factory::config()->getConfigValue('Rate_Usage.calculator.limit', 5000);
+    }
+
+    private function setRateBatchLimit($limit)
+    {
+        $this->writeDbConfigValue(['Rate_Usage', 'calculator', 'limit'], $limit);
     }
 
     /** How long a pulled-but-failed queue line waits before it may be re-pulled. */
@@ -330,6 +347,60 @@ class calculateCommandCest
             'lines with no matching subscriber must not be enriched');
         $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => false]),
             'unmatched lines must stay in the queue, still uncalculated (calc_name = false), for a later retry');
+    }
+
+    /**
+     * The rate stage of a no-type run must batch by its own configured limit
+     * (Rate_Usage.calculator.limit) - just as customer, pricing and tax batch by
+     * theirs in the same run. Regression test: the no-type chain instantiates the
+     * rate calculator without its config section, so the stage fell back to the
+     * built-in default limit and swallowed the ENTIRE backlog as a single batch
+     * (in the field: 255,000 lines at once instead of batches of 5,000).
+     *
+     * Small-scale repro: 3 lines wait at the rate stage (calc_name = 'customer')
+     * and the rate limit is set to 1. The queue puller reads limit + 1 docs (the
+     * extra doc is only the exclusive urt boundary of the batch), so a correct
+     * run logs "current limit : 2" and marks/loads exactly 1 line, leaving 2
+     * untouched, while the buggy run logs "current limit : 3" (the whole
+     * backlog) and marks all 3.
+     *
+     * The lines are parked at the rate stage by processing WITH a subscriber but
+     * WITHOUT the rate (see the class comment). Rating also fails during the
+     * --calculate run itself, so no line advances past the rate stage and the
+     * downstream stages pull nothing - the batch logs asserted below can only
+     * come from the rate stage.
+     *
+     * The rate batch limit is a global setting, restored at the end.
+     */
+    public function testRateStageBatchesByItsConfiguredLimit(ApiTester $I): void
+    {
+        $backlog = 3; // rows in test_files/rate_batch_limit.csv
+        $this->seedCustomer($I, false); // subscriber but no rate: lines park at the rate stage
+        $this->processToQueue($I, 'rate_batch_limit.csv');
+
+        $I->assertEquals($backlog, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer', 'calc_time' => false]),
+            'processing with a subscriber but no rate should leave every line waiting at the rate stage');
+
+        $originalLimit = $this->getRateBatchLimit();
+        $this->setRateBatchLimit(1);
+        try {
+            list($code, $output) = $this->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+
+            // The pull horizon must be capped by the configured limit (+1 boundary
+            // doc) - never the whole backlog.
+            $I->assertStringNotContainsString('current limit : ' . $backlog, $output,
+                'the rate stage must not pull the entire backlog as a single batch');
+            // Exactly one line - the configured limit - may be marked and loaded.
+            $I->assertStringContainsString('Queue records updated number: 1', $output,
+                'the rate stage must mark a batch of exactly its configured limit (1)');
+            $I->assertStringNotContainsString('Queue records updated number: ' . $backlog, $output,
+                'the rate stage must not mark the entire backlog in one batch');
+            $I->assertStringContainsString('Entities loaded: 1', $output,
+                'the rate stage must load a batch of exactly its configured limit (1)');
+        } finally {
+            $this->setRateBatchLimit($originalLimit);
+        }
     }
 
     /**
