@@ -143,7 +143,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'due' => $invoice['totals']['after_vat_rounded'],
 				'due_before_vat' => $invoice['totals']['before_vat'],
 				'customer_status' => 'open',//$invoice['attributes']['account_status'],
-				'payer_name' => $invoice['attributes']['lastname'] .' ' . $invoice['attributes']['firstname'],
 				'billrun_key' => $invoice['billrun_key'],
 				'amount' => abs($invoice['totals']['after_vat_rounded']),
 				'lastname' => $invoice['attributes']['lastname'],

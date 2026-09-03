@@ -136,6 +136,9 @@ class InvoicesList extends Component {
     return moment.unix(sentDate).format(getConfig('datetimeFormat', 'DD/MM/YYYY HH:mm'));
   };
 
+  parserCustomerName = entity =>
+    `${entity.get('lastname', '')} ${entity.get('firstname', '')}`.trim();
+
   getListActions = () => [{
     type: 'list',
     label: 'Create Immediate Invoice',
@@ -152,7 +155,7 @@ class InvoicesList extends Component {
     { id: 'paid', title: 'Status', parser: this.parserPaidBy },
     { id: 'billrun_key', title: 'Cycle', sort: true },
     { id: 'aid', title: 'Customer ID', sort: true },
-    { id: 'payer_name', title: 'Name', sort: true },
+    { id: 'lastname', title: 'Name', sort: true, parser: this.parserCustomerName },
     { title: 'Download', parser: this.parserDownload },
     { id: 'email_sent', title: 'Email Sent', sort: true, parser: this.parseCycleDataEmailSent, display: this.props.settings.get('billrun', Immutable.Map()).get('email_after_confirmation', false) },
   ]);
