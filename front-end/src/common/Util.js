@@ -613,6 +613,20 @@ export const mergeServiceProductsGroupsIncludes = (service, productsGroupsByKey)
   });
 };
 
+/**
+ * the unit of measure data of a unit name, looked up across all property types.
+ * unit names are unique across the property types, and for an include entry the
+ * backend validates the unit against the products group property type.
+ */
+export const getUomDataByUnitName = (propertyTypes, unit) => propertyTypes
+  .map(propertyType => propertyType.get('uom', Immutable.List()).find(uom => uom.get('name', '') === unit))
+  .find(uom => uom !== undefined) || Immutable.Map();
+
+/**
+ * include values are stored in the property type base unit and displayed in the
+ * chosen unit: values are converted to the base unit on save (toBaseUnit) and
+ * back to the chosen unit on load - include.groups and include.products_groups alike.
+ */
 export const getPlanConvertedIncludes = (propertyTypes, usageTypes, item, toBaseUnit = true) => {
   const convertedIncludes = item.get('include', Immutable.Map()).withMutations((includesWithMutations) => {
     includesWithMutations.get('groups', Immutable.Map()).forEach((include, group) => {
@@ -624,6 +638,16 @@ export const getPlanConvertedIncludes = (propertyTypes, usageTypes, item, toBase
         const newConvertedValue = (newValue === 'UNLIMITED') ? newValue : parseFloat(newValue);
         includesWithMutations.setIn(['groups', group, 'value'], newConvertedValue);
       }
+    });
+    includesWithMutations.get('products_groups', Immutable.List()).forEach((productsGroup, index) => {
+      const unit = productsGroup.get('unit', '');
+      const value = productsGroup.get('value', '');
+      // monetary based entries carry no unit, and UNLIMITED has no magnitude to convert
+      const factor = getUomDataByUnitName(propertyTypes, unit).get('unit', false);
+      if (unit === '' || value === '' || value === 'UNLIMITED' || factor === false) {
+        return;
+      }
+      includesWithMutations.setIn(['products_groups', index, 'value'], toBaseUnit ? value * factor : value / factor);
     });
   });
   return !convertedIncludes.isEmpty()

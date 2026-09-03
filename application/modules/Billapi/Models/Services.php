@@ -104,8 +104,8 @@ class Models_Services extends Models_Entity {
 	 * and is either usage based (value + unit, the group must have a property
 	 * type) or monetary based (cost).
 	 *
-	 * A usage based value is stored in the unit it was entered in - not in the
-	 * property type base unit - so a consumer must convert it by the entry unit.
+	 * A usage based value is stored in the property type base unit - like the old
+	 * include.groups values - and the entry unit is the unit it is displayed in.
 	 *
 	 * @throws Billrun_Exceptions_Api
 	 */
