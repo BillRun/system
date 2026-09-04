@@ -190,16 +190,15 @@ class EntityFields extends Component {
       const menuItemClass = classNames({
         'disable-label': !highlight,
       });
-      const onSelect = () => { this.onAddParam(option.value); };
       return (
-        <Dropdown.Item key={option.value} eventKey={option.value} onSelect={onSelect}>
+        <Dropdown.Item key={option.value} eventKey={option.value}>
           <span className={menuItemClass}>{option.label}</span>
         </Dropdown.Item>
       );
     });
     return (
       <InputGroupButton>
-        <DropdownButton id="add-param-input" title="Add parameter" className="btn-xs">
+        <DropdownButton id="add-param-input" title="Add parameter" className="btn-xs" onSelect={this.onAddParam}>
           { menuItems }
         </DropdownButton>
       </InputGroupButton>
