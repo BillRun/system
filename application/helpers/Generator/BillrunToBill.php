@@ -27,6 +27,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $sendToRremoteServer = false;
 	protected $filtration = null;
 	protected $invoicing_days = [];
+	protected $accountsInArray = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -83,6 +84,19 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 		$this->data = $invoices;
+		$customersAids = [];
+		foreach($this->data as $invoice){
+			$customersAids[] = $invoice['aid'];
+		}
+
+		$account = Billrun_Factory::account();
+		$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
+		$this->accountsInArray = [];
+		if (is_array($accounts)) {
+			foreach ($accounts as $account) {
+				$this->accountsInArray[$account['aid']] = $account;
+			}
+		}
 	}
 
 	public function generate() {
@@ -138,8 +152,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$this->handleAdjustments($bill, $invoice['adjusted_from_invoices']);
 		}
 		
-		$account = Billrun_Factory::account();
-		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
+		$foreignData = $this->getForeignFields(array('account' => $this->accountsInArray[$invoice['aid']]));
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);

@@ -910,6 +910,8 @@ class BillRunAPI extends \Codeception\Module{
                 $collection->remove(['_id' => ['$exists' => true]]);
             }
         }
+        $events = \Billrun_Factory::db()->eventsCollection();
+        $events->remove(['_id'=>['$exists' => true]]);
     }
     
 }

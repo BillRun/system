@@ -151,6 +151,7 @@ const TagsInput = ({
           key: index,
           disabled,
           onRemove: removeTag,
+          className: 'react-tagsinput-tag',
           classNameRemove: 'react-tagsinput-remove',
           getTagDisplayValue,
         })
