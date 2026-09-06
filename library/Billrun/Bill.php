@@ -1568,9 +1568,7 @@ abstract class Billrun_Bill {
 				$rejectionQuery = !empty($rejectionQuery) ? array('$and' => array($account_query, $rejectionQuery)) : $account_query;
 			}
 			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
-			$currentAccounts = Billrun_Factory::db()->billsCollection()->query($rejectionQuery)->cursor();
-			$currentAccounts = iterator_to_array($currentAccounts);
-
+			$rejection_required_aids = Billrun_Factory::db()->billsCollection()->distinct('aid', $rejectionQuery) ?: [];
 		}else{
 			if(!empty($account_query)){
 				$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
@@ -1578,11 +1576,10 @@ abstract class Billrun_Bill {
 			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
 			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
 			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
-
+			$rejection_required_aids = array_column(array_map(function($account) {
+					return $account->getRawData();
+				}, $currentAccounts), 'aid') ?? [];
 		}
-		$rejection_required_aids = array_column(array_map(function($account) {
-				return $account->getRawData();
-			}, $currentAccounts), 'aid') ?? [];
 		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts that require rejection in order to be in collection.", Zend_Log::DEBUG);
 		return $rejection_required_aids;
 	}

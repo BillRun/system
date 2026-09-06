@@ -8,6 +8,7 @@ use SimpleXMLElement;
 
 class Properties
 {
+    /** @var Spreadsheet */
     private $spreadsheet;
 
     public function __construct(Spreadsheet $spreadsheet)
@@ -15,21 +16,23 @@ class Properties
         $this->spreadsheet = $spreadsheet;
     }
 
-    public function load(SimpleXMLElement $xml, $namespacesMeta): void
+    public function load(SimpleXMLElement $xml, array $namespacesMeta): void
     {
         $docProps = $this->spreadsheet->getProperties();
         $officeProperty = $xml->children($namespacesMeta['office']);
         foreach ($officeProperty as $officePropertyData) {
-            // @var \SimpleXMLElement $officePropertyData
             if (isset($namespacesMeta['dc'])) {
+                /** @scrutinizer ignore-call */
                 $officePropertiesDC = $officePropertyData->children($namespacesMeta['dc']);
                 $this->setCoreProperties($docProps, $officePropertiesDC);
             }
 
-            $officePropertyMeta = (object) [];
+            $officePropertyMeta = null;
             if (isset($namespacesMeta['dc'])) {
+                /** @scrutinizer ignore-call */
                 $officePropertyMeta = $officePropertyData->children($namespacesMeta['meta']);
             }
+            $officePropertyMeta = $officePropertyMeta ?? [];
             foreach ($officePropertyMeta as $propertyName => $propertyValue) {
                 $this->setMetaProperties($namespacesMeta, $propertyValue, $propertyName, $docProps);
             }
@@ -55,9 +58,7 @@ class Properties
 
                     break;
                 case 'date':
-                    $creationDate = strtotime($propertyValue);
-                    $docProps->setCreated($creationDate);
-                    $docProps->setModified($creationDate);
+                    $docProps->setModified($propertyValue);
 
                     break;
                 case 'description':
@@ -69,9 +70,9 @@ class Properties
     }
 
     private function setMetaProperties(
-        $namespacesMeta,
+        array $namespacesMeta,
         SimpleXMLElement $propertyValue,
-        $propertyName,
+        string $propertyName,
         DocumentProperties $docProps
     ): void {
         $propertyValueAttributes = $propertyValue->attributes($namespacesMeta['meta']);
@@ -86,8 +87,7 @@ class Properties
 
                 break;
             case 'creation-date':
-                $creationDate = strtotime($propertyValue);
-                $docProps->setCreated($creationDate);
+                $docProps->setCreated($propertyValue);
 
                 break;
             case 'user-defined':
@@ -97,6 +97,10 @@ class Properties
         }
     }
 
+    /**
+     * @param mixed $propertyValueAttributes
+     * @param mixed $propertyValue
+     */
     private function setUserDefinedProperty($propertyValueAttributes, $propertyValue, DocumentProperties $docProps): void
     {
         $propertyValueName = '';
