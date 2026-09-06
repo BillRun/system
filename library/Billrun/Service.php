@@ -26,6 +26,7 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	protected $disableCache = false;
 	protected static $cache = array();
 	protected static $cacheType = 'services';
 
@@ -59,13 +60,13 @@ class Billrun_Service {
 		} else {
 			$time = time();
 		}
-		$disableServiceCache = isset($params['disable_service_cache']) ? $params['disable_service_cache'] : false;
+		$this->disableCache = isset($params['disable_service_cache']) ? $params['disable_service_cache'] : false;
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->load(new Mongodloid_Id($params['id']), null, '_id', $disableServiceCache);
+			$this->load(new Mongodloid_Id($params['id']), null, '_id', $this->disableCache);
 		} else if (isset($params['name'])) {
-			$this->load($params['name'], $time, 'name', $disableServiceCache);
+			$this->load($params['name'], $time, 'name', $this->disableCache);
 		}
 		
 		if (isset($params['service_start_date'])) {
@@ -140,6 +141,31 @@ class Billrun_Service {
 		$record = $coll->query($serviceQuery)->lessEq('from', $queryTime)->cursor()->current();
 		$record->collection($coll);
 		$this->data = $record;
+	}
+
+	/**
+	 * method to get the included products groups entries of the entity
+	 *
+	 * @return array the include.products_groups entries
+	 */
+	protected function getProductsGroups() {
+		return $this->data['include']['products_groups'] ?? [];
+	}
+
+	/**
+	 * method to get the included products group entry of a group name
+	 *
+	 * @param string $group the group name, which is the products group key
+	 *
+	 * @return mixed array of the entry if the group is a products group, else false
+	 */
+	protected function getProductsGroupEntry($group) {
+		foreach ($this->getProductsGroups() as $entry) {
+			if ($entry['key'] == $group) {
+				return $entry;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -262,9 +288,31 @@ class Billrun_Service {
 	 * @return false when no group rates, else array list of the groups
 	 * @since 2.6
 	 */
-	public function getRateGroups($rate, $usageType, $counters = 'without') {
+	public function getRateGroups($rate, $usageType, $counters = 'without', $time = null) {
 		$groups = array();
-		if (isset($this->data['include']['groups']) && is_array($this->data['include']['groups'])) {
+		$entries = $this->getProductsGroups();
+		if (!empty($entries)) {
+			if ($counters != 'only') { // products groups are never counters
+				foreach ($entries as $entry) {
+					$productsGroup = Billrun_Factory::productgroup([
+						'key' => $entry['key'],
+						'time' => is_null($time) ? time() : $time,
+						'disable_productgroup_cache' => $this->disableCache,
+					]);
+					if ($productsGroup->isEmpty() || !in_array($rate['key'], (array) $productsGroup->get('rates'))) { // the rate is not one of the products group products
+						continue;
+					}
+					// a monetary based quota is not bound to a usage type
+					if (!isset($entry['cost']) && !in_array($usageType, (array) $productsGroup->get('usage_types'))) {
+						continue;
+					}
+					$groups[] = $entry['key'];
+				}
+			}
+		}
+		// the include groups only holds counter groups (after products groups addition), so
+		// on a products groups service they are relevant only when counters are requested
+		if ((empty($entries) || $counters != 'without') && isset($this->data['include']['groups']) && is_array($this->data['include']['groups'])) { // legacy behavior
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
 				if (
 					(array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType]) || !empty($groupIncludes['counter_only'])) && 
@@ -316,8 +364,8 @@ class Billrun_Service {
 	 * @param string $usageType the usage type to check
 	 * @return true when the rate is part of group else false
 	 */
-	public function isRateInEntityGroup($rate, $usageType) {
-		if (count($this->getRateGroups($rate, $usageType, 'without'))) {
+	public function isRateInEntityGroup($rate, $usageType, $time = null) {
+		if (count($this->getRateGroups($rate, $usageType, 'without', $time))) {
 			return true;
 		}
 		return false;
@@ -335,9 +383,9 @@ class Billrun_Service {
 	 * 
 	 * @return false when no group found, else string name of the group selected
 	 */
-	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
+	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE, $time = null) {
 		if (is_null($this->groups)) {
-			$this->groups = $this->getRateGroups($rate, $usageType, 'without');
+			$this->groups = $this->getRateGroups($rate, $usageType, 'without', $time);
 		}
 		if (!count($this->groups)) {
 			$this->setEntityGroup(FALSE);
@@ -365,15 +413,18 @@ class Billrun_Service {
 	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null, $serviceQuantity = 1, $serviceMaximumQuantity = 1) {
 		if (is_null($staticGroup)) {
 			$rateUsageIncluded = 0; // pass by reference
-			$groupSelected = $this->getStrongestGroup($rate, $usageType);
+			$groupSelected = $this->getStrongestGroup($rate, $usageType, $time);
+			$entry = $this->getProductsGroupEntry($groupSelected);
 		} else { // specific group required to check
-			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
+			// a products group is already matched to the usage by getRateGroups and has no limits
+			$entry = $this->getProductsGroupEntry($staticGroup);
+			if ($entry === FALSE && !isset($this->data['include']['groups'][$staticGroup][$usageType]) 
 				&& !isset($this->data['include']['groups'][$staticGroup]['usage_types'][$usageType]) 
 				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
 				return array('usagev' => 0);
 			}
 
-			if (isset($this->data['include']['groups'][$staticGroup]['limits'])) {
+			if ($entry === FALSE && isset($this->data['include']['groups'][$staticGroup]['limits'])) {
 				// on some cases we have limits to check through plugin
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
@@ -385,12 +436,16 @@ class Billrun_Service {
 			$groupSelected = $staticGroup;
 		}
 
-		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
-			&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
-			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
+		if ($entry !== FALSE) { // products group: the entry holds either a cost or a value
+			$isMonetaryBased = isset($entry['cost']);
+		} else { // legacy behavior
+			$isMonetaryBased = !isset($this->data['include']['groups'][$groupSelected][$usageType])
+				&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType]);
+			if ($isMonetaryBased && !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
 			}
-			
+		}
+		if ($isMonetaryBased) {
 			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time, $serviceQuantity, $serviceMaximumQuantity);
 			// convert cost to volume
 			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
@@ -437,13 +492,13 @@ class Billrun_Service {
 	 * 
 	 * @return mixed string if found strongest group else false
 	 */
-	protected function getStrongestGroup($rate, $usageType) {
+	protected function getStrongestGroup($rate, $usageType, $time = null) {
 		if (!is_null($this->strongestGroup)) {
 			return $this->strongestGroup;
 		}
 		$limit = 10; // protect infinite loop
 		do {
-			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
+			$groupSelected = $this->setNextStrongestGroup($rate, $usageType, FALSE, $time);
 			// group not found
 			if ($groupSelected === FALSE) {
 //				$this->setEntityGroup($this->setNextStrongestGroup($rate, $usageType, true)); // removed, because it's run only one time per row
@@ -480,9 +535,13 @@ class Billrun_Service {
 	 */
 	public function isGroupAccountShared($rate, $usageType, $group = null) {
 		if (is_null($group)) {
-			$rateUsageIncluded = 0;
-			$group = $this->getStrongestGroup($rate, $usageType, $rateUsageIncluded);
+			$group = $this->getStrongestGroup($rate, $usageType);
 		}
+		$entry = $this->getProductsGroupEntry($group);
+		if ($entry !== FALSE) { // products group
+			return !empty($entry['account_shared']);
+		}
+		// legacy behavior
 		return isset($this->data['include']['groups'][$group]['account_shared']) && $this->data['include']['groups'][$group]['account_shared'];
 	}
 
@@ -500,6 +559,11 @@ class Billrun_Service {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
+		$entry = $this->getProductsGroupEntry($group);
+		if ($entry !== FALSE) { // products group
+			return !empty($entry['account_pool']);
+		}
+		// legacy behavior
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
 	
@@ -507,6 +571,11 @@ class Billrun_Service {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
+		$entry = $this->getProductsGroupEntry($group);
+		if ($entry !== FALSE) { // products group
+			return !empty($entry['quantity_affected']);
+		}
+		// legacy behavior
 		return isset($this->data['include']['groups'][$group]['quantity_affected']) && $this->data['include']['groups'][$group]['quantity_affected'];
 	}
 
@@ -514,8 +583,8 @@ class Billrun_Service {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
-		$isShared = isset($this->data['include']['groups'][$group]['account_shared']) ? $this->data['include']['groups'][$group]['account_shared'] : false;
-		$isquantityAffected = isset($this->data['include']['groups'][$group]['quantity_affected']) ? $this->data['include']['groups'][$group]['quantity_affected'] : false;
+		$isShared = $this->isGroupAccountShared(null, $usageType, $group);
+		$isquantityAffected = $this->isGroupQuantityAffected($group);
 		$groupValue = $this->getGroupValue($group, $usageType);
 		if ($groupValue === FALSE) {
 			return 0;
@@ -546,6 +615,17 @@ class Billrun_Service {
 	 * @since 5.7
 	 */
 	protected function getGroupValue($group, $usaget) {
+		$entry = $this->getProductsGroupEntry($group);
+		if ($entry !== FALSE) { // products group
+			if (isset($entry['cost'])) { // monetary based
+				return $usaget == 'cost' ? $entry['cost'] : false;
+			}
+			if ($usaget == 'cost') {
+				return false;
+			}
+			return $entry['value'] == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX : $entry['value'];
+		}
+		// legacy behavior
 		if (!isset($this->data['include']['groups'][$group][$usaget]) && !isset($this->data['include']['groups'][$group]['usage_types'][$usaget])) {
 			return false;
 		}
