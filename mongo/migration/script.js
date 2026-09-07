@@ -2298,6 +2298,13 @@ runOnce(lastConfig, 'BRCD-4748', function () {
 	db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
 });
 
+// BRCD-5499: update jsignpdf exec_path to the bundled jsignpdf 3.1.0 launcher script.
+runOnce(lastConfig, 'BRCD-5499', function () {
+	if (typeof lastConfig.signer !== 'undefined' && typeof lastConfig.signer.jsignpdf !== 'undefined') {
+		lastConfig.signer.jsignpdf.exec_path = "/opt/jsignpdf-3.1.0/bin/jsignpdf.sh";
+	}
+});
+
 db.config.insertOne(lastConfig);
 
 db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'urt': 1 }, { unique: false, sparse: false, background: true });
