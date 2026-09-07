@@ -45,7 +45,12 @@ class LogChecker extends \Codeception\Module
         }
 
         fseek($fp, $this->startOffset);
-        $this->cachedContent = stream_get_contents($fp) ?: '';
+        // bounded read: on PHP 7.4.26 (the php74 CI image) an unbounded
+        // stream_get_contents() sizes its buffer by the whole file instead of
+        // the remainder after fseek, so on a large log it tries to allocate
+        // the entire file and dies on memory_limit
+        $length = $currentSize - $this->startOffset;
+        $this->cachedContent = $length > 0 ? (stream_get_contents($fp, $length) ?: '') : '';
         fclose($fp);
 
         return $this->cachedContent;
