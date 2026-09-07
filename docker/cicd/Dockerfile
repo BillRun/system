@@ -20,6 +20,7 @@ RUN apt-get update && \
     && docker-php-ext-enable yaf mongodb memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
     && pip3 install --break-system-packages 'weasyprint>=62' \
+    && pip3 install --break-system-packages --upgrade 'jaraco.context>=6.1.0' \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update \
