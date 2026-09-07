@@ -1,0 +1,115 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "from": "2020-11-28 00:00:00",
+      "aid": "5473",
+      "invoice_language": "en_GB",
+      "firstname": "yossi",
+      "lastname": "test",
+      "email": "test@gmail.com",
+      "country": "Israel",
+      "address": "hshalom 7",
+      "zip_code": "123ab",
+      "payment_gateway": "",
+      "salutation": "",
+      "invoice_shipping_method": "email",
+      "invoice_detailed": false,
+      "type": "account",
+      "to": "2173-11-28 15:50:20",
+      "creation_time": "2024-11-28 00:00:00"
+    },
+    {
+      "sid": "54731",
+      "aid": "5473",
+      "type": "subscriber",
+      "from": "2016-10-17 03:00:00",
+      "to": "2026-07-10 00:00:00",
+      "plan": "A",
+      "firstname": "yo",
+      "lastname": "tu",
+      "activation_date": "2016-10-17 03:00:00",
+      "deactivation_date": "2200-01-01 02:00:00",
+      "plan_activation": "2016-10-17 03:00:00",
+      "plan_deactivation": "2026-07-10 00:00:00",
+      "creation_time": null,
+      "former_plan": null,
+      "services": [
+        {
+          "name": "SERVICE_A",
+          "from": "2026-07-01 03:00:00",
+          "to": "2200-01-01 02:00:00",
+          "service_id": 2014152,
+          "creation_time": "2026-07-01 03:00:00"
+         
+        }
+      ],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "A",
+          "value": {
+            "price": [
+              {
+                "price": 10,
+                "from": 0,
+                "to": "UNLIMITED"
+              }
+            ]
+          }
+        },
+        {
+          "type": "service",
+          "id": 2014152,
+          "key": "SERVICE_A",
+          "value": {
+            "price": [
+              {
+                "price": 5,
+                "from": 0,
+                "to": "UNLIMITED"
+              }
+            ]
+          }
+        }
+        
+      ]
+    },
+    {
+      "sid": "54731",
+      "aid": "5473",
+      "type": "subscriber",
+      "from": "2026-07-10 00:00:00",
+      "to": "2200-01-01 02:00:00",
+      "plan": "B",
+      "firstname": "yo",
+      "lastname": "tu",
+      "activation_date": "2016-10-17 03:00:00",
+      "deactivation_date": "2200-01-01 02:00:00",
+      "plan_activation": "2026-07-10 00:00:00",
+      "plan_deactivation": "2200-01-01 02:00:00",
+      "creation_time": null,
+      "former_plan": "A",
+      "services": [],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "B",
+          "value": {
+            "price": [
+              {
+                "price": 20,
+                "from": 0,
+                "to": "UNLIMITED"
+              }
+            ]
+          }
+        }
+      ]
+      
+      
+    }
+  ]
+}
