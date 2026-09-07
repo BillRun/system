@@ -36,11 +36,14 @@ services:
         image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
+        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
             - ${PWD}/../..:/billrun:ro
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
-            # - ${PWD}/../persist/backup:/backup 
+            # - ${PWD}/../persist/backup:/backup
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PWD}/mongo-entrypoint.sh:/mongo-entrypoint.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27018:27017
     chrome:
