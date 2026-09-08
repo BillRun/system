@@ -273,7 +273,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
-			$revisionOverrides = isset($arrService['overrides']) ? $arrService['overrides'] : $data['overrides'];
+			if (isset($arrService['overrides']) && is_array($arrService['overrides'])) {
+				$revisionOverrides = $arrService['overrides'];
+			} else if (isset($data['overrides']) && is_array($data['overrides'])) {
+				$revisionOverrides = $data['overrides'];
+			} else {
+				$revisionOverrides = [];
+			}
 			$overrideData['overrides'] = array_filter($revisionOverrides, function($override) use ($arrService) {
 				return $override['type'] != 'service' || empty($override['id']) || $arrService['service_id'] == $override['id'];
 			});
