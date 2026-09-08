@@ -9,5 +9,4 @@ return array(
     'Payrexx' => array($vendorDir . '/payrexx/payrexx/lib'),
     'OAuth2' => array($vendorDir . '/bshaffer/oauth2-server-php/src'),
     'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
-    'Behat\\Gherkin' => array($vendorDir . '/behat/gherkin/src'),
 );
