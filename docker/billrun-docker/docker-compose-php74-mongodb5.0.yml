@@ -35,9 +35,12 @@ services:
         image: mongo:5.0
         container_name: billrun-mongodb
         restart: always
+        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ./mongo-entrypoint.sh:/mongo-entrypoint.sh
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
 
