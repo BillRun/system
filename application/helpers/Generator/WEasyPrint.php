@@ -104,7 +104,9 @@ class Generator_WEasyPrint extends Generator_WkPdf {
 	 * @param mixed             $lines
 	 */
 	public function generateAccountInvoices($account, $lines = FALSE) {
+		$account = $this->reconstructBillrunObject($account);
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity', array($this, &$account, &$lines));
+		$this->applySubscriberDetailsLimit($account);
 
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
