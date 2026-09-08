@@ -12,8 +12,7 @@ RUN apt-get update && apt-get install -y \
     && pecl install xdebug-3.5.3 \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp \
-    && pip3 install --break-system-packages 'weasyprint>=62' \
-    && pip3 install --break-system-packages --upgrade 'jaraco.context>=6.1.0'
+    && pip3 install --break-system-packages 'weasyprint>=62'
 
 RUN  wget 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb' \
 	&& apt-get install -y ./wkhtmltox_0.12.6.1-3.bookworm_amd64.deb
