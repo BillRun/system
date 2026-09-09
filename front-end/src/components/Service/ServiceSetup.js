@@ -7,7 +7,7 @@ import moment from 'moment';
 import { Tabs, Tab } from 'react-bootstrap';
 import { Panel } from '@/common/BootstrapCompat';
 import ServiceDetails from './ServiceDetails';
-import PlanIncludesTab from '../Plan/PlanIncludesTab';
+import { ServiceIncludesTab } from './ServiceIncludes';
 import PlanProductsPriceTab from '../Plan/PlanProductsPriceTab';
 import { EntityTaxDetails } from '@/components/Tax';
 import { EntityRevisionDetails } from '../Entity';
@@ -23,7 +23,8 @@ import {
   getItemId,
 } from '@/common/Util';
 import {
-  addGroup,
+  addProductsGroup,
+  removeProductsGroup,
   removeGroup,
   addGroupCounter,
   getService,
@@ -196,8 +197,12 @@ class ServiceSetup extends Component {
     this.props.dispatch(addGroupCounter(groupName, data));
   }
 
-  onGroupAdd = (groupName, usages, unit, value, shared, pooled, quantityAffected, products) => {
-    this.props.dispatch(addGroup(groupName, usages, unit, value, shared, pooled, quantityAffected, products));
+  onProductsGroupAdd = (productsGroup) => {
+    this.props.dispatch(addProductsGroup(productsGroup));
+  }
+
+  onProductsGroupRemove = (index) => {
+    this.props.dispatch(removeProductsGroup(index));
   }
 
   onGroupRemove = (groupName) => {
@@ -252,8 +257,9 @@ class ServiceSetup extends Component {
 
     const allowEdit = mode !== 'view';
     const includeGroups = item.getIn(['include', 'groups'], Immutable.Map());
-    const includeServices = includeGroups.filter(group => !group.get('counter_only', false));
     const counterServices = includeGroups.filter(group => group.get('counter_only', false));
+    // if include is empty, the server returns it as an empty array instead of an empty object
+    const includeProductsGroups = Immutable.List(item.getIn(['include', 'products_groups'], Immutable.List()));
     const planRates = item.get('rates', Immutable.Map());
     const plays = item.get('play', Immutable.List());
     return (
@@ -303,13 +309,12 @@ class ServiceSetup extends Component {
 
           <Tab title="Service Includes" eventKey={3}>
             <Panel style={{ borderTop: 'none' }}>
-              <PlanIncludesTab
-                includeGroups={includeServices}
+              <ServiceIncludesTab
+                productsGroups={includeProductsGroups}
                 onChangeFieldValue={this.onUpdateItem}
-                onGroupAdd={this.onGroupAdd}
-                onGroupRemove={this.onGroupRemove}
+                onGroupAdd={this.onProductsGroupAdd}
+                onGroupRemove={this.onProductsGroupRemove}
                 mode={mode}
-                type={ServiceSetup.entityName}
                 plays={plays.join(',')}
               />
             </Panel>

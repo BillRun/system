@@ -398,6 +398,14 @@ class DbinitModel {
 				],
 			],
 			[
+				'coll' => 'product_groups',
+				'indexes' => [
+					['fields' => ['key' => 1, 'from' => 1, 'to' => 1], 'params' => ['unique' => false, 'background' => true]],
+					['fields' => ['key' => 1, 'to' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
+					['fields' => ['description' => 1], 'params' => ['unique' => false, 'background' => true]],
+				],
+			],
+			[
 				'coll' => 'plans',
 				'indexes' => [
 					['fields' => ['name' => 1, 'from' => 1, 'to' => 1], 'params' => ['unique' => false, 'background' => true]],

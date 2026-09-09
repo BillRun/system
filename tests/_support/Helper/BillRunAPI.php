@@ -528,14 +528,63 @@ class BillRunAPI extends \Codeception\Module{
 
     }
 
+    /**
+     * create a service that includes products groups.
+     *
+     * @param array $productsGroups - the include.products_groups entries
+     * @param array $override - fields to override the default values
+     * @return string the service name
+     */
+    public function generateServiceWithProductsGroups(array $productsGroups, array $override = [])
+    {
+        $service = $this->generateService(array_merge([
+            'name' => $this->uniqueEntityKey('SERVICE'),
+            'include' => ['products_groups' => $productsGroups],
+        ], $override), true);
+        return $service['name'];
+    }
+
         /**
      * create an rate.
-     * @param Array $override - fields to override the default values 
+     * @param Array $override - fields to override the default values
+     * @param string|array $usagets - when given, the activity type(s) the product is
+     *        priced for, and the key defaults to a unique one
+     * @return string the product key
      */
-    public function generateRate(array $override = [])
+    public function generateRate(array $override = [], $usagets = null)
     {
         $populatedValues = $this->getCustomFields('rates');
         $override = array_merge($populatedValues, $override);
+        // when activity types are given the product is priced for them instead of the
+        // default rates, and gets a unique key so several products can be created
+        $usagetDefaults = [];
+        if (!is_null($usagets)) {
+            $rates = [];
+            foreach ((array) $usagets as $usaget) {
+                $rates[$usaget] = [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ];
+            }
+            $key = $this->uniqueEntityKey('RATE');
+            $usagetDefaults = [
+                "key" => $key,
+                "description" => 'test rate ' . $key,
+                "rates" => $rates,
+            ];
+        }
         $rate = array_merge([
                 "key"=> "CALL",
                 "description"=> "call",
@@ -567,8 +616,47 @@ class BillRunAPI extends \Codeception\Module{
                         "taxation"=> "global"
                     ]
                 ]
-        ], $override);
+        ], $usagetDefaults, $override);
         $this->sendBillapiCreate($rate, 'rates');
+        return $rate['key'];
+    }
+
+    /**
+     * a unique uppercase entity key for tests.
+     *
+     * @param string $prefix
+     * @return string
+     */
+    public function uniqueEntityKey($prefix)
+    {
+        return strtoupper($prefix . '_' . str_replace('.', '', microtime(true) * 10000) . '_' . rand(1000, 9999));
+    }
+
+    /**
+     * the mongo id of an entity, by default of the last API response entity.
+     *
+     * @param array $entity
+     * @return string
+     */
+    public function getEntityId($entity = null)
+    {
+        $entity = is_null($entity) ? $this->getLastEntity() : $entity;
+        return is_array($entity['_id']) ? $entity['_id']['$id'] : $entity['_id'];
+    }
+
+    /**
+     * create a products group.
+     * @param Array $override - fields to override the default values
+     */
+    public function generateProductsGroup(array $override = [])
+    {
+        $group = array_merge([
+            'key' => 'GROUP',
+            'description' => 'products group',
+            'usage_types' => [],
+            'rates' => [],
+        ], $override);
+        return $this->sendBillapiCreate($group, 'productgroups');
     }
 
     /**

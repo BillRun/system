@@ -23,9 +23,10 @@ export const DELETE_SERVICE_FIELD = 'DELETE_SERVICE_FIELD';
 export const SAVE_SERVICE = 'SAVE_SERVICE';
 export const CLEAR_SERVICE = 'CLEAR_SERVICE';
 export const CLONE_RESET_SERVICE = 'CLONE_RESET_SERVICE';
-export const ADD_GROUP_SERVICE = 'ADD_GROUP_SERVICE';
 export const ADD_GROUP_SERVICE_COUNTER = 'ADD_GROUP_SERVICE_COUNTER';
 export const REMOVE_GROUP_SERVICE = 'REMOVE_GROUP_SERVICE';
+export const ADD_SERVICE_PRODUCTS_GROUP = 'ADD_SERVICE_PRODUCTS_GROUP';
+export const REMOVE_SERVICE_PRODUCTS_GROUP = 'REMOVE_SERVICE_PRODUCTS_GROUP';
 export const SERVICE_PRODUCTS_REMOVE = 'SERVICE_PRODUCTS_REMOVE';
 export const SERVICE_PRODUCTS_RATE_UPDATE_TO = 'SERVICE_PRODUCTS_RATE_UPDATE_TO';
 export const SERVICE_PRODUCTS_RATE_UPDATE = 'SERVICE_PRODUCTS_RATE_UPDATE';
@@ -71,16 +72,14 @@ export const deleteServiceField = path => ({
   path,
 });
 
-export const addGroup = (groupName, usages, unit, value, shared, pooled, quantityAffected, products) => ({
-  type: ADD_GROUP_SERVICE,
-  groupName,
-  usages,
-  unit,
-  value,
-  shared,
-  pooled,
-  quantityAffected,
-  products,
+export const addProductsGroup = productsGroup => ({
+  type: ADD_SERVICE_PRODUCTS_GROUP,
+  productsGroup,
+});
+
+export const removeProductsGroup = index => ({
+  type: REMOVE_SERVICE_PRODUCTS_GROUP,
+  index,
 });
 
 export const addGroupCounter = (groupName, groupData) => ({

@@ -23,6 +23,7 @@ import {
 } from './listActions';
 import {
   createRateListNameByArgs,
+  mergeServiceProductsGroupsIncludes,
 } from '@/common/Util';
 
 
@@ -41,8 +42,14 @@ export const optionsLoaders = {
     .then((success) => {
       try {
         const collection = 'available_groups';
+        const productsGroupsByKey = {};
+        success.data[2].data.details.forEach((productsGroup) => {
+          productsGroupsByKey[productsGroup.key] = productsGroup;
+        });
+        const services = success.data[1].data.details
+          .map(service => mergeServiceProductsGroupsIncludes(service, productsGroupsByKey));
         dispatch(gotList(collection, success.data[0].data.details));
-        dispatch(addToList(collection, success.data[1].data.details));
+        dispatch(addToList(collection, services));
         return dispatch(apiBillRunSuccessHandler(success));
       } catch (e) {
         throw new Error("Error retrieving 'Groups' options");

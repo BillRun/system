@@ -1,7 +1,7 @@
 import Immutable from 'immutable';
 import { getConfig, reCalculateCycles } from '@/common/Util';
 import includeGroupsReducer from './includeGroupsReducer';
-import { ADD_GROUP, REMOVE_GROUP, ADD_COUNTER_GROUP } from '@/actions/includeGroupsActions';
+import { REMOVE_GROUP, ADD_COUNTER_GROUP } from '@/actions/includeGroupsActions';
 import {
   SERVICE_PRODUCTS_REMOVE,
   SERVICE_PRODUCTS_RATE_UPDATE_TO,
@@ -13,9 +13,10 @@ import {
   CLONE_RESET_SERVICE,
   CLEAR_SERVICE,
   UPDATE_SERVICE,
-  ADD_GROUP_SERVICE,
   REMOVE_GROUP_SERVICE,
   ADD_GROUP_SERVICE_COUNTER,
+  ADD_SERVICE_PRODUCTS_GROUP,
+  REMOVE_SERVICE_PRODUCTS_GROUP,
   DELETE_SERVICE_FIELD,
   SERVICE_ADD_TARIFF,
   SERVICE_UPDATE_SERVICE_CYCLE, 
@@ -66,10 +67,18 @@ const serviceReducer = (state = DefaultState, action) => {
       return includeGroupsReducer(state, includeGroupsAction);
     }
 
-    case ADD_GROUP_SERVICE: {
-      const includeGroupsAction = Object.assign({}, action, { type: ADD_GROUP });
-      return includeGroupsReducer(state, includeGroupsAction);
-    }
+    case ADD_SERVICE_PRODUCTS_GROUP:
+      return state
+        // if include is empty, server returns it as empty array instead of empty object
+        // in this case ImmutableJS will fail to set products_groups on a list
+        .updateIn(['include'], Immutable.Map(), include => (include.isEmpty() ? Immutable.Map() : include))
+        .updateIn(['include', 'products_groups'], Immutable.List(), productsGroups => (
+          (productsGroups.isEmpty() ? Immutable.List() : productsGroups).push(action.productsGroup)
+        ));
+
+    case REMOVE_SERVICE_PRODUCTS_GROUP:
+      return state.updateIn(['include', 'products_groups'], Immutable.List(), productsGroups =>
+        productsGroups.delete(action.index));
 
     case REMOVE_GROUP_SERVICE: {
       const includeGroupsAction = Object.assign({}, action, { type: REMOVE_GROUP });
