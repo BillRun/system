@@ -19,7 +19,7 @@ return new class extends Billrun_Migration_Base {
 
 	public function run() {
 		$migrated = 0;
-		$cursor = $this->db->servicesCollection()->query(['include.groups' => ['$exists' => true]])->cursor();
+		$cursor = $this->db->servicesCollection()->query(['include.groups' => ['$exists' => true]])->cursor()->setReadPreference('RP_PRIMARY');
 		foreach ($cursor as $service) {
 			$migrated += $this->migrateService($service->getRawData()) ? 1 : 0;
 		}
@@ -75,7 +75,7 @@ return new class extends Billrun_Migration_Base {
 		$usageTypes = array_keys(isset($group['usage_types']) ? $group['usage_types'] : []);
 		sort($rates); // the products are compared as a set
 		sort($usageTypes);
-		$existing = $this->db->productgroupsCollection()->query(['key' => $groupName])->cursor()->limit(1)->current();
+		$existing = $this->db->productgroupsCollection()->query(['key' => $groupName])->cursor()->setReadPreference('RP_PRIMARY')->limit(1)->current();
 		if (!$existing->isEmpty()) {
 			$existingRates = (array) $existing->get('rates');
 			$existingUsageTypes = (array) $existing->get('usage_types');
