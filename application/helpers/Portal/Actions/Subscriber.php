@@ -171,8 +171,10 @@ class Portal_Actions_Subscriber extends Portal_Actions {
 	 */
 	protected function addServiceGroupsUsages(&$service, $subscriber) {
 		$balances = $this->getBalances($subscriber);
-		if (isset($service['include']['groups'])) {
-			foreach ($service['include']['groups'] as $serviceGroupName => &$serviceGroup) {
+		$container = !empty($service['include']['products_groups']) ? 'products_groups' : 'groups'; // products groups replace the include groups
+		if (isset($service['include'][$container])) {
+			foreach ($service['include'][$container] as $serviceGroupName => &$serviceGroup) {
+				$serviceGroupName = $serviceGroup['key'] ?? $serviceGroupName; // a products group entry holds its key
 				foreach ($balances as $balance) {
 					if (isset($balance['balance']['groups'][$serviceGroupName])) {
 						$serviceGroup['usage']['used'] = $balance['balance']['groups'][$serviceGroupName]['usagev'];
