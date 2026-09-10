@@ -17,6 +17,7 @@ import {
   getGroupUsages,
   getGroupValue,
   getGroupUsageTypes,
+  collectExistingGroupNames,
 } from '@/common/Util';
 import {
   usageTypeSelector,
@@ -72,15 +73,7 @@ class PlanIncludesTab extends Component {
       this.props.dispatch(getSettings('usage_types'));
     }
     getAllGroup().then((responses) => {
-      const existingGroups = Immutable.Set().withMutations((groupsWithMutations) => {
-        responses.data.forEach((response) => {
-          response.data.details.forEach((item) => {
-            if (item.include && item.include.groups) {
-              groupsWithMutations.union(Object.keys(item.include.groups));
-            }
-          });
-        });
-      }).toList();
+      const existingGroups = Immutable.List(collectExistingGroupNames(responses.data));
       this.setState({ existingGroups });
     });
   }

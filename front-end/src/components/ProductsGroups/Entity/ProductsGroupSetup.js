@@ -5,7 +5,7 @@ import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { Panel } from '@/common/BootstrapCompat';
-import ProductsGroupDetails from './ProductsGroupDetails';
+import ProductsGroupDetails, { KEY_EXISTS_ERROR } from './ProductsGroupDetails';
 import { EntityRevisionDetails } from '../../Entity';
 import { ActionButtons, LoadingItemPlaceholder } from '@/components/Elements';
 import {
@@ -13,7 +13,9 @@ import {
   getConfig,
   getItemId,
   getItemDateValue,
+  collectExistingGroupNames,
 } from '@/common/Util';
+import { getAllGroup } from '@/actions/planActions';
 import { showSuccess, showDanger } from '@/actions/alertsActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
 import {
@@ -50,11 +52,15 @@ class ProductsGroupSetup extends Component {
 
   state = {
     progress: false,
+    // the group names already taken in the balance groups namespace: a products group
+    // key is a balance group name like a service counter or a plan group name
+    existingGroupsNames: Immutable.List(),
   }
 
   componentDidMount() {
     const { mode } = this.props;
     this.fetchItem();
+    this.fetchExistingGroupsNames();
     if (mode === 'create') {
       const pageTitle = buildPageTitle(mode, 'products_group');
       this.props.dispatch(setPageTitle(pageTitle));
@@ -143,11 +149,22 @@ class ProductsGroupSetup extends Component {
     }
   }
 
+  fetchExistingGroupsNames = () => {
+    getAllGroup().then((responses) => {
+      this.setState({ existingGroupsNames: Immutable.List(collectExistingGroupNames(responses.data)) });
+    });
+  }
+
   handleSave = () => {
     const { item, mode } = this.props;
+    const { existingGroupsNames } = this.state;
     const itemToSave = item.update('usage_types', Immutable.List(), usageTypes => usageTypes.filter(usageType => usageType !== ''));
     if (itemToSave.get('rates', Immutable.List()).isEmpty()) {
       this.props.dispatch(showDanger('Please select at least one product'));
+      return;
+    }
+    if (['clone', 'create'].includes(mode) && existingGroupsNames.includes(itemToSave.get('key', ''))) {
+      this.props.dispatch(showDanger(KEY_EXISTS_ERROR));
       return;
     }
     this.setState({ progress: true });
@@ -163,7 +180,7 @@ class ProductsGroupSetup extends Component {
   }
 
   render() {
-    const { progress } = this.state;
+    const { progress, existingGroupsNames } = this.state;
     const { item, mode, revisions } = this.props;
     if (mode === 'loading') {
       return (<LoadingItemPlaceholder onClick={this.handleBack} />);
@@ -190,6 +207,7 @@ class ProductsGroupSetup extends Component {
           <ProductsGroupDetails
             item={item}
             mode={mode}
+            existingGroupsNames={existingGroupsNames}
             onFieldUpdate={this.onChangeFieldValue}
             onFieldRemove={this.onRemoveFieldValue}
           />

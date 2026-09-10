@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { Modal, Button } from 'react-bootstrap';
-import ProductsGroupDetails from '../../ProductsGroups/Entity/ProductsGroupDetails';
+import ProductsGroupDetails, { KEY_EXISTS_ERROR } from '../../ProductsGroups/Entity/ProductsGroupDetails';
 import { showDanger } from '@/actions/alertsActions';
 import {
   updateProductsGroup,
@@ -33,6 +33,9 @@ class ProductsGroupCreatePopup extends Component {
     onCancel: PropTypes.func.isRequired,
     onCreated: PropTypes.func.isRequired,
     dispatch: PropTypes.func.isRequired,
+    // the group names already taken in the balance groups namespace, held by the service
+    // page so that a counter added to the service before it was saved is taken as well
+    existingGroupsNames: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
@@ -41,6 +44,7 @@ class ProductsGroupCreatePopup extends Component {
     plays: '',
     item: Immutable.Map(),
     usageTypesData: Immutable.List(),
+    existingGroupsNames: Immutable.List(),
   };
 
   state = {
@@ -79,13 +83,16 @@ class ProductsGroupCreatePopup extends Component {
   }
 
   getValidationError = (usageTypes) => {
-    const { item, monetaryBased } = this.props;
+    const { item, monetaryBased, existingGroupsNames } = this.props;
     if (item.get('description', '') === '') {
       return 'Title is required';
     }
     const key = item.get('key', '');
     if (key === '' || !getConfig('keyUppercaseRegex', /./).test(key)) {
       return 'A valid key is required';
+    }
+    if (existingGroupsNames.includes(key)) {
+      return KEY_EXISTS_ERROR;
     }
     if (!monetaryBased && usageTypes.isEmpty()) {
       return 'Please select at least one activity type';
@@ -130,7 +137,7 @@ class ProductsGroupCreatePopup extends Component {
   }
 
   render() {
-    const { show, monetaryBased, plays, item } = this.props;
+    const { show, monetaryBased, plays, item, existingGroupsNames } = this.props;
     const { progress } = this.state;
     return (
       <Modal show={show} keyboard={false} size="lg">
@@ -146,6 +153,7 @@ class ProductsGroupCreatePopup extends Component {
             mode="create"
             monetaryBased={monetaryBased}
             plays={plays}
+            existingGroupsNames={existingGroupsNames}
             onFieldUpdate={this.onFieldUpdate}
             onFieldRemove={this.onFieldRemove}
           />

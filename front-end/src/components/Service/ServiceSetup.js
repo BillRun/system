@@ -21,6 +21,7 @@ import {
   buildPageTitle,
   getConfig,
   getItemId,
+  collectExistingGroupNames,
 } from '@/common/Util';
 import {
   addProductsGroup,
@@ -159,15 +160,7 @@ class ServiceSetup extends Component {
 
   fetchGroupNames = () => {
     getAllGroup().then((responses) => {
-      const existingGroups = Immutable.Set().withMutations((groupsWithMutations) => {
-        responses.data.forEach((response) => {
-          response.data.details.forEach((item) => {
-            if (item.include && item.include.groups) {
-              groupsWithMutations.union(Object.keys(item.include.groups));
-            }
-          });
-        });
-      }).toList();
+      const existingGroups = Immutable.List(collectExistingGroupNames(responses.data));
       this.setState(() => ({ existingGroups }));
     });
   }
@@ -197,7 +190,22 @@ class ServiceSetup extends Component {
     this.props.dispatch(addGroupCounter(groupName, data));
   }
 
+  // a products group key is a balance group name like a counter name, so a group created
+  // or added after the names were fetched is taken as well. removing the include entry
+  // does not delete the products group, so the key is not freed on remove
+  markGroupNameTaken = (groupName) => {
+    const { existingGroups } = this.state;
+    if (groupName !== '' && !existingGroups.includes(groupName)) {
+      this.setState(() => ({ existingGroups: existingGroups.push(groupName) }));
+    }
+  }
+
+  onProductsGroupCreated = (productsGroup) => {
+    this.markGroupNameTaken(productsGroup.get('key', ''));
+  }
+
   onProductsGroupAdd = (productsGroup) => {
+    this.markGroupNameTaken(productsGroup.get('key', ''));
     this.props.dispatch(addProductsGroup(productsGroup));
   }
 
@@ -314,6 +322,8 @@ class ServiceSetup extends Component {
                 onChangeFieldValue={this.onUpdateItem}
                 onGroupAdd={this.onProductsGroupAdd}
                 onGroupRemove={this.onProductsGroupRemove}
+                onGroupCreated={this.onProductsGroupCreated}
+                existingGroupsNames={existingGroups}
                 mode={mode}
                 plays={plays.join(',')}
               />

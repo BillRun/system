@@ -18,6 +18,9 @@ import {
   getUsagePropertyType,
 } from '@/common/Util';
 
+// a products group key is a balance group name, like a service counter or a plan group name
+export const KEY_EXISTS_ERROR = 'Key is already used as a group name (by a products group, a service counter or a plan group)';
+
 class ProductsGroupDetails extends Component {
 
   static propTypes = {
@@ -31,15 +34,19 @@ class ProductsGroupDetails extends Component {
     // cannot be chosen and the products are not filtered by them
     monetaryBased: PropTypes.bool,
     plays: PropTypes.string,
+    // the group names already taken in the balance groups namespace
+    existingGroupsNames: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
     usageTypesData: Immutable.List(),
     monetaryBased: false,
     plays: '',
+    existingGroupsNames: Immutable.List(),
     errorMessages: {
       key: {
         allowedCharacters: 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)',
+        exist: KEY_EXISTS_ERROR,
       },
     },
   };
@@ -51,10 +58,15 @@ class ProductsGroupDetails extends Component {
   }
 
   onChangeKey = (e) => {
-    const { errorMessages: { key: { allowedCharacters } } } = this.props;
+    const { existingGroupsNames, errorMessages: { key: { allowedCharacters, exist } } } = this.props;
     const { errors } = this.state;
     const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), "_");
-    const newError = (!getConfig('keyUppercaseRegex', /./).test(value)) ? allowedCharacters : '';
+    let newError = '';
+    if (!getConfig('keyUppercaseRegex', /./).test(value)) {
+      newError = allowedCharacters;
+    } else if (existingGroupsNames.includes(value)) {
+      newError = exist;
+    }
     this.setState({ errors: Object.assign({}, errors, { key: newError }) });
     this.props.onFieldUpdate(['key'], value);
   }

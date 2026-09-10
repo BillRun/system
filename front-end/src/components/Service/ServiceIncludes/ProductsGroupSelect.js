@@ -23,6 +23,7 @@ export default class ProductsGroupSelect extends Component {
     onGroupCreated: PropTypes.func,
     plays: PropTypes.string,
     disabled: PropTypes.bool,
+    existingGroupsNames: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
@@ -34,6 +35,7 @@ export default class ProductsGroupSelect extends Component {
     onGroupCreated: () => {},
     plays: '',
     disabled: false,
+    existingGroupsNames: Immutable.List(),
   };
 
   state = {
@@ -93,7 +95,7 @@ export default class ProductsGroupSelect extends Component {
   }
 
   render() {
-    const { usageBased, allowCreate, plays, disabled } = this.props;
+    const { usageBased, allowCreate, plays, disabled, existingGroupsNames } = this.props;
     const { showCreatePopup } = this.state;
     if (!allowCreate) {
       return this.renderSelect();
@@ -112,6 +114,7 @@ export default class ProductsGroupSelect extends Component {
           show={showCreatePopup}
           monetaryBased={!usageBased}
           plays={plays}
+          existingGroupsNames={existingGroupsNames}
           onCancel={this.onCancelCreate}
           onCreated={this.onGroupCreated}
         />

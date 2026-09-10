@@ -28,6 +28,10 @@ class ServiceIncludesTab extends Component {
     onChangeFieldValue: PropTypes.func.isRequired,
     onGroupAdd: PropTypes.func.isRequired,
     onGroupRemove: PropTypes.func.isRequired,
+    onGroupCreated: PropTypes.func,
+    // the group names already taken in the balance groups namespace, including the
+    // counters and groups added on this service before it was saved
+    existingGroupsNames: PropTypes.instanceOf(Immutable.List),
     mode: PropTypes.string,
     dispatch: PropTypes.func.isRequired,
     plays: PropTypes.string,
@@ -38,6 +42,8 @@ class ServiceIncludesTab extends Component {
     usageTypes: Immutable.List(),
     propertyTypes: Immutable.List(),
     currency: 'USD',
+    onGroupCreated: () => {},
+    existingGroupsNames: Immutable.List(),
     mode: 'create',
     plays: '',
   };
@@ -67,6 +73,7 @@ class ServiceIncludesTab extends Component {
   onProductsGroupCreated = (productsGroup) => {
     const { availableProductsGroups } = this.state;
     this.setState({ availableProductsGroups: availableProductsGroups.push(productsGroup) });
+    this.props.onGroupCreated(productsGroup);
   }
 
   getUsedKeys = () => this.props.productsGroups
@@ -115,7 +122,7 @@ class ServiceIncludesTab extends Component {
   );
 
   render() {
-    const { mode, plays } = this.props;
+    const { mode, plays, existingGroupsNames } = this.props;
     const { availableProductsGroups } = this.state;
     const allowCreate = mode !== 'view';
 
@@ -138,6 +145,7 @@ class ServiceIncludesTab extends Component {
               usedKeys={this.getUsedKeys()}
               addGroup={this.props.onGroupAdd}
               onGroupCreated={this.onProductsGroupCreated}
+              existingGroupsNames={existingGroupsNames}
               plays={plays}
             />
           }

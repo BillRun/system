@@ -614,6 +614,43 @@ export const mergeServiceProductsGroupsIncludes = (service, productsGroupsByKey)
 };
 
 /**
+ * Collect the group names already taken in the balance groups namespace from the
+ * getAllGroupsQuery responses: the include.groups names of plans and services (the
+ * service counters), the include.products_groups keys of services and the products
+ * groups keys. A products group key becomes a balance group name exactly like a
+ * counter name does, so a counter cannot be named after a products group.
+ * Operates on the plain (not immutable) API responses, returns a plain array of unique names.
+ */
+export const collectExistingGroupNames = (responses = []) => {
+  const names = new Set();
+  responses.forEach((response) => {
+    const details = (response && response.data && Array.isArray(response.data.details))
+      ? response.data.details
+      : [];
+    details.forEach((item) => {
+      if (!item) {
+        return;
+      }
+      if (typeof item.key === 'string' && item.key !== '') { // a products group
+        names.add(item.key);
+      }
+      const include = item.include || {};
+      if (include.groups && !Array.isArray(include.groups)) {
+        Object.keys(include.groups).forEach(name => names.add(name));
+      }
+      if (Array.isArray(include.products_groups)) {
+        include.products_groups.forEach((entry) => {
+          if (entry && typeof entry.key === 'string' && entry.key !== '') {
+            names.add(entry.key);
+          }
+        });
+      }
+    });
+  });
+  return [...names];
+};
+
+/**
  * the unit of measure data of a unit name, looked up across all property types.
  * unit names are unique across the property types, and for an include entry the
  * backend validates the unit against the products group property type.

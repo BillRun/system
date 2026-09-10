@@ -26,6 +26,7 @@ class ServiceProductsGroupCreate extends Component {
     currency: PropTypes.string,
     propertyTypes: PropTypes.instanceOf(Immutable.List),
     plays: PropTypes.string,
+    existingGroupsNames: PropTypes.instanceOf(Immutable.List),
   }
 
   static defaultProps = {
@@ -35,6 +36,7 @@ class ServiceProductsGroupCreate extends Component {
     currency: 'USD',
     propertyTypes: Immutable.List(),
     plays: '',
+    existingGroupsNames: Immutable.List(),
   };
 
   static defaultState = {
@@ -227,7 +229,7 @@ class ServiceProductsGroupCreate extends Component {
   }
 
   getStepContent = (stepIndex) => {
-    const { availableProductsGroups, usedKeys, currency, propertyTypes, plays } = this.props;
+    const { availableProductsGroups, usedKeys, currency, propertyTypes, plays, existingGroupsNames } = this.props;
     const { monetaryBased, groupKey, include, unit, shared, pooled, quantityAffected, error } = this.state;
     const steps = ServiceProductsGroupCreate.steps;
     const selectedGroup = this.getSelectedGroup();
@@ -278,6 +280,7 @@ class ServiceProductsGroupCreate extends Component {
                 usedKeys={usedKeys}
                 usageBased={!monetaryBased}
                 onGroupCreated={this.onGroupCreated}
+                existingGroupsNames={existingGroupsNames}
                 plays={plays}
               />
               { error.length > 0 && <HelpBlock>{error}</HelpBlock>}
