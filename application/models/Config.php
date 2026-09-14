@@ -476,7 +476,9 @@ class ConfigModel {
 					break;
 				}
 			}
-		
+
+			$this->validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField);
+
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
 					'name' => $fieldName,
@@ -499,8 +501,30 @@ class ConfigModel {
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
 			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
-		
+
 		return true;
+	}
+
+	/**
+	 * the 'encrypted' field type can only be chosen when a custom field is first
+	 * created, not changed to/from afterwards - existing data was already
+	 * written encrypted/plaintext under the old type, and there is no
+	 * migration that transparently re-encrypts or decrypts it in place
+	 *
+	 * @param string $fieldName
+	 * @param array $field
+	 * @param array|false $prevField false if the field did not exist before (new field)
+	 * @throws Exception on validation failure
+	 */
+	protected function validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField) {
+		if (!$prevField) {
+			return;
+		}
+		$prevType = Billrun_Util::getFieldVal($prevField['type'], 'string');
+		$newType = Billrun_Util::getFieldVal($field['type'], 'string');
+		if ($prevType !== $newType && ($prevType === 'encrypted' || $newType === 'encrypted')) {
+			throw new Exception("cannot change field {$fieldName} type from {$prevType} to {$newType}: the encrypted type can only be set when the field is created");
+		}
 	}
 	
 	/**

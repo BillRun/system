@@ -41,6 +41,8 @@ services:
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ./billrun-php74/composer.json:/billrun/composer.json:ro
+            - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
         ports:
             - 27017:27017
 
