@@ -320,6 +320,15 @@ class Billrun_Factory {
 		try {
             $mailer = new Zend_Mail();
             $mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+			foreach ((array) $mailerTransport as $key => $value) {
+				if (is_string($value) && trim($value) === '') {
+					unset($mailerTransport[$key]);
+				}
+			}
+			if (isset($mailerTransport['auth']) && $mailerTransport['auth'] !== 'oauth2' && empty($mailerTransport['username'])) {
+				// no credentials to authenticate with - use an unauthenticated SMTP session
+				unset($mailerTransport['auth']);
+			}
 			$oauthSettings = isset($mailerTransport['oauth2']) ? $mailerTransport['oauth2'] : [];
             if (isset($mailerTransport['auth']) && $mailerTransport['auth'] === 'oauth2') {
 				$oauthParams = [
