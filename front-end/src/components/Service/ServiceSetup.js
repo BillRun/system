@@ -21,6 +21,7 @@ import {
   buildPageTitle,
   getConfig,
   getItemId,
+  getItemDateValue,
   collectExistingGroupNames,
 } from '@/common/Util';
 import {
@@ -319,6 +320,8 @@ class ServiceSetup extends Component {
             <Panel style={{ borderTop: 'none' }}>
               <ServiceIncludesTab
                 productsGroups={includeProductsGroups}
+                serviceFrom={getItemDateValue(item, 'from')}
+                serviceTo={item.has('to') ? getItemDateValue(item, 'to') : null}
                 onChangeFieldValue={this.onUpdateItem}
                 onGroupAdd={this.onProductsGroupAdd}
                 onGroupRemove={this.onProductsGroupRemove}

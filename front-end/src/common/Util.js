@@ -651,6 +651,41 @@ export const collectExistingGroupNames = (responses = []) => {
 };
 
 /**
+ * The products groups a service revision can include, resolved the way the backend
+ * validates them: a group is available when one of its revisions overlaps the service
+ * revision dates. Of the overlapping revisions the one in effect at the service start
+ * is returned, else the earliest, so the screen shows the products the service starts with.
+ * @param {Immutable.List} revisions every revision of every products group, from / to as date strings
+ * @param {moment} serviceFrom the service revision start
+ * @param {moment|null} serviceTo the service revision end, null for unlimited
+ * @return {Immutable.List} one revision per available products group key
+ */
+export const getProductsGroupsForRevision = (revisions, serviceFrom, serviceTo = null) => revisions
+  .filter((revision) => {
+    const from = getItemDateValue(revision, 'from', moment(0));
+    const startsBeforeEnd = serviceTo === null || from.isBefore(serviceTo);
+    const endsAfterStart = !revision.has('to') || getItemDateValue(revision, 'to').isAfter(serviceFrom);
+    return startsBeforeEnd && endsAfterStart;
+  })
+  .groupBy(revision => revision.get('key', ''))
+  .map((groupRevisions) => {
+    const sorted = groupRevisions.sortBy(revision => getItemDateValue(revision, 'from', moment(0)).valueOf());
+    return sorted.findLast(revision => !getItemDateValue(revision, 'from', moment(0)).isAfter(serviceFrom)) || sorted.first();
+  })
+  .toList();
+
+/**
+ * The latest revision of every products group, to still show the details of a group
+ * that a service includes although none of its revisions overlaps the service revision.
+ * @param {Immutable.List} revisions every revision of every products group
+ * @return {Immutable.List} one revision per products group key
+ */
+export const getProductsGroupsLatestRevisions = revisions => revisions
+  .groupBy(revision => revision.get('key', ''))
+  .map(groupRevisions => groupRevisions.maxBy(revision => getItemDateValue(revision, 'from', moment(0)).valueOf()))
+  .toList();
+
+/**
  * the unit of measure data of a unit name, looked up across all property types.
  * unit names are unique across the property types, and for an include entry the
  * backend validates the unit against the products group property type.

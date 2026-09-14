@@ -4,12 +4,14 @@ import { connect } from 'react-redux';
 import { Col, Row, Table } from 'react-bootstrap';
 import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
+import moment from 'moment';
 import Help from '../../Help';
 import { GroupsInclude } from '@/language/FieldDescriptions';
 import ServiceProductsGroupEdit from './ServiceProductsGroupEdit';
 import ServiceProductsGroupCreate from './ServiceProductsGroupCreate';
 import { apiBillRun } from '@/common/Api';
-import { getProductsGroupsOptionsQuery } from '@/common/ApiQueries';
+import { getProductsGroupsRevisionsQuery } from '@/common/ApiQueries';
+import { getProductsGroupsForRevision, getProductsGroupsLatestRevisions } from '@/common/Util';
 import { getSettings } from '@/actions/settingsActions';
 import {
   usageTypeSelector,
@@ -22,6 +24,10 @@ class ServiceIncludesTab extends Component {
 
   static propTypes = {
     productsGroups: PropTypes.instanceOf(Immutable.List),
+    // the service revision dates: only the products groups with a revision overlapping
+    // them can be included, as the backend validates on save
+    serviceFrom: PropTypes.object,
+    serviceTo: PropTypes.object,
     usageTypes: PropTypes.instanceOf(Immutable.List),
     propertyTypes: PropTypes.instanceOf(Immutable.List),
     currency: PropTypes.string,
@@ -39,6 +45,8 @@ class ServiceIncludesTab extends Component {
 
   static defaultProps = {
     productsGroups: Immutable.List(),
+    serviceFrom: null,
+    serviceTo: null,
     usageTypes: Immutable.List(),
     propertyTypes: Immutable.List(),
     currency: 'USD',
@@ -49,7 +57,8 @@ class ServiceIncludesTab extends Component {
   };
 
   state = {
-    availableProductsGroups: Immutable.List(),
+    // every revision of every products group, with its dates
+    productsGroupsRevisions: Immutable.List(),
   };
 
   componentDidMount() {
@@ -61,28 +70,46 @@ class ServiceIncludesTab extends Component {
   }
 
   fetchProductsGroups = () => {
-    apiBillRun(getProductsGroupsOptionsQuery())
+    apiBillRun(getProductsGroupsRevisionsQuery())
       .then((success) => {
-        this.setState({ availableProductsGroups: Immutable.fromJS(success.data[0].data.details) });
+        this.setState({ productsGroupsRevisions: Immutable.fromJS(success.data[0].data.details) });
       })
       .catch(() => {
-        this.setState({ availableProductsGroups: Immutable.List() });
+        this.setState({ productsGroupsRevisions: Immutable.List() });
       });
   }
 
   onProductsGroupCreated = (productsGroup) => {
-    const { availableProductsGroups } = this.state;
-    this.setState({ availableProductsGroups: availableProductsGroups.push(productsGroup) });
+    const { productsGroupsRevisions } = this.state;
+    // the create popup starts the new group now, so its revision is known without a refetch
+    const revision = productsGroup.set('from', moment().toISOString());
+    this.setState({ productsGroupsRevisions: productsGroupsRevisions.push(revision) });
     this.props.onGroupCreated(productsGroup);
+  }
+
+  /**
+   * the products groups that can be included by this service revision
+   */
+  getAvailableProductsGroups = () => {
+    const { serviceFrom, serviceTo } = this.props;
+    const { productsGroupsRevisions } = this.state;
+    return getProductsGroupsForRevision(productsGroupsRevisions, serviceFrom || moment(), serviceTo);
   }
 
   getUsedKeys = () => this.props.productsGroups
     .map(productsGroup => productsGroup.get('key', ''))
     .toList();
 
+  /**
+   * the details of an included products group: the revision covering the service, else
+   * the latest one, so a group none of whose revisions covers the service is still shown
+   */
   getProductsGroupData = (key) => {
-    const { availableProductsGroups } = this.state;
-    return availableProductsGroups.find(productsGroup => productsGroup.get('key', '') === key) || Immutable.Map();
+    const { productsGroupsRevisions } = this.state;
+    const byKey = productsGroup => productsGroup.get('key', '') === key;
+    return this.getAvailableProductsGroups().find(byKey)
+      || getProductsGroupsLatestRevisions(productsGroupsRevisions).find(byKey)
+      || Immutable.Map();
   }
 
   renderGroups = () => {
@@ -123,7 +150,6 @@ class ServiceIncludesTab extends Component {
 
   render() {
     const { mode, plays, existingGroupsNames } = this.props;
-    const { availableProductsGroups } = this.state;
     const allowCreate = mode !== 'view';
 
     return (
@@ -141,7 +167,7 @@ class ServiceIncludesTab extends Component {
           </Panel>
           { allowCreate &&
             <ServiceProductsGroupCreate
-              availableProductsGroups={availableProductsGroups}
+              availableProductsGroups={this.getAvailableProductsGroups()}
               usedKeys={this.getUsedKeys()}
               addGroup={this.props.onGroupAdd}
               onGroupCreated={this.onProductsGroupCreated}
