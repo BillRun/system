@@ -260,6 +260,17 @@ class calculateCommandCest
         $this->writeDbConfigValue(['Rate_Usage', 'calculator', 'limit'], $limit);
     }
 
+    /** Current tax-stage queue batch size (tax.calculator.limit), or the ini default. */
+    private function getTaxBatchLimit()
+    {
+        return Billrun_Factory::config()->getConfigValue('tax.calculator.limit', 5000);
+    }
+
+    private function setTaxBatchLimit($limit)
+    {
+        $this->writeDbConfigValue(['tax', 'calculator', 'limit'], $limit);
+    }
+
     /** How long a pulled-but-failed queue line waits before it may be re-pulled. */
     private function getOrphanWait()
     {
@@ -390,6 +401,56 @@ class calculateCommandCest
     }
 
     /**
+     * one_calc=true is meaningful only together with --type. Passed alone it is
+     * reported and ignored: the run is a plain no-type chain run - one pull, every
+     * line through its whole remaining chain, priced and out of the queue.
+     */
+    public function testOneCalcWithoutTypeIsIgnoredAndTheWholeChainRuns(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I);
+
+        $code = $this->runCalculate($I, null, null, true);
+        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+
+        $I->seeInLogFile('one_calc is only relevant together with --type; ignoring it');
+        // Ignored means chain mode, exactly as without the flag.
+        $I->seeCountInLogFile('Entities loaded: ', 1);
+        $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'the ignored flag must not stop the chain: every line must be priced');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'every fully-calculated line must leave the queue');
+    }
+
+    /**
+     * one_calc=true at a LATER stage: lines waiting at the rate stage (calc_name =
+     * 'customer') are rated by a --type rate_Usage one_calc=true run and nothing
+     * more - not priced - and go back to the queue at the rate tag, released, for
+     * the pricing stage's run. No chain runs at all.
+     */
+    public function testOneCalcAtALaterStageRunsOnlyThatCalculator(ApiTester $I): void
+    {
+        $this->seedCustomer($I, false); // subscriber but no rate: processing parks the lines at the rate stage
+        $this->processToQueue($I);
+        $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer', 'calc_time' => false]),
+            'processing with a subscriber but no rate should leave every line waiting at the rate stage');
+        $this->generateCallRate($I);
+
+        $code = $this->runCalculate($I, 'rate_Usage', null, true);
+        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+
+        $I->dontSeeInLogFile('Chain results:');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'arate' => ['$exists' => true]]),
+            'the rate calculator must rate every waiting line');
+        $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'pricing must not run in a one_calc=true run');
+        $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'rate', 'calc_time' => false]),
+            'one_calc=true must leave every line in the queue at the rate stage, released for the pricing run');
+    }
+
+    /**
      * file_types restricts the run to the given line type: filtering by a type
      * that is not in the queue processes nothing; filtering by the real type
      * runs the whole chain (no --type is given), so the lines are priced and
@@ -486,6 +547,39 @@ class calculateCommandCest
                 'the lines beyond the batch limit must be left untouched');
         } finally {
             $this->setRateBatchLimit($originalLimit);
+        }
+    }
+
+    /**
+     * The no-type batch is the MINIMUM among ALL stages' limits, not the limit of
+     * the stage the lines happen to wait at: here every line is fresh (entering at
+     * the customer stage) and only the TAX stage's limit is lowered to 1 - the
+     * single pull must still take exactly 1 line.
+     *
+     * The batch limit is a global setting, restored at the end.
+     */
+    public function testNoTypeBatchIsTheMinimumAcrossAllStages(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I);
+
+        $originalLimit = $this->getTaxBatchLimit();
+        $this->setTaxBatchLimit(1);
+        try {
+            $code = $this->runCalculate($I);
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+
+            $I->seeInLogFile('Entities loaded: 1');
+            $I->seeInLogFile('Queue records updated number: 1');
+            $I->dontSeeInLogFile('Queue records updated number: ' . $this->csvRows);
+            $I->seeInLogFile('Chain results: 1 lines completed, 0 advanced and left for retry, 0 left unchanged');
+            $I->assertEquals(1, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+                'exactly the one pulled line must complete the chain');
+            $I->assertEquals($this->csvRows - 1, $this->countQueue(['type' => $this->fileType, 'calc_name' => false, 'calc_time' => false]),
+                'the lines beyond the batch must be left untouched');
+        } finally {
+            $this->setTaxBatchLimit($originalLimit);
         }
     }
 
