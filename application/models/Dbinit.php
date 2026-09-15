@@ -328,7 +328,6 @@ class DbinitModel {
 				'coll' => 'queue',
 				'indexes' => [
 					['fields' => ['stamp' => 1], 'params' => ['unique' => true]],
-					['fields' => ['calc_name' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
 					['fields' => ['calc_time' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
 					['fields' => ['type' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
 					['fields' => ['aid' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
