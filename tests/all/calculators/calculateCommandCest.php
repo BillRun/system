@@ -5,7 +5,8 @@
  *
  * Each test builds the queue by PROCESSING a real CSV file, then runs the
  * actual `php public/index.php --calculate` command as a subprocess and asserts
- * the resulting queue/lines state. This exercises the whole path: file parsing
+ * the resulting queue/lines state and what the run logged (LogChecker, scoped
+ * to the run by runCalculate). This exercises the whole path: file parsing
  * -> queue -> CLI -> calculator selection -> the customer/rate/pricing/tax chain.
  *
  * Chain-mode semantics under test (BRCD-3562): a run fetches the queue ONCE
@@ -146,8 +147,12 @@ class calculateCommandCest
         ]);
     }
 
-    /** Run the real --calculate CLI command as a subprocess. Returns [exitCode, output]. */
-    private function runCalculate($type = null, $fileTypes = null, $oneCalc = false)
+    /**
+     * Run the real --calculate CLI command as a subprocess and return its exit
+     * code. The log offset is cleared first, so the LogChecker assertions that
+     * follow (seeInLogFile & co.) see only what THIS run logged.
+     */
+    private function runCalculate(ApiTester $I, $type = null, $fileTypes = null, $oneCalc = false)
     {
         $cmd = 'php ' . APPLICATION_PATH . '/public/index.php --calculate';
         if ($type !== null) {
@@ -159,10 +164,11 @@ class calculateCommandCest
         if ($oneCalc) {
             $cmd .= ' one_calc=true';
         }
+        $I->clearLogFile();
         $out = [];
         $code = null;
-        exec($cmd . ' 2>&1', $out, $code);
-        return [$code, implode("\n", $out)];
+        exec($cmd . ' 2>&1', $out, $code); // output captured only to keep it out of the test report
+        return $code;
     }
 
     private function countQueue(array $query = [])
@@ -319,7 +325,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);     // now the data needed to calculate exists
 
-        list($code) = $this->runCalculate();
+        $code = $this->runCalculate($I);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Whole chain ran: at least one line was priced (customer+rate+pricing).
@@ -341,14 +347,14 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);
 
-        list($code, $output) = $this->runCalculate('customer');
+        $code = $this->runCalculate($I, 'customer');
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
-        // One fetch for the whole run, and every fetched line finished its chain.
-        $I->assertStringContainsString('Entities loaded: ' . $this->csvRows, $output,
-            'a --type run must fetch the queue exactly once for the whole chain');
-        $I->assertStringContainsString('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged', $output,
-            'every fetched line must complete the whole remaining chain in memory');
+        // One fetch for the whole run (a single "Entities loaded" line) taking every
+        // line, and every fetched line finished its chain in memory.
+        $I->seeCountInLogFile('Entities loaded: ', 1);
+        $I->seeInLogFile('Entities loaded: ' . $this->csvRows);
+        $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
         $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
             'a --type run without one_calc must take the lines through pricing');
         $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
@@ -366,7 +372,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);
 
-        list($code) = $this->runCalculate('customer', null, true);
+        $code = $this->runCalculate($I, 'customer', null, true);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // The customer calculator ran: every line has a subscriber.
@@ -393,7 +399,7 @@ class calculateCommandCest
         $this->seedCustomer($I);
 
         // Filter by a type that is not present -> nothing is pulled.
-        list($code) = $this->runCalculate(null, 'no_such_type');
+        $code = $this->runCalculate($I, null, 'no_such_type');
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'no line should be calculated when file_types matches nothing');
@@ -401,7 +407,7 @@ class calculateCommandCest
             'all lines should be left untouched when file_types matches nothing');
 
         // Filter by the real type -> the lines are calculated.
-        list($code) = $this->runCalculate(null, $this->fileType);
+        $code = $this->runCalculate($I, null, $this->fileType);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'lines of the filtered type should be calculated');
@@ -422,7 +428,7 @@ class calculateCommandCest
         $this->processToQueue($I);
         $this->assertFreshlyQueued($I);
 
-        list($code) = $this->runCalculate();
+        $code = $this->runCalculate($I);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
@@ -464,16 +470,14 @@ class calculateCommandCest
         $originalLimit = $this->getRateBatchLimit();
         $this->setRateBatchLimit(1);
         try {
-            list($code, $output) = $this->runCalculate();
+            $code = $this->runCalculate($I);
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
-            // The single pull must be capped by the rate stage's limit - never the whole backlog.
-            $I->assertStringContainsString('Entities loaded: 1', $output,
-                'the chain pull must fetch a batch of exactly the rate stage\'s configured limit (1)');
-            $I->assertStringContainsString('Queue records updated number: 1', $output,
-                'the chain pull must mark a batch of exactly the rate stage\'s configured limit (1)');
-            $I->assertStringNotContainsString('Queue records updated number: ' . $backlog, $output,
-                'the chain pull must not mark the entire backlog in one batch');
+            // The single pull must fetch AND mark a batch of exactly the rate stage's
+            // limit (1) - never the whole backlog.
+            $I->seeInLogFile('Entities loaded: 1');
+            $I->seeInLogFile('Queue records updated number: 1');
+            $I->dontSeeInLogFile('Queue records updated number: ' . $backlog);
             // The other lines were left untouched, released and fresh for the next run.
             $I->assertEquals($backlog - 1, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer', 'calc_time' => false]),
                 'the lines beyond the batch limit must be left untouched');
@@ -525,7 +529,7 @@ class calculateCommandCest
                 $runs++;
                 // one_calc=true: this test circulates the SINGLE customer stage, so the
                 // advanced lines must stop at calc_name = 'customer' (not chain onward).
-                list($code) = $this->runCalculate('customer', null, true);
+                $code = $this->runCalculate($I, 'customer', null, true);
                 $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
 
                 // The lines the customer stage advanced this run are now at calc_name = 'customer'.
@@ -595,7 +599,7 @@ class calculateCommandCest
             $maxRuns = $this->csvRows * $rounds + 10; // generous cap; the loop stops once every line hits the target
             while (min($attempts) < $rounds && $runs < $maxRuns) {
                 $runs++;
-                list($code) = $this->runCalculate('customer');
+                $code = $this->runCalculate($I, 'customer');
                 $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
 
                 // A line was (re-)attempted this run iff its calc_time changed to a new value.
@@ -641,7 +645,7 @@ class calculateCommandCest
         $originalLimit = $this->getCustomerBatchLimit();
         $this->setCustomerBatchLimit(3);
         try {
-            list($code) = $this->runCalculate('customer', null, true);
+            $code = $this->runCalculate($I, 'customer', null, true);
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         } finally {
             $this->setCustomerBatchLimit($originalLimit);
@@ -652,12 +656,13 @@ class calculateCommandCest
             'the prep run should leave exactly 3 lines fresh');
 
         // One no-type invocation: a single pull takes both groups and finishes them all.
-        list($code, $output) = $this->runCalculate();
+        $code = $this->runCalculate($I);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
-        $I->assertStringContainsString('Entities loaded: ' . $this->csvRows, $output,
-            'the single pull must take the lines of BOTH stages together');
-        $I->assertStringContainsString('Chain results: ' . $this->csvRows . ' lines completed', $output,
-            'lines from both stages must complete their remaining chain in the same run');
+        // A single pull took the lines of BOTH stages together, and all of them
+        // completed their remaining chain in the same run.
+        $I->seeCountInLogFile('Entities loaded: ', 1);
+        $I->seeInLogFile('Entities loaded: ' . $this->csvRows);
+        $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed');
         $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
             'every line, from either stage, must complete the chain');
         $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
@@ -696,13 +701,14 @@ class calculateCommandCest
         // Now the rate exists: only the rows with rate = CALL can be rated.
         $this->generateCallRate($I);
 
-        list($code, $output) = $this->runCalculate();
+        $code = $this->runCalculate($I);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
-        $I->assertStringContainsString('Entities loaded: 4', $output,
-            'the single pull must take all 4 lines, from both stages');
-        $I->assertStringContainsString('Chain results: 1 lines completed, 1 advanced and left for retry, 2 left unchanged', $output,
-            'one line must complete, one advance and two stay put - all in the same run');
+        // A single pull took all 4 lines from both stages; one completed, one
+        // advanced and two stayed put - all in the same run.
+        $I->seeCountInLogFile('Entities loaded: ', 1);
+        $I->seeInLogFile('Entities loaded: 4');
+        $I->seeInLogFile('Chain results: 1 lines completed, 1 advanced and left for retry, 2 left unchanged');
 
         // 10: completed the whole chain - priced and gone from the queue.
         $completed = $this->lineByVolume($I, 10);
@@ -742,12 +748,12 @@ class calculateCommandCest
         $originalOrphan = $this->getOrphanWait();
         $this->setOrphanWait('-1 second');
         try {
-            list($code, $output) = $this->runCalculate();
+            $code = $this->runCalculate($I);
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
-            $I->assertStringContainsString('Entities loaded: 3', $output,
-                'the second pull must take the three lines the first run left behind');
-            $I->assertStringContainsString('Chain results: 3 lines completed, 0 advanced and left for retry, 0 left unchanged', $output,
-                'with the rate and the subscriber in place every remaining line must complete its chain');
+            // The second pull takes the three lines the first run left behind, and
+            // with the rate and the subscriber in place all of them complete.
+            $I->seeInLogFile('Entities loaded: 3');
+            $I->seeInLogFile('Chain results: 3 lines completed, 0 advanced and left for retry, 0 left unchanged');
             $nowMatched = $this->lineByVolume($I, 40);
             $I->assertTrue(isset($nowMatched['aid']),
                 'the new subscriber must let the previously unmatched line through the customer stage');
@@ -772,7 +778,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I, false); // subscriber but NO rate: the rate stage will fail
 
-        list($code) = $this->runCalculate();
+        $code = $this->runCalculate($I);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Customer succeeded in the chain, rate failed: the lines parked at the
@@ -792,7 +798,7 @@ class calculateCommandCest
         $originalOrphan = $this->getOrphanWait();
         $this->setOrphanWait('-1 second');
         try {
-            list($code) = $this->runCalculate('rate_Usage');
+            $code = $this->runCalculate($I, 'rate_Usage');
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
             $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
                 'the resumed lines must complete the remaining chain (rate + pricing)');
