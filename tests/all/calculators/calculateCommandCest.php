@@ -168,6 +168,9 @@ class calculateCommandCest
         $out = [];
         $code = null;
         exec($cmd . ' 2>&1', $out, $code); // output captured only to keep it out of the test report
+        // An uncaught exception is logged as CRIT "Crashed When running..." and the
+        // CLI still exits 0, so the exit code alone proves nothing - fail right here.
+        $I->dontSeeInLogFile('Crashed When running');
         return $code;
     }
 
