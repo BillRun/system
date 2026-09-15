@@ -39,20 +39,31 @@ class CalculateAction extends Action_Base {
 			$options['file_types'] = $params['file_types'];
 		}
 
+		// BRCD-3562: one_calc=true (relevant only with --type) requests the
+		// previous single-calculator behavior: the given calculator runs and the
+		// lines return to the queue for the next stage. Without it, the queue is
+		// fetched ONCE and every fetched line runs through all its remaining
+		// calculators in memory (the single pull takes lines waiting at every
+		// queue stage - with --type, at that calculator's stage onward).
+		$oneCalc = isset($params['one_calc']) && filter_var($params['one_calc'], FILTER_VALIDATE_BOOLEAN);
 		$requestedType = isset($options['type']) ? $options['type'] : null;
-		$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
-		if (empty($calculatorNames)) {
-			$this->getController()->addOutput("No calculators to run");
-			return;
+		if ($oneCalc && $requestedType === null) {
+			$this->getController()->addOutput("one_calc is only relevant together with --type; ignoring it");
+			$oneCalc = false;
 		}
 
-		// Map each queue calculator name to its concrete instantiation options
-		// (e.g. 'rate' -> rate_Usage, 'pricing' -> customerPricing) so a no-type
-		// run drives the whole chain.
-		foreach ($calculatorNames as $calculatorName) {
-			$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorName, $options));
-			$this->runCalculator($calcOptions);
+		if ($oneCalc) {
+			$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
+			$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorNames[0], $options));
+		} else {
+			// Chain mode lives in Billrun_Calculator_Queue: one pull, then every
+			// line runs through all its remaining calculators in memory.
+			$calcOptions = array_merge($options, array('type' => 'queue'));
+			if ($requestedType !== null) {
+				$calcOptions['chain_start'] = $requestedType;
+			}
 		}
+		$this->runCalculator($calcOptions);
 	}
 
 	/**

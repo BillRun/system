@@ -115,6 +115,8 @@ class Billrun_Helpers_QueueCalculators {
 						}
 					}
 					$line = $entity->getRawData();
+				} else if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'], array_slice($calc_name_in_queue, $index + 1), true)) {
+					//BRCD-3562: the line entered the chain mid-way and is waiting for a later stage of this run - it is not stuck
 				} else {
 					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
 					$this->stuckInQueue[$line['stamp']] = true;

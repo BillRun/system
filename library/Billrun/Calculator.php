@@ -389,6 +389,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
+	 * The calc_name condition queue pulls filter by: the previous calculator.
+	 * Billrun_Calculator_Queue (the BRCD-3562 chain-mode puller) overrides this
+	 * to take lines waiting at ANY stage.
+	 *
+	 * @param mixed $previous_calculator this calculator's previous stage (false for the first)
+	 * @return mixed
+	 */
+	protected function getPullCalcNameCondition($previous_calculator) {
+		return $previous_calculator;
+	}
+
+	/**
 	 * Get the base query to get lines from the queue for the current calculator
 	 * @return array
 	 */
@@ -411,11 +423,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$orphand_time = time() - 3600;
 		}
 
+		$calcNameCondition = $this->getPullCalcNameCondition($previous_calculator);
 		$query = array();
-		$query['$and'][0]['calc_name'] = $previous_calculator;
+		$query['$and'][0]['calc_name'] = $calcNameCondition;
 		$query['$and'][0]['$or'] = array(
-			array('calc_name'=> $previous_calculator, 'calc_time' => false),//improving query using index with calc_name
-			array('calc_name' => $previous_calculator, 'calc_time' => array(
+			array('calc_name'=> $calcNameCondition, 'calc_time' => false),//improving query using index with calc_name
+			array('calc_name' => $calcNameCondition, 'calc_time' => array(
 					'$ne' => true, '$lt' => new Mongodloid_Date($orphand_time)
 				)),
 		);
@@ -604,10 +617,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 					}
 				} else {
 					if($first['calc_time'] ==  false){
+						$calcNameCondition = $this->getPullCalcNameCondition($previous_calculator);
 						$query['$and'][] = [
 							'$or' => [
-								['calc_name' => $previous_calculator, 'calc_time' => ['$lt' => $last['calc_time'], '$gte' => $first['calc_time']]],//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more. 
-								['calc_name' => $previous_calculator, 'calc_time' => false], 
+								['calc_name' => $calcNameCondition, 'calc_time' => ['$lt' => $last['calc_time'], '$gte' => $first['calc_time']]],//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more.
+								['calc_name' => $calcNameCondition, 'calc_time' => false],
 
 							]
 						];
@@ -658,8 +672,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if ($updateHintSupported === null) {
 			$updateHintSupported = Billrun_Factory::db()->compareServerVersion('4.2.0', '>=');//hint on the update command requires mongo 4.2+
 		}
-		if ($updateHintSupported && $this->limit != 0 && $this->autosort) {//the sort-less update may lose the plan selection trial - force the queue compound index
-			$options['hint'] = array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
+		if ($updateHintSupported && $this->limit != 0 && $this->autosort) {//the sort-less update may lose the plan selection trial - force the right queue index
+			$options['hint'] = $this->getQueueUpdateHint();
 		}
 		Billrun_Factory::log('Queue hash update, query: ' . json_encode($query) . ', options: ' . json_encode($options), Zend_Log::DEBUG);
 		$res = $queue->update($query, $update, $options);
@@ -751,6 +765,19 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			return array($requestedType);
 		}
 		return array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
+	}
+
+	/**
+	 * The index the queue marking update is hinted with (the update has no sort,
+	 * so the planner may lose the plan-selection trial without it; requires the
+	 * BRCD-3562 migration). Billrun_Calculator_Queue overrides this: its
+	 * all-stages pull filters calc_name with a low-selectivity $in, where the
+	 * branch-free {calc_time, urt} index is the right one.
+	 *
+	 * @return array index specification
+	 */
+	protected function getQueueUpdateHint() {
+		return array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
 	}
 
 	/**
