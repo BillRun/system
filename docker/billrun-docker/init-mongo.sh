@@ -1,4 +1,4 @@
-if command -v mongosh &>/dev/null; then
+if command -v mongosh >/dev/null 2>&1; then
   MONGOC=mongosh
 else
   MONGOC=mongo
@@ -15,16 +15,9 @@ fi
 FILE=/billrun/mongo/first_users.json
 if test -f "$FILE"; then
     mongoimport -d billing_container -c users $FILE
-fi 
-$MONGOC billing_container /billrun/mongo/migration/script.js
+fi
 
 for f in /plugin/mongo/installation/*.js
-do
-    [ -f "$f" ] || break
-    $MONGOC billing_container $f
-done
-
-for f in /plugin/mongo/migration/*.js
 do
     [ -f "$f" ] || break
     $MONGOC billing_container $f
