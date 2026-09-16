@@ -180,10 +180,13 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 		}
 
 		// A dummy processor holds the queue-row bookkeeping for the chain (the
-		// Billrun_Utils_Credit::calculateCreditCDRs pattern).
+		// Billrun_Utils_Credit::calculateCreditCDRs pattern). The chain works on the
+		// processor's own data array, as the inline path does (calcCpu): a stage that
+		// consumes a line - unify archiving a source line - removes it from there, and
+		// the outcomes below must see that, or the line would be saved back.
 		$processor = Billrun_Processor::getInstance(array('type' => 'Credit', 'parser' => 'none'));
 		$processor->init();
-		$data = array('data' => array());
+		$data = &$processor->getData();
 		foreach ($this->pullLines($this->lines) as $line) {
 			$data['data'][$line['stamp']] = $line->getRawData();
 			$processor->setQueueRow($this->lines[$line['stamp']]->getRawData());
@@ -191,13 +194,8 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 		$missingLines = count($this->lines) - count($data['data']);
 		if ($missingLines > 0) {
 			//as in a regular calculator run, a queue row whose line is gone is never
-			//calculated but still flushed through the chain - complete it out of the queue
+			//calculated but still flushed through the chain - the outcome loop below completes it out of the queue
 			Billrun_Factory::log('Chain run: ' . $missingLines . ' queue lines have no matching line, removing them from the queue', Zend_Log::WARN);
-			foreach ($this->lines as $stamp => $queueRow) {
-				if (!isset($data['data'][$stamp])) {
-					$this->completedStamps[] = $stamp;
-				}
-			}
 		}
 
 		// autoload=0: the calculators the chain instantiates must not pull the queue
@@ -210,20 +208,22 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 		$this->chainRunner = new Billrun_Helpers_QueueCalculators(array_merge($chainOptions, array('autoload' => 0)));
 		$this->chainRunner->run($processor, $data);
 
-		// Record every line's outcome.
+		// Record every pulled queue row's outcome.
 		$unchanged = 0;
-		foreach ($data['data'] as $stamp => $lineData) {
-			if (!isset($this->lines[$stamp])) {//an extra line the chain created - collected below
-				continue;
-			}
+		foreach ($this->lines as $stamp => $queueRow) {
 			$finalRow = $processor->getQueueRow($stamp);
-			if ($finalRow === false) {//the line completed its remaining chain
-				unset($lineData['in_queue']);
-				$processor->setFullCalculationTime($lineData);//completed = fully calculated, whichever stage emptied its queue row (same config gate as the processor)
-				$this->data[$stamp] = new Mongodloid_Entity($lineData);
+			if ($finalRow === false) {//completed its remaining chain - or consumed by it (unify archived it, or its line was gone to begin with): nothing left to save then
+				if (isset($data['data'][$stamp])) {
+					$lineData = $data['data'][$stamp];
+					unset($lineData['in_queue']);
+					$processor->setFullCalculationTime($lineData);//completed = fully calculated, whichever stage emptied its queue row (same config gate as the processor)
+					$this->data[$stamp] = new Mongodloid_Entity($lineData);
+				}
 				$this->completedStamps[] = $stamp;
-			} elseif ($finalRow['calc_name'] !== $this->lines[$stamp]['calc_name']) {//advanced, then failed a later stage: park at the last completed stage, still claimed
-				$this->data[$stamp] = new Mongodloid_Entity($lineData);
+			} elseif ($finalRow['calc_name'] !== $queueRow['calc_name']) {//advanced, then failed a later stage: park at the last completed stage, still claimed
+				if (isset($data['data'][$stamp])) {
+					$this->data[$stamp] = new Mongodloid_Entity($data['data'][$stamp]);
+				}
 				$this->advancedStages[$stamp] = $finalRow['calc_name'];
 			} else {//nothing completed - stays claimed at its stage for a later retry
 				$unchanged++;
