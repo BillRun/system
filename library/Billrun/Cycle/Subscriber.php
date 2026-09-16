@@ -116,6 +116,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$aggregatedPlans = $this->generalAggregate($this->records['plans'], Billrun_Cycle_Data_Plan::class);
 		Billrun_Factory::log("Aggregating services!");
 		$aggregatedServices = $this->generalAggregate($this->records['services'], Billrun_Cycle_Data_Service::class);
+		$usageLines =[];
 		if($this->cycleAggregator->shouldLoadSubscriberLines($this->sid)){
 			$usageLines = $this->loadSubscriberLines();
 		}
