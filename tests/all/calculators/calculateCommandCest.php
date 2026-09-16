@@ -46,6 +46,16 @@ class calculateCommandCest
     /** plan every seeded subscriber is put on */
     private $planName = 'E2E_PLAN';
 
+    /** CRM mockup subscribers (crm_data/<aid>.json), by the phone the CSV rows carry; all on $crmFixturePlan */
+    private $crmFixtures = [
+        '0561234567' => ['aid' => 35620001, 'sid' => 3562101],
+        '0569999999' => ['aid' => 35620002, 'sid' => 3562102],
+    ];
+    private $crmFixturePlan = 'PLAN_BULK_E2E';
+
+    /** the phone of every row in bulk_one_phone.csv - the first CRM subscriber above */
+    private $crmPhone = '0561234567';
+
     public function _before(ApiTester $I)
     {
         if (!self::$settingsLoaded) {
@@ -147,33 +157,6 @@ class calculateCommandCest
         ]);
     }
 
-    /**
-     * Run the real --calculate CLI command as a subprocess and return its exit
-     * code. The log offset is cleared first, so the LogChecker assertions that
-     * follow (seeInLogFile & co.) see only what THIS run logged.
-     */
-    private function runCalculate(ApiTester $I, $type = null, $fileTypes = null, $oneCalc = false)
-    {
-        $cmd = 'php ' . APPLICATION_PATH . '/public/index.php --calculate';
-        if ($type !== null) {
-            $cmd .= ' --type ' . $type;
-        }
-        if ($fileTypes !== null) {
-            $cmd .= ' file_types=' . $fileTypes;
-        }
-        if ($oneCalc) {
-            $cmd .= ' one_calc=true';
-        }
-        $I->clearLogFile();
-        $out = [];
-        $code = null;
-        exec($cmd . ' 2>&1', $out, $code); // output captured only to keep it out of the test report
-        // An uncaught exception is logged as CRIT "Crashed When running..." and the
-        // CLI still exits 0, so the exit code alone proves nothing - fail right here.
-        $I->dontSeeInLogFile('Crashed When running');
-        return $code;
-    }
-
     private function countQueue(array $query = [])
     {
         return Billrun_Factory::db()->queueCollection()->query($query)->count();
@@ -238,15 +221,24 @@ class calculateCommandCest
     }
 
 
+    /** Any one line of this type as a plain array - for fields every line shares (aid, billrun). */
+    private function anyLine(ApiTester $I)
+    {
+        foreach (Billrun_Factory::db()->linesCollection()->query(['type' => $this->fileType])->cursor()->limit(1) as $doc) {
+            return $doc->getRawData();
+        }
+        $I->fail('no line of type ' . $this->fileType . ' exists');
+    }
+
     /** Current customer-stage queue batch size (customer.calculator.limit), or the ini default. */
     private function getCustomerBatchLimit()
     {
         return Billrun_Factory::config()->getConfigValue('customer.calculator.limit', 5000);
     }
 
-    private function setCustomerBatchLimit($limit)
+    private function setCustomerBatchLimit(ApiTester $I, $limit)
     {
-        $this->writeDbConfigValue(['customer', 'calculator', 'limit'], $limit);
+        $I->overrideConfigValue('customer.calculator.limit', $limit);
     }
 
     /** Current rate-stage queue batch size (Rate_Usage.calculator.limit), or the ini default. */
@@ -255,9 +247,9 @@ class calculateCommandCest
         return Billrun_Factory::config()->getConfigValue('Rate_Usage.calculator.limit', 5000);
     }
 
-    private function setRateBatchLimit($limit)
+    private function setRateBatchLimit(ApiTester $I, $limit)
     {
-        $this->writeDbConfigValue(['Rate_Usage', 'calculator', 'limit'], $limit);
+        $I->overrideConfigValue('Rate_Usage.calculator.limit', $limit);
     }
 
     /** Current tax-stage queue batch size (tax.calculator.limit), or the ini default. */
@@ -266,9 +258,26 @@ class calculateCommandCest
         return Billrun_Factory::config()->getConfigValue('tax.calculator.limit', 5000);
     }
 
-    private function setTaxBatchLimit($limit)
+    private function setTaxBatchLimit(ApiTester $I, $limit)
     {
-        $this->writeDbConfigValue(['tax', 'calculator', 'limit'], $limit);
+        $I->overrideConfigValue('tax.calculator.limit', $limit);
+    }
+
+    /** Current customer.calculator.bulk - the customer stage's bulk subscriber loading (ini default: off). */
+    private function getBulkSetting()
+    {
+        return Billrun_Factory::config()->getConfigValue('customer.calculator.bulk', 0);
+    }
+
+    private function setBulkSetting(ApiTester $I, $bulk)
+    {
+        $I->overrideConfigValue('customer.calculator.bulk', $bulk);
+    }
+
+    /** The log line the external subscriber source writes for every request it sends: to the configured (gsd) URL. */
+    private function crmRequestMarker()
+    {
+        return 'Sending request to ' . Billrun_Factory::config()->getConfigValue('subscribers.subscriber.external_url');
     }
 
     /** How long a pulled-but-failed queue line waits before it may be re-pulled. */
@@ -277,42 +286,9 @@ class calculateCommandCest
         return Billrun_Factory::config()->getConfigValue('queue.calculator.orphan_wait_time', '6 hours');
     }
 
-    private function setOrphanWait($value)
+    private function setOrphanWait(ApiTester $I, $value)
     {
-        $this->writeDbConfigValue(['queue', 'calculator', 'orphan_wait_time'], $value);
-    }
-
-    /**
-     * Write one nested config value as a new DB config revision. --calculate runs
-     * as a subprocess, so overrides must live in DB config for it to pick them up.
-     * The settings API rejects these low-level paths ("Category not found ..."), so
-     * we write the revision directly (the teldas-plugin pattern); mergeConfigs
-     * deep-merges it over the ini defaults, changing only the given leaf. Callers
-     * MUST restore the original value.
-     */
-    private function writeDbConfigValue(array $path, $value)
-    {
-        $model = new ConfigModel();
-        $data = $model->getConfig();
-        unset($data['_id']);
-        $data['urt'] = new Mongodloid_Date();
-
-        $ref = &$data;
-        $leaf = array_pop($path);
-        foreach ($path as $key) {
-            if (!isset($ref[$key]) || !is_array($ref[$key])) {
-                $ref[$key] = [];
-            }
-            $ref = &$ref[$key];
-        }
-        $ref[$leaf] = $value;
-        unset($ref);
-
-        Billrun_Factory::db()->configCollection(['force' => true])->insert($data);
-        if (Billrun_Config::getInstance()->isConfigCacheEnabled() && ($cache = Billrun_Factory::cache())) {
-            $cache->remove('db_config', 'config');
-        }
-        Billrun_Config::getInstance()->refresh();
+        $I->overrideConfigValue('queue.calculator.orphan_wait_time', $value);
     }
 
     /**
@@ -339,7 +315,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);     // now the data needed to calculate exists
 
-        $code = $this->runCalculate($I);
+        $code = $I->runCalculate();
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Whole chain ran: at least one line was priced (customer+rate+pricing).
@@ -348,6 +324,34 @@ class calculateCommandCest
         // A fully-calculated line reached the last calculator and left the queue.
         $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
             'a fully-calculated line should be removed from the queue');
+    }
+
+    /**
+     * A line that completes its chain in a --calculate run is stamped
+     * full_calculation, exactly as a line completed inline by the processor is
+     * (Billrun_Processor::setFullCalculationTime) - gated by the same
+     * lines.reference_fields setting, a global config restored at the end.
+     */
+    public function testCompletedLinesAreStampedFullCalculation(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I);
+
+        $originalFields = Billrun_Factory::config()->getConfigValue('lines.reference_fields', []);
+        $I->overrideConfigValue('lines.reference_fields', array_values(array_unique(array_merge($originalFields, ['full_calculation']))));
+        try {
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
+        } finally {
+            $I->overrideConfigValue('lines.reference_fields', $originalFields);
+        }
+
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'full_calculation' => ['$exists' => true]]),
+            'every line that completed its chain must carry full_calculation');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'every fully-calculated line should be removed from the queue');
     }
 
     /**
@@ -361,7 +365,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);
 
-        $code = $this->runCalculate($I, 'customer');
+        $code = $I->runCalculate('customer');
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // One fetch for the whole run (a single "Entities loaded" line) taking every
@@ -386,7 +390,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);
 
-        $code = $this->runCalculate($I, 'customer', null, true);
+        $code = $I->runCalculate('customer', null, true);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // The customer calculator ran: every line has a subscriber.
@@ -411,7 +415,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);
 
-        $code = $this->runCalculate($I, null, null, true);
+        $code = $I->runCalculate(null, null, true);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         $I->seeInLogFile('one_calc is only relevant together with --type; ignoring it');
@@ -438,7 +442,7 @@ class calculateCommandCest
             'processing with a subscriber but no rate should leave every line waiting at the rate stage');
         $this->generateCallRate($I);
 
-        $code = $this->runCalculate($I, 'rate_Usage', null, true);
+        $code = $I->runCalculate('rate_Usage', null, true);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         $I->dontSeeInLogFile('Chain results:');
@@ -448,6 +452,276 @@ class calculateCommandCest
             'pricing must not run in a one_calc=true run');
         $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'rate', 'calc_time' => false]),
             'one_calc=true must leave every line in the queue at the rate stage, released for the pricing run');
+    }
+
+    /**
+     * one_calc=true stage by stage, the pre-BRCD-3562 cron layout (customer,
+     * Rate_Usage, customerPricing and tax as separate runs - the names
+     * scripts/pseudo_cron_cycle.sh uses): each run advances the lines exactly one
+     * stage and returns them to the queue released, and no chain ever runs.
+     *
+     * The last calculator that actually does work is customerPricing: it applies
+     * tax itself (applyTaxToRow) and, when tax directly follows pricing in
+     * queue.calculators, tags the lines PAST the tax stage
+     * (CustomerPricing::getQueueTagType). With tax as the last stage the pricing
+     * run therefore removes the finished lines from the queue itself, and the
+     * separate --type tax run of the old layout finds nothing left to do.
+     */
+    public function testOneCalcStageByStageTheLastCalculatorRemovesTheLines(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I);
+
+        // customer, then rate: one calculator each, lines back in the queue at its tag.
+        foreach (['customer' => 'customer', 'Rate_Usage' => 'rate'] as $type => $stage) {
+            $code = $I->runCalculate($type, null, true);
+            $I->assertEquals(0, $code, "--type $type one_calc=true should exit cleanly");
+            $I->dontSeeInLogFile('Chain results:');
+            $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => $stage, 'calc_time' => false]),
+                "after --type $type one_calc=true every line must wait, released, at the '$stage' tag");
+        }
+        $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'no line may be priced before the pricing run');
+
+        // Pricing prices AND taxes, tags the lines past the tax stage and - tax being
+        // the last stage - removes them from the queue.
+        $code = $I->runCalculate('customerPricing', null, true);
+        $I->assertEquals(0, $code, '--type customerPricing one_calc=true should exit cleanly');
+        $I->dontSeeInLogFile('Chain results:');
+        $I->seeInLogFile('Removing ' . $this->csvRows . ' lines from queue');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'the pricing run must price every line');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'tax_data' => ['$exists' => true]]),
+            'the pricing run must tax every line as well');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'the last calculator that does work must remove the finished lines from the queue');
+
+        // The old layout's separate tax run has nothing left to do - and does no harm.
+        $code = $I->runCalculate('tax', null, true);
+        $I->assertEquals(0, $code, '--type tax one_calc=true should exit cleanly');
+        $I->seeInLogFile('Entities loaded: 0');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'tax_data' => ['$exists' => true]]),
+            'the tax run must not disturb the already taxed lines');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'the queue must stay empty');
+    }
+
+    /**
+     * A calculator outside the queue chain - rebalance works off its own
+     * rebalance_queue and has no queue stage - must still run on its own with
+     * --type rebalance, as before BRCD-3562, instead of being resolved to a chain
+     * stage it does not have and doing nothing.
+     */
+    public function testTypeOutsideTheChainRunsThatCalculatorOnItsOwn(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+
+        $code = $I->runCalculate('rebalance');
+        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+
+        $I->seeInLogFile('Calculator type rebalance is not a queue chain stage; running it on its own');
+        $I->seeInLogFile('Execute reset'); // the rebalance calculator itself ran
+        $I->dontSeeInLogFile('is not a queue chain stage - nothing to pull'); // never reached the chain calculator
+        $I->dontSeeInLogFile('Chain results:');
+        // It works off rebalance_queue: our queue lines are not touched.
+        $this->assertFreshlyQueued($I);
+    }
+
+    /**
+     * --type rebalance end to end: the rebalance calculator - its own write() and
+     * removeFromQueue(), working off rebalance_queue rather than the calculators
+     * chain - still does its whole job after BRCD-3562. The calculated lines of the
+     * account are reset (calculated fields cleared, lines back in the queue fresh),
+     * the rebalance_queue entry is marked started and finished, and the next
+     * no-type chain run prices every line again.
+     *
+     * The rebalance is requested through the resetlines API, as the UI does.
+     * resetlines.offset (default 1 hour) hides entries requested moments ago and
+     * resetlines.process_time_offset (default 15 minutes) hides lines processed
+     * moments ago, so both are shortened for the run and restored.
+     */
+    public function testRebalanceResetsCalculatedLinesAndTheChainRecalculatesThem(ApiTester $I): void
+    {
+        $this->processToQueue($I);
+        $this->assertFreshlyQueued($I);
+        $this->seedCustomer($I);
+        $code = $I->runCalculate();
+        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'precondition: the whole chain priced every line');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'precondition: nothing is left in the queue');
+
+        // Ask for a rebalance of that account's cycle through the resetlines API, as
+        // the UI does: it queues a rebalance_queue entry for the run to pick up.
+        $line = $this->anyLine($I);
+        $response = $I->resetLines($line['aid'], $line['billrun']);
+        $I->assertStringContainsString('"status":1', $response, 'the resetlines API must accept the request');
+        $rebalanceQueue = Billrun_Factory::db()->rebalance_queueCollection();
+        $entryQuery = ['aid' => $line['aid'], 'billrun_key' => $line['billrun']];
+        $I->assertEquals(1, $rebalanceQueue->query($entryQuery)->count(),
+            'the API must queue exactly one rebalance entry for the account and cycle');
+
+        // The entry was requested moments ago and the lines were processed moments
+        // ago: shorten both offsets that would hide them from the run.
+        $originalOffset = Billrun_Factory::config()->getConfigValue('resetlines.offset', '1 hour');
+        $originalProcessOffset = Billrun_Factory::config()->getConfigValue('resetlines.process_time_offset', '15 minutes');
+        $I->overrideConfigValue('resetlines.offset', '-1 second');
+        $I->overrideConfigValue('resetlines.process_time_offset', '-1 second');
+        try {
+            $code = $I->runCalculate('rebalance');
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Calculator type rebalance is not a queue chain stage; running it on its own');
+            $I->seeInLogFile('Success resetting aids ' . $line['aid']);
+        } finally {
+            $I->overrideConfigValue('resetlines.offset', $originalOffset);
+            $I->overrideConfigValue('resetlines.process_time_offset', $originalProcessOffset);
+        }
+
+        // The entry is closed and the lines are reset: kept, stripped of their
+        // calculation, and queued fresh again.
+        $done = null;
+        foreach ($rebalanceQueue->query($entryQuery)->cursor() as $doc) {
+            $done = $doc->getRawData();
+        }
+        $I->assertNotNull($done, 'the rebalance entry must still exist');
+        $I->assertTrue(isset($done['start_time']) && isset($done['end_time']),
+            'the rebalance entry must be marked started and finished');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType]),
+            'a reset keeps the lines');
+        $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'a reset must clear the calculated price');
+        $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
+            'a reset must clear the customer fields');
+        $I->assertEquals($this->csvRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => false, 'calc_time' => false]),
+            'a reset must queue every line fresh, for the whole chain');
+
+        // Full circle: the next chain run recalculates them.
+        $code = $I->runCalculate();
+        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+        $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'the rebalanced lines must be priced again by the chain');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'the rebalanced lines must leave the queue once recalculated');
+    }
+
+    // --------------------------------------------- customer stage in BULK mode
+    //
+    // customer.calculator.bulk=1 makes the customer stage load the subscribers of
+    // the whole batch in ONE lookup (Billrun_Calculator_Customer::prepareData ->
+    // loadSubscribers) instead of one lookup per line. The chain feeds the stage
+    // the whole pulled batch, so the bulk lookup must cover every line, map each
+    // line to ITS OWN subscriber, and treat a line with no subscriber as failed -
+    // neither failing the batch nor letting the line through.
+    //
+    // Bulk is checked where it is countable: with EXTERNAL subscribers (the CRM
+    // mockup, fixtures crm_data/3562000{1,2}.json) the external source logs every
+    // request it sends, so a bulk batch is exactly ONE gsd request where the
+    // per-line path sends one per line. A miss shows up as "Missing subscriber
+    // info for line with stamp" (the bulk path) - never as the per-line path's
+    // "Error loading subscriber for row". The subscriber source and the bulk flag
+    // are global config, restored at the end of each test.
+
+    /**
+     * Bulk mode: the customer stage loads the batch's subscribers with ONE gsd
+     * request, and every line is enriched with the CRM subscriber and priced.
+     */
+    public function testBulkModeLoadsTheBatchSubscribersInOneCrmRequest(ApiTester $I): void
+    {
+        $this->runExternalSubscribersScenario($I, true, 1);
+    }
+
+    /**
+     * The control for the test above: the same batch with bulk OFF costs one gsd
+     * request PER LINE for the same end state - so the single request of the bulk
+     * run really is the bulk lookup at work.
+     */
+    public function testPerLineModeSendsOneCrmRequestPerLine(ApiTester $I): void
+    {
+        $this->runExternalSubscribersScenario($I, false, $this->csvRows);
+    }
+
+    /**
+     * Bulk mode with a MIXED batch (bulk_mixed.csv): two phones the CRM knows,
+     * each with its own fixture, and one it does not. ONE gsd request must carry
+     * the whole batch, give each matched line ITS OWN CRM subscriber, and fail
+     * each unmatched line on its own - not enriched with someone else's
+     * subscriber, not let through, not failing the batch - so it stays queued
+     * for a retry.
+     */
+    public function testBulkModeMapsEachLineToItsOwnSubscriberInOneCrmRequest(ApiTester $I): void
+    {
+        $this->processToQueue($I, 'bulk_mixed.csv'); // 2 rows each for 0561234567 and 0569999999 (CRM fixtures) and 0587654321 (unknown)
+        $this->assertFreshlyQueued($I);
+        $I->generatePlan(['name' => $this->crmFixturePlan, 'from' => '2025-01-01']);
+        $this->generateCallRate($I);
+
+        $originalBulk = $this->getBulkSetting();
+        $this->setBulkSetting($I, 1);
+        $I->enableExternalModeSettings();
+        try {
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeCountInLogFile($this->crmRequestMarker(), 1);
+            $I->seeCountInLogFile('Missing subscriber info for line with stamp', 2); // one per unmatched line, from the bulk path
+            $I->dontSeeInLogFile('Error loading subscriber for row'); // the per-line path's miss message
+            $I->seeInLogFile('Chain results: 4 lines completed, 0 advanced and left for retry, 2 left unchanged');
+        } finally {
+            $I->enableDBModeSettings();
+            $this->setBulkSetting($I, $originalBulk);
+        }
+
+        foreach ($this->crmFixtures as $phone => $crm) {
+            $I->assertEquals(2, $this->countLines(['type' => $this->fileType, 'uf.firstname' => $phone, 'aid' => $crm['aid'], 'sid' => $crm['sid']]),
+                "the lines of $phone must be enriched with their own CRM subscriber");
+        }
+        $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'uf.firstname' => '0587654321', 'aid' => ['$exists' => true]]),
+            'a line the CRM does not know must not be enriched - not even with another line\'s subscriber');
+        $I->assertEquals(4, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'the matched lines must go on through the chain and be priced');
+        $I->assertEquals(2, $this->countQueue(['type' => $this->fileType, 'calc_name' => false]),
+            'the unmatched lines must stay queued, uncalculated, for a retry');
+    }
+
+    /**
+     * Shared body of the two single-phone tests: the CSV lines are queued
+     * uncalculated (DB mode, no local subscriber), the plan the CRM subscribers
+     * are on and the CALL rate are created locally, then the subscriber source is
+     * switched to the CRM mockup for one no-type chain run and the gsd requests
+     * it sent are counted. No other stage of the chain queries the subscriber
+     * source.
+     */
+    private function runExternalSubscribersScenario(ApiTester $I, $bulk, $expectedRequests)
+    {
+        $this->processToQueue($I, 'bulk_one_phone.csv'); // 6 rows, all for the first CRM subscriber's phone
+        $this->assertFreshlyQueued($I);
+        $I->generatePlan(['name' => $this->crmFixturePlan, 'from' => '2025-01-01']);
+        $this->generateCallRate($I);
+
+        $originalBulk = $this->getBulkSetting();
+        $this->setBulkSetting($I, $bulk ? 1 : 0);
+        $I->enableExternalModeSettings(); // subscribers now come from the CRM mockup - DB config, so the CLI sees it too
+        try {
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Entities loaded: ' . $this->csvRows);
+            $I->seeCountInLogFile($this->crmRequestMarker(), $expectedRequests);
+            $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
+        } finally {
+            $I->enableDBModeSettings();
+            $this->setBulkSetting($I, $originalBulk);
+        }
+
+        $crm = $this->crmFixtures[$this->crmPhone];
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => $crm['aid'], 'sid' => $crm['sid']]),
+            'every line must be enriched with the CRM subscriber');
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'every line must go on through the chain and be priced');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'every fully-calculated line should be removed from the queue');
     }
 
     /**
@@ -463,7 +737,7 @@ class calculateCommandCest
         $this->seedCustomer($I);
 
         // Filter by a type that is not present -> nothing is pulled.
-        $code = $this->runCalculate($I, null, 'no_such_type');
+        $code = $I->runCalculate(null, 'no_such_type');
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'no line should be calculated when file_types matches nothing');
@@ -471,7 +745,7 @@ class calculateCommandCest
             'all lines should be left untouched when file_types matches nothing');
 
         // Filter by the real type -> the lines are calculated.
-        $code = $this->runCalculate($I, null, $this->fileType);
+        $code = $I->runCalculate(null, $this->fileType);
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
             'lines of the filtered type should be calculated');
@@ -492,7 +766,7 @@ class calculateCommandCest
         $this->processToQueue($I);
         $this->assertFreshlyQueued($I);
 
-        $code = $this->runCalculate($I);
+        $code = $I->runCalculate();
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         $I->assertEquals(0, $this->countLines(['type' => $this->fileType, 'aid' => ['$exists' => true]]),
@@ -532,9 +806,9 @@ class calculateCommandCest
             'processing with a subscriber but no rate should leave every line waiting at the rate stage');
 
         $originalLimit = $this->getRateBatchLimit();
-        $this->setRateBatchLimit(1);
+        $this->setRateBatchLimit($I, 1);
         try {
-            $code = $this->runCalculate($I);
+            $code = $I->runCalculate();
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
             // The single pull must fetch AND mark a batch of exactly the rate stage's
@@ -546,7 +820,7 @@ class calculateCommandCest
             $I->assertEquals($backlog - 1, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer', 'calc_time' => false]),
                 'the lines beyond the batch limit must be left untouched');
         } finally {
-            $this->setRateBatchLimit($originalLimit);
+            $this->setRateBatchLimit($I, $originalLimit);
         }
     }
 
@@ -565,9 +839,9 @@ class calculateCommandCest
         $this->seedCustomer($I);
 
         $originalLimit = $this->getTaxBatchLimit();
-        $this->setTaxBatchLimit(1);
+        $this->setTaxBatchLimit($I, 1);
         try {
-            $code = $this->runCalculate($I);
+            $code = $I->runCalculate();
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
             $I->seeInLogFile('Entities loaded: 1');
@@ -579,7 +853,7 @@ class calculateCommandCest
             $I->assertEquals($this->csvRows - 1, $this->countQueue(['type' => $this->fileType, 'calc_name' => false, 'calc_time' => false]),
                 'the lines beyond the batch must be left untouched');
         } finally {
-            $this->setTaxBatchLimit($originalLimit);
+            $this->setTaxBatchLimit($I, $originalLimit);
         }
     }
 
@@ -609,13 +883,13 @@ class calculateCommandCest
         $rounds = 3;
         $originalLimit = $this->getCustomerBatchLimit();
         $originalOrphan = $this->getOrphanWait();
-        $this->setCustomerBatchLimit(1);   // small batch so each run advances only a few lines
+        $this->setCustomerBatchLimit($I, 1);   // small batch so each run advances only a few lines
         // A NEGATIVE wait makes a re-queued line eligible again immediately: the
         // eligibility threshold (strtotime "<wait> ago") has whole-second granularity,
         // so with '0 seconds' a line stamped at second S only becomes eligible at
         // wall-clock second S+1 - and the runs are much faster than a second, so
         // most runs would find nothing eligible and the run budget would expire.
-        $this->setOrphanWait('-1 second');
+        $this->setOrphanWait($I, '-1 second');
 
         try {
             $stamps = $this->queueStamps(['type' => $this->fileType]);
@@ -626,7 +900,7 @@ class calculateCommandCest
                 $runs++;
                 // one_calc=true: this test circulates the SINGLE customer stage, so the
                 // advanced lines must stop at calc_name = 'customer' (not chain onward).
-                $code = $this->runCalculate($I, 'customer', null, true);
+                $code = $I->runCalculate('customer', null, true);
                 $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
 
                 // The lines the customer stage advanced this run are now at calc_name = 'customer'.
@@ -651,8 +925,8 @@ class calculateCommandCest
                 "every line must be circulated at least $rounds times (took $runs runs)");
         } finally {
             // Restore the global settings so later tests use the real configuration.
-            $this->setCustomerBatchLimit($originalLimit);
-            $this->setOrphanWait($originalOrphan);
+            $this->setCustomerBatchLimit($I, $originalLimit);
+            $this->setOrphanWait($I, $originalOrphan);
         }
     }
 
@@ -683,10 +957,10 @@ class calculateCommandCest
         $rounds = 3;
         $originalLimit = $this->getCustomerBatchLimit();
         $originalOrphan = $this->getOrphanWait();
-        $this->setCustomerBatchLimit(4);   // small batch so each run handles only a few lines
+        $this->setCustomerBatchLimit($I, 4);   // small batch so each run handles only a few lines
         // Negative on purpose - a failed line is eligible to re-circulate on the
         // very next run (see the note in the previous test).
-        $this->setOrphanWait('-1 second');
+        $this->setOrphanWait($I, '-1 second');
 
         try {
             $stamps = $this->queueStamps(['type' => $this->fileType]);
@@ -696,7 +970,7 @@ class calculateCommandCest
             $maxRuns = $this->csvRows * $rounds + 10; // generous cap; the loop stops once every line hits the target
             while (min($attempts) < $rounds && $runs < $maxRuns) {
                 $runs++;
-                $code = $this->runCalculate($I, 'customer');
+                $code = $I->runCalculate('customer');
                 $I->assertEquals(0, $code, "run $runs: the calculate command should exit cleanly");
 
                 // A line was (re-)attempted this run iff its calc_time changed to a new value.
@@ -720,8 +994,8 @@ class calculateCommandCest
                 'no line may be enriched with a subscriber');
         } finally {
             // Restore the global settings so later tests use the real configuration.
-            $this->setCustomerBatchLimit($originalLimit);
-            $this->setOrphanWait($originalOrphan);
+            $this->setCustomerBatchLimit($I, $originalLimit);
+            $this->setOrphanWait($I, $originalOrphan);
         }
     }
 
@@ -740,12 +1014,12 @@ class calculateCommandCest
         // Park half the lines at the rate stage: a one_calc customer run with a
         // batch of 3 advances exactly 3 lines and returns them to the queue.
         $originalLimit = $this->getCustomerBatchLimit();
-        $this->setCustomerBatchLimit(3);
+        $this->setCustomerBatchLimit($I, 3);
         try {
-            $code = $this->runCalculate($I, 'customer', null, true);
+            $code = $I->runCalculate('customer', null, true);
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         } finally {
-            $this->setCustomerBatchLimit($originalLimit);
+            $this->setCustomerBatchLimit($I, $originalLimit);
         }
         $I->assertEquals(3, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer']),
             'the prep run should park exactly 3 lines at the rate stage');
@@ -753,7 +1027,7 @@ class calculateCommandCest
             'the prep run should leave exactly 3 lines fresh');
 
         // One no-type invocation: a single pull takes both groups and finishes them all.
-        $code = $this->runCalculate($I);
+        $code = $I->runCalculate();
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
         // A single pull took the lines of BOTH stages together, and all of them
         // completed their remaining chain in the same run.
@@ -798,7 +1072,7 @@ class calculateCommandCest
         // Now the rate exists: only the rows with rate = CALL can be rated.
         $this->generateCallRate($I);
 
-        $code = $this->runCalculate($I);
+        $code = $I->runCalculate();
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // A single pull took all 4 lines from both stages; one completed, one
@@ -843,9 +1117,9 @@ class calculateCommandCest
         $this->generateCallRate($I, 'NO_SUCH_RATE');
         $this->seedSubscriber($I, $this->unknownPhone);
         $originalOrphan = $this->getOrphanWait();
-        $this->setOrphanWait('-1 second');
+        $this->setOrphanWait($I, '-1 second');
         try {
-            $code = $this->runCalculate($I);
+            $code = $I->runCalculate();
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
             // The second pull takes the three lines the first run left behind, and
             // with the rate and the subscriber in place all of them complete.
@@ -859,7 +1133,7 @@ class calculateCommandCest
             $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
                 'all the lines must exit the queue once the chain completes for each of them');
         } finally {
-            $this->setOrphanWait($originalOrphan);
+            $this->setOrphanWait($I, $originalOrphan);
         }
     }
 
@@ -875,7 +1149,7 @@ class calculateCommandCest
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I, false); // subscriber but NO rate: the rate stage will fail
 
-        $code = $this->runCalculate($I);
+        $code = $I->runCalculate();
         $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
 
         // Customer succeeded in the chain, rate failed: the lines parked at the
@@ -893,16 +1167,16 @@ class calculateCommandCest
         // resume the lines from the rate stage and finish the chain.
         $this->generateCallRate($I);
         $originalOrphan = $this->getOrphanWait();
-        $this->setOrphanWait('-1 second');
+        $this->setOrphanWait($I, '-1 second');
         try {
-            $code = $this->runCalculate($I, 'rate_Usage');
+            $code = $I->runCalculate('rate_Usage');
             $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
             $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
                 'the resumed lines must complete the remaining chain (rate + pricing)');
             $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
                 'the resumed lines must leave the queue when the chain completes');
         } finally {
-            $this->setOrphanWait($originalOrphan);
+            $this->setOrphanWait($I, $originalOrphan);
         }
     }
 }

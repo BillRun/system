@@ -717,4 +717,90 @@ class unifyCest
             'sid' => $subscriberDetails2['sid']
         ]));
     }
+
+    // ------------------------------------------------ BRCD-3562 chain mode
+
+    /**
+     * Chain mode (no --type) with unify as the LAST queue stage: lines queued
+     * uncalculated (processed before their subscriber existed) must go through
+     * customer, rate, pricing, tax AND unify in the single --calculate run, and
+     * end exactly as the inline path of testUnifyShouldUnifyAllCdrs leaves them:
+     * ONE unified line in lines, the 3 source lines in the archive and gone from
+     * lines, and nothing left in the queue.
+     *
+     * queue.calculators is a global setting (the CLI reads it from DB config),
+     * restored at the end.
+     */
+    public function testChainModeCalculateUnifiesAsTheLastStage(ApiTester $I): void
+    {
+        // Queue the lines uncalculated: no subscriber exists yet, so the inline
+        // calculation stops at the customer stage and the lines wait in the queue.
+        $this->process(['type' => 'abc', 'path' => 'tests/all/calculators/test_files/test1.csv']);
+        $I->assertEquals(3, $I->grabCollectionCount('queue', ['type' => 'abc', 'calc_name' => false]),
+            'processing before the subscriber exists should leave every line queued and uncalculated');
+        $I->assertEquals(3, $I->grabCollectionCount('lines', ['type' => 'abc']));
+
+        // Now everything the chain needs exists (the setup of testUnifyShouldUnifyAllCdrs).
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => ["CALL"],
+                        "value" => 300000,
+                        "usage_types" => ["call" => ["unit" => "minutes"]]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => ["call" => ["BASE" => ["rate" => [[
+                "from" => 0, "to" => "UNLIMITED", "interval" => 1, "price" => 1,
+                "uom_display" => ["range" => "seconds", "interval" => "seconds"]
+            ]]]]],
+        ]);
+        $I->generateSubscriber([
+            'from' => '2025-01-01',
+            'firstname' => '0531234567',
+            'aid' => $this->accountDetails['aid'],
+            'plan' => $this->planDetails['name'],
+            'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+        ]);
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        // The CLI must see unify as the last stage of the chain.
+        $originalCalculators = Billrun_Util::getIn((new ConfigModel())->getConfig(), ['queue', 'calculators'], ['customer', 'rate', 'pricing', 'tax']);
+        $I->overrideConfigValue('queue.calculators', ['customer', 'rate', 'pricing', 'tax', 'unify']);
+        try {
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Entities loaded: 3');
+            $I->seeInLogFile('Plugin calc Cpu unifying 3 lines');
+            $I->seeInLogFile('Chain results: 3 lines completed, 0 advanced and left for retry, 0 left unchanged');
+        } finally {
+            $I->overrideConfigValue('queue.calculators', $originalCalculators);
+        }
+
+        // The same end state the inline unification produces.
+        $I->assertEquals(1, $I->grabCollectionCount('lines', ['type' => 'abc']),
+            'only the unified line may remain in lines - the 3 source lines belong in the archive');
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'source' => 'unify',
+            'lcount' => 3,
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+        $I->assertEquals(0, $I->grabCollectionCount('queue', ['type' => 'abc']),
+            'every unified source line must leave the queue');
+    }
 }

@@ -26,9 +26,9 @@ class CalculateAction extends Action_Base {
 			return;
 		}
 
-		// BRCD-3562: the calculator name (type) is optional. When omitted, every
-		// queue calculator runs so a line flows through the whole chain; when
-		// given, only that calculator runs.
+		// BRCD-3562: the calculator name (type) is optional. When omitted, the run
+		// is a whole-chain run; when given, the chain starts at that calculator's
+		// stage (with one_calc=true only that calculator runs) - see below.
 		$possibleOptions = array('type' => true);
 
 		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -52,7 +52,16 @@ class CalculateAction extends Action_Base {
 			$oneCalc = false;
 		}
 
-		if ($oneCalc) {
+		// A calculator outside the queue chain (e.g. rebalance, which works off its
+		// own rebalance_queue, or unify when it is not a configured stage) has
+		// nothing to chain into: it always runs on its own, as before BRCD-3562.
+		$runAlone = $oneCalc;
+		if (!$runAlone && $requestedType !== null && Billrun_Calculator_Queue::getChainStage($requestedType, $options) === false) {
+			$this->getController()->addOutput("Calculator type " . $requestedType . " is not a queue chain stage; running it on its own");
+			$runAlone = true;
+		}
+
+		if ($runAlone) {
 			$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
 			$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorNames[0], $options));
 		} else {

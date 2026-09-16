@@ -87,7 +87,7 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 		$this->queueCalculators = array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
 		if (isset($options['chain_start'])) {
 			$this->chainStart = $options['chain_start'];
-			$this->startStage = $this->resolveStage($this->chainStart, $options);
+			$this->startStage = self::getChainStage($this->chainStart, $options);
 		}
 		if (!isset($options['calculator']['limit'])) {
 			//batch by the pulled stage's configured limit (e.g. customer.calculator.limit,
@@ -109,25 +109,23 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 	}
 
 	/**
-	 * Resolve a requested calculator name to its queue stage: a stage name is
+	 * The queue stage a requested calculator name belongs to: a stage name is
 	 * taken as-is, a concrete calculator name (e.g. rate_Usage) is instantiated
-	 * to ask for its stage.
+	 * (without loading) to ask for its stage. A calculator outside the chain -
+	 * e.g. rebalance, which works off its own rebalance_queue - has no stage.
 	 *
 	 * @param string $requestedType calculator or stage name
-	 * @param array $options run options
-	 * @return string|false the stage, or false when it is not a queue stage
+	 * @param array $options run options, passed on to the calculator instantiation
+	 * @return string|false the stage, or false when the calculator is not part of the queue chain
 	 */
-	protected function resolveStage($requestedType, $options) {
-		$stage = $requestedType;
-		if (!in_array($stage, $this->queueCalculators)) {
-			$calculator = Billrun_Calculator::getInstance(array_merge($options, array('type' => $requestedType, 'autoload' => false)));
-			$stage = $calculator ? $calculator->getCalculatorQueueType() : null;
+	public static function getChainStage($requestedType, $options = array()) {
+		$queueCalculators = array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
+		if (in_array($requestedType, $queueCalculators, true)) {
+			return $requestedType;
 		}
-		if (!in_array($stage, $this->queueCalculators)) {
-			Billrun_Factory::log('No queue stage found for calculator type ' . $requestedType, Zend_Log::ERR);
-			return false;
-		}
-		return $stage;
+		$calculator = Billrun_Calculator::getInstance(array_merge($options, array('type' => $requestedType, 'autoload' => false)));
+		$stage = $calculator ? $calculator->getCalculatorQueueType() : null;
+		return in_array($stage, $queueCalculators, true) ? $stage : false;
 	}
 
 	public function getCalculatorQueueType() {
@@ -135,7 +133,8 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 	}
 
 	protected function getLines() {
-		if ($this->startStage === false) {//unknown chain_start - resolveStage already logged it
+		if ($this->startStage === false) {//chain_start is not a queue chain stage (the action runs such calculators on their own) - nothing to chain
+			Billrun_Factory::log('Calculator type ' . $this->chainStart . ' is not a queue chain stage - nothing to pull', Zend_Log::INFO);
 			return array();
 		}
 		return $this->getQueuedLines(array());
@@ -220,6 +219,7 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 			$finalRow = $processor->getQueueRow($stamp);
 			if ($finalRow === false) {//the line completed its remaining chain
 				unset($lineData['in_queue']);
+				$processor->setFullCalculationTime($lineData);//completed = fully calculated, whichever stage emptied its queue row (same config gate as the processor)
 				$this->data[$stamp] = new Mongodloid_Entity($lineData);
 				$this->completedStamps[] = $stamp;
 			} elseif ($finalRow['calc_name'] !== $this->lines[$stamp]['calc_name']) {//advanced, then failed a later stage: park at the last completed stage, still claimed
