@@ -193,18 +193,26 @@ class MoveActionBox extends Component {
     const disableStartInput = !item.getIn(['revision_info', 'movable_from'], true);
     const disableEndInput = !item.getIn(['revision_info', 'movable_to'], true) || (isEndDateUnlimited && isLast);
     const highlightStartDates = [getItemDateValue(item, 'from', null)];
-    const getStartDayClass = day => (
-      minStart.isBefore(minStartDate) &&
-      !day.isSame(getItemDateValue(item, 'from', null), 'days') &&
-      day.isBetween(minStart, minStartDate, 'day', '[)',
-    ) ? 'danger-red' : undefined);
+    const getStartDayClass = (day) => {
+      const dayMoment = moment(day);
+
+      return (
+        minStart.isBefore(minStartDate) &&
+        !dayMoment.isSame(getItemDateValue(item, 'from', null), 'days') &&
+        dayMoment.isBetween(minStart, minStartDate, 'day', '[)')
+      ) ? 'danger-red' : undefined;
+    };
 
     const highlightEndDates = [getItemDateValue(item, 'to', null)];
-    const getEndDayClass = day => (
-      minEnd.isBefore(minStartDate) &&
-      !day.isSame(getItemDateValue(item, 'to', null), 'days') &&
-      day.isBetween(minEnd, minStartDate, 'day', '[)',
-    ) ? 'danger-red' : undefined);
+    const getEndDayClass = (day) => {
+      const dayMoment = moment(day);
+
+      return (
+        minEnd.isBefore(minStartDate) &&
+        !dayMoment.isSame(getItemDateValue(item, 'to', null), 'days') &&
+        dayMoment.isBetween(minEnd, minStartDate, 'day', '[)')
+      ) ? 'danger-red' : undefined;
+    };
 
     return (
       <ModalWrapper show={true} title={title} labelCancel="Close" onCancel={this.onClickCancel} onHide={this.onClickCancel}>

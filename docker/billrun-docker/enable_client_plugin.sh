@@ -90,7 +90,4 @@ fi
 
 cd /billrun
 
-ln -s /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf
-mkdir -p /opt/wkhtmltox/bin/
-ln -s /usr/local/bin/wkhtmltopdf /opt/wkhtmltox/bin/wkhtmltopdf
 exec "$@"

@@ -252,7 +252,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 				'creation_time' => date('c')
 			);
 			if ($this->runStep($step) === false) {
-				Billrun_Factory::log('Collection state change: batch ' . ($index + 1) . '/' . $batchesCount . ' failed (' . count($batchAids) . ' accounts, state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::ERR);
+				// Billrun_Factory::log('Collection state change: batch ' . ($index + 1) . '/' . $batchesCount . ' failed (' . count($batchAids) . ' accounts, state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::ERR);
 				$result = false;
 			}
 		}
