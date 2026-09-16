@@ -21,9 +21,10 @@ RUN docker-php-ext-configure pcntl --enable-pcntl \
     && docker-php-ext-install pcntl
 
 RUN wget -O /tmp/jsignpdf.zip \
-        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/3.1.0/jsignpdf-distribution-3.1.0-minimal.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
     && rm -f /tmp/jsignpdf.zip
+
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/

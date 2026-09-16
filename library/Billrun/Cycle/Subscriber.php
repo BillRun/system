@@ -273,7 +273,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 		Billrun_Factory::dispatcher()->trigger('beforeConstructServices',array($this,&$services,&$stumpLine));
 		foreach ($services as &$arrService) {
-			$overrideData['overrides'] = array_filter($data['overrides'] ?? [], function($override) use ($arrService) {
+			if (isset($arrService['overrides']) && is_array($arrService['overrides'])) {
+				$revisionOverrides = $arrService['overrides'];
+			} else if (isset($data['overrides']) && is_array($data['overrides'])) {
+				$revisionOverrides = $data['overrides'];
+			} else {
+				$revisionOverrides = [];
+			}
+			$overrideData['overrides'] = array_filter($revisionOverrides, function($override) use ($arrService) {
 				return $override['type'] != 'service' || empty($override['id']) || $arrService['service_id'] == $override['id'];
 			});
 			$localMongoServices = $this->cycleAggregator->getServices($this->parentAccount,$overrideData);
@@ -466,15 +473,20 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 												['name','start','quantity','service_id'] // Sepearate service by
 )
 											  );
-				 $serviceData = array_merge(  $tmpService,
-											array('name' => $tmpService['name'],
-											'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
-											'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
-											'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
-											'start'=> max($tmpService['from']->sec + ($tmpService['from']->usec/ 1000000), $activationDate),
-										'end'=> min($tmpService['to']->sec +($tmpService['to']->usec/ 1000000),  $deactivationDate),
-										'compare_fields' => $srvStampFields)
-					);
+				$serviceData = array_merge(
+					$tmpService,
+					array(
+						'name' => $tmpService['name'],
+						'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'], 1),
+						'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'], null),
+						'plan' => $subscriber['sid'] != 0 ? $subscriber['plan'] : null,
+						'start' => max($tmpService['from']->sec + ($tmpService['from']->usec / 1000000), $activationDate),
+						'end' => min($tmpService['to']->sec + ($tmpService['to']->usec / 1000000), $deactivationDate),
+						'overrides' => Billrun_Util::getFieldVal($subscriber['overrides'], []),
+						'compare_fields' => $srvStampFields,
+					)
+				);
+
 
 					//Fix Quantitative  services which their quantity changed but not their from date
 					if(!empty($currentMongoSrv['quantitative']) && !empty($currentMongoSrv['prorated']) && !empty($previousServices) ) {

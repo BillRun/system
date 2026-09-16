@@ -36,10 +36,12 @@ services:
         image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
+        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
-            - ./data/mongodb36:/data/db/
+            - ./data/mongodb-3.6-${PLUGIN_BASENAME:-default}:/data/db/
             - ./../..:/billrun:ro
             - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ./mongo-entrypoint.sh:/mongo-entrypoint.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
             - ./billrun-php74/composer.json:/billrun/composer.json:ro
             - ./billrun-php74/composer.lock:/billrun/composer.lock:ro

@@ -385,11 +385,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	public function generateAccountInvoices($account, $lines = FALSE) {
 		$account = $this->reconstructBillrunObject($account);
 		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity',array($this, &$account,&$lines));
-		$maxSubsForDetails = Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_for_invoice_pdf', 10000); 
-		if (count(Billrun_Util::getFieldVal($account['subs'], [])) > $maxSubsForDetails) {
-			Billrun_Factory::log('AID: ' . $account['aid'] . '. Subscriber count exceeds limit (' . $maxSubsForDetails . '). Setting render_subscription_details to false.', Zend_Log::DEBUG);
-			$this->render_subscription_details = false;
-		}
+		$this->applySubscriberDetailsLimit($account);
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
@@ -447,6 +443,19 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	/**
+	 * Disable per-subscriber detail rendering when the account exceeds the configured subscriber limit.
+	 *
+	 * @param Mongodloid_Entity $account The (reconstructed) billrun object.
+	 */
+	protected function applySubscriberDetailsLimit($account) {
+		$maxSubsForDetails = Billrun_Factory::config()->getConfigValue('billrun.max_subscribers_for_invoice_pdf', 10000);
+		if (count($account['subs'] ?? []) > $maxSubsForDetails) {
+			Billrun_Factory::log('AID: ' . $account['aid'] . '. Subscriber count exceeds limit (' . $maxSubsForDetails . '). Setting render_subscription_details to false.', Zend_Log::DEBUG);
+			$this->render_subscription_details = false;
+		}
+	}
+
+	/**
 	 * Reconstructs the billrun object by fetching subscribers and grouping data from
 	 * separate collections and re-attaching them.
 	 *
@@ -456,7 +465,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function reconstructBillrunObject(Mongodloid_Entity $accountObject)
 	{
 		$accountData = $accountObject->getRawData();
-		//Backward Compatability (subs used to be inside the BillrunObject)
+		// Subs already attached: in-cycle generation passes the in-memory invoice (subs never stripped),
 		if (isset($accountData['subs'])) {
 			return $accountObject;
 		}
