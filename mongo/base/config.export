@@ -141,7 +141,8 @@
             }, {
                 "field_name":"services",
                 "system": true,
-                "mandatory": false
+                "mandatory": false,
+                "multiple": true
             }]
         },
         "account": {
@@ -220,6 +221,18 @@
                 "field_name": "in_collection",
                 "system": true,
                 "display": false
+            }, {
+                "system": false,
+                "select_list": true,
+                "display": true,
+                "editable": true,
+                "field_name": "invoice_shipping_method",
+                "default_value": "email",
+                "show_in_list": true,
+                "title": "Invoice shipping method",
+                "mandatory": false,
+                "select_options": "email",
+                "changeable_props": ["select_options"]
             }]
         }
     },
