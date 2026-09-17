@@ -3,7 +3,122 @@
     "cg_return_url": "",
     "shared_secret": [],
     "usage_types": [],
-    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin", "notificationsPlugin"],
+    "plugins": [{
+        "name": "calcCpuPlugin",
+        "enabled": true,
+        "system": true,
+        "hide_from_ui": true
+    }, {
+        "name": "csiPlugin",
+        "enabled": true,
+        "system": false,
+        "hide_from_ui": false
+    }, {
+        "name": "autorenewPlugin",
+        "enabled": true,
+        "system": false,
+        "hide_from_ui": false
+    }, {
+        "name": "notificationsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    }, {
+        "name": "webhooksPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false
+    }, {
+        "name": "metabaseReportsPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration": {
+            "values": {
+                "metabase_details": {},
+                "export": {},
+                "added_data": {},
+                "reports": []
+            }
+        }
+    }, {
+        "name": "debtCollectionPlugin",
+        "enabled": true,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration": {
+            "values": {
+                "immediateEnter": false,
+                "immediateExit": true
+            }
+        }
+    }, {
+        "name": "israelInvoicePlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+        "configuration": {
+            "values": {
+                "company_vat_number": 0,
+                "client_secret": "",
+                "client_key": "",
+                "account_vat_number_field": "",
+                "union_vat_number": 0,
+                "invoice_approval_api": "https://ita-api.taxes.gov.il/shaam/production/Invoices/v2/Approval",
+                "refresh_token": "",
+                "accounting_software_number": 0,
+                "new_access_token_api": "",
+                "cancel_invoice_generation_on_error": true,
+                "apply_to_refund_invoices": false,
+                "invoice_thresholds": "",
+                "user_id": ""
+            }
+        }
+    }, {
+        "name": "creditGuardPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": false,
+        "configuration": {
+            "values": {
+                "card_expiration_field_name": "card_expiration",
+                "oldest_card_expiration": "20 years ago",
+                "years_to_extend_card_expiration": 3,
+                "extend_card_expiration": true
+            }
+        }
+    }, {
+        "name": "teldasPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true
+    }, {
+        "name": "eBillSwitzerlandPlugin",
+        "enabled": false,
+        "system": true,
+        "hide_from_ui": true,
+        "configuration": {
+            "values": {
+                "string_keys": [],
+                "creditor_reference_prefix": "",
+                "bill_summary_template": [],
+                "should_generate_ebill": {},
+                "bill_headers": [],
+                "header_values": [],
+                "address": {},
+                "delivery_info": [],
+                "line_item_template": [],
+                "export_sftp_host": "",
+                "export_sftp_user": "",
+                "export_sftp_password": "",
+                "export_sftp_remote_directory": "",
+                "response_sftp_host": "",
+                "response_sftp_user": "",
+                "response_sftp_password": "",
+                "response_sftp_remote_directory": ""
+            }
+        }
+    }],
     "resetlines": {
         "limit": {
             "v": 10,
