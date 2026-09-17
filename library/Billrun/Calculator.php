@@ -770,13 +770,18 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * The index the queue marking update is hinted with (the update has no sort,
 	 * so the planner may lose the plan-selection trial without it; requires the
-	 * BRCD-3562 migration). Billrun_Calculator_Queue overrides this: its
-	 * all-stages pull filters calc_name with a low-selectivity $in, where the
-	 * branch-free {calc_time, urt} index is the right one.
+	 * BRCD-3562 migration): {calc_name, calc_time, urt}, or the type-prefixed
+	 * {calc_name, type, calc_time, urt} when --file_types narrows the pull.
+	 * Billrun_Calculator_Queue overrides this: its all-stages pull filters
+	 * calc_name with a low-selectivity $in, where the branch-free {calc_time, urt}
+	 * index is the right one ({type, calc_time, urt} with --file_types).
 	 *
 	 * @return array index specification
 	 */
 	protected function getQueueUpdateHint() {
+		if (isset($this->file_types)) {
+			return array('calc_name' => 1, 'type' => 1, 'calc_time' => 1, 'urt' => 1);
+		}
 		return array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
 	}
 

@@ -159,11 +159,16 @@ class Billrun_Calculator_Queue extends Billrun_Calculator {
 
 	/**
 	 * The chain pull filters calc_name with a low-selectivity $in, so the
-	 * branch-free {calc_time, urt} index serves its marking update best.
+	 * branch-free {calc_time, urt} index serves its marking update best; when
+	 * --file_types narrows the pull, the type-prefixed {type, calc_time, urt}
+	 * index scans the requested types only.
 	 *
 	 * @return array index specification
 	 */
 	protected function getQueueUpdateHint() {
+		if (isset($this->file_types)) {
+			return array('type' => 1, 'calc_time' => 1, 'urt' => 1);
+		}
 		return array('calc_time' => 1, 'urt' => 1);
 	}
 
