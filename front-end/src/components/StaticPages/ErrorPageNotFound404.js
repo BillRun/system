@@ -1,8 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Col } from 'react-bootstrap';
-
-
 const PageNotFound404 = () => (
   <Col md={12} style={{ textAlign: 'center', marginTop: 50 }}>
     <i className="fa fa-frown-o fa-fw" style={{ fontSize: 70 }} />

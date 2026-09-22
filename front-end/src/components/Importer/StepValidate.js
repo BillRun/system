@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col, Panel, InputGroup } from 'react-bootstrap';
+import { Col, InputGroup } from 'react-bootstrap';
+import { ControlLabel, FormGroup, InputGroupButton, Panel } from '@/common/BootstrapCompat';
 // import ReactJson from 'react-json-view';
 import { sentenceCase } from 'change-case';
 import { Actions } from '@/components/Elements';
@@ -12,8 +13,7 @@ import {
   getFieldNameType,
 } from '@/common/Util';
 
-
-const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMapper, removeMapper, entity }) => {
+const StepValidate = ({ fields = [], rows = Immutable.List(), selectedMapper = '', defaultMappedName = '', saveMapper = () => {}, removeMapper = () => {}, entity = '' }) => {
   const [mapperName, setMapperName] = useState(['', null].includes(selectedMapper) ? defaultMappedName : selectedMapper);
 
   const row = rows.get(0, Immutable.Map());
@@ -63,7 +63,7 @@ const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMap
     const curField = fields.find(field => field.value === fieldKey);
     return (
       <FormGroup key={key}>
-        <Col sm={3} componentClass={ControlLabel}>
+        <Col sm={3} as={ControlLabel}>
           { curField ? curField.label : fieldKey }
         </Col>
         <Col sm={9}>
@@ -78,7 +78,7 @@ const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMap
     return (
       <Panel header="Linker" className="mb0" key={inedx}>
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>
+          <Col sm={3} as={ControlLabel}>
             { curField ? curField.label : linker.get('field', '') }
           </Col>
           <Col sm={9}>
@@ -117,7 +117,7 @@ const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMap
     const displayValue = ['number', 'string', 'boolean'].includes(valueType) ? value : 'complex value cannot be displayed in preview';
     return (
       <FormGroup key={`row_${fieldName}`}>
-        <Col sm={3} componentClass={ControlLabel}>
+        <Col sm={3} as={ControlLabel}>
           { curField
             ? curField.label
             : getFieldName(fieldName, getFieldNameType(entity), sentenceCase(fieldName))
@@ -155,7 +155,7 @@ const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMap
         <h4 className="pull-left">Example Import</h4>
         <div className="pull-right">
           <InputGroup style={{ width: 300, marginTop: 7 }}>
-            <InputGroup.Addon style={{ fontSize: 13, padding: '6px 9px' }}>Mapper</InputGroup.Addon>
+            <InputGroup.Text style={{ fontSize: 13, padding: '6px 9px' }}>Mapper</InputGroup.Text>
             <input
               type="text"
               className="form-control"
@@ -164,9 +164,9 @@ const StepValidate = ({ fields, rows, selectedMapper, defaultMappedName, saveMap
               placeholder="Enter mapper name"
               style={{ height: 28, fontSize: 13 }}
             />
-            <InputGroup.Button>
+            <InputGroupButton>
               <Actions actions={mapperActions} data={mapperName} type="group"/>
-            </InputGroup.Button>
+            </InputGroupButton>
           </InputGroup>
         </div>
         <div className="clearfix" />
@@ -214,16 +214,6 @@ StepValidate.propTypes = {
   rows: PropTypes.instanceOf(Immutable.List),
   saveMapper: PropTypes.func,
   removeMapper: PropTypes.func,
-};
-
-StepValidate.defaultProps = {
-  fields: [],
-  entity: '',
-  selectedMapper: '',
-  defaultMappedName: '',
-  rows: Immutable.List(),
-  saveMapper: () => {},
-  removeMapper: () => {},
 };
 
 export default StepValidate;

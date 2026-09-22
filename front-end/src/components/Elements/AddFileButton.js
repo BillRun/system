@@ -2,12 +2,10 @@ import React, { memo } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-
 const inputFileStyle = {height: 0, width: 0, overflow: 'hidden', display: 'inline-block' };
 
-
 const AddFileButton = ({
-  label, onClick, fileType, multiple, disabled, buttonStyle, buttonSize
+  label = 'Add File', onClick = () => {}, fileType = '.csv', multiple = true, disabled = false, buttonStyle = 'primary', buttonSize = undefined
 }) => {
   const buttonClass = classNames('custom-file-upload', 'btn', 'full-width', {
     'btn-xs': buttonSize === 'xsmall',
@@ -35,17 +33,6 @@ const AddFileButton = ({
     </label>
   );
 }
-
-AddFileButton.defaultProps = {
-  label: 'Add File',
-  action: '',
-  fileType: '.csv',
-  multiple: true,
-  disabled: false,
-  buttonStyle: 'primary',
-  buttonSize: undefined,
-  onClick: () => {},
-};
 
 AddFileButton.propTypes = {
   label: PropTypes.string,

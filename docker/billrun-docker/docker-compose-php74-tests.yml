@@ -30,23 +30,29 @@ services:
         - "COMPOSER_HOME=/tmp/composer"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ./billrun-php74/composer.json:/billrun/composer.json:ro
+            - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
         healthcheck:
             test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"]
             interval: 20s
             timeout: 3s
             retries: 4
-        command: sh -c "mkdir -p /billrun/vendor && cp -r /var/www/html/vendor/* /billrun/vendor/ && php-fpm"
+        command: sh -c "composer install && php-fpm"
     mongodb:
         image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
+        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
+            - ./data/mongodb-3.6-${PLUGIN_BASENAME:-default}:/data/db/
             - ${PWD}/../..:/billrun:ro
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PWD}/mongo-entrypoint.sh:/mongo-entrypoint.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017

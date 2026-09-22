@@ -181,6 +181,26 @@ export const getSettingsQuery = (category, data = {}) => ({
   ],
 });
 
+export const sendTestSmsQuery = (recipient) => {
+  const formData = new FormData();
+  formData.append('recipient', recipient);
+
+  return ({
+    api: 'testsms',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
+
+export const testSubscribersAuthQuery = () => ({
+  api: 'testsubscribersauth',
+  options: {
+    method: 'POST',
+  },
+});
+
 export const setInputProcessorQuery = (data, action) => {
   const formData = new FormData();
   formData.append('category', 'file_types');
@@ -203,17 +223,6 @@ export const getInputProcessorActionQuery = (fileType, action) => ({
     { data: JSON.stringify({ file_type: fileType }) },
   ],
 });
-
-export const getExportGeneratorActionQuery = (name, action) => ({
-  api: 'settings',
-  params: [
-    { category: 'export_generators' },
-    { action },
-    { data: JSON.stringify({ name }) },
-  ],
-});
-
-export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
 
 export const getCreditChargeQuery = params => ({
   api: 'credit',
@@ -266,14 +275,20 @@ export const postpaidBalancesListQuery = (query, page, sort, size) => ({
 });
 
 /* Settings API */
-export const savePaymentGatewayQuery = gateway => ({
-  api: 'settings',
-  params: [
-    { category: 'payment_gateways' },
-    { action: 'set' },
-    { data: JSON.stringify(gateway) },
-  ],
-});
+export const savePaymentGatewayQuery = gateway => {
+  const formData = new FormData();
+  formData.append('category', 'payment_gateways');
+  formData.append('action', 'set');
+  formData.append('data', JSON.stringify(gateway));
+
+  return ({
+    api: 'settings',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};
 
 /* Settings API */
 export const saveSharedSecretQuery = secret => ({
@@ -370,6 +385,8 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'users':
     case 'suggestions':
     case 'bills':
+    case 'export_generators':
+    case 'eventsettings':
       action = 'get';
       break;
     default:

@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Panel, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { CreateButton } from '@/components/Elements';
 import Notification from './Notification';
 
@@ -43,7 +44,7 @@ const Notifications = (props) => {
     <h3>
       { props.name }
       { props.editable &&
-        <Button onClick={onRemoveBalance} bsSize="xsmall" className="pull-right" style={{ minWidth: 80 }}>
+        <Button onClick={onRemoveBalance} variant="outline-secondary" className="pull-right btn-xs" style={{ minWidth: 80 }}>
           <i className="fa fa-trash-o danger-red" />&nbsp;Remove
         </Button>
       }
@@ -55,7 +56,7 @@ const Notifications = (props) => {
       <Panel header={header}>
         { props.notifications.map(notification_el) }
         <br />
-        { props.editable && <CreateButton onClick={onAdd} label="Add New" /> }
+        { props.editable && <CreateButton onClick={onAdd} label="Add New" buttonClass="btn-xs" /> }
       </Panel>
     </div>
   );

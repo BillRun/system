@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
-import { Panel, Tabs, Tab } from 'react-bootstrap';
+import withRouter from '@/common/withRouter';
+import { Tabs, Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import moment from 'moment';
 import PlanTab from './PlanTab';
@@ -68,11 +69,10 @@ class PlanSetup extends Component {
     progress: false,
   }
 
-  componentWillMount() {
-    this.fetchItem();
-  }
-
+  
   componentDidMount() {
+    this.fetchItem();
+    
     const { mode } = this.props;
     if (['clone', 'create'].includes(mode)) {
       const pageTitle = buildPageTitle(mode, PlanSetup.entityName);
@@ -82,9 +82,19 @@ class PlanSetup extends Component {
   }
 
 
-  componentWillReceiveProps(nextProps) {
-    const { item, itemId, mode } = nextProps;
-    const { item: oldItem, itemId: oldItemId, mode: oldMode } = this.props;
+  
+  shouldComponentUpdate(nextProps, nextState) {
+    return !Immutable.is(this.props.item, nextState.item)
+      || !Immutable.is(this.props.revisions, nextState.revisions)
+      || this.props.activeTab !== nextProps.activeTab
+      || this.props.itemId !== nextProps.itemId
+      || this.props.mode !== nextProps.mode;
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { item, itemId, mode } = this.props;
+    const { item: oldItem, itemId: oldItemId, mode: oldMode } = prevProps;
     if (mode !== oldMode || getItemId(item) !== getItemId(oldItem)) {
       const pageTitle = buildPageTitle(mode, PlanSetup.entityName, item);
       this.props.dispatch(setPageTitle(pageTitle));
@@ -94,16 +104,9 @@ class PlanSetup extends Component {
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !Immutable.is(this.props.item, nextState.item)
-      || !Immutable.is(this.props.revisions, nextState.revisions)
-      || this.props.activeTab !== nextProps.activeTab
-      || this.props.itemId !== nextProps.itemId
-      || this.props.mode !== nextProps.mode;
-  }
-
   componentWillUnmount() {
     this.props.dispatch(clearPlan());
+    this.props.dispatch(setPageTitle(''));
   }
 
   initDefaultValues = () => {
@@ -251,7 +254,7 @@ class PlanSetup extends Component {
           />
         </Panel>
 
-        <Tabs activeKey={activeTab} animation={false} id="PlanTab" onSelect={this.handleSelectTab}>
+        <Tabs activeKey={activeTab} transition={false} id="PlanTab" onSelect={this.handleSelectTab}>
           <Tab title="Details" eventKey={1}>
             <Panel style={{ borderTop: 'none' }}>
               <PlanTab

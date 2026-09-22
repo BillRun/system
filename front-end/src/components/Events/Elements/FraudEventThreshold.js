@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import isNumber from 'is-number';
 import Field from '@/components/Field';
 import ConditionValue from '../../Report/Editor/ConditionValue';
@@ -43,13 +44,7 @@ class FraudEventThreshold extends Component {
     errors: Immutable.Map(),
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { index, eventPropertyType } = this.props;
-    if (!Immutable.is(eventPropertyType, nextProps.eventPropertyType)) {
-      this.props.onUpdate([index], Immutable.Map());
-    }
-  }
-
+  
   onChangeThresholdField = (value) => {
     const { index } = this.props;
     this.props.onUpdate([index, 'field'], value);
@@ -88,6 +83,14 @@ class FraudEventThreshold extends Component {
     this.props.setError(`threshold_condition.${index}`, null);
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { index, eventPropertyType } = prevProps;
+    if (!Immutable.is(eventPropertyType, this.props.eventPropertyType)) {
+      prevProps.onUpdate([index], Immutable.Map());
+    }
+  }
+
   render() {
     const {
       index,
@@ -117,9 +120,6 @@ class FraudEventThreshold extends Component {
     const showUOM = eventPropertyType.size === 1 && !['aprice', 'final_charge'].includes(field);
     return (
       <FormGroup className="form-inner-edit-row pl0 pr0" validationState={isThresholdError ? 'error' : null}>
-        <Col componentClass={ControlLabel} smHidden mdHidden lgHidden>
-          Field <span className="danger-red"> *</span>
-        </Col>
         <Col sm={showUOM ? 3 : 4}>
           <Field
             id="threshold_field"
@@ -130,9 +130,6 @@ class FraudEventThreshold extends Component {
           />
         </Col>
 
-        <Col componentClass={ControlLabel} smHidden mdHidden lgHidden>
-          Operator <span className="danger-red"> *</span>
-        </Col>
         <Col sm={showUOM ? 3 : 4}>
           <Field
             id="threshold_operator"
@@ -144,9 +141,6 @@ class FraudEventThreshold extends Component {
           />
         </Col>
 
-        <Col componentClass={ControlLabel} smHidden mdHidden lgHidden>
-          Value <span className="danger-red"> *</span>
-        </Col>
         <Col sm={showUOM ? 3 : 4}>
           <ConditionValue
             field={thresholdForValue}
@@ -159,9 +153,6 @@ class FraudEventThreshold extends Component {
 
         {showUOM && (
           <>
-            <Col componentClass={ControlLabel} smHidden mdHidden lgHidden>
-              Unit of measure <span className="danger-red"> *</span>
-            </Col>
             <Col sm={3} className="pr0 pl5">
               <UsageTypesSelector
                 usaget={usaget}

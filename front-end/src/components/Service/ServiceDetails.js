@@ -4,7 +4,8 @@ import Immutable from 'immutable';
 import { titleCase, sentenceCase } from 'change-case';
 import isNumber from 'is-number';
 import pluralize from 'pluralize';
-import { Form, FormGroup, ControlLabel, HelpBlock, Col, InputGroup, DropdownButton, MenuItem, Panel } from 'react-bootstrap';
+import { Form, Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, InputGroupButton, Panel } from '@/common/BootstrapCompat';
 import { ServiceDescription } from '../../language/FieldDescriptions';
 import Help from '../Help';
 import Field from '@/components/Field';
@@ -47,14 +48,7 @@ export default class ServiceDetails extends Component {
     },
   }
 
-  componentWillMount() {
-    const { item } = this.props;
-    const count = item.get('price', Immutable.List()).size;
-    if (count === 0) {
-      this.props.onServiceTariffAdd();
-    }
-  }
-
+  
   shouldComponentUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
     return !Immutable.is(this.props.item, nextProps.item) || this.props.mode !== nextProps.mode;
   }
@@ -172,6 +166,15 @@ export default class ServiceDetails extends Component {
     return prices;
   }
 
+  
+  componentDidMount() {
+    const { item } = this.props;
+    const count = item.get('price', Immutable.List()).size;
+    if (count === 0) {
+      this.props.onServiceTariffAdd();
+    }
+  }
+
   render() {
     const { errors } = this.state;
     const { item, mode, sourceItem } = this.props;
@@ -184,7 +187,7 @@ export default class ServiceDetails extends Component {
     const isByCycles = item.getIn(['balance_period', 'type'], 'default') === 'default';
     const lastPriceIndex = item.getIn(['price'], Immutable.List()).size <= 0 ? 0: item.getIn(['price'], Immutable.List()).size - 1;
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel>
         <PlaysSelector
           entity={item}
@@ -194,7 +197,7 @@ export default class ServiceDetails extends Component {
         />
 
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             { getFieldName('description', getFieldNameType('service'), sentenceCase('title'))}
             <span className="danger-red"> *</span>
             <Help contents={ServiceDescription.description} />
@@ -206,7 +209,7 @@ export default class ServiceDetails extends Component {
 
         {['clone', 'create'].includes(mode) &&
           <FormGroup validationState={errors.name.length > 0 ? 'error' : null} >
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('name', getFieldNameType('service'), sentenceCase('key'))}
               <span className="danger-red"> *</span>
               <Help contents={ServiceDescription.name} />
@@ -228,7 +231,7 @@ export default class ServiceDetails extends Component {
         />
 
         {(!isByCycles) && <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             { getFieldName('price', getFieldNameType('service'), sentenceCase('price'))}
             <span className="danger-red"> *</span>
           </Col>
@@ -239,7 +242,7 @@ export default class ServiceDetails extends Component {
 
         {['clone', 'create'].includes(mode) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               { getFieldName('period_type', getFieldNameType('service'), 'Eligibility Period')}
               <span className="danger-red"> *</span>
             </Col>
@@ -280,7 +283,7 @@ export default class ServiceDetails extends Component {
 
         {(!isByCycles) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2} >
+            <Col as={ControlLabel} sm={3} lg={2} >
               {!['clone', 'create'].includes(mode) && 'Custom Period'}
             </Col>
             <Col sm={4}>
@@ -296,17 +299,18 @@ export default class ServiceDetails extends Component {
                   suffix={!editable ? ` ${balancePeriodUnitTitle}` : null }
                 />
                 { editable && (
-                  <DropdownButton
+                  <InputGroupButton>
+                    <DropdownButton
                     id="balance-period-unit"
-                    componentClass={InputGroup.Button}
                     title={balancePeriodUnitTitle}
                     disabled={isByCycles}
                     >
-                    <MenuItem eventKey="days" onSelect={this.onSelectPeriodUnit}>Days</MenuItem>
-                    <MenuItem eventKey="weeks" onSelect={this.onSelectPeriodUnit}>Weeks</MenuItem>
-                    <MenuItem eventKey="months" onSelect={this.onSelectPeriodUnit}>Months</MenuItem>
-                    <MenuItem eventKey="years" onSelect={this.onSelectPeriodUnit}>Years</MenuItem>
-                  </DropdownButton>
+                    <Dropdown.Item eventKey="days" onSelect={this.onSelectPeriodUnit}>Days</Dropdown.Item>
+                    <Dropdown.Item eventKey="weeks" onSelect={this.onSelectPeriodUnit}>Weeks</Dropdown.Item>
+                    <Dropdown.Item eventKey="months" onSelect={this.onSelectPeriodUnit}>Months</Dropdown.Item>
+                    <Dropdown.Item eventKey="years" onSelect={this.onSelectPeriodUnit}>Years</Dropdown.Item>
+                    </DropdownButton>
+                  </InputGroupButton>
                 )}
               </InputGroup>
             </Col>
@@ -315,7 +319,7 @@ export default class ServiceDetails extends Component {
 
         {(isByCycles) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2} >
+            <Col as={ControlLabel} sm={3} lg={2} >
               {!['clone', 'create'].includes(mode) && 'No. of Cycles'}
             </Col>
             <Col sm={4}>
@@ -334,7 +338,7 @@ export default class ServiceDetails extends Component {
 
         {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode) && isByCycles)) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Prorated?</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Prorated?</Col>
             <Col sm={4} style={editable ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"
@@ -349,7 +353,7 @@ export default class ServiceDetails extends Component {
 
         {(['clone', 'create'].includes(mode) || (!['clone', 'create'].includes(mode))) &&
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>Quantitative?</Col>
+            <Col as={ControlLabel} sm={3} lg={2}>Quantitative?</Col>
             <Col sm={4} style={['clone', 'create'].includes(mode) ? { padding: '10px 15px' } : { paddingTop: 5 }}>
               <Field
                 fieldType="checkbox"

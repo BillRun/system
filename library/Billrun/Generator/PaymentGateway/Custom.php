@@ -172,24 +172,29 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'account':
-            case 'payer':
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-                $accountAid = $params['aid'];
-                if ($entity == 'payer') {
-                    // BRCD-785: the account paying the bill - itself, or its nearest is_payer ancestor
-                    if (isset($params['payer_aid'])) {
-                        $accountAid = $params['payer_aid'];
-                    } else {
-                        $message = 'Field "' . $field . '" is configured as a "payer" field, but no payer was found for aid "' . $params['aid'] . '" - using aid "' . $params['aid'] . '" own "' . $field . '" field';
-                        Billrun_Factory::log($message, Zend_Log::ERR);
-                        $this->logFile->updateLogFileField('errors', $message);
-                    }
-                }
-                $account = Billrun_Factory::account();
-                $account->loadAccountForQuery(array('aid' => $accountAid));
-                return $this->getAccountField($field, $account->getCustomerData());
+		if (!empty($params['_account']) && is_array($params['_account'])) {
+                    $accountData = $params['_account'];
+                } else {
+ 			Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+			$accountAid = $params['aid'];
+			if ($entity == 'payer') {
+			    // BRCD-785: the account paying the bill - itself, or its nearest is_payer ancestor
+			    if (isset($params['payer_aid'])) {
+				$accountAid = $params['payer_aid'];
+			    } else {
+				$message = 'Field "' . $field . '" is configured as a "payer" field, but no payer was found for aid "' . $params['aid'] . '" - using aid "' . $params['aid'] . '" own "' . $field . '" field';
+				Billrun_Factory::log($message, Zend_Log::ERR);
+				$this->logFile->updateLogFileField('errors', $message);
+			    }
+			}
+			$account = Billrun_Factory::account();
+                	$account->loadAccountForQuery(array('aid' => $accountAid));
+			$accountData = $account->getCustomerData();
+		}
+                return $this->getAccountField($field, $accountData);
 
             case 'payment_request':
                 if (!isset($params[$field])) {

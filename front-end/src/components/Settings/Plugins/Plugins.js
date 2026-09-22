@@ -4,7 +4,7 @@ import Immutable from 'immutable';
 import { Table } from 'react-bootstrap';
 import Plugin from './PluginContainer';
 
-const Plugins = ({ data, onChange }) => (
+const Plugins = ({ data = Immutable.List(), onChange }) => (
   <div className="plugins List row panel-body">
     <Table className="table table-hover table-striped table-bordered">
       <thead>
@@ -32,10 +32,6 @@ const Plugins = ({ data, onChange }) => (
 Plugins.propTypes = {
   data: PropTypes.instanceOf(Immutable.List),
   onChange: PropTypes.func.isRequired,
-};
-
-Plugins.defaultProps = {
-  data: Immutable.List(),
 };
 
 export default Plugins;

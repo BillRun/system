@@ -371,7 +371,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @param array $update additional fields to update in the queue
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
-		$calculator_tag = $this->getCalculatorQueueType();
+		$calculator_tag = $this->getQueueTagType();
 		$stamps = array();
 		foreach ($this->lines as $item) {
 			$stamps[] = $item['stamp'];
@@ -445,17 +445,31 @@ abstract class Billrun_Calculator extends Billrun_Base {
 //	}
 
 	/**
+	 * Get the queue stage to tag processed lines with.
+	 * By default this is the calculator's own queue type; a calculator that
+	 * completes additional queue stages within its own run (e.g. pricing
+	 * applies tax) may return a later stage in order to skip the stages it
+	 * has already covered.
+	 *
+	 * @return string
+	 */
+	public function getQueueTagType() {
+		return $this->getCalculatorQueueType();
+	}
+
+	/**
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public function removeFromQueue() {
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
-		$queue_id = array_search($calculator_type, $queue_calculators);
+		$completed_type = $this->getQueueTagType();
+		$queue_id = array_search($completed_type, $queue_calculators);
 		end($queue_calculators);
-		// remove  recalculated lines.	
+		// remove  recalculated lines.
 		$stamps = array();
 		foreach ($this->lines as $queueLine) {
-			if (($queue_id == key($queue_calculators)) || (isset($queueLine['final_calc']) && ($queueLine['final_calc'] == $calculator_type ))) {
+			if (($queue_id == key($queue_calculators)) || (isset($queueLine['final_calc']) && in_array($queueLine['final_calc'], array($calculator_type, $completed_type)))) {
 				$stamps[] = $queueLine['stamp'];
 			}
 		}

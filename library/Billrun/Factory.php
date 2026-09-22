@@ -550,8 +550,13 @@ class Billrun_Factory {
 
 	public static function auth() {
 		if (!isset(self::$auth)) {
-			Billrun_Util::setHttpSessionTimeout(null, 'Lax');
-			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
+			if (php_sapi_name() === 'cli') {
+				// no HTTP session in CLI (cron/tests); Yaf_Session hangs/segfaults on PHP 8.5 (BRCD-3318)
+				self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
+			} else {
+				Billrun_Util::setHttpSessionTimeout(null, 'Lax');
+				self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
+			}
 		}
 		return self::$auth;
 	}
