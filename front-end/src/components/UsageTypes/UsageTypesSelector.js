@@ -7,6 +7,7 @@ import Field from '@/components/Field';
 import { getSettings, updateSetting, saveSettings } from '@/actions/settingsActions';
 import { usageTypesDataSelector, propertyTypeSelector } from '@/selectors/settingsSelector';
 import UsageTypeForm from '../UsageTypes/UsageTypeForm';
+import { InputGroupButton } from '@/common/BootstrapCompat';
 
 class UsageTypesSelector extends Component {
 
@@ -26,6 +27,7 @@ class UsageTypesSelector extends Component {
     unitFilter: PropTypes.func,
     showSelectTypes: PropTypes.bool,
     showDisplayUnits: PropTypes.bool,
+    compact: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -43,13 +45,16 @@ class UsageTypesSelector extends Component {
     unitFilter: () => true,
     showSelectTypes: true,
     showDisplayUnits: false,
+    compact: false,
   };
 
   state = {
     currentItem: null,
   }
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const { usageTypesData, propertyTypes } = this.props;
     const settingToFetch = [];
     if (usageTypesData.isEmpty()) {
@@ -63,12 +68,7 @@ class UsageTypesSelector extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.props.usaget !== nextProps.usaget) {
-      this.onChangeUnit(nextProps.usaget)('');
-    }
-  }
-
+  
   onChangeUsaget = (usaget) => {
     this.props.onChangeUsaget(usaget);
   }
@@ -142,7 +142,7 @@ class UsageTypesSelector extends Component {
   }
 
   renderAddUsageTypeButton = () => (
-    <Button className="btn-primary" onClick={this.onClickNewUsageType} disabled={!this.props.enabled}>
+    <Button variant="primary" onClick={this.onClickNewUsageType} disabled={!this.props.enabled}>
       <i className="fa fa-plus" />&nbsp;
     </Button>
   );
@@ -174,25 +174,34 @@ class UsageTypesSelector extends Component {
     );
   };
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    if (prevProps.usaget !== this.props.usaget) {
+      this.onChangeUnit(this.props.usaget)('');
+    }
+  }
+
   render() {
-    const { showUnits, showAddButton, showSelectTypes, editable } = this.props;
+    const { showUnits, showAddButton, showSelectTypes, editable, compact } = this.props;
+    const usageTypeColStyle = compact ? { maxWidth: 240 } : undefined;
+    const unitColStyle = compact ? { maxWidth: 150 } : undefined;
     if (showSelectTypes) {
       return (
         <span>
-          <Col sm={7} className="pr0 pl0">
+          <Col sm={7} className="pr0 pl0" style={usageTypeColStyle}>
               { showAddButton && editable
                 ? (
                   <InputGroup>
-                    <InputGroup.Button>
+                    <InputGroupButton>
                       {this.renderAddUsageTypeButton()}
-                    </InputGroup.Button>
+                    </InputGroupButton>
                     {this.renderUsageTypeSelect()}
                   </InputGroup>
                 )
                 : this.renderUsageTypeSelect()
               }
           </Col>
-          <Col sm={5} className="pr0">
+          <Col sm={5} className="pr0" style={unitColStyle}>
             {showUnits && this.renderUnitSelect()}
           </Col>
           {this.renderNewUsageTypeForm()}

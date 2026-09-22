@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Col, FormGroup, HelpBlock } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import { ReportDescription } from '../../../language/FieldDescriptions';
 import { CreateButton } from '@/components/Elements';
 import Condition from './Condition';
@@ -72,9 +73,9 @@ class Conditions extends Component {
         <Col sm={12}>
           { !conditionsRows.isEmpty() ? (
             <FormGroup className="form-inner-edit-row">
-              <Col sm={4} xsHidden><label htmlFor="field_field">Field</label></Col>
-              <Col sm={3} xsHidden><label htmlFor="operator_field">Operator</label></Col>
-              <Col sm={4} xsHidden><label htmlFor="value_field">Value</label></Col>
+              <Col sm={4} className="d-none d-sm-block"><label htmlFor="field_field">Field</label></Col>
+              <Col sm={3} className="d-none d-sm-block"><label htmlFor="operator_field">Operator</label></Col>
+              <Col sm={4} className="d-none d-sm-block"><label htmlFor="value_field">Value</label></Col>
             </FormGroup>
           ) : (
             <HelpBlock>{ReportDescription.block_conditions}</HelpBlock>

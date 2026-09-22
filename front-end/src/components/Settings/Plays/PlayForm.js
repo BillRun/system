@@ -1,25 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form, FormGroup, Col, ControlLabel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Immutable from 'immutable';
 import Field from '@/components/Field';
 
-
 const PlayForm = ({
-  item,
-  isNameHasError,
-  isAllowedDisableAction,
-  isAllowedEditName,
-  isAllowedEditDefault,
+  item = Immutable.Map(),
+  isNameHasError = false,
+  isAllowedDisableAction = true,
+  isAllowedEditName = true,
+  isAllowedEditDefault = true,
   onChangeName,
   onChangeLabel,
   onChangeDefault,
   onChangeEnabled,
 }) => (
-  <Form horizontal>
+    <Form className="form-horizontal">
     {isAllowedEditName && (
       <FormGroup validationState={isNameHasError ? 'error' : null} >
-        <Col componentClass={ControlLabel} sm={3}>
+        <Col as={ControlLabel} sm={3}>
           Name <span className="danger-red"> *</span>
         </Col>
         <Col sm={7}>
@@ -34,7 +34,7 @@ const PlayForm = ({
       </FormGroup>
     )}
     <FormGroup>
-      <Col componentClass={ControlLabel} sm={3}>
+      <Col as={ControlLabel} sm={3}>
         Description
       </Col>
       <Col sm={7}>
@@ -46,7 +46,7 @@ const PlayForm = ({
     </FormGroup>
     {isAllowedEditDefault && (
       <FormGroup>
-        <Col sm={7} smOffset={3}>
+        <Col sm={7} className="col-sm-offset-3" >
           <Field
             fieldType="checkbox"
             label="Default"
@@ -57,7 +57,7 @@ const PlayForm = ({
       </FormGroup>
     )}
     <FormGroup>
-      <Col sm={7} smOffset={3}>
+      <Col sm={7} className="col-sm-offset-3" >
         <Field
           fieldType="checkbox"
           label="Enabled"
@@ -83,14 +83,6 @@ PlayForm.propTypes = {
   onChangeLabel: PropTypes.func.isRequired,
   onChangeDefault: PropTypes.func.isRequired,
   onChangeEnabled: PropTypes.func.isRequired,
-};
-
-PlayForm.defaultProps = {
-  item: Immutable.Map(),
-  isNameHasError: false,
-  isAllowedDisableAction: true,
-  isAllowedEditName: true,
-  isAllowedEditDefault: true,
 };
 
 export default PlayForm;

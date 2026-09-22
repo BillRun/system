@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel, Panel, HelpBlock } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import BalancePrepaidEventCondition from './BalancePrepaidEventCondition';
 import {
   validateFieldEventCode,
+  validateFieldKey,
 } from '@/actions/eventActions';
+import { getConfig } from '@/common/Util';
 
 
 class BalancePrepaidEvent extends Component {
@@ -34,6 +37,13 @@ class BalancePrepaidEvent extends Component {
     this.props.updateField(['event_code'], value);
   };
 
+  onChangeKey = (e) => {
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), '_');
+    const isValid = validateFieldKey(value);
+    this.props.setError('key', isValid === true ? null : isValid);
+    this.props.updateField(['key'], value);
+  };
+
   onChangeDescription = (e) => {
     const { value } = e.target;
     this.props.updateField(['event_description'], value);
@@ -47,12 +57,25 @@ class BalancePrepaidEvent extends Component {
   render() {
     const { item, errors, setError } = this.props;
     const isEventCodeError = errors.get('event_code', false);
+    const isKeyError = errors.get('key', false);
     const conditions = item.get('conditions', Immutable.List());
     return (
-      <Form horizontal>
+      <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
+          <FormGroup validationState={isKeyError ? 'error' : null}>
+            <Col as={ControlLabel} sm={3}>
+              Key
+              <span className="danger-red"> *</span>
+            </Col>
+            <Col sm={7}>
+              <Field id="key" onChange={this.onChangeKey} value={item.get('key', '')} disabled={Boolean(item.get('_id'))} />
+              { isKeyError && (
+                <HelpBlock>{isKeyError}</HelpBlock>
+              )}
+            </Col>
+          </FormGroup>
           <FormGroup validationState={isEventCodeError ? 'error' : null}>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Event Code
               <span className="danger-red"> *</span>
             </Col>
@@ -64,7 +87,7 @@ class BalancePrepaidEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>
+            <Col as={ControlLabel} sm={3}>
               Description
             </Col>
             <Col sm={7}>
@@ -72,7 +95,7 @@ class BalancePrepaidEvent extends Component {
             </Col>
           </FormGroup>
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>Status</Col>
+            <Col as={ControlLabel} sm={3}>Status</Col>
             <Col sm={7}>
               <span>
                 <span className="mr20 inline">

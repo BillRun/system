@@ -4,9 +4,18 @@ import { Map } from 'immutable';
 import Field from '@/components/Field';
 
 
-const SelectDelimiter = (
-  { settings, onSetDelimiterType, delimiterOptions, onChangeDelimiter }
-) => {
+const DEFAULT_DELIMITER_OPTIONS = [
+  { value: '\t', label: 'Tab' },
+  { value: ' ', label: 'Space' },
+  { value: ',', label: 'Comma' },
+];
+
+const SelectDelimiter = ({
+  settings = Map(),
+  onSetDelimiterType,
+  delimiterOptions = DEFAULT_DELIMITER_OPTIONS,
+  onChangeDelimiter,
+}) => {
   const onChange = (value) => {
     onChangeDelimiter({ target: { value } });
   };
@@ -70,16 +79,6 @@ SelectDelimiter.propTypes = {
   delimiterOptions: PropTypes.array,
   onSetDelimiterType: PropTypes.func.isRequired,
   onChangeDelimiter: PropTypes.func.isRequired,
-};
-
-
-SelectDelimiter.defaultProps = {
-  settings: Map(),
-  delimiterOptions: [
-    { value: '	', label: 'Tab' }, // eslint-disable-line no-tabs
-    { value: ' ', label: 'Space' },
-    { value: ',', label: 'Comma' },
-  ],
 };
 
 export default SelectDelimiter;

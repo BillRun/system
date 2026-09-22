@@ -246,9 +246,7 @@ class Billrun_FraudManager {
 	}
 	
 	protected function buildConditionsMatchQuery($conditionsSettings) {
-		$match = [
-			'$or' => [],
-		];
+		$match = [];
 		
 		foreach ($conditionsSettings as $conditionsSet) {
 			$conditionsSetMatch = [ '$and' => [] ];

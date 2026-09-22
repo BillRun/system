@@ -105,8 +105,11 @@ class CloseActionBox extends Component {
   }
 
   dayDateClass = (day) => {
+    // react-datepicker v9 passes a native Date to dayClassName, not a moment.
+    // Wrap it so we can use the moment API already used by minDate/dangerousFrom.
     const { minDate, dangerousFrom } = this.props;
-    if (day.isBetween(minDate, dangerousFrom)) {
+    const dayMoment = moment(day);
+    if (dayMoment.isBetween(minDate, dangerousFrom)) {
       return 'danger-red';
     }
     return undefined;
@@ -134,7 +137,7 @@ class CloseActionBox extends Component {
             dayClassName={this.dayDateClass}
           />
         </div>
-        <Button onClick={this.toggleCloseConfirm} style={btnStyle} disabled={disableSubmit} bsStyle="primary" className="inline">
+        <Button onClick={this.toggleCloseConfirm} style={btnStyle} disabled={disableSubmit} variant="primary" className="inline">
           OK
         </Button>
       </div>
@@ -149,7 +152,7 @@ class CloseActionBox extends Component {
     if (allowCloseAction) {
       return (
         <div>
-          <Button bsStyle="link" onClick={this.toggleCloseAction} style={{ verticalAlign: 'bottom', lineHeight: '24px' }}>
+          <Button variant="link" onClick={this.toggleCloseAction} style={{ verticalAlign: 'bottom', lineHeight: '24px' }}>
             Close { getConfig(['systemItems', itemName, 'itemName'], 'item') } <i className="fa fa-angle-right" />
           </Button>
           { showCloseDetails && this.renderDateFromfields() }

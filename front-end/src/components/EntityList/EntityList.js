@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { noCase, upperCaseFirst, sentenceCase } from 'change-case';
-import { Col, Row, Panel } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { LoadingItemPlaceholder, Actions } from '@/components/Elements';
 import List from '../List';
 import Pager from './Pager';
@@ -115,21 +116,18 @@ class EntityList extends Component {
     onClearFilters: null,
   }
 
-  componentWillMount() {
-    const { entityKey } = this.props;
+  
+  componentDidMount() {
+    const { entityKey, forceRefetchItems, items, sort, defaultSort, itemsType, fetchOnMount } = this.props;
     const settingsKey = getConfig(['systemItems', entityKey, 'settingsKey'], entityKey);
     this.props.dispatch(getSettings(`${settingsKey}.fields`));
-    const { forceRefetchItems, items, sort, defaultSort, itemsType, fetchOnMount } = this.props;
     if ((forceRefetchItems || items == null || items.isEmpty()) && fetchOnMount) {
       this.fetchItems(this.props);
     }
     if (sort.isEmpty() && !defaultSort.isEmpty()) {
       this.props.dispatch(setListSort(itemsType, defaultSort));
     }
-  }
 
-  componentDidMount() {
-    const { itemsType } = this.props;
     if (this.isImportEnabled()) {
       const importName = `import${upperCaseFirst(itemsType)}`;
       this.props.dispatch(getSettings('plugin_actions', { actions: [importName] }));
@@ -147,19 +145,21 @@ class EntityList extends Component {
   //   // );
   // }
 
-  componentWillUpdate(nextProps, nextState) { // eslint-disable-line no-unused-vars
-    const pageChanged = this.props.page !== nextProps.page;
-    const sizeChanged = this.props.size !== nextProps.size;
-    const filterChanged = !Immutable.is(this.props.filter, nextProps.filter);
-    const sortChanged = !Immutable.is(this.props.sort, nextProps.sort);
-    const stateChanged = !Immutable.is(this.props.state, nextProps.state);
+  
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const pageChanged = this.props.page !== prevProps.page;
+    const sizeChanged = this.props.size !== prevProps.size;
+    const filterChanged = !Immutable.is(this.props.filter, prevProps.filter);
+    const sortChanged = !Immutable.is(this.props.sort, prevProps.sort);
+    const stateChanged = !Immutable.is(this.props.state, prevProps.state);
     const baseFilterMap = (Immutable.fromJS(this.props.baseFilter));
-    const baseFilterNextMap = (Immutable.fromJS(nextProps.baseFilter));
+    const baseFilterNextMap = (Immutable.fromJS(prevProps.baseFilter));
     const baseFilterChanged = !Immutable.is(baseFilterMap, baseFilterNextMap);
-    const refreshStringChanged = this.props.refreshString !== nextProps.refreshString;
+    const refreshStringChanged = this.props.refreshString !== prevProps.refreshString;
     if (pageChanged || sizeChanged || filterChanged ||
       sortChanged || stateChanged || baseFilterChanged || refreshStringChanged) { 
-      this.fetchItems(nextProps);
+      this.fetchItems(this.props);
     }
   }
 
@@ -455,13 +455,39 @@ class EntityList extends Component {
   getActions = () => {
     const { actions, showRevisionBy } = this.props;
     const editColumn = showRevisionBy ? 1 : 0;
-    const editAction = { type: 'edit', showIcon: true, helpText: 'Edit', onClick: this.onClickEditItem, show: true, onClickColumn: editColumn };
-    const viewAction = { type: 'view', showIcon: true, helpText: 'View', onClick: this.onClickViewItem, show: true, onClickColumn: editColumn };
+    const editAction = {
+      type: 'edit',
+      showIcon: true,
+      helpText: 'Edit',
+      onClick: this.onClickEditItem,
+      show: true,
+      onClickColumn: editColumn,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    };
+    const viewAction = {
+      type: 'view',
+      showIcon: true,
+      helpText: 'View',
+      onClick: this.onClickViewItem,
+      show: true,
+      onClickColumn: editColumn,
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    };
+    const cloneAction = {
+      type: 'clone',
+      showIcon: true,
+      helpText: 'Clone',
+      actionStyle: 'link',
+      actionSize: 'xsmall',
+    };
 
     return actions.map((action) => {
       switch (action.type) {
         case 'edit': return Object.assign(editAction, action);
         case 'view': return Object.assign(viewAction, action);
+        case 'clone': return Object.assign(cloneAction, action);
         default: return action;
       }
     });

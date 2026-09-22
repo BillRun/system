@@ -347,13 +347,6 @@ class ConfigModel {
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
 			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
-		} else if (strpos($category, 'events.') === 0 && !$this->validateEvents($category, $data)) {
-			throw new Exception("Error saving events");
-		} else if (strpos($category, 'event.') === 0) {
-			$eventType = explode('.', $category)[1];
-			if ($this->validateEvent($eventType, $data)) {
-				$updatedData['events'][$eventType][] = $data;
-			}
 		} else if ($category === 'plugins') {
 			throw new Exception('Only one plugin can be saved');
 		} else if ($category === 'plugin') {
@@ -383,6 +376,17 @@ class ConfigModel {
 			}
 		} else if ($category === 'collection' && $this->validateCollection($data) !== TRUE) {
 			throw new Exception("Can not save collection configuration");
+		} else if ($category === 'smser') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for smser.");
+				return 0;
+			}
+
+			Billrun_Utils_Mongo::setValueByMongoIndex(
+				$data,
+				$updatedData,
+				'smser'
+			);
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -472,7 +476,9 @@ class ConfigModel {
 					break;
 				}
 			}
-		
+
+			$this->validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField);
+
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
 					'name' => $fieldName,
@@ -495,8 +501,30 @@ class ConfigModel {
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
 			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
-		
+
 		return true;
+	}
+
+	/**
+	 * the 'encrypted' field type can only be chosen when a custom field is first
+	 * created, not changed to/from afterwards - existing data was already
+	 * written encrypted/plaintext under the old type, and there is no
+	 * migration that transparently re-encrypts or decrypts it in place
+	 *
+	 * @param string $fieldName
+	 * @param array $field
+	 * @param array|false $prevField false if the field did not exist before (new field)
+	 * @throws Exception on validation failure
+	 */
+	protected function validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField) {
+		if (!$prevField) {
+			return;
+		}
+		$prevType = Billrun_Util::getFieldVal($prevField['type'], 'string');
+		$newType = Billrun_Util::getFieldVal($field['type'], 'string');
+		if ($prevType !== $newType && ($prevType === 'encrypted' || $newType === 'encrypted')) {
+			throw new Exception("cannot change field {$fieldName} type from {$prevType} to {$newType}: the encrypted type can only be set when the field is created");
+		}
 	}
 	
 	/**
@@ -1188,9 +1216,11 @@ class ConfigModel {
 							if (isset($fileSettings['unify'])) {
 								$updatedFileSettings['unify'] = $this->getUnifyConfig($updatedFileSettings, $fileSettings['unify']);
 							}
-							
 							if (isset($fileSettings['filters'])) {
 								$updatedFileSettings['filters'] = $fileSettings['filters'];
+							}
+							if (isset($fileSettings['drop_lines'])) {
+								$updatedFileSettings['drop_lines'] = $fileSettings['drop_lines'];
 							}
 						}
 					}
@@ -1207,54 +1237,6 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
-	/**
-	 * 
-	 * @todo Insert validations
-	 * @param string $category
-	 * @param type $data
-	 * @return boolean
-	 */
-	protected function validateEvents($category, $events) {
-		$eventType = explode('.', $category)[1];
-		foreach ($events as $event) {
-			$this->validateEvent($type, $event);
-		}
-		
-		return TRUE;
-	}
-	
-	protected function validateEvent($eventType, $event) {
-		switch ($eventType) {
-			case 'fraud':
-				return $this->validateFraudEvent($event);
-			case 'balance':
-				return $this->validateBalanceEvent($event);
-			case 'settings':
-			default:
-				return true;
-		}
-		return true;
-	}
-
-
-	protected function validateBalanceEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		return true;
-	}
-
-	protected function validateFraudEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
-		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
-		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
-			throw new Exception('Event recurrence must be less than or equal to date range');
-		}
-		return true;
-	}
 
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');

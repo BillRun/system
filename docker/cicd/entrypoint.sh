@@ -31,8 +31,6 @@ for dir in shared files export workspace; do
     link_persistent "$dir"
 done
 
-chown -R www-data:www-data "$PERSIST_DIR" 2>/dev/null || true
-
 # Render the nginx site config from the template so APPLICATION_MULTITENANT
 # (and any future runtime-configurable param) can be supplied via env vars.
 # Defaults preserve the previous baked-in behaviour (single-tenant).
@@ -56,6 +54,22 @@ if [ "${DB_INIT:-0}" = "1" ]; then
     echo "Running --dbinit (DB_INIT=1)..."
     php /billrun/public/index.php --env container --dbinit
 fi
+
+# Select which supervisor programs run, based on BILLRUN_ROLE. The values feed
+# the autostart=%(ENV_...)s expansions in billrun.conf
+# Role selection is env-driven: no /etc/supervisor edits are needed in child images.
+#   worker          -> only the billrun worker process
+#   anything else   -> php-fpm + nginx (default/unset behaviour)
+case "${BILLRUN_ROLE:-web}" in
+    worker)
+        export BILLRUN_WEB_ENABLED=false
+        export BILLRUN_WORKER_ENABLED=true
+        ;;
+    *)
+        export BILLRUN_WEB_ENABLED=true
+        export BILLRUN_WORKER_ENABLED=false
+        ;;
+esac
 
 # If we are starting supervisor, run it directly to avoid nested entrypoint conflicts
 if [ "$1" = "/usr/bin/supervisord" ]; then

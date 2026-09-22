@@ -153,7 +153,44 @@ abstract class Billrun_Bill {
 		return NULL;
 	}
 
+	/**
+	 * Whether the given raw bill data represents a voided bill - rejected,
+	 * cancelled or denied. This is the logical complement of
+	 * getNotRejectedOrCancelledQuery().
+	 *
+	 * @param array $rawData
+	 * @return bool
+	 */
+	public static function isVoidedBill(array $rawData) {
+		return (($rawData['rejected'] ?? null) === true)
+			|| (($rawData['rejection'] ?? null) === true)
+			|| (($rawData['cancelled'] ?? null) === true)
+			|| array_key_exists('cancel', $rawData)
+			|| (($rawData['is_denial'] ?? null) === true)
+			|| array_key_exists('denied_by', $rawData);
+	}
+
+	/**
+	 * Zero left / left_to_pay on a voided bill, so it carries no
+	 * positive balance; no-op otherwise. Call where the void flag is set.
+	 *
+	 * @return $this
+	 */
+	public function zeroVoidedBalance() {
+		$rawData = $this->getRawData();
+		if (self::isVoidedBill($rawData)) {
+			foreach (array('left', 'left_to_pay') as $field) {
+				if (array_key_exists($field, $rawData) && $rawData[$field] > 0) {
+					$this->data[$field] = 0;
+				}
+			}
+		}
+		return $this;
+	}
+
 	public function save() {
+		// A voided bill must never keep a positive left / left_to_pay.
+		$this->zeroVoidedBalance();
 		try{
 			$res = $this->data->save(1);
 			if(!$res){
@@ -264,7 +301,7 @@ abstract class Billrun_Bill {
 				);
 			}
 		}
-		$results = static::getTotalDue($query, $notFormatted);
+		$results = static::getTotalDue($query, false, $notFormatted);
 		if (count($results)) {
 			$total =  current($results)['total'];
 			$totalWaiting = current($results)['waiting_for_confirmation_total'];
@@ -433,6 +470,84 @@ abstract class Billrun_Bill {
 	public static function getBills($query = array(), $sort = array(), $read_preference = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		return iterator_to_array($billsColl->find($query)->sort($sort)->setReadPreference($read_preference), FALSE);
+	}
+	
+	/**
+	 * Get the latest $limit valid bills for the account (newest first by 'urt'),
+	 * with a running 'balance' on each entry — what the customer owed at the time
+	 * of that bill. Includes both invoices and payments.
+	 *
+	 * TODO: exclude pending payments.
+	 *
+	 * @param int $aid
+	 * @param int $limit
+	 * @return array bills with an extra 'balance' field
+	 */
+	public static function getLatestValidBillsWithBalance($aid, $limit) {
+		$total = static::getTotalDueForAccount($aid, null, true)['total'];
+		$validQuery = array_merge(['aid' => (int) $aid], static::getNotRejectedOrCancelledQuery());
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$bills = iterator_to_array(
+			$billsColl->find($validQuery)->sort(['urt' => -1])->limit((int) $limit),
+			false
+		);
+		$running = 0;
+		foreach ($bills as &$bill) {
+			$bill['balance'] = $total - $running;
+			$running += isset($bill['due']) ? $bill['due'] : 0;
+		}
+		unset($bill);
+		return $bills;
+	}
+
+	public static function buildBaseBillFromInvoice(array $invoice, $dueDate = null, $chargeNotBefore = null) {
+		$bill = [
+			'type' => 'inv',
+			'invoice_id' => $invoice['invoice_id'],
+			'aid' => $invoice['aid'],
+			'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
+			'due_date' => $dueDate,
+			'charge' => ['not_before' => $chargeNotBefore],
+			'due' => $invoice['totals']['after_vat_rounded'],
+			'due_before_vat' => $invoice['totals']['before_vat'],
+			'customer_status' => 'open',//$invoice['attributes']['account_status'],
+			'payer_name' => $invoice['attributes']['lastname'] . ' ' . $invoice['attributes']['firstname'],
+			'billrun_key' => $invoice['billrun_key'],
+			'amount' => abs($invoice['totals']['after_vat_rounded']),
+			'lastname' => $invoice['attributes']['lastname'],
+			'firstname' => $invoice['attributes']['firstname'],
+			'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
+			'method' => Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
+			'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'], null),
+			'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'], null),
+			'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'], null),
+			'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'], null),
+			'urt' => new Mongodloid_Date(),
+			'invoice_date' => $invoice['invoice_date'],
+			'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
+			'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
+			'paid' => '0',
+			'total_paid' => 0
+		];
+		if (!empty($invoice['note'])) {
+			$bill['note'] = $invoice['note'];
+		}
+		if (!empty($invoice['invoicing_day'])) {
+			$bill['invoicing_day'] = $invoice['invoicing_day'];
+		}
+		if (!empty($invoice['uf'])) {
+			$bill['uf'] = $invoice['uf'];
+		}
+		if ($bill['due'] < 0) {
+			$bill['left'] = $bill['amount'];
+		} else {
+			$bill['left_to_pay'] = $bill['due'];
+			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
+		}
+		if (!empty($invoice['attributes']['suspend_debit'])) {
+			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
+		}
+		return $bill;
 	}
 
 	public static function getOverPayingBills($query = array(), $sort = array(), $read_preference = null) {
@@ -1137,15 +1252,16 @@ abstract class Billrun_Bill {
 		return (isset($this->data['pending']) && $this->data['pending']);
 	}
 	
-	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment') {
+	public static function getBillsAggregateValues($filters = array(), $payMode = 'one_payment', $limit = null, $afterGroupMatch = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
-		$filters = array_merge($filters, $nonRejectedOrCanceled);
+		$match = array('$match' => array());
 		if (!empty($filters)) {
-			$match = array(
-				'$match' => $filters
-			);
+			$match['$match'] = $filters;
 		}
+		// $and (not array_merge) so the not-rejected/cancelled conditions never
+		// overwrite a caller filter that uses one of the voided fields.
+		$match['$match']['$and'][] = $nonRejectedOrCanceled;
 		$match['$match']['$and'][] = array('$or' => array(
 				array('charge.not_before' => array('$exists' => false)),
 				array('charge.not_before' => array('$lt' => new Mongodloid_Date())),
@@ -1155,23 +1271,42 @@ abstract class Billrun_Bill {
 				array('left' => array('$gt' => 0)),
 		));
 		$pipelines[] = $match;
-		$pipelines[] = array(
-			'$sort' => array(
-				'type' => 1,
-				'charge.not_before' => -1,
-			),
-		);
+		
 		$pipelines[] = array(
 			'$addFields' => array(
 				'method' => 'automatic',
 				'unique_id' => array('$ifNull' => array('$invoice_id', '$txid')),
 			),
 		);
-		
+		$pipelines[] = array(
+			'$addFields' => array(
+				'method' => 'automatic',
+				// We concatenate with an empty string to force everything to become a String type
+				'unique_id_str' => array(
+					'$concat' => array(
+						array('$substr' => array(array('$ifNull' => array('$invoice_id', '$txid')), 0, -1)),
+						""
+					)
+				),
+			),
+		);
+
 		$pipelines[] = array(
 			'$group' => self::getGroupByMode($payMode),
 		);
 
+		// Keyset pagination: resume strictly after the previous batch. See TransactionsRequest::getAlreadyLoadedQuery.
+		if (!is_null($afterGroupMatch)) {
+			$pipelines[] = array('$match' => $afterGroupMatch);
+		}
+
+		// The chargeability filter below (non-zero due, no suspend_debit) must run
+		// BEFORE the $sort/$limit stages: with a $limit (max_records_per_batch) in
+		// place, a group dropped only after the $limit would still consume a batch
+		// slot, so the caller would get back a partial batch while chargeable
+		// bills remain - and the batched loader (TransactionsRequest::load, which
+		// keeps pulling only while a batch comes back full) would wrongly conclude
+		// the bills are exhausted and stop charging early.
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 1,
@@ -1195,6 +1330,7 @@ abstract class Billrun_Bill {
 				'invoice_id' => 1,
 				'txid' => 1,
 				'unique_id' => 1,
+				'unique_id_str' => 1,
 			),
 		);
 		
@@ -1207,6 +1343,22 @@ abstract class Billrun_Bill {
 				'suspend_debit' => NULL,
 			),
 		);
+
+		// Order by the max invoice_id / txid (unique_id_str) of the group, newest
+		// first. txid is left zero-padded (leading '0') while invoice_id is an
+		// unpadded number (leading '1'-'9'), so this also keeps invoice groups
+		// ahead of txid groups without an explicit 'type' key. invoice_id and txid
+		// are each unique auto-increment sequences, so unique_id_str is a total
+		// order on its own - which the keyset pagination above relies on.
+		$pipelines[] = [
+			'$sort' => array('unique_id_str' => -1)
+		];
+		if(!is_null($limit)){
+			$pipelines[] = array(
+				'$limit' => $limit
+			);
+		}
+
 		
 		$res = $billsColl->aggregateWithOptions($pipelines, ['allowDiskUse' => true]);
 		return $res;
@@ -1269,7 +1421,12 @@ abstract class Billrun_Bill {
                                                 'urt' => '$urt'
 					)
 				),
-			);	
+				// max invoice_id / txid (as string) of the grouped bills - used to
+				// order the aggregate result for both pay modes.
+				'unique_id_str' => array(
+					'$max' => '$unique_id_str',
+				),
+			);
 		if ($mode == 'multiple_payments') {
 			$group['_id'] = '$unique_id';
 			$group['unique_id'] = array('$first' => '$unique_id');
@@ -1328,16 +1485,9 @@ abstract class Billrun_Bill {
 	 */
 	public static function getBalanceByAids($aids = array(), $is_aids_query = false, $only_debts = false, $min_debt = null) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		$account = Billrun_Factory::account();
-		Billrun_Factory::log()->log("Building 'rejection required' query according to the configuration", Zend_Log::DEBUG);
-		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", []);
-		$accountQuery = Billrun_Account::getBalanceAccountQuery($aids, $is_aids_query, $rejection_required_conditions);
-		Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
-		$currentAccounts = $account->loadAccountsForQuery($accountQuery);
-		Billrun_Factory::log()->log("Pulled " . count($currentAccounts) . " accounts. Filtering aids", Zend_Log::DEBUG);
-		$rejection_required_aids = array_column(array_map(function($account) {
-				return $account->getRawData();
-			}, $currentAccounts), 'aid') ?? [];
+		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
+	
+		$rejection_required_aids = static::getRejectionRequiredAids($account_query);
 		Billrun_Factory::log()->log("Building aggregate query", Zend_Log::DEBUG);
 		$nonRejectedOrCanceled = Billrun_Bill::getNotRejectedOrCancelledQuery();
 		$match = array(
@@ -1473,7 +1623,45 @@ abstract class Billrun_Bill {
 				return $ele['aid'];
 			}, $results), $results);
 	}
-	
+
+	protected static function getRejectionRequiredAids($account_query){
+		$account = Billrun_Factory::account();
+		$currentAccounts = [];
+		$rejection_required_conditions = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.conditions.customers", null);
+		if (is_null($rejection_required_conditions)) {
+			Billrun_Factory::log()->log("Rejection required conditions are not configured - no accounts require rejection in order to be in collection", Zend_Log::DEBUG);
+			return [];
+		}
+		$rejectionQuery = $account->convertConditionsToAccountQuery($rejection_required_conditions);
+		$billsFields = Billrun_Factory::config()->getConfigValue("collection.settings.rejection_required.bills_queries.fields", ['aid']);
+		$loadFromBills = true;
+		foreach(array_merge($rejectionQuery, $account_query) as $queryKey => $field){
+			if(!in_array($queryKey, $billsFields)) {	
+				$loadFromBills = false;
+				break;
+			}
+		}
+		
+		if($loadFromBills){
+			if(!empty($account_query)){
+				$rejectionQuery = !empty($rejectionQuery) ? array('$and' => array($account_query, $rejectionQuery)) : $account_query;
+			}
+			Billrun_Factory::log()->log("Pulling the bills of accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
+			$rejection_required_aids = Billrun_Factory::db()->billsCollection()->distinct('aid', $rejectionQuery) ?: [];
+		}else{
+			if(!empty($account_query)){
+				$rejectionQuery = array_merge_recursive($account_query, $rejectionQuery);
+			}
+			Billrun_Factory::log()->log("Pulling the accounts that require rejection in order to be in collection", Zend_Log::DEBUG);
+			$currentAccounts = $account->loadAccountsForQuery($rejectionQuery);
+			$currentAccounts = empty($currentAccounts) ? [] : $currentAccounts;
+			$rejection_required_aids = array_column(array_map(function($account) {
+					return $account->getRawData();
+				}, $currentAccounts), 'aid') ?? [];
+		}
+		Billrun_Factory::log()->log("Pulled " . count($rejection_required_aids) . " accounts that require rejection in order to be in collection.", Zend_Log::DEBUG);
+		return $rejection_required_aids;
+	}
 	
 	protected function setChargeNotBefore($chargeNotBefore) {
 		$rawData = $this->getRawData();
@@ -1529,7 +1717,15 @@ abstract class Billrun_Bill {
 				Billrun_Util::setIn($paymentData, $path, $value);
 			} else {
 				$currentArray = Billrun_Util::getIn($paymentData, $path);
-				Billrun_Util::setIn($paymentData, $path, array_unique(array_merge_recursive($currentArray, $value)));
+				$merged = array_merge_recursive($currentArray, $value);
+				$merged = array_map(function($v) {
+					if (!is_array($v)) {
+						return $v;
+					}
+					$unique = array_unique($v, SORT_REGULAR);
+					return count($unique) === 1 ? reset($unique) : array_values($unique);
+				}, $merged);
+				Billrun_Util::setIn($paymentData, $path, $merged);
 			}
 		}
 		$this->setRawData($paymentData);

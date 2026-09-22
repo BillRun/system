@@ -1,13 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Col, Label, FormGroup, ControlLabel, Panel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, Label, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import MapField from './MapField';
 
 
 const StepMapper = (props) => {
-  const { item, fields, ignoredHeaders, mapperPrefix, defaultFieldsValues } = props;
+  const {
+    item = Immutable.Map(),
+    fields = [],
+    ignoredHeaders = [],
+    mapperPrefix = '',
+    defaultFieldsValues = Immutable.Map(),
+    defaultValuesOperation,
+    customFilterFields = () => true,
+  } = props;
   const fileContent = item.get('fileContent', []) || [];
   const linkerField = item.getIn(['linker', 'field'], '') || '';
   const linkerValue = item.getIn(['linker', 'value'], '') || '';
@@ -82,7 +91,7 @@ const StepMapper = (props) => {
       && field.value !== 'effective_date'
       && field.editable
       && (!field.hasOwnProperty('linker') || !field.linker)
-      && props.customFilterFields(field)
+      && customFilterFields(field)
     );
 
   const csvHeaders = headers
@@ -107,7 +116,7 @@ const StepMapper = (props) => {
     return (
       <Panel header="Linker" className="mb0">
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>Link to field<span className="danger-red"> *</span></Col>
+          <Col sm={3} as={ControlLabel}>Link to field<span className="danger-red"> *</span></Col>
           <Col sm={9}>
             <Field
               fieldType="select"
@@ -119,7 +128,7 @@ const StepMapper = (props) => {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col sm={3} componentClass={ControlLabel}>Link by value from<span className="danger-red"> *</span></Col>
+          <Col sm={3} as={ControlLabel}>Link by value from<span className="danger-red"> *</span></Col>
           <Col sm={9}>
             <Field
               fieldType="select"
@@ -149,7 +158,7 @@ const StepMapper = (props) => {
     return (
       <Panel header="Updater">
         <FormGroup>
-          <Col sm={6} componentClass={ControlLabel} className="text-left">
+          <Col sm={6} as={ControlLabel} className="text-left">
             Unique field used for the update
             <span className="danger-red"> *</span>
             <Field
@@ -160,7 +169,7 @@ const StepMapper = (props) => {
               placeholder="Select field to  update by..."
             />
           </Col>
-          <Col sm={6} componentClass={ControlLabel} className="text-left">
+          <Col sm={6} as={ControlLabel} className="text-left">
             Match unique field to CSV column
             <span className="danger-red"> *</span>
             <Field
@@ -174,7 +183,7 @@ const StepMapper = (props) => {
         </FormGroup>
         <hr className="mt0 mb10" />
         <FormGroup className="mb0">
-          <Col sm={3} componentClass={ControlLabel}>
+          <Col sm={3} as={ControlLabel}>
             Update Revision by Effective Date
             <span className="danger-red"> *</span>
           </Col>
@@ -209,6 +218,7 @@ const StepMapper = (props) => {
           options={csvHeaders}
           mapResult={item.get('map')}
           multiFieldAction={item.get('multiFieldAction')}
+          defaultValuesOperation={defaultValuesOperation}
           mapperPrefix={mapperPrefix}
           onChange={props.onChange}
           onDelete={props.onDelete}
@@ -218,10 +228,10 @@ const StepMapper = (props) => {
 
   const renderContent = () => {
     if (fileContent.length === 0) {
-      return (<Label bsStyle="default">Please upload a file.</Label>);
+      return (<Label variant="default">Please upload a file.</Label>);
     }
     if (headers.length === 0) {
-      return (<Label bsStyle="default">No CSV headers was found, please check your file.</Label>);
+      return (<Label variant="default">No CSV headers was found, please check your file.</Label>);
     }
 
     const mapfields = renderFields();
@@ -244,21 +254,11 @@ const StepMapper = (props) => {
   );
 };
 
-StepMapper.defaultProps = {
-  item: Immutable.Map(),
-  fields: [],
-  defaultFieldsValues: Immutable.Map(),
-  ignoredHeaders: [],
-  mapperPrefix: '',
-  customFilterFields: () => true,
-  onChange: () => {},
-  onDelete: () => {},
-};
-
 StepMapper.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),
   fields: PropTypes.array,
   defaultFieldsValues: PropTypes.instanceOf(Immutable.Map),
+  defaultValuesOperation: PropTypes.instanceOf(Immutable.Map),
   ignoredHeaders: PropTypes.array,
   mapperPrefix: PropTypes.string,
   customFilterFields: PropTypes.func,
