@@ -1,6 +1,10 @@
 FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
+RUN sed -i '/security.debian.org/d' /etc/apt/sources.list \
+    && sed -i '/bullseye-updates/d' /etc/apt/sources.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
 RUN apt-get update && apt-get install --no-install-recommends -y \
         wkhtmltopdf wget  \
 		libpng-dev zlib1g-dev libzip-dev libgmp-dev \
@@ -16,7 +20,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
-	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb
+	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb \
+	&& ln -sf /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf \
+	&& mkdir -p /opt/wkhtmltox/bin/ \
+	&& ln -sf /usr/local/bin/wkhtmltopdf /opt/wkhtmltox/bin/wkhtmltopdf
 
 RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
 
@@ -34,8 +41,6 @@ COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
 COPY composer.json /var/www/html/
 RUN composer install -d /var/www/html/  # in production we need to add --no-dev
 
-COPY enable_client_plugin.sh /enable_client_plugin.sh
-RUN chmod ug+x /enable_client_plugin.sh
 ENTRYPOINT ["/enable_client_plugin.sh"]
 ARG EXTRA_PACKAGES=""
 RUN if [ -n "${EXTRA_PACKAGES}" ]; then \

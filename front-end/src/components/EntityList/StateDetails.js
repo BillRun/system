@@ -35,6 +35,8 @@ class StateDetails extends Component {
     allowManageRevisions: true,
   };
 
+  revisionOverlayRef = React.createRef();
+
   state = {
     showList: false,
   }
@@ -54,8 +56,9 @@ class StateDetails extends Component {
   }
 
   showManageRevisions = () => {
-    const { revisionOverlay = {} } = this.refs; // eslint-disable-line  react/no-string-refs
-    revisionOverlay.hide();
+    if (this.revisionOverlayRef.current) {
+      this.revisionOverlayRef.current.hide();
+    }
     this.setState({ showList: true });
   }
 
@@ -80,7 +83,7 @@ class StateDetails extends Component {
       <Popover id={`${getItemId(item, '')}-revisions`} title={title} className="entity-revision-history-popover">
         <RevisionTimeline revisions={revisions} item={item} size={size} itemName={itemName} />
         <hr style={{ margin: 0, borderColor: '#3A3A3A', borderWidth: 2 }} />
-        {allowManageRevisions && (<Button bsStyle="link" style={{ color: '#fff' }} onClick={this.showManageRevisions}>Manage Revisions</Button>)}
+        {allowManageRevisions && (<Button variant="link" style={{ color: '#fff' }} onClick={this.showManageRevisions}>Manage Revisions</Button>)}
       </Popover>
     );
   }
@@ -88,10 +91,21 @@ class StateDetails extends Component {
   renderVerisionList = () => {
     const { item, itemName, revisions, revisionBy } = this.props;
     const { showList } = this.state;
+    if (!showList) {
+      return null;
+    }
     const revisionByField = toImmutableList(revisionBy).get(0, '');
     const title = `${item.get(revisionByField, '')} - Revision History`;
     return (
-      <ModalWrapper title={title} show={showList} onCancel={this.hideManageRevisions} onHide={this.hideManageRevisions} labelCancel="Close">
+      <ModalWrapper
+        title={title}
+        show
+        animation={false}
+        onCancel={this.hideManageRevisions}
+        onHide={this.hideManageRevisions}
+        labelCancel="Close"
+        enforceFocus={false}
+      >
         <RevisionList
           items={revisions}
           itemName={itemName}
@@ -115,7 +129,7 @@ class StateDetails extends Component {
     const { item } = this.props;
     return (
       <div>
-        <OverlayTrigger trigger="click" rootClose placement="right" ref="revisionOverlay" overlay={this.renderRevisionTooltip()} onEnter={this.onEnter}>
+        <OverlayTrigger trigger="click" rootClose placement="right" ref={this.revisionOverlayRef} overlay={this.renderRevisionTooltip()} onEnter={this.onEnter}>
           <OverlayTrigger overlay={this.renderHelpTooltip()} placement="left">
             <div className="clickable">
               <StateIcon status={item.getIn(['revision_info', 'status'], '')} />

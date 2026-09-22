@@ -263,10 +263,12 @@ class Mongodloid_Collection {
 	 * @param type $w
 	 * @return mongodloid save result.
 	 */
-	public function save(Mongodloid_Entity $entity, $w = null) {
-		$options = array(
-			'w' => $w
-		);
+	public function save(Mongodloid_Entity $entity, $w = null, array $options = []) {
+		if (empty($options)) {
+			$options = array(
+				'w' => $w
+			);
+		}
 		$this->convertWriteConcernOptions($options);
 		$data = $entity->getRawData();
 		$id = $entity->getId();
@@ -500,7 +502,7 @@ class Mongodloid_Collection {
 			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
 			'writeConcern' => $this->_collection->getWriteConcern(),
 		];
-		$this->withOptions($options);
+		$this->_collection = $this->withOptions($options);
 		return $this;
 	}
 

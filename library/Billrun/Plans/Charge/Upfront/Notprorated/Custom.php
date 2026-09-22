@@ -7,7 +7,8 @@
  */
 
 /**
- * Calculates a yearly upfront charge
+ * Calculates a not prorated custom recurrence upfront charge - the regular (arrears) not prorated
+ * custom charge of the next custom cycle, paid in advance (see Billrun_Plans_Charge_Upfront).
  *
  * @package  Plans
  * @since    5.2
@@ -16,28 +17,4 @@ class Billrun_Plans_Charge_Upfront_Notprorated_Custom extends Billrun_Plans_Char
 
 	use Billrun_Plans_Charge_Traits_Custom;
 
-	protected function getFractionOfMonth() {
-		//No change in current cycle  charge  just for the upfront
-		if ((empty($this->deactivation) || $this->deactivation > $this->cycle->end() ) && $this->activation < $this->cycle->start()  ) {
-			return 1;
-		}
-		$frequency = $this->recurrenceConfig['frequency'];
-		// subscriber activates in the middle of the current cycle month and should be charged for the next month (upfront)
-		if ($this->activation >= $this->cycle->start() && $this->deactivation > $this->cycle->end() ) {
-			return ($this->proratedStart ? 1 : 0 ) + 1;
-		}
-		// subscriber activates in the middle of the cycle and ends  before the  cyclle is done  should be charged for the current cycle month and no more
-		if ($this->activation >= $this->cycle->start() && $this->deactivation <= $this->cycle->end() ) {
-			return 1;
-		}
-		// nothing to charge as the values are out of this cycle. return null to indicate invalid charge  without affecting other charges.
-		Billrun_Factory::log(Billrun_Utils_Dev::colorText('Non prorated plan with no charge exists in cycle','Yellow'),Zend_Log::DEBUG);
-
-		return null;
-	}
-
-	protected function getUpfrontCycle($regularCycle) {
-		$nextCycleKey = Billrun_Billingcycle::getFollowingBillrunKey($regularCycle->key());
-		return  new Billrun_DataTypes_CustomCycleTime($nextCycleKey, $this->recurrenceConfig, $regularCycle->invoicingDay(), $this->activation);
-	}
 }

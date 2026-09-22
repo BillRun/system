@@ -25,6 +25,7 @@ services:
         - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
         volumes:
             - ${PWD}/../..:/billrun
+            - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
             - ${PWD}/../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         healthcheck:
@@ -37,11 +38,13 @@ services:
         image: mongo:3.6
         container_name: billrun-mongodb
         restart: always
+        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
             - ${PWD}/../..:/billrun:ro
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup 
             - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+            - ${PWD}/mongo-entrypoint.sh:/mongo-entrypoint.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27018:27017

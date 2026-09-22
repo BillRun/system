@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import Immutable from 'immutable';
 import moment from 'moment';
 import { titleCase } from 'change-case';
-import { Panel } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Importer from '../Importer';
 import { getSettings } from '@/actions/settingsActions';
 import { setPageTitle } from '@/actions/guiStateActions/pageActions';
@@ -34,7 +34,9 @@ class ImporterSetup extends Component {
     refreshString: '',
   }
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     const { importEntity } = this.props;
     if (importEntity) {
       const entityName = getConfig(['systemItems', importEntity, 'itemsName'], importEntity);
@@ -45,21 +47,7 @@ class ImporterSetup extends Component {
     this.props.dispatch(getSettings(['rates.fields', 'subscribers.account', 'subscribers.subscriber']));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { importEntity } = nextProps;
-    if (this.props.importEntity !== importEntity) {
-      this.setState({
-        refreshString: moment().format(), //refetch screen import
-      });
-      if (!importEntity) {
-        this.props.dispatch(setPageTitle('Import'));
-      } else {
-        const entityName = getConfig(['systemItems', importEntity, 'itemsName'], importEntity);
-        this.props.dispatch(setPageTitle(titleCase(`Import ${entityName}`)));
-      }
-    }
-  }
-
+  
   onCloseImport = () => {
     const { item, importEntity } = this.props;
     if (importEntity) {
@@ -86,6 +74,26 @@ class ImporterSetup extends Component {
       const collection = getConfig(['systemItems', entityName, 'collection'], '');
       this.props.dispatch(clearRevisions(collection));
     }
+  }
+
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { importEntity } = this.props;
+    if (prevProps.importEntity !== importEntity) {
+      this.setState({
+        refreshString: moment().format(), //refetch screen import
+      });
+      if (!importEntity) {
+        this.props.dispatch(setPageTitle('Import'));
+      } else {
+        const entityName = getConfig(['systemItems', importEntity, 'itemsName'], importEntity);
+        this.props.dispatch(setPageTitle(titleCase(`Import ${entityName}`)));
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    this.props.dispatch(setPageTitle(''));
   }
 
   render() {

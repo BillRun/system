@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Form, FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Form, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import Csi from './Tax/Csi';
 
-
-const Tax = ({ data, csiOptions, taxRateOptions, onChange }) => {
+const Tax = ({ data = Immutable.Map(), csiOptions = Immutable.List(), taxRateOptions = Immutable.List(), onChange }) => {
 
   const isCSI = data.get('tax_type', '') === 'CSI';
 
@@ -29,9 +29,9 @@ const Tax = ({ data, csiOptions, taxRateOptions, onChange }) => {
 
   return (
     <div className="tax">
-      <Form horizontal>
+    <Form className="form-horizontal">
         <FormGroup controlId="tax_type">
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Tax Type
           </Col>
           <Col sm={8} lg={9}>
@@ -53,7 +53,7 @@ const Tax = ({ data, csiOptions, taxRateOptions, onChange }) => {
         )}
         {!isCSI && (
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3} lg={2}>
+            <Col as={ControlLabel} sm={3} lg={2}>
               Default Tax Rate
             </Col>
             <Col sm={8} lg={9}>
@@ -76,12 +76,6 @@ Tax.propTypes = {
   csiOptions: PropTypes.instanceOf(Immutable.Iterable),
   taxRateOptions: PropTypes.instanceOf(Immutable.Iterable),
   onChange: PropTypes.func.isRequired,
-};
-
-Tax.defaultProps = {
-  data: Immutable.Map(),
-  csiOptions: Immutable.List(),
-  taxRateOptions: Immutable.List(),
 };
 
 export default Tax;

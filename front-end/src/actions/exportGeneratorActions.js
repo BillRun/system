@@ -1,7 +1,9 @@
+import Immutable from 'immutable';
 import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '@/common/Api';
-import { getExportGeneratorActionQuery, saveExportGeneratorQuery } from '@/common/ApiQueries';
+import { getEntitesQuery } from '@/common/ApiQueries';
 import { startProgressIndicator } from './progressIndicatorActions';
-import { getSettings } from '@/actions/settingsActions';
+import { saveEntity, deleteEntity } from '@/actions/entityActions';
+import { clearItems } from '@/actions/entityListActions';
 
 
 export const CLEAR_EXPORT_GENERATOR = 'CLEAR_EXPORT_GENERATOR';
@@ -30,49 +32,29 @@ export const clearExportGenerator = () => ({
   type: CLEAR_EXPORT_GENERATOR
 });
 
-export const fetchExportGenerators = () => dispatch => 
-  dispatch(getSettings("export_generators"));
+export const deleteExportGenerator = item => dispatch =>
+  dispatch(deleteEntity('export_generators', item));
 
-export const deleteExportGenerator = name => (dispatch) => {
-  const query = getExportGeneratorActionQuery(name, 'unset');
+export const updateExportGeneratorStatus = (item, status) => dispatch =>
+  dispatch(saveEntity('export_generators', Immutable.Map({ _id: item.get('_id'), enabled: status }), 'update'));
+
+export const getExportGenerator = (name) => (dispatch) => {
+  const query = getEntitesQuery('export_generators', {}, { name: { $in: [name] } });
   dispatch(startProgressIndicator());
   return apiBillRun(query)
     .then(success => {
-      dispatch(fetchExportGenerators());
-      return dispatch(apiBillRunSuccessHandler(success));
-    })
-    .catch(error => dispatch(apiBillRunErrorHandler(error, `Error occurred while trying to delete export generator ${name}`)));
-};
-
-export const updateExportGeneratorStatus = (name, status) => (dispatch) => {
-  const action = (status ? 'enable' : 'disable');
-  const query = getExportGeneratorActionQuery(name, action);
-  dispatch(startProgressIndicator());
-  return apiBillRun(query)
-    .then(success => {
-      dispatch(fetchExportGenerators());
-      return dispatch(apiBillRunSuccessHandler(success));
-    })
-    .catch(error => dispatch(apiBillRunErrorHandler(error, `Error occurred while trying to ${action} export generator ${name}`)));
-};
-
-export const getExportGenerator = name => (dispatch) => {
-  const query = getExportGeneratorActionQuery(name, 'get');
-  dispatch(startProgressIndicator());
-  return apiBillRun(query)
-    .then(success => {
-      dispatch(gotExportGenerator(success.data[0].data.details));
+      const generatorData = success.data[0].data.details[0] || {};
+      dispatch(gotExportGenerator(generatorData));
       return dispatch(apiBillRunSuccessHandler(success));
     })
     .catch(error => dispatch(apiBillRunErrorHandler(error, `Error loading export generator ${name}`)));
 };
 
-export const saveExportGenerator = (generator) => {
-  const query = saveExportGeneratorQuery(generator);
-  return dispatch => {
-    dispatch(startProgressIndicator());
-    return apiBillRun(query).then(
-      success => dispatch(apiBillRunSuccessHandler(success, 'Export generator saved successfully')),
-    ).catch(error => dispatch(apiBillRunErrorHandler(error)));
-  };
-}
+export const saveExportGenerator = (generator) => (dispatch) => {
+  const action = generator.has('_id') ? 'update' : 'create';
+  return dispatch(saveEntity('export_generators', generator, action))
+    .then((response) => {
+      dispatch(clearItems('export generators'));
+      return response;
+    });
+};

@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { Panel, ButtonToolbar, DropdownButton, MenuItem } from 'react-bootstrap';
+import { ButtonToolbar, DropdownButton, Dropdown } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -49,9 +50,9 @@ class EditBlock extends PureComponent {
         <div className="pull-right">
           { templates.length > 0 && (
             <ButtonToolbar className="inline" style={{ verticalAlign: 'middle' }}>
-              <DropdownButton bsSize="xsmall" title="Load default" id="dropdown-size-medium" onSelect={this.loadTemplate}>
+              <DropdownButton size="sm" title="Load default" id="dropdown-size-medium" onSelect={this.loadTemplate}>
                 { templates.map((template, key) => (
-                  <MenuItem key={key} eventKey={key}>{template}</MenuItem>
+                  <Dropdown.Item key={key} eventKey={key}>{template}</Dropdown.Item>
                 ))}
               </DropdownButton>
             </ButtonToolbar>

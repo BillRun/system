@@ -269,7 +269,7 @@ class Billrun_Service {
 				if (
 					(array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType]) || !empty($groupIncludes['counter_only'])) && 
 					!empty($groupIncludes['rates']) && 
-					(in_array($rate['key'], $groupIncludes['rates']) || (is_string($groupIncludes['rates']) && 
+					((is_array($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) || (is_string($groupIncludes['rates']) && 
 						(strtoupper($groupIncludes['rates']) === 'ALL_RATES' || preg_match($groupIncludes['rates'], $rate['key']) === 1))) &&
 					($counters == 'with' || ($counters == 'without' && empty($groupIncludes['counter_only'])) || ($counters == 'only' && !empty($groupIncludes['counter_only'])))
 				) {

@@ -856,6 +856,10 @@ class ResetLinesModel {
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost'], $line['aprice']);
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'count'], 1);
 			Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost'], $line['aprice']);
+			if (isset($line['final_charge'])) {
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'totals', $line['usaget'], 'cost_with_tax'], $line['final_charge']);
+				Billrun_Util::increaseIn($this->balanceSubstract, [$line['aid'], $line['sid'], $billrunKey, 'cost_with_tax'], $line['final_charge']);
+			}
 		}
 	}
 
@@ -913,7 +917,7 @@ class ResetLinesModel {
 		return !empty($ret) ? $ret : false;
 	}
 
-	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0) {
+	protected function buildUpdateBalance($balance, $volumeToSubstract, $totalsUsage = array(), $balanceCost = 0, $balanceCostWithTax = 0) {
 		$isMainBlalance = isset($balance['balance']['totals']);
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
@@ -944,10 +948,16 @@ class ResetLinesModel {
 				if (isset($usage['cost'])) {
 					$update['$set']['balance.totals.' . $usageType . '.cost'] = $balance['balance']['totals'][$usageType]['cost'] - $usage['cost'];
 				}
+				if (isset($usage['cost_with_tax'])) {
+					$update['$set']['balance.totals.' . $usageType . '.cost_with_tax'] = ($balance['balance']['totals'][$usageType]['cost_with_tax'] ?? 0) - $usage['cost_with_tax'];
+				}
 				if (isset($usage['count'])) {
 					$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usage['count'];
 				}
 				$update['$set']['balance.cost'] = $balance['balance']['cost'] - $balanceCost;
+				if ($balanceCostWithTax > 0) {
+					$update['$set']['balance.cost_with_tax'] = ($balance['balance']['cost_with_tax'] ?? 0) - $balanceCostWithTax;
+				}
 				if (isset($usage['out_group'])) {
 					$update['$set']['balance.totals.' . $usageType . '.out_group.usagev'] = $balance['balance']['totals'][$usageType]['out_group']['usagev'] - $usage['out_group']['usage'];
 				}
@@ -1029,7 +1039,8 @@ class ResetLinesModel {
 						$groups = !empty($usage['groups']) ? $usage['groups'] : array();
 						$totals = !empty($usage['totals']) ? $usage['totals'] : array();
 						$cost = !empty($usage['cost']) ? $usage['cost'] : 0;
-						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
+						$costWithTax = !empty($usage['cost_with_tax']) ? $usage['cost_with_tax'] : 0;
+						$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost, $costWithTax);
 						if (empty($updateData)) {
 							continue;
 						}

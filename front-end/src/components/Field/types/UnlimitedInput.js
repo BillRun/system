@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { InputGroup, FormControl } from 'react-bootstrap';
-
-
 export default class UnlimitedInput extends Component {
 
   static defaultProps = {
@@ -62,21 +60,21 @@ export default class UnlimitedInput extends Component {
 
     return (
       <InputGroup>
-        <InputGroup.Addon>
+        <InputGroup.Text>
           <input
             checked={unlimited}
             onChange={this.onUnlimitedChanged}
             type="checkbox"
             disabled={disabled}
           /><small style={{ verticalAlign: 'bottom' }}> {unlimitedLabel}</small>
-        </InputGroup.Addon>
+        </InputGroup.Text>
         <FormControl
           disabled={unlimited || disabled}
           onChange={this.onValueChanged}
           type="text"
           value={unlimited ? '' : value}
         />
-        { (suffix !== null) && <InputGroup.Addon>{suffix}</InputGroup.Addon> }
+        { (suffix != null) && <InputGroup.Text>{suffix}</InputGroup.Text> }
       </InputGroup>
     );
   }

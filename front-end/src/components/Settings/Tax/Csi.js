@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { FormGroup, Col, ControlLabel } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import CsiMapper from './CsiMapper';
 import Field from '@/components/Field';
 
@@ -109,7 +110,7 @@ class Csi extends Component {
     return (
       <div className="csi">
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Authentication Token
           </Col>
           <Col sm={8} lg={9}>
@@ -122,7 +123,7 @@ class Csi extends Component {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>
+          <Col as={ControlLabel} sm={3} lg={2}>
             Provider
           </Col>
           <Col sm={8} lg={9}>
@@ -136,7 +137,7 @@ class Csi extends Component {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3} lg={2}>&nbsp;</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>&nbsp;</Col>
           <Col sm={8} lg={9}>
             <Field
               fieldType="checkbox"

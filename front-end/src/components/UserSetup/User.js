@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import { titleCase } from 'change-case';
-import { Form, FormGroup, ControlLabel, Col, Row, HelpBlock } from 'react-bootstrap';
+import { Form, Col, Row } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 
 
@@ -123,7 +124,7 @@ export default class User extends Component {
       <span>
         { action !== 'create' &&
         <FormGroup validationState={hasError ? 'error' : null} >
-          <Col componentClass={ControlLabel} sm={3} lg={2}>&nbsp;</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>&nbsp;</Col>
           <Col sm={8} lg={9}>
             <label htmlFor="enable-change-password">
               <input id="enable-change-password" type="checkbox" checked={enableChangePassword} onChange={this.onEnableChangePassword} style={{ verticalAlign: 'text-bottom' }} />
@@ -134,14 +135,14 @@ export default class User extends Component {
       }
 
         <FormGroup validationState={hasError ? 'error' : null} >
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Password</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Password</Col>
           <Col sm={8} lg={9}>
             <input onChange={this.onPasswordChange} value={password} className="form-control" id="password" type="password" disabled={!enableChangePassword} />
             { errors.password.length > 0 && <HelpBlock>{errors.password}</HelpBlock> }
           </Col>
         </FormGroup>
         <FormGroup validationState={errors.password1.length > 0 ? 'error' : null} >
-          <Col componentClass={ControlLabel} sm={3} lg={2}>Confirm Password</Col>
+          <Col as={ControlLabel} sm={3} lg={2}>Confirm Password</Col>
           <Col sm={8} lg={9}>
             <input onChange={this.onPassword1Change} value={password1} className="form-control" id="password1" type="password" disabled={!enableChangePassword} />
             { errors.password1.length > 0 && <HelpBlock>{errors.password1}</HelpBlock> }
@@ -160,16 +161,16 @@ export default class User extends Component {
     return (
       <Row>
         <Col lg={12}>
-          <Form horizontal>
+          <Form className="form-horizontal">
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>User Name (email)</Col>
+              <Col as={ControlLabel} sm={3} lg={2}>User Name (email)</Col>
               <Col sm={8} lg={9}>
                 <Field onChange={this.onUserNameChange} value={user.get('username', '')} />
               </Col>
             </FormGroup>
 
             <FormGroup>
-              <Col componentClass={ControlLabel} sm={3} lg={2}>Roles</Col>
+              <Col as={ControlLabel} sm={3} lg={2}>Roles</Col>
               <Col sm={8} lg={9}>
                 <Field
                   fieldType="select"

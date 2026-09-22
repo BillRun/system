@@ -9,6 +9,7 @@ db.lines.createIndex({'urt': 1 }, { unique: false , sparse: false, background: t
 db.lines.createIndex({'type': 1 }, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1, 'urt' : 1}, { unique: false , sparse: true, background: true }); // index necessary for admin panel(?)
 db.lines.createIndex({'aid': 1, 'billrun': 1, 'urt' : 1}, { unique: false , sparse: false, background: true }); // rebalance index (might be useful by other processes)
+db.lines.createIndex({'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1}, { unique: false, sparse: false, background: true, partialFilterExpression: {'is_upfront': true}}); // BRCD-5421 - the upfront reconciliation previous cycle lines
 db.lines.createIndex({'billrun': 1, 'usaget' : 1, 'type' : 1}, { unique: false , sparse: true, background: true });
 db.lines.createIndex({'sid': 1 ,'session_id':1,'request_num':-1}, { unique: false, background: true });
 db.lines.createIndex({'session_id':1,'request_num':-1}, { unique: false, background: true });
@@ -79,6 +80,8 @@ db.billrun.createIndex({'invoice_id': 1 }, { unique: false , sparse: true, backg
 db.billrun.createIndex({'invoice_date': 1 }, { unique: false , sparse: true, background: true });
 db.billrun.createIndex( { aid: 1,billrun_key: 1 },{ unique: true , background: true });
 db.billrun.createIndex( { billrun_key: -1, 'attributes.invoicing_day': -1 },{unique: false, background: true });
+db.billrun_subs.createIndex({ "aid": 1, "key": 1 });
+db.billrun_grouping.createIndex({ "aid": 1, "billrun_key": 1 });
 
 //Counters collection
 db.createCollection('counters');
@@ -154,6 +157,9 @@ db.createCollection('config', {capped: true, size:104857600});
 db.config.createIndex({ 'urt': -1 }, { unique: false, background: true });
 
 db.createCollection('events');
+db.createCollection('event_settings');
+db.event_settings.createIndex({ 'key': 1 }, { unique: true, background: true });
+db.event_settings.createIndex({ 'type': 1, 'from': 1, 'to': 1 }, { background: true });
 db.createCollection('carriers');
 
 //Collections Steps
@@ -168,6 +174,8 @@ db.bills.createIndex({'invoice_id': 1 }, { unique: false, background: true});
 db.bills.createIndex({'billrun_key': 1 }, { unique: false, background: true});
 db.bills.createIndex({'invoice_date': 1 }, { unique: false, background: true});
 db.bills.createIndex({'urt': 1 }, { unique: false, background: true});
+db.bills.createIndex({'left': 1 }, { unique: false, sparse: true, background: true });
+db.bills.createIndex({'left_to_pay': 1 }, { unique: false, sparse: true, background: true });
 
 //Discounts Collection
 db.createCollection('discounts');
@@ -183,6 +191,7 @@ db.createCollection('reports');
 
 // Events collection
 db.events.createIndex({'creation_time': 1 }, { unique: false , sparse: true, background: true });
+db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
 
 // Auto Renew Collection
 db.createCollection('autorenew');
