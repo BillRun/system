@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Merge-installments cases (legacy Paymenttest cases 31-34): merging the open
  * installments of a split agreement into a single new installment
@@ -12,28 +14,8 @@ use Helper\PaymentStatus;
  * merge_installments bill carrying a bills_merged list. As with split, the
  * customer plugins that hook beforeSplitDebt are disabled.
  */
-class InstallmentMergeTest extends \Codeception\Test\Unit
+class InstallmentMergeTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-    const BLOCKING_PLUGINS = ['epicPlugin', 'gomoPlugin'];
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->cleanDB();
-        $this->tester->setPluginsEnabled(self::BLOCKING_PLUGINS, false);
-    }
-
-    protected function _after()
-    {
-        $this->tester->setPluginsEnabled(self::BLOCKING_PLUGINS, true);
-        $this->tester->restoreTimezone();
-    }
-
     // case 31 - merge all 3 installments (due/charge dates given)
     public function testMergeAllInstallments()
     {
@@ -85,11 +67,6 @@ class InstallmentMergeTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
 
     /** account with a 15 debt split into 3 installments (3, 2, 10) */
     private function splitDebt()

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * "switch_links" cases (legacy Paymenttest cases 87, 90-97): an invoice that is
  * partially covered by a PENDING gateway bill, and what happens to that pending
@@ -21,26 +23,13 @@
  *   base.'006' fc rec approved cash payment 5 (pays the debt)
  *   base.'007' fc rec PENDING automatic gateway payment 5 (pays the debt, pending)
  */
-class SwitchLinksTest extends \Codeception\Test\Unit
+class SwitchLinksTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
+    /** legacy credit_time of these cases */
+    const CREDIT_TIME = '2021-03-18T17:18:56Z';
 
-    const CARD_OK = '1022273188555888';
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17% VAT
-        $this->tester->cleanDB();
-        $this->tester->seedCallRate();
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
+    protected $seedCallRate = true;
 
     // ===== switch_links = TRUE: the pending link is detached, the real payment re-links =====
 
@@ -164,19 +153,6 @@ class SwitchLinksTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
-
-    private function cdr($aid, $aprice)
-    {
-        return [
-            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
-            'type' => 'credit', 'credit_time' => '2021-03-18T17:18:56Z', 'aprice' => $aprice,
-        ];
-    }
 
     /** switch_links=true: the pending coverage is fully displaced by the real payment. */
     private function assertPendingDisplaced($aid, $base)

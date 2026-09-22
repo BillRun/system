@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * chargeAccount cases (legacy Paymenttest cases 72-77): /billrun/chargeAccount
  * charges accounts that have outstanding debt through the (mockup) CreditGuard
@@ -11,33 +13,13 @@ use Helper\PaymentStatus;
  * Charging multiple accounts runs asynchronously (the controller forks a CLI
  * worker), so assertions poll for the resulting receipt bill.
  */
-class ChargeAccountTest extends \Codeception\Test\Unit
+class ChargeAccountTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
     const CHARGE_WAIT = 45;
 
-    private $invoiceSeq = 0;
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17%
-        $this->tester->cleanDB();
-        // chargeAccount sweeps the (un-wiped) bills collection; clear it so a global
-        // charge (exclude_accounts) only touches this test's accounts and stays fast.
-        $this->tester->clearBills();
-        $this->tester->seedCallRate();
-        $this->invoiceSeq = 0;
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
+    protected $clearBills = true;
+    protected $seedCallRate = true;
 
     // case 72 - no filter: both accounts with debt get charged
     public function testChargeAllAccounts()
@@ -145,11 +127,6 @@ class ChargeAccountTest extends \Codeception\Test\Unit
             'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
             'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => $aprice,
         ]], ['step' => 1, 'invoice_unixtime' => $unixtime]);
-    }
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
     }
 
     /** create a PAST-due invoice (so it is chargeable); distinct day offsets avoid stamp clashes */

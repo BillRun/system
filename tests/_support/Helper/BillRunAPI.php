@@ -884,7 +884,7 @@ class BillRunAPI extends \Codeception\Module{
         $invoice = [
             'dir' => 'tc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
             'amount' => 10, 'due' => 10, 'due_date' => $past, 'urt' => $past,
-            'payer_name' => 'yossi test', 'source' => 'web', 'left_to_pay' => 0, 'total_paid' => 10,
+            'payer_name' => 'Test Payer', 'source' => 'web', 'left_to_pay' => 0, 'total_paid' => 10,
             'vatable_left_to_pay' => 0, 'paid' => '2', 'pending_covering_amount' => 5,
             'txid' => $base . '005', 'process_time' => $past,
             'paid_by' => [
@@ -896,7 +896,7 @@ class BillRunAPI extends \Codeception\Module{
         $approved = [
             'dir' => 'fc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
             'amount' => 5, 'due' => -5, 'due_date' => $past, 'urt' => $past,
-            'payer_name' => 'yossi test', 'source' => 'web',
+            'payer_name' => 'Test Payer', 'source' => 'web',
             'pays' => [['type' => 'rec', 'id' => $base . '005', 'amount' => 5, 'total_amount' => 10, 'date' => $past]],
             'left' => 0, 'pending_covering_amount' => 0, 'txid' => $base . '006', 'process_time' => $past,
         ];
@@ -965,23 +965,23 @@ class BillRunAPI extends \Codeception\Module{
     }
 
     /**
-     * Enable/disable named plugins in a fresh config revision (test-scoped).
-     * Some customer plugins (e.g. epicPlugin) hook generic payment events
-     * (beforeSplitDebt) and must be turned off to test core billing behavior.
+     * Raw copy of the newest config revision, to be handed back to restoreConfig().
+     * Taken in _before so a test can override freely (timezone, gateway, taxation,
+     * switch_links, uf whitelist...) and leave the configuration exactly as it found it.
      */
-    public function setPluginsEnabled(array $names, $enabled)
+    public function snapshotConfig()
     {
-        $config = \Billrun_Factory::db()->configCollection();
-        $data = $config->query()->cursor()->sort(['urt' => -1, '_id' => -1])->limit(1)->current()->getRawData();
+        $data = \Billrun_Factory::db()->configCollection()->query()->cursor()
+            ->sort(['urt' => -1, '_id' => -1])->limit(1)->current()->getRawData();
         unset($data['_id']);
-        foreach ($data['plugins'] as &$plugin) {
-            if (in_array($plugin['name'] ?? '', $names, true)) {
-                $plugin['enabled'] = (bool) $enabled;
-            }
-        }
-        unset($plugin);
-        $data['urt'] = new \MongoDB\BSON\UTCDateTime();
-        $config->insert($data);
+        return $data;
+    }
+
+    /** Re-insert a snapshotConfig() copy as the newest config revision and reload it. */
+    public function restoreConfig(array $snapshot)
+    {
+        $snapshot['urt'] = new \MongoDB\BSON\UTCDateTime();
+        \Billrun_Factory::db()->configCollection()->insert($snapshot); // insert() takes its argument by reference
         \Billrun_Config::getInstance()->loadDbConfig();
     }
   

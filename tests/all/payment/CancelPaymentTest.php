@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Cancel-payments cases (legacy Paymenttest cases 38-42, 71): cancelling
  * offline payments via action=cancel_payments. Cancelling a payment marks it
@@ -10,26 +12,14 @@ use Helper\PaymentStatus;
  * on/off with a bogus txid, cancelling an already-cancelled bill, and
  * cancelling several payments that were linked to an invoice.
  */
-class CancelPaymentTest extends \Codeception\Test\Unit
+class CancelPaymentTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
+    /** legacy credit_time of these cases */
+    const CREDIT_TIME = '2021-03-18T17:18:56Z';
 
-    const CARD_OK = '1022273188555888';
-    const UF = ['payer_name' => 'Yossi', 'reason_code' => '4'];
+    const UF = ['payer_name' => 'Test Payer', 'reason_code' => '4'];
 
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // pin VAT to 17%
-        $this->tester->cleanDB();
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
 
     // case 38 - cancel a single payment that fully paid a debt
     public function testCancelSinglePayment()
@@ -50,10 +40,10 @@ class CancelPaymentTest extends \Codeception\Test\Unit
         $this->tester->verifyCollectionRecord('bills', [
             'aid' => $aid, 'dir' => 'fc', 'amount' => 15, 'due' => -15, 'cancelled' => true, 'pending' => false,
         ]);
-        // reversal record with uf
+        // reversal record with uf; a voided bill carries no open balance (left_to_pay 0, BRCD-4676)
         $this->tester->verifyCollectionRecord('bills', [
-            'aid' => $aid, 'dir' => 'fc', 'amount' => 15, 'due' => 15, 'left_to_pay' => 15,
-            'uf.payer_name' => 'Yossi', 'uf.reason_code' => '4',
+            'aid' => $aid, 'dir' => 'fc', 'amount' => 15, 'due' => 15, 'left_to_pay' => 0,
+            'uf.payer_name' => 'Test Payer', 'uf.reason_code' => '4',
         ]);
     }
 
@@ -78,9 +68,9 @@ class CancelPaymentTest extends \Codeception\Test\Unit
         $this->tester->verifyCollectionRecord('bills', [
             'aid' => $aid, 'dir' => 'fc', 'amount' => 10, 'due' => -10, 'left' => 0,
         ]);
-        // reversal of 5
+        // reversal of 5; voided bill carries no open balance (left_to_pay 0, BRCD-4676)
         $this->tester->verifyCollectionRecord('bills', [
-            'aid' => $aid, 'dir' => 'fc', 'amount' => 5, 'due' => 5, 'left_to_pay' => 5,
+            'aid' => $aid, 'dir' => 'fc', 'amount' => 5, 'due' => 5, 'left_to_pay' => 0,
         ]);
     }
 
@@ -153,7 +143,7 @@ class CancelPaymentTest extends \Codeception\Test\Unit
     public function testCancelPaymentsLinkedToInvoice()
     {
         $aid = $this->newAccount();
-        $this->ensureCallRate();
+        $this->tester->seedCallRate();
         $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 1]); // inv 23.4
         $this->tester->payOffline($aid, 23.4, 'fc', 'cash');   // pays the invoice
         $this->tester->payOffline($aid, 15, 'fc', 'cash');
@@ -170,25 +160,5 @@ class CancelPaymentTest extends \Codeception\Test\Unit
             'aid' => $aid, 'type' => 'inv', 'amount' => 23.4, 'left_to_pay' => 23.4,
             'total_paid' => 0, 'paid' => ['$in' => PaymentStatus::UNPAID], 'paid_by' => [],
         ]);
-    }
-
-    // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
-
-    private function ensureCallRate()
-    {
-        $this->tester->seedCallRate();
-    }
-
-    private function cdr($aid, $aprice, $creditTime = '2021-03-18T17:18:56Z')
-    {
-        return [
-            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
-            'type' => 'credit', 'credit_time' => $creditTime, 'aprice' => $aprice,
-        ];
     }
 }

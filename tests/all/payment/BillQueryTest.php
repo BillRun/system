@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Bill-query cases (legacy Paymenttest cases 43-56): the /api/bill read actions
  * query_bills_invoices, get_balances, search_invoice, collection_debt and
@@ -12,30 +14,10 @@
  * past-due + rejection fixtures (collection over an aged debt) are skipped with a
  * note — they belong to a collection-workflow suite, not payment.
  */
-class BillQueryTest extends \Codeception\Test\Unit
+class BillQueryTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-
-    /** distinct invoice timestamps so same-account invoices don't share a billrun stamp */
-    private $invoiceSeq = 0;
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17% VAT
-        $this->tester->cleanDB();
-        $this->tester->seedCallRate();
-        $this->invoiceSeq = 0;
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
+    protected $seedCallRate = true;
 
     // case 43 - query all invoices of an account
     public function testQueryAllInvoices()
@@ -198,11 +180,6 @@ class BillQueryTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
 
     /** create an immediate invoice of $aprice (pre-VAT); negative => refund/credit */
     private function invoice($aid, $aprice)

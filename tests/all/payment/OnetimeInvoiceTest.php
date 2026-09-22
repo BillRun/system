@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * One-time-invoice charge/refund cases (legacy Paymenttest cases 78-89): the
  * /api/onetimeinvoice endpoint creating an immediate invoice and charging it via
@@ -12,27 +14,10 @@ use Helper\PaymentStatus;
  * with vendor_response.status=000 and a paid invoice; a rejected charge (an
  * un-chargeable card token) yields a failure response.
  */
-class OnetimeInvoiceTest extends \Codeception\Test\Unit
+class OnetimeInvoiceTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-    const CARD_REJECT = '1022273188';
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17%
-        $this->tester->cleanDB();
-        $this->tester->seedCallRate();
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
+    protected $seedCallRate = true;
 
     // case 78 - charge_before_invoice: invoice created and charged (10 -> 11.7)
     public function testChargeBeforeInvoice()
@@ -46,7 +31,7 @@ class OnetimeInvoiceTest extends \Codeception\Test\Unit
     public function testChargeRegularFlow()
     {
         $aid = $this->newAccount();
-        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 10)], ['step' => 2]);
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 10)], ['step' => 2, 'invoice_unixtime' => 'past']);
         $this->assertChargedInvoice($aid, 11.7);
     }
 
@@ -54,7 +39,7 @@ class OnetimeInvoiceTest extends \Codeception\Test\Unit
     public function testRefundRegularFlow()
     {
         $aid = $this->newAccount();
-        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, -10)], ['step' => 2]);
+        $this->tester->onetimeInvoice($aid, [$this->cdr($aid, -10)], ['step' => 2, 'invoice_unixtime' => 'past']);
         $this->assertRefundInvoice($aid, 11.7);
     }
 
@@ -176,19 +161,6 @@ class OnetimeInvoiceTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
-
-    private function cdr($aid, $aprice)
-    {
-        return [
-            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
-            'type' => 'credit', 'credit_time' => '2021-04-18T17:17:56Z', 'aprice' => $aprice,
-        ];
-    }
 
     /** a debit invoice was created and paid by a gateway receipt */
     private function assertChargedInvoice($aid, $amount)

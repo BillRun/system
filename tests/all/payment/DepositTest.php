@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Deposit cases (legacy Paymenttest cases 9-17): recording a (frozen) deposit,
  * and unfreezing / applying it to debt via action=use_deposit.
@@ -9,25 +11,8 @@ use Helper\PaymentStatus;
  * A deposit is created with deposit='true' (a frozen rec: amount 0, deposit_amount N).
  * use_deposit unfreezes it (amount becomes N, due -N) and applies it to open debt.
  */
-class DepositTest extends \Codeception\Test\Unit
+class DepositTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->cleanDB();
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
-
     // case 9 - deposit only, no debt
     public function testRecordDeposit()
     {
@@ -169,11 +154,6 @@ class DepositTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
 
     /** create a frozen deposit of $amount on the account */
     private function deposit($aid, $amount)

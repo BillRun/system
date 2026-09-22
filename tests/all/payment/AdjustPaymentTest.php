@@ -2,33 +2,18 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Adjust-payments cases (legacy Paymenttest cases 57-69): /api/adjustpayments
  * adjusts an existing payment by cancelling it and creating a correction (new
  * amount and/or method), plus the validation errors (negative amount, unknown
  * id, missing id, illegal method, empty adjustments, missing amount/method).
  */
-class AdjustPaymentTest extends \Codeception\Test\Unit
+class AdjustPaymentTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-    const CARD_REJECT = '1022273188'; // 10-char token -> mockup returns code 033 -> gateway rejection
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']); // 17% VAT
-        $this->tester->cleanDB();
-        $this->tester->seedCallRate(); // onetimeinvoice CDRs reference rate CALL
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
+    protected $seedCallRate = true;
 
     // case 57 - adjust a payment's amount (15 -> 10)
     public function testAdjustAmount()
@@ -93,7 +78,7 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
         $aid = $this->newAccount();
         $txid = $this->payment($aid, 15);
         $this->tester->adjustPayments([['id' => $txid, 'method' => 'cheque', 'amount' => 20,
-            'payer_name' => 'Yossi', 'deposit_slip_bank' => '12']]);
+            'payer_name' => 'Test Payer', 'deposit_slip_bank' => '12']]);
         $this->tester->verifyCollectionRecord('bills', [
             'aid' => $aid, 'amount' => 20, 'method' => 'cheque', 'correction' => true,
         ]);
@@ -105,7 +90,7 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
         $aid = $this->newAccount();
         $txid = $this->payment($aid, 15);
         $this->tester->adjustPayments([['id' => $txid, 'method' => 'cheque',
-            'payer_name' => 'Yossi', 'deposit_slip_bank' => '12']]);
+            'payer_name' => 'Test Payer', 'deposit_slip_bank' => '12']]);
         $this->tester->verifyCollectionRecord('bills', [
             'aid' => $aid, 'amount' => 15, 'method' => 'cheque', 'correction' => true,
         ]);
@@ -116,8 +101,8 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
     {
         $aid = $this->newAccount();
         $txid = $this->payment($aid, 15);
-        $resp = $this->tester->adjustPayments([['id' => $txid, 'method' => 'yossi']]);
-        $this->assertStringContainsString('Illegal payment method yossi', json_encode($resp));
+        $resp = $this->tester->adjustPayments([['id' => $txid, 'method' => 'not_a_method']]);
+        $this->assertStringContainsString('Illegal payment method not_a_method', json_encode($resp));
         $this->assertNoCorrection($aid);
     }
 
@@ -181,11 +166,6 @@ class AdjustPaymentTest extends \Codeception\Test\Unit
     }
 
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
 
     /** record an offline cash payment of $amount and return its txid */
     private function payment($aid, $amount)

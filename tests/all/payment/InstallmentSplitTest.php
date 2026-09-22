@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Split-bill installment cases (legacy Paymenttest cases 18-30): splitting a
  * debt into installments via method=installment_agreement / action=split_bill,
@@ -13,30 +15,8 @@ use Helper\PaymentStatus;
  * Exact charge dates are intentionally NOT asserted (time/timezone sensitive);
  * the structural outcome (amounts, counts, indices, paid status) is verified.
  */
-class InstallmentSplitTest extends \Codeception\Test\Unit
+class InstallmentSplitTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-
-    /** customer plugins that hook beforeSplitDebt and block split for generic accounts */
-    const BLOCKING_PLUGINS = ['epicPlugin', 'gomoPlugin'];
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        $this->tester->cleanDB();
-        $this->tester->setPluginsEnabled(self::BLOCKING_PLUGINS, false);
-    }
-
-    protected function _after()
-    {
-        $this->tester->setPluginsEnabled(self::BLOCKING_PLUGINS, true);
-        $this->tester->restoreTimezone();
-    }
-
     // case 18 - split 15 into 3 (first due/charge dates transferred)
     public function testSplitByNumWithTransferredDates()
     {
@@ -203,11 +183,6 @@ class InstallmentSplitTest extends \Codeception\Test\Unit
     // ------------------------------------------------------------------
     //  helpers
     // ------------------------------------------------------------------
-
-    private function newAccount($card = self::CARD_OK)
-    {
-        return (int) $this->tester->createAccountWithCard($card)['aid'];
-    }
 
     /** account carrying a single tc cash debt of $amount */
     private function debtAccount($amount)

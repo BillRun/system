@@ -2,6 +2,8 @@
 
 use Helper\PaymentStatus;
 
+require_once __DIR__ . '/AbstractPaymentCase.php';
+
 /**
  * Offline payment / refund cases (legacy Paymenttest cases 1-8, 35, 36, 37):
  * recording offline payments and refunds, paying off / partially paying debt,
@@ -12,27 +14,9 @@ use Helper\PaymentStatus;
  * enabled in _before (offline cases don't charge it, but the account carries a
  * payment_gateway uniformly).
  */
-class OfflinePaymentTest extends \Codeception\Test\Unit
+class OfflinePaymentTest extends AbstractPaymentCase
 {
-    /** @var \AcceptanceTester */
-    protected $tester;
-
-    const CARD_OK = '1022273188555888';
-
-    protected function _before()
-    {
-        $this->tester->setTimezone('Asia/Jerusalem');
-        $this->tester->enableCreditGuardPGWithSettings();
-        // pin VAT to 17% (DEFAULT_VAT) so invoice amounts are deterministic
-        // regardless of the tenant's default (this EPIC-CY env defaults to 19%)
-        $this->tester->overrideConfigValue('taxation.default', ['key' => 'DEFAULT_VAT']);
-        $this->tester->cleanDB();
-    }
-
-    protected function _after()
-    {
-        $this->tester->restoreTimezone();
-    }
+    protected $pinVat = true;
 
     // case 1
     public function testRecordOfflineRefund()
@@ -60,7 +44,7 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     public function testPaymentSettlesInvoiceDebt()
     {
         $aid = $this->newAccount();
-        $this->ensureCallRate();
+        $this->tester->seedCallRate();
         $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 1]);
         $this->tester->payOffline($aid, 23.4, 'fc', 'cash');
         $this->tester->verifyCollectionRecord('bills', [
@@ -161,7 +145,7 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     {
         $aid = $this->newAccount();
         $this->tester->payOffline($aid, 15, 'fc', 'cheque', [
-            'payer_name' => 'yossi yoss', 'deposit_slip' => '3', 'deposit_slip_bank' => '', 'source' => 'web',
+            'payer_name' => 'Test Payer', 'deposit_slip' => '3', 'deposit_slip_bank' => '', 'source' => 'web',
         ]);
         $this->tester->verifyCollectionRecord('bills', [
             'aid' => $aid, 'dir' => 'fc', 'method' => 'cheque', 'type' => 'rec',
@@ -173,7 +157,7 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     public function testPaySpecificInvoiceViaPays()
     {
         $aid = $this->newAccount();
-        $this->ensureCallRate();
+        $this->tester->seedCallRate();
         $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 1]); // inv due 23.4
         $invoiceId = $this->tester->grabBill(['aid' => $aid, 'type' => 'inv'])['invoice_id'];
         $this->tester->payOffline($aid, 10, 'tc', 'cash');   // a second, separate debt
@@ -198,7 +182,7 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
     public function testPayPartOfSpecificInvoiceViaPays()
     {
         $aid = $this->newAccount();
-        $this->ensureCallRate();
+        $this->tester->seedCallRate();
         $this->tester->onetimeInvoice($aid, [$this->cdr($aid, 20)], ['step' => 1]); // inv due 23.4
         $invoiceId = $this->tester->grabBill(['aid' => $aid, 'type' => 'inv'])['invoice_id'];
         $this->tester->payOffline($aid, 10, 'tc', 'cash');
@@ -212,31 +196,5 @@ class OfflinePaymentTest extends \Codeception\Test\Unit
             'aid' => $aid, 'type' => 'inv', 'invoice_id' => $invoiceId,
             'left_to_pay' => 18.4, 'paid' => ['$in' => PaymentStatus::UNPAID],
         ]);
-    }
-
-    // ------------------------------------------------------------------
-    //  small per-file helpers
-    // ------------------------------------------------------------------
-
-    /** create an account with the mockup CreditGuard card, return its (int) aid */
-    private function newAccount($card = self::CARD_OK)
-    {
-        $account = $this->tester->createAccountWithCard($card);
-        return (int) $account['aid'];
-    }
-
-    /** create the CALL rate the onetimeinvoice CDRs reference (cleanDB wipes rates) */
-    private function ensureCallRate()
-    {
-        $this->tester->seedCallRate();
-    }
-
-    /** build a single credit CDR for an immediate invoice of $aprice (pre-VAT) */
-    private function cdr($aid, $aprice, $creditTime = '2021-04-18T17:17:56Z')
-    {
-        return [
-            'aid' => $aid, 'sid' => 0, 'rate' => 'CALL', 'usagev' => 1,
-            'type' => 'credit', 'credit_time' => $creditTime, 'aprice' => $aprice,
-        ];
     }
 }
