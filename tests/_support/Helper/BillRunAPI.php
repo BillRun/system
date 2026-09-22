@@ -714,6 +714,276 @@ class BillRunAPI extends \Codeception\Module{
         $ret = $rest->sendPOST("/billrun/chargeAccount",   $params);
         return json_decode($ret, true);
     }
+
+    // ----------------------------------------------------------------------
+    //  Thin, single-purpose payment helpers (used by tests/all/payment/*Test)
+    //  Each is ONE authenticated request; array params are JSON-encoded as the
+    //  API endpoints expect. No business logic lives here.
+    // ----------------------------------------------------------------------
+
+    /**
+     * Authenticated request to an API path. Array values are JSON-encoded.
+     * @return array decoded JSON response
+     */
+    protected function sendApiRequest($path, array $request, $method = 'POST')
+    {
+        $encoded = [];
+        foreach ($request as $key => $value) {
+            $encoded[$key] = is_array($value) ? json_encode($value) : $value;
+        }
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        if (strtoupper($method) === 'GET') {
+            $rest->sendGET($path, $encoded);
+        } else {
+            $rest->sendPOST($path, $encoded);
+        }
+        return json_decode($rest->grabResponse(), true);
+    }
+
+    /** /api/pay — one offline payment (cash/cheque/credit/write_off). */
+    public function payOffline($aid, $amount, $dir = 'fc', $method = 'cash', array $paymentFields = [])
+    {
+        $payment = array_merge(['aid' => (int) $aid, 'amount' => $amount, 'dir' => $dir], $paymentFields);
+        return $this->sendApiRequest('/api/pay', ['method' => $method, 'payments' => [$payment]]);
+    }
+
+    /** /api/pay — a custom payments array (e.g. with a `pays` link to a bill). */
+    public function payPayments(array $payments, $method = 'cash', array $topExtra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge(['method' => $method, 'payments' => $payments], $topExtra));
+    }
+
+    /** /api/pay — split a debt into installments (action=split_bill). $amount=null omits it. */
+    public function splitBill($aid, $amount, array $opts = [])
+    {
+        $base = ['method' => 'installment_agreement', 'action' => 'split_bill', 'aid' => (int) $aid];
+        if (!is_null($amount)) {
+            $base['amount'] = $amount;
+        }
+        return $this->sendApiRequest('/api/pay', array_merge($base, $opts));
+    }
+
+    /** /api/pay — merge installments of an agreement (action=merge_installments). */
+    public function mergeInstallments($aid, $splitBillId, array $opts = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'method'        => 'merge_installments',
+            'action'        => 'merge_installments',
+            'aid'           => (int) $aid,
+            'split_bill_id' => (string) $splitBillId,
+        ], $opts));
+    }
+
+    /** /api/pay — unfreeze/use deposit bills (action=use_deposit). */
+    public function useDeposit($aid, array $txids, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'action' => 'use_deposit',
+            'aid'    => (int) $aid,
+            'txid'   => $txids,
+        ], $extra));
+    }
+
+    /** /api/pay — cancel payments (action=cancel_payments). */
+    public function cancelPayments($aid, array $cancellations, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/pay', array_merge([
+            'action'        => 'cancel_payments',
+            'aid'           => (int) $aid,
+            'cancellations' => $cancellations,
+        ], $extra));
+    }
+
+    /** /api/adjustpayments — adjust existing payments. */
+    public function adjustPayments(array $adjustments, array $extra = [])
+    {
+        return $this->sendApiRequest('/api/adjustpayments', array_merge(['adjustments' => $adjustments], $extra));
+    }
+
+    /** /api/bill — query bills/invoices/balances/collection-debt by action. */
+    public function billQuery($action, array $params = [])
+    {
+        return $this->sendApiRequest('/api/bill', array_merge(['action' => $action], $params), 'GET');
+    }
+
+    /** /api/onetimeinvoice — create an immediate invoice from CDRs. */
+    public function onetimeInvoice($aid, array $cdrs, array $extra = [])
+    {
+        if (isset($extra['invoice_unixtime'])) {
+            if ($extra['invoice_unixtime'] === 'past') {
+                $extra['invoice_unixtime'] = time() - 2592000;
+            } elseif ($extra['invoice_unixtime'] === 'future') {
+                $extra['invoice_unixtime'] = time() + 2592000;
+            }
+        }
+        return $this->sendApiRequest('/api/onetimeinvoice', array_merge(['aid' => (int) $aid, 'cdrs' => $cdrs], $extra), 'GET');
+    }
+
+    /** Create an account whose active payment gateway is the mockup CreditGuard with $cardToken. */
+    public function createAccountWithCard($cardToken, array $override = [])
+    {
+        $active = array_merge([
+            'name'                  => 'CreditGuard',
+            'instance_name'         => 'CreditGuard',
+            'card_token'            => $cardToken,
+            'card_expiration'       => '1225',
+            'four_digits'           => '5606',
+            'personal_id'           => '890108566',
+            'card_acquirer'         => '1',
+            'card_brand'            => '1',
+            'credit_company'        => '1',
+            'card_type'             => '00',
+            'transaction_exhausted' => true,
+            'auth_number'           => '9433084',
+            'generate_token_time'   => '2023-11-29T08:55:32Z',
+            'keepCCDetails'         => null,
+        ], $override['payment_gateway']['active'] ?? []);
+        unset($override['payment_gateway']);
+        $resp = $this->createAccountWithAllMandatoryCustomFields(
+            array_merge(['payment_gateway' => ['active' => $active]], $override)
+        );
+        return (is_array($resp) && isset($resp['entity'])) ? $resp['entity'] : $this->getLastEntity();
+    }
+
+    /**
+     * Switch an account's active payment-gateway card token directly in the
+     * subscribers collection (accounts live there with type='account'). Used to
+     * flip a rejecting card to a good one between charges (e.g. retry-after-rejection).
+     */
+    public function setAccountCardToken($aid, $cardToken)
+    {
+        \Billrun_Factory::db()->subscribersCollection()->update(
+            ['aid' => (int) $aid, 'type' => 'account'],
+            ['$set' => ['payment_gateway.active.card_token' => $cardToken]],
+            ['multiple' => true]
+        );
+    }
+
+    /**
+     * Seed the 3-bill "pending gateway coverage" fixture used by the switch_links
+     * tests, directly into the bills collection (the legacy SimpleTest did the same
+     * from bills.json). It represents a tc debt of 10 that is covered 5 by an
+     * APPROVED cash payment and 5 by a PENDING automatic gateway bill that is still
+     * awaiting confirmation (cpg_* file-charge artifacts). The online CreditGuard
+     * gateway is designed never to emit this awaiting-confirmation state
+     * (hasPendingStatus()=false), so it cannot be produced through the payment API
+     * and must be seeded. txids are derived from the (dynamic) aid so they are unique
+     * and never collide with auto-generated payment txids. Returns the txid base; the
+     * three bills are base.'005' (debt invoice), base.'006' (approved), base.'007' (pending).
+     */
+    public function seedSwitchLinksFixture($aid)
+    {
+        // 13-char txids (matches Billrun_Bill_Payment::txIdLength) so padTxId is a no-op
+        // and the bill lookups by id (getInstanceByid) resolve the seeded links.
+        $base = '9' . str_pad((string) (int) $aid, 9, '0', STR_PAD_LEFT);
+        $past = new \Mongodloid_Date(strtotime('-30 days'));
+        $bills = \Billrun_Factory::db()->billsCollection();
+
+        $invoice = [
+            'dir' => 'tc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 10, 'due' => 10, 'due_date' => $past, 'urt' => $past,
+            'payer_name' => 'yossi test', 'source' => 'web', 'left_to_pay' => 0, 'total_paid' => 10,
+            'vatable_left_to_pay' => 0, 'paid' => '2', 'pending_covering_amount' => 5,
+            'txid' => $base . '005', 'process_time' => $past,
+            'paid_by' => [
+                ['type' => 'rec', 'id' => $base . '006', 'amount' => 5, 'total_amount' => 5, 'date' => $past],
+                ['type' => 'rec', 'id' => $base . '007', 'amount' => 5, 'total_amount' => 5, 'date' => $past, 'pending' => true],
+            ],
+            'waiting_payments' => [$base . '007'],
+        ];
+        $approved = [
+            'dir' => 'fc', 'method' => 'cash', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 5, 'due' => -5, 'due_date' => $past, 'urt' => $past,
+            'payer_name' => 'yossi test', 'source' => 'web',
+            'pays' => [['type' => 'rec', 'id' => $base . '005', 'amount' => 5, 'total_amount' => 10, 'date' => $past]],
+            'left' => 0, 'pending_covering_amount' => 0, 'txid' => $base . '006', 'process_time' => $past,
+        ];
+        $pending = [
+            'dir' => 'fc', 'method' => 'automatic', 'aid' => (int) $aid, 'type' => 'rec',
+            'amount' => 5, 'due' => -5, 'due_date' => $past, 'urt' => $past, 'source' => 'web',
+            'generated_pg_file_log' => 'seedswitchlinks',
+            'pays' => [['type' => 'rec', 'id' => $base . '005', 'amount' => 5, 'pending' => true]],
+            'left' => 0, 'pending_covering_amount' => 0, 'waiting_for_confirmation' => true,
+            'txid' => $base . '007', 'pending' => true,
+            'cpg_name' => ['Credit_Card'], 'cpg_type' => ['transactions_request'],
+            'cpg_file_type' => ['transactions1'], 'pg_request' => [],
+        ];
+        $bills->insert($invoice);  // insert() takes its argument by reference
+        $bills->insert($approved);
+        $bills->insert($pending);
+        return $base;
+    }
+
+    /**
+     * Wipe the bills collection (cleanDB intentionally leaves it intact). Needed by
+     * tests that issue a GLOBAL charge sweep (chargeAccount without an aids filter,
+     * e.g. exclude_accounts) so the forked worker only processes this test's debt
+     * and is not slowed/contended by every prior test's leftover unpaid invoices.
+     */
+    public function clearBills()
+    {
+        \Billrun_Factory::db()->billsCollection()->remove(['_id' => ['$exists' => true]]);
+    }
+
+    /** Read one bill (raw array) matching $criteria, or null — used to chain txid/invoice_id. */
+    public function grabBill(array $criteria)
+    {
+        $cursor = \Billrun_Factory::db()->billsCollection()->query($criteria)->cursor()
+            ->setReadPreference('RP_PRIMARY');
+        foreach ($cursor as $bill) {
+            return $bill->getRawData();
+        }
+        return null;
+    }
+
+    /**
+     * Seed the CALL rate that onetimeinvoice CDRs reference, directly into Mongo
+     * (cleanDB wipes rates; the billapi rate-create path is config-state fragile).
+     * Pre-priced credit CDRs don't use the tariff, so a minimal rate suffices.
+     */
+    public function seedCallRate()
+    {
+        $rates = \Billrun_Factory::db()->ratesCollection();
+        $rates->remove(['key' => 'CALL']);
+        $rate = [
+            'key' => 'CALL',
+            'description' => 'call',
+            'from' => new \Mongodloid_Date(strtotime('2018-01-01')),
+            'to' => new \Mongodloid_Date(strtotime('2099-01-01')),
+            'tariff_category' => 'retail',
+            'add_to_retail' => true,
+            'pricing_method' => 'tiered',
+            'rates' => ['call' => ['BASE' => ['rate' => [[
+                'from' => 0, 'to' => 'UNLIMITED', 'interval' => 1, 'price' => 0,
+                'uom_display' => ['range' => 'seconds', 'interval' => 'seconds'],
+            ]]]]],
+            'tax' => [['type' => 'vat', 'taxation' => 'global']],
+        ];
+        $rates->insert($rate); // insert() takes its argument by reference
+    }
+
+    /**
+     * Enable/disable named plugins in a fresh config revision (test-scoped).
+     * Some customer plugins (e.g. epicPlugin) hook generic payment events
+     * (beforeSplitDebt) and must be turned off to test core billing behavior.
+     */
+    public function setPluginsEnabled(array $names, $enabled)
+    {
+        $config = \Billrun_Factory::db()->configCollection();
+        $data = $config->query()->cursor()->sort(['urt' => -1, '_id' => -1])->limit(1)->current()->getRawData();
+        unset($data['_id']);
+        foreach ($data['plugins'] as &$plugin) {
+            if (in_array($plugin['name'] ?? '', $names, true)) {
+                $plugin['enabled'] = (bool) $enabled;
+            }
+        }
+        unset($plugin);
+        $data['urt'] = new \MongoDB\BSON\UTCDateTime();
+        $config->insert($data);
+        \Billrun_Config::getInstance()->loadDbConfig();
+    }
   
     public function sendRealTimeRequest($fileType, $request)
     {
