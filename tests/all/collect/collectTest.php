@@ -553,6 +553,74 @@ public function testCollectInCollectionWithoutAids()
         $this->tester->dontSeeInLogFile('Collection state change: sending batch 3/');
     }
 
+    /**
+     * BRCD-5519: a process with change_state_include_debt enabled notifies the CRM of accounts entering
+     * collection with each account's debt as calculated by the collect run - {"accounts": [{"aid", "debt"}]} -
+     * instead of the plain {"aids": [...]}; a process without the flag keeps the request as before.
+     * The requests are asserted as the CRM receives them, through the state change receiver mock
+     * (mockup-servers/collectionStateChange.php), configured as the change_state_url of both processes.
+     */
+    public function testCollectStateChangeWithDebtOnlyOnFlaggedProcess()
+    {
+        $run = uniqid('brcd5519_');
+        $processes = $this->defaultCollectionProcesses;
+        $this->assertSame('condition_process', $processes[0]['name']);
+        $this->assertSame('default_process', $processes[1]['name']);
+        foreach (array_keys($processes) as $index) {
+            $processes[$index]['settings']['change_state_url'] = $this->tester->getCollectionStateChangeUrl($run);
+        }
+        $processes[1]['settings']['change_state_include_debt'] = true; // default_process only
+        $this->initCollectionConfig($processes, $this->defaultWithoutRejectionSettings);
+        $this->tester->resetCollectionStateChangeRequests($run);
+
+        // enters default_process (the flagged one) with a debt made of two bills
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $withDebtAid = json_decode($this->tester->grabResponse(), true)['entity']['aid'];
+        $this->tester->payApi(["amount" => 10, "aid" => $withDebtAid, "dir" => "tc"]);
+        $this->tester->payApi(["amount" => 5.5, "aid" => $withDebtAid, "dir" => "tc"]);
+        // enters condition_process (no flag)
+        $this->tester->createAccountWithAllMandatoryCustomFields(['country' => 'ISREAL']);
+        $aidsOnlyAid = json_decode($this->tester->grabResponse(), true)['entity']['aid'];
+        $this->tester->payApi(["amount" => 12, "aid" => $aidsOnlyAid, "dir" => "tc"]);
+
+        $this->sendCollectCommand(['aids' => $withDebtAid . ',' . $aidsOnlyAid]);
+
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $withDebtAid, 'type' => "account"]);
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $aidsOnlyAid, 'type' => "account"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'condition_process');
+
+        $requests = $this->tester->grabCollectionStateChangeRequests($run);
+        $this->assertCount(2, $requests, 'one state change request per process');
+        $extraParamsByProcess = [];
+        foreach ($requests as $request) {
+            $received = $request['post'];
+            $this->assertSame('collection state change', $received['step_code']);
+            $this->assertSame('httpnoack', $received['step_type']);
+            $this->assertSame('in_collection', $received['extra_params']['state']);
+            $extraParamsByProcess[$received['extra_params']['process_name']] = $received['extra_params'];
+        }
+        $this->assertEqualsCanonicalizing(['condition_process', 'default_process'], array_keys($extraParamsByProcess));
+
+        // the flagged process: the account with its debt, and no aids
+        $withDebt = $extraParamsByProcess['default_process'];
+        $this->assertArrayNotHasKey('aids', $withDebt);
+        $this->assertCount(1, $withDebt['accounts']);
+        $this->assertEquals($withDebtAid, $withDebt['accounts'][0]['aid']);
+        $this->assertArrayHasKey('debt', $withDebt['accounts'][0]);
+        $this->assertEqualsWithDelta(15.5, (float) $withDebt['accounts'][0]['debt'], 0.001, 'debt is the sum of the account bills');
+        \Billrun_Config::getInstance()->loadDbConfig();
+        $collectQueryDebt = \Billrun_Bill::getBalanceByAids([$withDebtAid], false, true, $processes[1]['settings']['min_debt'])[$withDebtAid]['total'];
+        $this->assertEqualsWithDelta($collectQueryDebt, (float) $withDebt['accounts'][0]['debt'], 0.001, 'debt sent is the one of the collect query');
+
+        // the process without the flag: the aids as before, and no accounts
+        $aidsOnly = $extraParamsByProcess['condition_process'];
+        $this->assertArrayNotHasKey('accounts', $aidsOnly);
+        $this->assertEquals([$aidsOnlyAid], array_map('intval', $aidsOnly['aids']));
+
+        $this->tester->resetCollectionStateChangeRequests($run);
+    }
+
     protected function initCollectionConfig($collectionProcesses, $rejectionSettings){
         $this->tester->setSettings('collection', ['processes' => $collectionProcesses, 'settings' => [
             "run_on_holidays" => true,
