@@ -14,8 +14,8 @@
  * accountLastRevision), so the whole tree is resolved from one deterministic end-of-cycle snapshot.
  *
  * This single helper is the source of truth shared by the aggregate selection (getBillable), the
- * roll-up bucketing (parseToAccounts), the re-run cleanup (removeBeforeAggregate) and the payer-gateway
- * resolution, so they can never disagree about which descendants belong to which invoicing account.
+ * roll-up bucketing (parseToAccounts) and the re-run cleanup (removeBeforeAggregate), so they can never
+ * disagree about which descendants belong to which invoicing account.
  *
  * An "invoicing account" is one whose end-of-cycle revision has no parent (parent_aid null/absent) OR
  * issues_invoice=true; defaults for missing fields are parent_aid => root, issues_invoice/is_payer => true.
@@ -279,35 +279,6 @@ class Billrun_Cycle_Hierarchy {
 			}
 		}
 		return $this->childrenCache[$aid] = $children;
-	}
-
-	/**
-	 * The account whose payment gateway should be charged for this account: the nearest self-or-ancestor
-	 * with is_payer=true (a root is always a payer). Falls back to the deepest reachable active account.
-	 *
-	 * @param int $aid
-	 * @return int payer aid
-	 */
-	public function getPayerAid($aid) {
-		$aid = intval($aid);
-		$visited = array();
-		$current = $aid;
-		$lastActive = $aid;
-		$hops = 0;
-		while (!is_null($current) && !isset($visited[$current]) && $hops <= $this->maxDepth) {
-			$visited[$current] = true;
-			$state = $this->getAccountState($current);
-			if ($state === false) {
-				break;
-			}
-			$lastActive = $current;
-			if ($state['is_payer'] === true) {
-				return $current;
-			}
-			$current = $state['parent_aid'];
-			$hops++;
-		}
-		return $lastActive;
 	}
 
 	/**
