@@ -523,7 +523,6 @@ class calculateCommandCest
 
         $I->seeInLogFile('Calculator type rebalance is not a queue chain stage; running it on its own');
         $I->seeInLogFile('Execute reset'); // the rebalance calculator itself ran
-        $I->dontSeeInLogFile('is not a queue chain stage - nothing to pull'); // never reached the chain calculator
         $I->dontSeeInLogFile('Chain results:');
         // It works off rebalance_queue: our queue lines are not touched.
         $this->assertFreshlyQueued($I);

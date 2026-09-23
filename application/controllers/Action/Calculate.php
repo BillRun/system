@@ -26,9 +26,10 @@ class CalculateAction extends Action_Base {
 			return;
 		}
 
-		// BRCD-3562: the calculator name (type) is optional. When omitted, the run
-		// is a whole-chain run; when given, the chain starts at that calculator's
-		// stage (with one_calc=true only that calculator runs) - see below.
+		// BRCD-3562: the calculator name (type) is optional. Without it the run
+		// starts the chain at the first configured stage; with it, at that
+		// calculator's stage. one_calc=true (only with --type) keeps the previous
+		// single-calculator behavior.
 		$possibleOptions = array('type' => true);
 
 		if (($options = $this->getController()->getInstanceOptions($possibleOptions)) === FALSE) {
@@ -39,12 +40,9 @@ class CalculateAction extends Action_Base {
 			$options['file_types'] = $params['file_types'];
 		}
 
-		// BRCD-3562: one_calc=true (relevant only with --type) requests the
-		// previous single-calculator behavior: the given calculator runs and the
-		// lines return to the queue for the next stage. Without it, the queue is
-		// fetched ONCE and every fetched line runs through all its remaining
-		// calculators in memory (the single pull takes lines waiting at every
-		// queue stage - with --type, at that calculator's stage onward).
+		// one_calc=true (relevant only with --type) requests the previous
+		// single-calculator behavior: the given calculator runs and the lines return
+		// to the queue for the next stage.
 		$oneCalc = isset($params['one_calc']) && filter_var($params['one_calc'], FILTER_VALIDATE_BOOLEAN);
 		$requestedType = isset($options['type']) ? $options['type'] : null;
 		if ($oneCalc && $requestedType === null) {
@@ -52,35 +50,24 @@ class CalculateAction extends Action_Base {
 			$oneCalc = false;
 		}
 
-		// A calculator outside the queue chain (e.g. rebalance, which works off its
-		// own rebalance_queue, or unify when it is not a configured stage) has
-		// nothing to chain into: it always runs on its own, as before BRCD-3562.
-		$runAlone = $oneCalc;
-		if (!$runAlone && $requestedType !== null && Billrun_Calculator_Queue::getChainStage($requestedType, $options) === false) {
-			$this->getController()->addOutput("Calculator type " . $requestedType . " is not a queue chain stage; running it on its own");
-			$runAlone = true;
-		}
-
-		if ($runAlone) {
-			$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
-			$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorNames[0], $options));
-		} else {
-			// Chain mode lives in Billrun_Calculator_Queue: one pull, then every
-			// line runs through all its remaining calculators in memory.
-			$calcOptions = array_merge($options, array('type' => 'queue'));
-			if ($requestedType !== null) {
-				$calcOptions['chain_start'] = $requestedType;
-			}
-		}
-		$this->runCalculator($calcOptions);
+		// The calculator to run: the requested one, or the first configured stage.
+		// In chain mode it pulls the queue ONCE - its stage and every later stage -
+		// and runs every pulled line through its remaining calculators in memory
+		// (Billrun_Calculator::calcChain); with one_calc it runs on its own, as before.
+		$calculatorNames = Billrun_Calculator::getQueueCalculatorTypes($requestedType);
+		$calcOptions = array_merge($options, Billrun_Helpers_QueueCalculators::getCalculatorOptions($calculatorNames[0], $options));
+		$calcOptions['chain'] = !$oneCalc;
+		$this->runCalculator($calcOptions, !$oneCalc);
 	}
 
 	/**
-	 * Load and run a single calculator over the queue.
+	 * Load and run one calculator over the queue - in chain mode when it accepted
+	 * the 'chain' option (it is a configured queue stage), else on its own.
 	 *
 	 * @param array $options calculator options (must include 'type')
+	 * @param bool $chainRequested whether chain mode was asked for
 	 */
-	protected function runCalculator($options) {
+	protected function runCalculator($options, $chainRequested = false) {
 		$this->getController()->addOutput("Loading Calculator");
 		$calculator = Billrun_Calculator::getInstance($options);
 		$this->getController()->addOutput("Calculator loaded");
@@ -89,7 +76,17 @@ class CalculateAction extends Action_Base {
 			$this->getController()->addOutput("Calculator cannot be loaded");
 		} else if (!$calculator->isEnabled()) {
 			$this->getController()->addOutput("Calculator type " . $calculator->getCalculatorQueueType() . " is disabled");
+		} else if ($calculator->isChainMode()) {
+			$this->getController()->addOutput("Starting to calculate. This action can take a while...");
+			$calculator->calcChain();
+			$this->getController()->addOutput("Writing calculated data.");
+			$calculator->writeChain();
+			$this->getController()->addOutput("Calculation finished.");
+			$calculator->removeChainFromQueue();
 		} else {
+			if ($chainRequested) {//not a queue chain stage (e.g. rebalance, which works off its own rebalance_queue) - nothing to chain into
+				$this->getController()->addOutput("Calculator type " . $options['type'] . " is not a queue chain stage; running it on its own");
+			}
 			$this->getController()->addOutput("Starting to calculate. This action can take a while...");
 			$calculator->calc();
 			$this->getController()->addOutput("Writing calculated data.");
@@ -98,5 +95,4 @@ class CalculateAction extends Action_Base {
 			$calculator->removeFromQueue();
 		}
 	}
-
 }

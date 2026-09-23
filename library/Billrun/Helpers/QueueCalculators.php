@@ -285,7 +285,7 @@ class Billrun_Helpers_QueueCalculators {
          * @return array $extraData - the extra lines we need to add to the calculator data. 
 	 */
 	protected function addExtraLines(&$line, &$queue_data, $calculator, $processor, $extraData = []) {
-            Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, 'calculator' => $calculator));
             if (!empty($extraData)) {
                 foreach ($extraData as $originalStamp => $extraDataByStamp) {
                     foreach ($extraDataByStamp as $newStamp => $extraRow) {
@@ -297,7 +297,7 @@ class Billrun_Helpers_QueueCalculators {
                     }
                 }
             }
-            Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, 'calculator' => $calculator));
             return $extraData[$line['stamp']] ?? [];
 	}
 
