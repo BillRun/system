@@ -907,14 +907,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$data['data'][$line['stamp']] = $line->getRawData();
 			$processor->setQueueRow($this->lines[$line['stamp']]->getRawData());
 		}
-		// The chain goes through this calculator's stage and the later ones only - the
-		// pulled lines wait at those entries (getChainEntryStages) - so the earlier stages
-		// are not instantiated, nor their prepareData / extra-lines hooks fed lines that
-		// already passed them. autoload=0: the calculators the chain instantiates must not
-		// pull the queue themselves.
-		$queueCalculators = array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
-		$chainStages = array_slice($queueCalculators, array_search($this->getCalculatorQueueType(), $queueCalculators, true));
-		$this->chainRunner = new Billrun_Helpers_QueueCalculators(array_merge($this->chainOptions, array('autoload' => 0, 'queue_calculators' => $chainStages)));
+		// autoload=0: the calculators the chain instantiates must not pull the queue themselves
+		$this->chainRunner = new Billrun_Helpers_QueueCalculators(array_merge($this->chainOptions, array('autoload' => 0)));
 		$this->chainRunner->run($processor, $data);
 
 		// Record every line's outcome - the pulled lines and the extra lines the chain
