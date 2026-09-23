@@ -907,34 +907,21 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$data['data'][$line['stamp']] = $line->getRawData();
 			$processor->setQueueRow($this->lines[$line['stamp']]->getRawData());
 		}
-		// autoload=0: the calculators the chain instantiates must not pull the queue themselves
-		$this->chainRunner = new Billrun_Helpers_QueueCalculators(array_merge($this->chainOptions, array('autoload' => 0)));
+		// The chain goes through this calculator's stage and the later ones only - the
+		// pulled lines wait at those entries (getChainEntryStages) - so the earlier stages
+		// are not instantiated, nor their prepareData / extra-lines hooks fed lines that
+		// already passed them. autoload=0: the calculators the chain instantiates must not
+		// pull the queue themselves.
+		$queueCalculators = array_values(Billrun_Factory::config()->getConfigValue('queue.calculators', array()));
+		$chainStages = array_slice($queueCalculators, array_search($this->getCalculatorQueueType(), $queueCalculators, true));
+		$this->chainRunner = new Billrun_Helpers_QueueCalculators(array_merge($this->chainOptions, array('autoload' => 0, 'queue_calculators' => $chainStages)));
 		$this->chainRunner->run($processor, $data);
 
-		$outcomes = $this->recordChainOutcomes($processor, $data);
-		if ($outcomes['extra_completed'] + count($this->extraQueueRows) > 0) {
-			Billrun_Factory::log('Chain run: ' . ($outcomes['extra_completed'] + count($this->extraQueueRows)) . ' extra lines created, '
-				. count($this->extraQueueRows) . ' queued for later stages', Zend_Log::INFO);
-		}
-		Billrun_Factory::log('Chain results: ' . count($this->completedStamps) . ' lines completed, '
-			. count($this->advancedStages) . ' advanced and left for retry, ' . $outcomes['unchanged'] . ' left unchanged', Zend_Log::INFO);
-		Billrun_Factory::dispatcher()->trigger('afterCalculateChainData', array('data' => $this->data, 'calculator' => $this));
-	}
-
-	/**
-	 * Record every line's outcome once the chain ran: the pulled lines and the
-	 * extra lines the chain created (e.g. a split CDR), which exist in neither
-	 * collection yet. Fills $data (what writeChain() saves), $completedStamps
-	 * (rows removeChainFromQueue() drops), $advancedStages (rows parked at the
-	 * last completed stage) and $extraQueueRows (rows to insert, released).
-	 *
-	 * @param Billrun_Processor $processor the chain's queue-row bookkeeping after the run
-	 * @param array $data the chain's lines after the run: ['data' => stamp => line]
-	 * @return array 'unchanged' pulled rows and 'extra_completed' extra lines, for the run summary
-	 */
-	protected function recordChainOutcomes(Billrun_Processor $processor, array $data) {
 		// Record every line's outcome - the pulled lines and the extra lines the chain
-		// created (e.g. a split CDR), which exist in neither collection yet.
+		// created (e.g. a split CDR), which exist in neither collection yet: $data is
+		// what writeChain() saves, $completedStamps the rows removeChainFromQueue()
+		// drops, $advancedStages the rows parked at the last completed stage and
+		// $extraQueueRows the rows to insert, released.
 		$unchanged = 0;
 		$extraCompleted = 0;
 		foreach ($data['data'] as $stamp => $lineData) {
@@ -975,7 +962,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				}
 			}
 		}
-		return array('unchanged' => $unchanged, 'extra_completed' => $extraCompleted);
+		if ($extraCompleted + count($this->extraQueueRows) > 0) {
+			Billrun_Factory::log('Chain run: ' . ($extraCompleted + count($this->extraQueueRows)) . ' extra lines created, '
+				. count($this->extraQueueRows) . ' queued for later stages', Zend_Log::INFO);
+		}
+		Billrun_Factory::log('Chain results: ' . count($this->completedStamps) . ' lines completed, '
+			. count($this->advancedStages) . ' advanced and left for retry, ' . $unchanged . ' left unchanged', Zend_Log::INFO);
+		Billrun_Factory::dispatcher()->trigger('afterCalculateChainData', array('data' => $this->data, 'calculator' => $this));
 	}
 
 	/**

@@ -307,36 +307,16 @@ class calculateCommandCest
 
     /**
      * With no --type the command runs the whole calculator chain, so a line is
-     * fully calculated (priced) and removed from the queue in a single run.
+     * fully calculated (priced) and removed from the queue in a single run - and,
+     * exactly as a line completed inline by the processor is
+     * (Billrun_Processor::setFullCalculationTime), stamped full_calculation when
+     * lines.reference_fields lists it (a global config, restored at the end).
      */
     public function testCalculateWithoutTypeRunsTheWholeChain(ApiTester $I): void
     {
         $this->processToQueue($I);   // uncalculated lines in the queue
         $this->assertFreshlyQueued($I);
         $this->seedCustomer($I);     // now the data needed to calculate exists
-
-        $code = $I->runCalculate();
-        $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
-
-        // Whole chain ran: at least one line was priced (customer+rate+pricing).
-        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
-            'a no-type run must price at least one line (the whole chain ran)');
-        // A fully-calculated line reached the last calculator and left the queue.
-        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
-            'a fully-calculated line should be removed from the queue');
-    }
-
-    /**
-     * A line that completes its chain in a --calculate run is stamped
-     * full_calculation, exactly as a line completed inline by the processor is
-     * (Billrun_Processor::setFullCalculationTime) - gated by the same
-     * lines.reference_fields setting, a global config restored at the end.
-     */
-    public function testCompletedLinesAreStampedFullCalculation(ApiTester $I): void
-    {
-        $this->processToQueue($I);
-        $this->assertFreshlyQueued($I);
-        $this->seedCustomer($I);
 
         $originalFields = Billrun_Factory::config()->getConfigValue('lines.reference_fields', []);
         $I->overrideConfigValue('lines.reference_fields', array_values(array_unique(array_merge($originalFields, ['full_calculation']))));
@@ -348,10 +328,14 @@ class calculateCommandCest
             $I->overrideConfigValue('lines.reference_fields', $originalFields);
         }
 
+        // Whole chain ran: every line was priced (customer+rate+pricing) and stamped as completed.
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aprice' => ['$exists' => true]]),
+            'a no-type run must price every line (the whole chain ran)');
         $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'full_calculation' => ['$exists' => true]]),
             'every line that completed its chain must carry full_calculation');
+        // A fully-calculated line reached the last calculator and left the queue.
         $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
-            'every fully-calculated line should be removed from the queue');
+            'a fully-calculated line should be removed from the queue');
     }
 
     /**

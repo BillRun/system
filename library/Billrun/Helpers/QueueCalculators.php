@@ -134,8 +134,17 @@ class Billrun_Helpers_QueueCalculators {
 				}
 			}
 	
+	/**
+	 * The stages this run goes through, in order: the configured queue.calculators,
+	 * or the 'queue_calculators' option - a chain run (BRCD-3562) hands the stages
+	 * from its own stage onward, so the earlier stages are not instantiated and
+	 * their prepareData / extra-lines hooks are not fed lines that already passed them.
+	 *
+	 * @return array
+	 */
 	protected function getQueueCalculators() {
-		$queue_calcs = Billrun_Factory::config()->getConfigValue("queue.calculators", array());
+		$queue_calcs = isset($this->options['queue_calculators']) ? $this->options['queue_calculators'] : Billrun_Factory::config()->getConfigValue("queue.calculators", array());
+		$queue_calcs = array_values($queue_calcs);
 		if ($this->realtime && !array_search('unify', $queue_calcs)) { // realtime must run a unify calculator
 			$queue_calcs[] = 'unify';
 		}
