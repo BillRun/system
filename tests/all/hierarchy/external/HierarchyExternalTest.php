@@ -54,10 +54,28 @@ class HierarchyExternalTest extends \Codeception\Test\Unit {
 		Billrun_Cycle_Hierarchy::resetInUseCache();
 	}
 
-	protected function subAids($billrun) {
-		// $billrun['subs'] is a MongoDB BSONArray of BSONDocuments; iterate rather than array_map.
+	/**
+	 * Subscriber aids billed onto $ownerAid's invoice for $billrunKey. Subscriber records are not stored
+	 * inline on the billrun document (Billrun_Cycle_Account_Invoice::_saveWithoutTransaction() strips
+	 * 'subs' before saving the billrun doc and writes them to the separate billrun_subs collection
+	 * instead); a rolled-up sub-account's subscriber keeps its own aid there and is tagged with
+	 * parent_aid = the owner's aid by setSubscribers(), which is how a consolidated subscriber is told
+	 * apart from one that owns its own, separate invoice.
+	 *
+	 * @param string $billrunKey
+	 * @param int $ownerAid
+	 * @return int[]
+	 */
+	protected function subAids($billrunKey, $ownerAid) {
+		$cursor = Billrun_Factory::db()->billrun_subsCollection()->query(array(
+			'key' => $billrunKey,
+			'$or' => array(
+				array('aid' => $ownerAid),
+				array('parent_aid' => $ownerAid),
+			),
+		))->cursor();
 		$aids = array();
-		foreach ($billrun['subs'] as $sub) {
+		foreach ($cursor as $sub) {
 			if (isset($sub['aid'])) {
 				$aids[] = intval($sub['aid']);
 			}
@@ -78,7 +96,7 @@ class HierarchyExternalTest extends \Codeception\Test\Unit {
 		$this->assertNotEmpty($ownerBillrun, 'the invoicing owner produces a billrun document');
 		$this->assertEmpty($subBillrun, 'the non-invoicing sub-account produces no billrun document of its own');
 
-		$subAids = $this->subAids($ownerBillrun);
+		$subAids = $this->subAids('202601', 770001);
 		$this->assertContains(770001, $subAids, 'the owner subscriber is on the invoice');
 		$this->assertContains(770002, $subAids, 'the sub-account subscriber is rolled up into the owner invoice');
 	}
@@ -97,6 +115,6 @@ class HierarchyExternalTest extends \Codeception\Test\Unit {
 		// the sub-account is NOT rolled up.
 		$this->assertNotEmpty($ownerBillrun, 'owner gets its own invoice');
 		$this->assertNotEmpty($subBillrun, 'sub-account gets its own invoice when hierarchy is disabled');
-		$this->assertNotContains(770002, $this->subAids($ownerBillrun), 'no consolidation when the flag is off');
+		$this->assertNotContains(770002, $this->subAids('202602', 770001), 'no consolidation when the flag is off');
 	}
 }
