@@ -1,0 +1,35 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "aid": 770002,
+      "type": "account",
+      "from": "2025-01-01 00:00:00",
+      "to": "2200-01-01 00:00:00",
+      "firstname": "Hierarchy",
+      "lastname": "SubAccount",
+      "parent_aid": 770001,
+      "issues_invoice": false,
+      "is_payer": false,
+      "invoice_language": "en_GB",
+      "activation_date": "2025-01-01 00:00:00",
+      "deactivation_date": "2200-01-01 00:00:00"
+    },
+    {
+      "sid": 880002,
+      "aid": 770002,
+      "type": "subscriber",
+      "from": "2025-01-01 00:00:00",
+      "to": "2200-01-01 00:00:00",
+      "plan": "PLAN_HIER",
+      "play": "MOBILE",
+      "firstname": "child",
+      "lastname": "sub",
+      "activation_date": "2025-01-01 00:00:00",
+      "deactivation_date": "2200-01-01 00:00:00",
+      "plan_activation": "2025-01-01 00:00:00",
+      "plan_deactivation": "2200-01-01 00:00:00",
+      "services": []
+    }
+  ]
+}

@@ -79,6 +79,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected $forceAccountIds = array();
 
 	/**
+	 * BRCD-785: ownerAid => [contributing aids] for the current page, populated by
+	 * consolidateHierarchyAccounts() from the in-memory feed. The pre-aggregate line cleanup reads it to
+	 * expand an invoicing owner to its subtree without re-resolving the (possibly non-local) account tree.
+	 * @var array
+	 */
+	protected $hierarchySubtrees = array();
+
+	/**
 	 * the amount of account lines to preload from the db at a time.
 	 * @param int $bulkAccountPreload
 	 */
@@ -346,13 +354,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$billed = $billrunColl->query($billrunQuery)->cursor();
 		$protectedAids = array();
+		$billedDocs = array();
+		// In external mode the protected subtree is read from each billed doc's subs[].aid; keep the docs
+		// (only when hierarchy is actually in use) so expandProtectedAidsToSubtrees needs no extra query.
+		$collectBilledSubs = Billrun_Cycle_Hierarchy::isExternalMode() && Billrun_Cycle_Hierarchy::isInUse();
 		foreach ($billed as $account) {
 			$protectedAids[] = $account['aid'];
+			if ($collectBilledSubs) {
+				$billedDocs[] = $account;
+			}
 		}
 		// BRCD-785: rolled-up child lines carry the child's aid (not the invoicing owner's), so a
 		// protected (billed) invoicing account must also protect its whole subtree's lines from removal.
 		if (!empty($protectedAids)) {
-			$protectedAids = self::expandProtectedAidsToSubtrees($billrunKey, $protectedAids);
+			$protectedAids = self::expandProtectedAidsToSubtrees($billrunKey, $protectedAids, $billedDocs);
 		}
 		if (empty($aids)) {
 			$linesRemoveQuery = array('aid' => array('$nin' => $protectedAids), 'billrun' => $billrunKey,
@@ -436,9 +451,28 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param int[] $protectedAids
 	 * @return int[]
 	 */
-	protected static function expandProtectedAidsToSubtrees($billrunKey, $protectedAids) {
+	protected static function expandProtectedAidsToSubtrees($billrunKey, $protectedAids, $billedDocs = null) {
 		if (!Billrun_Cycle_Hierarchy::isInUse()) {
 			return $protectedAids; // no hierarchy in use
+		}
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			// External mode has no local account tree to walk. A protected account is by definition already
+			// billed, so its full subtree is recorded on its own (existing) billrun document as subs[].aid -
+			// the same snapshot the invoice/PDF generators read. We collect it from the billed documents
+			// removeBeforeAggregate has already fetched (no extra query, and never the not-yet-written doc of
+			// an account we are about to bill).
+			$expanded = array();
+			foreach ($protectedAids as $protectedAid) {
+				$expanded[intval($protectedAid)] = true;
+			}
+			foreach ((array) $billedDocs as $billedDoc) {
+				foreach (Billrun_Util::getFieldVal($billedDoc['subs'], array()) as $sub) {
+					if (isset($sub['aid'])) {
+						$expanded[intval($sub['aid'])] = true;
+					}
+				}
+			}
+			return array_keys($expanded);
 		}
 		$hierarchy = new Billrun_Cycle_Hierarchy(new Billrun_DataTypes_CycleTime($billrunKey));
 		$expanded = array();
@@ -461,6 +495,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (empty($aids) || !$this->isHierarchyInUse()) {
 			return $aids;
 		}
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			// External mode: the account tree is not in Mongo, so resolve each owner's subtree from the
+			// in-memory feed captured during consolidation (this page's CRM response), never from the billrun
+			// collection - the billrun doc of an account we are about to (re)bill may not exist yet.
+			$expanded = array();
+			foreach ($aids as $aid) {
+				$aid = intval($aid);
+				$expanded[$aid] = true;
+				foreach (Billrun_Util::getFieldVal($this->hierarchySubtrees[$aid], array()) as $subtreeAid) {
+					$expanded[intval($subtreeAid)] = true;
+				}
+			}
+			return array_values($expanded);
+		}
 		$hierarchy = new Billrun_Cycle_Hierarchy($this->getCycle());
 		$expanded = array();
 		foreach ($aids as $aid) {
@@ -479,6 +527,22 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function isHierarchyInUse() {
 		return Billrun_Cycle_Hierarchy::isInUse();
+	}
+
+	/**
+	 * BRCD-785: the hierarchy resolver for the current cycle. DB mode resolves from the Mongo subscribers
+	 * collection; external subscribers mode resolves from the in-memory account feed the CRM returned for
+	 * this page (the invoicing account plus its full subtree), so consolidation works without any local
+	 * account persistence.
+	 *
+	 * @param array $accounts the parsed per-page accounts, required to seed the feed resolver
+	 * @return Billrun_Cycle_Hierarchy
+	 */
+	protected function getHierarchyResolver($accounts = array()) {
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			return new Billrun_Cycle_Hierarchy_Feed($this->getCycle(), (array) $accounts);
+		}
+		return new Billrun_Cycle_Hierarchy($this->getCycle());
 	}
 
 	public function isFakeCycle() {
@@ -716,7 +780,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return $accounts; // flat tenant: every account is its own invoicing owner
 		}
 
-		$hierarchy = new Billrun_Cycle_Hierarchy($this->getCycle());
+		$hierarchy = $this->getHierarchyResolver($accounts);
 		$hierarchyMeta = array(); // ownerAid => [contributingAid => ['name'=>..., 'parent_aid'=>...]]
 		foreach (array_keys($accounts) as $aidStr) {
 			if (!isset($accounts[$aidStr])) {
@@ -767,6 +831,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			if (isset($accounts[(string) $ownerAid]['attributes'])) {
 				$accounts[(string) $ownerAid]['attributes']['hierarchy'] = $contributors;
 			}
+		}
+
+		// BRCD-785: stash ownerAid => [contributing aids] (the owner plus its rolled-up sub-accounts, exactly
+		// the keys of the hierarchy meta) for this page. expandAidsToSubtrees() reuses it during the pre-
+		// aggregate line cleanup so it never has to re-resolve the tree - which, in external mode, is not in
+		// Mongo and may not yet be in the billrun collection (the billrun doc is only written at cycle finish).
+		foreach ($hierarchyMeta as $ownerAid => $contributors) {
+			$this->hierarchySubtrees[intval($ownerAid)] = array_map('intval', array_keys($contributors));
 		}
 		return $accounts;
 	}
