@@ -15,8 +15,8 @@
  * resolver answers the same hierarchy questions from that in-memory feed.
  *
  * It overrides only the two state-source seams of the parent (loadAccountState / loadChildAids); every
- * derived walk (getInvoiceOwner, getRollupDescendants, getSubtreeAids, getPayerAid, ...) and all caching
- * are inherited unchanged, so DB and external modes resolve hierarchy identically for the same tree.
+ * derived walk (getInvoiceOwner, getRollupDescendants, getSubtreeAids, ...) and all caching are inherited
+ * unchanged, so DB and external modes resolve hierarchy identically for the same tree.
  *
  * @package  Cycle
  * @since    6.0

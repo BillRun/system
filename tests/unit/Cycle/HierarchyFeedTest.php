@@ -109,14 +109,19 @@ class HierarchyFeedTest extends \Codeception\Test\Unit {
 		$this->assertEquals(array(600), $this->sorted($h->getSubtreeAids(600)));
 	}
 
-	public function testGetPayerAidWalksToNearestPayerAncestor() {
+	/**
+	 * is_payer itself is just a feed-extracted field on the account state (walking to the nearest payer
+	 * ancestor is Billrun_Account::getPayerAid()'s job, resolved from the live DB rather than the feed -
+	 * out of scope for this in-memory resolver).
+	 */
+	public function testGetAccountStateResolvesIsPayerField() {
 		$h = $this->sampleTree();
-		$this->assertSame(100, $h->getPayerAid(100), 'a payer pays itself');
-		$this->assertSame(100, $h->getPayerAid(200), 'non-payer walks up to the root payer');
-		$this->assertSame(100, $h->getPayerAid(300), 'two hops up to the root payer');
-		$this->assertSame(100, $h->getPayerAid(400));
-		$this->assertSame(100, $h->getPayerAid(500));
-		$this->assertSame(600, $h->getPayerAid(600), 'default is_payer (absent) -> pays itself');
+		$this->assertTrue($h->getAccountState(100)['is_payer'], 'root is a payer');
+		$this->assertFalse($h->getAccountState(200)['is_payer']);
+		$this->assertFalse($h->getAccountState(300)['is_payer']);
+		$this->assertFalse($h->getAccountState(400)['is_payer'], 'issues its own invoice but is not a payer');
+		$this->assertFalse($h->getAccountState(500)['is_payer']);
+		$this->assertTrue($h->getAccountState(600)['is_payer'], 'default is_payer (absent) is true');
 	}
 
 	public function testDefaultsForMissingFields() {
