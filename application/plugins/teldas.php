@@ -1106,8 +1106,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
       $segmentDuration = (float) $duration / $durationDivide;
 
-      // baseCharge only on the first CDR of the call (call_offset == 0 or absent)
-      $applyBaseCharge = ($callDurationBefore == 0.0);
+      // baseCharge fires on answer: only on the first CDR of the call (call_offset == 0
+      // or absent) and only if the call was actually answered (duration > 0).
+      // An unanswered call (duration = 0) is not charged at all.
+      $applyBaseCharge = ($callDurationBefore == 0.0 && $segmentDuration > 0);
 
       // How much of the free startInterval pool is still remaining for this segment
       $startIntervalRemaining = max($startInterval - $callDurationBefore, 0.0);
@@ -1444,15 +1446,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
     return $this->afterGetLineUsageType($line, $type);
   }
 
-  /**
-   * Pricing is skipped for the first (or only) CDR of the call
-   * (call_offset 0 or absent) that carries no volume. 
-   */
-  protected function shouldSkipPricing($line) {
-      $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
-      return isset($line['usagev']) && (float) $line['usagev'] == 0.0
-          && $this->getCallDurationBefore($line, $matchingPaths) == 0.0;
-  }
 
   public function afterGetLineUsageType(&$line, $type) {
       $matchingPaths = $this->matchingPathsByType[$line['type']] ?? null;
@@ -1491,10 +1484,6 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $this->addCfTeldasFieldsByInaNumber($inaNumberRevison, $line);
       $line['usaget'] = Billrun_Util::getIn($matchingPaths, 'usage.type', 'ina_vas_call');
       $line['prepriced'] = true;
-      if ($this->shouldSkipPricing($line)) {
-          // nothing to price: the baseCharge fires on answer (see calcPriceByOnlineTariffProfileSequence)
-          $line['skip_calc'] = array_values(array_unique(array_merge($line['skip_calc'] ?? array(), array('pricing'))));
-      }
     //   $usagevUnit = Billrun_Util::getIn($this->options, 'matching_paths.usage.unit', 'seconds');
     //   $volumeType = Billrun_Util::getIn($this->options, 'matching_paths.volume.type', 'field');
     //   $volumeSrc = Billrun_Util::getIn($this->options, 'matching_paths.volume.src', array('Duration'));
