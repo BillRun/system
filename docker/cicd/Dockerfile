@@ -11,9 +11,10 @@ RUN apt-get update && \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        procps \
         python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
-    && pecl install mongodb-2.3.1 \
+    && pecl install mongodb-2.3.3 \
     && pecl install memcached \
     && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
@@ -28,12 +29,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget -O /tmp/jsignpdf.zip \
-        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/3.1.0/jsignpdf-distribution-3.1.0-minimal.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
     && rm -f /tmp/jsignpdf.zip
 
 WORKDIR /billrun
 # Copy over custom configurations
+
 COPY docker/billrun-docker/billrun-php85/php-fpm.conf /usr/local/etc/
 COPY docker/billrun-docker/billrun-php85/php.ini /usr/local/etc/php/
 
@@ -58,7 +60,7 @@ RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN mkdir -p /data /run/nginx /var/cache/nginx \
+RUN mkdir -p /data /run/nginx /var/cache/nginx /billrun/cache \
     && chown -R www-data:www-data \
         /data /billrun /run/nginx /var/cache/nginx \
         /etc/nginx/sites-available /etc/nginx/sites-enabled

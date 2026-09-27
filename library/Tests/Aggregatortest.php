@@ -97,7 +97,17 @@
      }
 
      /**
-      * 
+      * BRCD-5421 - the test runs a single cycle with no previous one - require a previous billing
+      * cycle for the upfront reconciliation, so nothing is reconciled and the cycle is charged as
+      * before (the flag is restored to its default before every test case).
+      * to be used as a test case preRun.
+      */
+     public function requirePreviousBillrunForReconcile($key, $row) {
+         Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', true);
+     }
+
+     /**
+      *
       * @param $query
       * @return billrun objects by query or all if query is null
       */
@@ -131,6 +141,8 @@
         
          foreach ($this->tests as $key => $row) {
              $this->shouldRunAggregate = true;
+             Billrun_Plans_Charge_Upfront::resetReconciliationCache();
+             Billrun_Factory::config()->setConfigValue('billrun.upfront.reconcile_requires_previous_billrun', false);
              $aid = $row['test']['aid'];
 	     $this->message .= "<span id={$row['test']['test_number']}>test number : " . $row['test']['test_number'] . '</span><br>';
 	    if (isset($row['test']['label'])) {
@@ -299,6 +311,16 @@
          return $passed;
      }
 
+      public function getBillrunSubs($key, $returnBillrun, $row) {
+            
+            $billrun_key = $row['expected']['billrun']['billrun_key'];
+            $aid = $row['expected']['billrun']['aid'];
+            $query = array('key' => $billrun_key, 'aid' => $aid);
+            $billrun_subsCollection = Billrun_Factory::db()->billrun_subsCollection();
+            $billrun_subs = $billrun_subsCollection->query($query)->cursor();
+            return $billrun_subs;
+      }
+
      /**
       * check if all subscribers was calculeted
       * @param int $key number of the test case
@@ -307,10 +329,10 @@
       * @return boolean true if the test is pass and false if the tast is fail
       */
      public function sumSids($key, $returnBillrun, $row) {
-         $this->message .= "<b> sum sid's :</b> <br>";
-         $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
-         $subs = isset($returnBillrun['subs']) && is_array($returnBillrun['subs']) ? $returnBillrun['subs'] : array();
-         if (count($sids) == count($subs) - 1) {
+        $this->message .= "<b> sum sid's :</b> <br>";
+        $subscount  = count($this->getBillrunSubs($key, $returnBillrun, $row));
+        $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         if (count($sids) == $subscount - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {

@@ -4,7 +4,8 @@ import { connect } from 'react-redux';
 import Immutable from 'immutable';
 import classNames from 'classnames';
 import isNumber from 'is-number';
-import { Button, Col, Row, Label } from 'react-bootstrap';
+import { Button, Col, Row } from 'react-bootstrap';
+import { Label } from '@/common/BootstrapCompat';
 import getSymbolFromCurrency from 'currency-symbol-map';
 import { buildRequestUrl } from '@/common/Api';
 import {
@@ -21,8 +22,7 @@ import {
   getFieldName,
 } from '@/common/Util';
 
-
-const ViewExpectedInvoice = ({ item, dispatch }) => {
+const ViewExpectedInvoice = ({ item = Immutable.Map(), dispatch }) => {
 
   const [invoiceId, setInvoiceId] = useState('');
   const [inConfirmProgress, setInConfirmProgress] = useState(false);
@@ -102,7 +102,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               )}
             </span>
             <form method="post" action={downloadExpectedInvoiceUrl} target="_blank" className='mt10 mb10 ml15'>
-                <Button bsStyle='primary' type="submit" disabled={isInvoiceConfirmed || inConfirmProgress}>
+                <Button variant='primary' type="submit" disabled={isInvoiceConfirmed || inConfirmProgress}>
                   <i className="fa fa-download" /> {getFieldName('btn_download_expected_invoice', 'immediate_invoice')}
                 </Button>
               </form>
@@ -144,7 +144,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               />
             </div>
             { !hasPaymentGateway && (
-              <Label bsStyle="warning">{ getFieldName('no_pg_more_options_text', 'immediate_invoice')}</Label>
+              <Label variant="warning">{ getFieldName('no_pg_more_options_text', 'immediate_invoice')}</Label>
             )}
             <div style={advancedOptionsStyle} className='mt15'>
               <Field
@@ -157,7 +157,7 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
               />
             </div>
             <hr className="mb5" />
-            <Button onClick={onConfirmInvoice} bsStyle='success' className='mt10 mb10 ml15' disabled={isInvoiceConfirmed || inConfirmProgress}>
+            <Button onClick={onConfirmInvoice} variant='success' className='mt10 mb10 ml15' disabled={isInvoiceConfirmed || inConfirmProgress}>
               <i className={iconClass} /> {getFieldName('btn_confirm_expected_invoice', 'immediate_invoice', null, {type: invTypeLabel})}
             </Button>
         </Col>
@@ -177,11 +177,6 @@ const ViewExpectedInvoice = ({ item, dispatch }) => {
     </>
   );
 }
-
-ViewExpectedInvoice.defaultProps = {
-  item: Immutable.Map(),
-  currency: '',
-};
 
 ViewExpectedInvoice.propTypes = {
   item: PropTypes.instanceOf(Immutable.Map),

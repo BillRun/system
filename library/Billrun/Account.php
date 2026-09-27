@@ -13,6 +13,7 @@
  * @since    5.0
  */
 abstract class Billrun_Account extends Billrun_Base {
+	use Billrun_Traits_ConditionsCheck;
 
 	/**
 	 * Type of object
@@ -48,6 +49,12 @@ abstract class Billrun_Account extends Billrun_Base {
 	protected $customerExtraData = array();
 	
 	protected static $allowedQueryKeys = ['id', 'time', 'read_preference'];
+
+	/**
+	 * Resolved payers, keyed by aid and revision time.
+	 * @var array
+	 */
+	protected static $payerAidCache = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -111,6 +118,27 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param $aids aids array  to only return contained aids
 	 */
 	public abstract function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $size, $aids = []);
+
+	/**
+	 * The end of the billable revisions window for a cycle - the cycle end, or one cycle (month)
+	 * ahead when the billrun.upfront.billable_next_cycle configuration is set: the next cycle
+	 * revisions are needed to pay upfront plans in advance by the changes that are already
+	 * recorded (BRCD-5421). Irrelevant in the full fraction (legacy upfront) mode, which ignores
+	 * the known future - the window is never extended there.
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle
+	 * @return int unix timestamp
+	 */
+	protected function getBillableWindowEnd(\Billrun_DataTypes_MongoCycleTime $cycle) {
+		$config = Billrun_Factory::config();
+		if (!$config->getConfigValue('billrun.upfront.billable_next_cycle', false) ||
+				$config->getConfigValue('billrun.upfront.full_fraction', false) ||
+				!Billrun_Util::isBillrunKey($cycle->key())) { // onetime (immediate invoice) cycles are never extended
+			return $cycle->end()->sec;
+		}
+		$windowEnd = strtotime('+1 month', $cycle->end()->sec);
+		Billrun_Factory::log("getBillable window of cycle {$cycle->key()} extended to " . date('Y-m-d', $windowEnd) . " (billrun.upfront.billable_next_cycle) - requesting the next cycle revisions as well", Zend_Log::DEBUG);
+		return $windowEnd;
+	}
 
 	/**
 	 * get account revision by params
@@ -206,7 +234,62 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		return $result;
 	}
+
+	public function loadAccountsByAidsWithBatches($aidsValues, $queryOptions = []) {
+		$gadBatchLimit = Billrun_Factory::config()->getConfigValue('subscribers.account.gad_limit', 5000, "int");
+		Billrun_Factory::log("Found gad batch limit of size " . $gadBatchLimit, Zend_Log::DEBUG);
+		$aidsBatches = array_chunk($aidsValues, $gadBatchLimit);
+		$batchesNumber = count($aidsBatches);
+		Billrun_Factory::log("Got " . $batchesNumber . " aids chunks" , Zend_Log::DEBUG);
+		$accounts = [];
+		for ($i = 0; $i < $batchesNumber; $i++) {
+			Billrun_Factory::log("Load accounts of batch number " . ($i+1) . "/" .  $batchesNumber, Zend_Log::DEBUG);
+			$query = array_merge(['aid' => array('$in' => $aidsBatches[$i])], $queryOptions);
+			$accounts = array_merge($this->loadAccountsForQuery($query), $accounts);
+		}
+		return $accounts;
+	}
 	
+	
+	/**
+	 * The account paying this account's bills: itself, or its nearest is_payer ancestor.
+	 *
+	 * @param int $aid
+	 * @param string|null $time revision date to resolve by, defaults to now
+	 * @return int payer aid
+	 */
+	public static function getPayerAid($aid, $time = null) {
+		$aid = intval($aid);
+		$cacheKey = $aid . '_' . $time;
+		if (isset(self::$payerAidCache[$cacheKey])) {
+			return self::$payerAidCache[$cacheKey];
+		}
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		$visited = array();
+		$current = $aid;
+		$payerAid = $aid;
+		$hops = 0;
+		while (!is_null($current) && !isset($visited[$current]) && $hops <= $maxDepth) {
+			$visited[$current] = true;
+			$query = array('aid' => $current);
+			if (!is_null($time)) {
+				$query['time'] = $time;
+			}
+			$revision = Billrun_Factory::account()->loadAccountForQuery($query);
+			if (empty($revision)) {
+				break; // dangling parent, the deepest account reached pays for itself
+			}
+			$payerAid = $current;
+			if (Billrun_Util::toBool(Billrun_Util::getIn($revision, 'is_payer', true), true)) {
+				break;
+			}
+			$parentAid = Billrun_Util::getIn($revision, 'parent_aid');
+			$current = ($parentAid === '' || is_null($parentAid)) ? null : intval($parentAid);
+			$hops++;
+		}
+		return self::$payerAidCache[$cacheKey] = $payerAid;
+	}
+
 	/**
 	 * @param array $queries to load one subscriber per query
 	 * @return array of account instances
@@ -408,22 +491,12 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getData() {
 		return $this->data;
 	}
-	/**
-	 * Function that returns the relevant aids for collection.
-	 * @param array $aids
-	 * @param boolean $is_aids_query
-	 * @param array $rejection_conditions
-	 * @return array of aids
-	 */
-	public static function getBalanceAccountQuery($aids, $is_aids_query, $rejection_conditions) {
-		$rejection_query = [];
-		foreach ($rejection_conditions as $condition) {
-			$rejection_query[$condition['field']] = ['$' . $condition['op'] => $condition['value']];
+
+	public static function convertConditionsToAccountQuery($conditions){
+		$query = [];
+		foreach ($conditions as $condition) {
+			$query[$condition['field']]['$' . $condition['op']] = $condition['value'];
 		}
-		$account_query = !empty($aids) ? (!$is_aids_query ? array('aid' => array('$in' => $aids)) : $aids) : [];
-		if ($rejection_query == ['aid' => ['$in' => [-1]]]) {
-			return $rejection_query; // clients hack in order to avoid wrong `aid` merge in the next line in case of an aid specific call. Actually a workaround for https://billrun.atlassian.net/browse/BRCD-4180
-		}
-		return array_merge_recursive($rejection_query, $account_query);
+		return $query;
 	}
 }

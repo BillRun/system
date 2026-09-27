@@ -14,8 +14,8 @@
  * accountLastRevision), so the whole tree is resolved from one deterministic end-of-cycle snapshot.
  *
  * This single helper is the source of truth shared by the aggregate selection (getBillable), the
- * roll-up bucketing (parseToAccounts), the re-run cleanup (removeBeforeAggregate) and the payer-gateway
- * resolution, so they can never disagree about which descendants belong to which invoicing account.
+ * roll-up bucketing (parseToAccounts) and the re-run cleanup (removeBeforeAggregate), so they can never
+ * disagree about which descendants belong to which invoicing account.
  *
  * An "invoicing account" is one whose end-of-cycle revision has no parent (parent_aid null/absent) OR
  * issues_invoice=true; defaults for missing fields are parent_aid => root, issues_invoice/is_payer => true.
@@ -114,12 +114,30 @@ class Billrun_Cycle_Hierarchy {
 	 */
 	public static function isInUse() {
 		if (is_null(self::$hierarchyInUseCache)) {
-			$record = Billrun_Factory::db()->subscribersCollection()
-				->query(array('type' => 'account', 'parent_aid' => array('$exists' => true, '$ne' => null)))
-				->cursor()->limit(1)->current();
-			self::$hierarchyInUseCache = ($record && !$record->isEmpty());
+			if (self::isExternalMode()) {
+				// External subscribers mode: accounts live in a 3rd-party CRM, never in the local
+				// subscribers collection, so there is nothing to probe. Hierarchy is driven by an explicit
+				// config flag instead (the CRM still has to honor the subtree contract in its GBA/GAD feed).
+				self::$hierarchyInUseCache = (bool) Billrun_Factory::config()->getConfigValue('customer.hierarchy.external_enabled', false);
+			} else {
+				$record = Billrun_Factory::db()->subscribersCollection()
+					->query(array('type' => 'account', 'parent_aid' => array('$exists' => true, '$ne' => null)))
+					->cursor()->limit(1)->current();
+				self::$hierarchyInUseCache = ($record && !$record->isEmpty());
+			}
 		}
 		return self::$hierarchyInUseCache;
+	}
+
+	/**
+	 * Whether accounts are sourced from a 3rd-party CRM (external subscribers mode) rather than the local
+	 * Mongo subscribers collection. Determines whether hierarchy state is resolved from the DB or from the
+	 * in-memory account feed.
+	 *
+	 * @return bool
+	 */
+	public static function isExternalMode() {
+		return strtolower(Billrun_Factory::config()->getConfigValue('subscribers.account.type', 'db')) === 'external';
 	}
 
 	/**
@@ -143,17 +161,41 @@ class Billrun_Cycle_Hierarchy {
 		if (array_key_exists($aid, $this->stateCache)) {
 			return $this->stateCache[$aid];
 		}
+		return $this->stateCache[$aid] = $this->loadAccountState($aid);
+	}
+
+	/**
+	 * Load (uncached) the end-of-cycle hierarchy state of an account from its source. The DB resolver reads
+	 * the latest overlapping account revision from Mongo; the feed-backed resolver overrides this to read
+	 * from the in-memory account map built from the CRM subtree. Returns false when the account has no
+	 * revision active in the cycle.
+	 *
+	 * @param int $aid
+	 * @return array|false
+	 */
+	protected function loadAccountState($aid) {
 		$query = array_merge(array('aid' => $aid, 'type' => 'account'), $this->overlapQuery);
 		$revision = $this->collection->query($query)->cursor()->sort(array('from' => -1))->limit(1)->current();
 		if (!$revision || $revision->isEmpty()) {
-			return $this->stateCache[$aid] = false;
+			return false;
 		}
-		$raw = $revision->getRawData();
+		return $this->normalizeState($aid, $revision->getRawData());
+	}
+
+	/**
+	 * Build the canonical hierarchy-state array from a raw account revision. Shared by the DB and feed
+	 * resolvers so both apply identical parent_aid/issues_invoice/is_payer defaulting.
+	 *
+	 * @param int $aid
+	 * @param array $raw raw account revision data
+	 * @return array ['aid','parent_aid'(int|null),'issues_invoice'(bool),'is_payer'(bool)]
+	 */
+	protected function normalizeState($aid, $raw) {
 		$parentAid = (isset($raw['parent_aid']) && $raw['parent_aid'] !== '' && !is_null($raw['parent_aid']))
 			? intval($raw['parent_aid'])
 			: null;
-		return $this->stateCache[$aid] = array(
-			'aid' => $aid,
+		return array(
+			'aid' => intval($aid),
 			'parent_aid' => $parentAid,
 			'issues_invoice' => $this->resolveBool($raw, 'issues_invoice', true),
 			'is_payer' => $this->resolveBool($raw, 'is_payer', true),
@@ -262,6 +304,19 @@ class Billrun_Cycle_Hierarchy {
 		if (array_key_exists($aid, $this->childrenCache)) {
 			return $this->childrenCache[$aid];
 		}
+		return $this->childrenCache[$aid] = $this->loadChildAids($aid);
+	}
+
+	/**
+	 * Load (uncached) the child aids of an account from its source. The DB resolver queries Mongo for
+	 * account revisions pointing at $aid; the feed-backed resolver overrides this to read from the
+	 * in-memory account map. Each candidate is re-checked against its end-of-cycle state so a child that
+	 * was reparented mid-cycle is not counted.
+	 *
+	 * @param int $aid
+	 * @return int[]
+	 */
+	protected function loadChildAids($aid) {
 		$query = array_merge(array('parent_aid' => $aid, 'type' => 'account'), $this->overlapQuery);
 		$cursor = $this->collection->query($query)->cursor()->sort(array('from' => -1));
 		$children = array();
@@ -278,36 +333,7 @@ class Billrun_Cycle_Hierarchy {
 				$children[] = $childAid;
 			}
 		}
-		return $this->childrenCache[$aid] = $children;
-	}
-
-	/**
-	 * The account whose payment gateway should be charged for this account: the nearest self-or-ancestor
-	 * with is_payer=true (a root is always a payer). Falls back to the deepest reachable active account.
-	 *
-	 * @param int $aid
-	 * @return int payer aid
-	 */
-	public function getPayerAid($aid) {
-		$aid = intval($aid);
-		$visited = array();
-		$current = $aid;
-		$lastActive = $aid;
-		$hops = 0;
-		while (!is_null($current) && !isset($visited[$current]) && $hops <= $this->maxDepth) {
-			$visited[$current] = true;
-			$state = $this->getAccountState($current);
-			if ($state === false) {
-				break;
-			}
-			$lastActive = $current;
-			if ($state['is_payer'] === true) {
-				return $current;
-			}
-			$current = $state['parent_aid'];
-			$hops++;
-		}
-		return $lastActive;
+		return $children;
 	}
 
 	/**

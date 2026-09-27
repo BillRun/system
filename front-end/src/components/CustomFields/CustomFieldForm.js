@@ -1,23 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, List } from 'immutable'; // eslint-disable-line no-unused-vars
-import { Form, InputGroup, Col, FormGroup, ControlLabel, HelpBlock, Panel } from 'react-bootstrap';
+import { Form, InputGroup, Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '../Field';
 import { EntityField } from '../Entity';
 
-
 const CustomFieldForm = ({
-  item, onChangeOptions, onChangePlay, onChangeType, onChangeTitle, onChangeFieldName,
+  item = Map(), onChangeOptions, onChangePlay, onChangeType, onChangeTitle, onChangeFieldName,
   onChangeEntityField,
-  disableUnique, disableMandatory, disableFieldType, disabledEditable, disabledDisplay,
-  disabledShowInList, disableSearchable, disableMultiple, disableSelectList, disableSelectOptions,
-  disableTitle, disableFieldName, disableHelp, disableDescription, disableDefaultValue, disableCategoryValue,
-  isErrorTitle, isErrorFieldName,
-  fieldTypesOptions, playsOptions,
-  fieldType, showPlays, plays,
-  checkboxStyle, helpTextStyle,
+  disableUnique = false, disableMandatory = false, disableFieldType = false, disabledEditable = false, disabledDisplay = false,
+  disabledShowInList = false, disableSearchable = false, disableMultiple = false, disableSelectList = false, disableSelectOptions = false,
+  disableTitle = false, disableFieldName = false, disableHelp = false, disableDescription = false, disableDefaultValue = false, disableCategoryValue,
+  isErrorTitle = false, isErrorFieldName = false,
+  fieldTypesOptions = [], playsOptions = [],
+  fieldType = '', showPlays = false, plays = '',
+  checkboxStyle = {}, helpTextStyle = {},
 }) => (
-  <Form horizontal>
+    <Form className="form-horizontal">
     <EntityField
       field={Map({ title: 'Key', field_name: 'field_name', mandatory: true })}
       entity={item}
@@ -34,7 +34,7 @@ const CustomFieldForm = ({
     />
     {!disableFieldType && (
       <FormGroup>
-        <Col sm={3} lg={2} componentClass={ControlLabel}>Field Type</Col>
+        <Col sm={3} lg={2} as={ControlLabel}>Field Type</Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -49,7 +49,7 @@ const CustomFieldForm = ({
     )}
     {showPlays && (
       <FormGroup>
-        <Col sm={3} lg={2} componentClass={ControlLabel}>Play</Col>
+        <Col sm={3} lg={2} as={ControlLabel}>Play</Col>
         <Col sm={8} lg={9}>
           <Field
             fieldType="select"
@@ -90,7 +90,7 @@ const CustomFieldForm = ({
     <Panel header="Options">
       {!disableUnique && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Unique</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Unique</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               id="unique"
@@ -105,7 +105,7 @@ const CustomFieldForm = ({
       )}
       {!disableMandatory && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Mandatory</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Mandatory</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               id="mandatory"
@@ -121,7 +121,7 @@ const CustomFieldForm = ({
       )}
       {!disabledEditable && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Editable</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Editable</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               fieldType="checkbox"
@@ -136,7 +136,7 @@ const CustomFieldForm = ({
       )}
       {!disabledDisplay && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Display</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Display</Col>
           <Col sm={7} style={checkboxStyle}>
             <Field
               fieldType="checkbox"
@@ -151,7 +151,7 @@ const CustomFieldForm = ({
       )}
       {!disabledShowInList && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Show in list</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Show in list</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               fieldType="checkbox"
@@ -166,7 +166,7 @@ const CustomFieldForm = ({
       )}
       {!disableSearchable && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Searchable</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Searchable</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               fieldType="checkbox"
@@ -181,7 +181,7 @@ const CustomFieldForm = ({
       )}
       {!disableMultiple && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Multiple</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Multiple</Col>
           <Col sm={8} lg={9} style={checkboxStyle}>
             <Field
               id="multiple"
@@ -196,10 +196,10 @@ const CustomFieldForm = ({
       )}
       { (!disableSelectList || !disableSelectOptions) && (
         <FormGroup>
-          <Col sm={3} lg={2} componentClass={ControlLabel}>Select list</Col>
+          <Col sm={3} lg={2} as={ControlLabel}>Select list</Col>
           <Col sm={8} lg={9}>
             <InputGroup>
-              <InputGroup.Addon>
+              <InputGroup.Text>
                 <Field
                   id="select_list"
                   onChange={onChangeOptions}
@@ -207,7 +207,7 @@ const CustomFieldForm = ({
                   fieldType="checkbox"
                   disabled={disableSelectList}
                 />
-              </InputGroup.Addon>
+              </InputGroup.Text>
               <Field
                 id="select_options"
                 onChange={onChangeOptions}
@@ -239,7 +239,6 @@ const CustomFieldForm = ({
     )}
   </Form>
 );
-
 
 CustomFieldForm.propTypes = {
   item: PropTypes.instanceOf(Map),
@@ -285,36 +284,5 @@ CustomFieldForm.propTypes = {
   onChangeFieldName: PropTypes.func.isRequired,
   onChangeEntityField: PropTypes.func.isRequired,
 };
-
-
-CustomFieldForm.defaultProps = {
-  item: Map(),
-  fieldTypeLabel: '',
-  isErrorTitle: false,
-  isErrorFieldName: false,
-  disableUnique: false,
-  disableMandatory: false,
-  disableFieldType: false,
-  disabledEditable: false,
-  disabledDisplay: false,
-  disabledShowInList: false,
-  disableSearchable: false,
-  disableMultiple: false,
-  disableSelectList: false,
-  disableSelectOptions: false,
-  disableTitle: false,
-  disableFieldName: false,
-  disableHelp: false,
-  disableDescription: false,
-  disableDefaultValue: false,
-  fieldTypesOptions: [],
-  fieldType: '',
-  showPlays: false,
-  plays: '',
-  playsOptions: [],
-  checkboxStyle: {},
-  helpTextStyle: {},
-};
-
 
 export default CustomFieldForm;

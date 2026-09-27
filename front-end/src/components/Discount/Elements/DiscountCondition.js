@@ -4,13 +4,13 @@ import Immutable from 'immutable';
 import { Conditions } from '@/components/Elements';
 
 const DiscountCondition = ({
-  conditions,
+  conditions = Immutable.List(),
   path,
-  editable,
-  fields,
-  operators,
-  valueOptions,
-  errors,
+  editable = true,
+  fields = Immutable.List(),
+  operators = Immutable.List(),
+  valueOptions = Immutable.List(),
+  errors = Immutable.Map(),
   onChangeField,
   onChangeOp,
   onChangeValue,
@@ -76,15 +76,6 @@ DiscountCondition.propTypes = {
   onChangeValue: PropTypes.func.isRequired,
   onAdd: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
-};
-
-DiscountCondition.defaultProps = {
-  conditions: Immutable.List(),
-  editable: true,
-  fields: Immutable.List(),
-  operators: Immutable.List(),
-  valueOptions: Immutable.List(),
-  errors: Immutable.Map(),
 };
 
 export default memo(DiscountCondition);

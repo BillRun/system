@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Tab, Panel } from 'react-bootstrap';
+import { Tab } from 'react-bootstrap';
+import { Panel } from '@/common/BootstrapCompat';
 import { TabsWrapper } from '@/components/Elements';
 import InvoiceReady from './InvoiceReady';
 

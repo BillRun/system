@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Immutable from 'immutable';
-import { FormGroup, ControlLabel, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { getSettings } from '@/actions/settingsActions';
 import { showConfirmModal } from '@/actions/guiStateActions/pageActions';
@@ -39,25 +40,13 @@ class PlaysSelector extends Component {
     onChange: () => {},
   }
 
-  componentWillMount() {
+  
+  
+  componentDidMount() {
     this.props.dispatch(getSettings(['plays']));
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { availablePlays, mandatory, editable, onChange, entity } = this.props;
-    // Set default play in edit mode if it required and not set.
-    const playsLoadedComplete = !nextProps.availablePlays.isEmpty()
-      && Immutable.is(availablePlays, nextProps.availablePlays);
-    const playNotSet = entity.get('play', null) === null;
-    if (playNotSet && mandatory && editable && playsLoadedComplete) {
-      const defaultPlay = nextProps.availablePlays.find(
-        availablePlay => availablePlay.get('enabled', true) && availablePlay.get('default', false),
-        null, nextProps.availablePlays.first(),
-      ).get('name', '');
-      onChange(defaultPlay);
-    }
-  }
-
+  
   playsValueToList = (plays) => {
     if (plays === '') {
       return Immutable.List();
@@ -97,6 +86,22 @@ class PlaysSelector extends Component {
     return this.props.dispatch(showConfirmModal(confirm));
   }
 
+  
+  componentDidUpdate(prevProps, prevState) {// eslint-disable-line no-unused-vars
+    const { availablePlays, mandatory, editable, onChange, entity } = prevProps;
+    // Set default play in edit mode if it required and not set.
+    const playsLoadedComplete = !this.props.availablePlays.isEmpty()
+      && Immutable.is(availablePlays, this.props.availablePlays);
+    const playNotSet = entity.get('play', null) === null;
+    if (playNotSet && mandatory && editable && playsLoadedComplete) {
+      const defaultPlay = this.props.availablePlays.find(
+        availablePlay => availablePlay.get('enabled', true) && availablePlay.get('default', false),
+        null, this.props.availablePlays.first(),
+      ).get('name', '');
+      onChange(defaultPlay);
+    }
+  }
+
   render() {
     const { availablePlays, entity, editable, multi, mandatory, labelStyle, fieldStyle } = this.props;
     if (!shouldUsePlays(availablePlays)) {
@@ -106,7 +111,7 @@ class PlaysSelector extends Component {
     const playValue = this.playsValueToList(entity.get('play', '')).join(',');
     return (
       <FormGroup key="play">
-        <Col componentClass={ControlLabel} sm={labelStyle.sm} lg={labelStyle.lg}>
+        <Col as={ControlLabel} sm={labelStyle.sm} lg={labelStyle.lg}>
           {label}
           { mandatory && (<span className="danger-red"> *</span>)}
         </Col>

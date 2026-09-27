@@ -1,0 +1,56 @@
+{
+    "ends_at_cycle_start": {
+        "cycle": "202501",
+        "config": {
+            "start": "2024-11-30T00:00:00Z",
+            "end":   "2024-12-01T00:00:00Z"
+        },
+        "expected": false
+    },
+    "ends_after_cycle_start": {
+        "cycle": "202501",
+        "config": {
+            "start": "2024-11-30T00:00:00Z",
+            "end":   "2024-12-02T00:00:00Z"
+        },
+        "expected": true
+    },
+    "ends_before_cycle_start": {
+        "cycle": "202501",
+        "config": {
+            "start": "2024-11-29T00:00:00Z",
+            "end":   "2024-11-30T00:00:00Z"
+        },
+        "expected": false
+    },
+    "no_end_date": {
+        "cycle": "202501",
+        "config": {
+            "start": "2024-11-30T00:00:00Z"
+        },
+        "expected": true
+    },
+    "starts_at_cycle_end": {
+        "cycle": "202501",
+        "config": {
+            "start": "2025-01-01T00:00:00Z"
+        },
+        "expected": false
+    },
+    "starts_after_cycle_end": {
+        "cycle": "202501",
+        "config": {
+            "start": "2025-01-02T00:00:00Z"
+        },
+        "expected": false
+    },
+    "ends_at_cycle_start_custom_recurrence": {
+        "cycle": "202501",
+        "config": {
+            "start": "2024-11-30T00:00:00Z",
+            "end":   "2024-12-01T00:00:00Z",
+            "recurrence": { "frequency": 1, "start": null }
+        },
+        "expected": false
+    }
+}

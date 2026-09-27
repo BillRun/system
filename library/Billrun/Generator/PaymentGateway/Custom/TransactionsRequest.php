@@ -35,6 +35,17 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $affects_bills = true;
 	protected $locked_aid_bills_to_recharge = [];
 	protected $locked_aids_to_recharge = [];
+	/**
+	 * BRCD-785: aid => the aid whose payment details pay its bills. Resolved once per generated file.
+	 * @var array
+	 */
+	protected $payerAidByAid = array();
+	/**
+	 * BRCD-785: raw account data of the payer of the bill currently being processed.
+	 * @var array
+	 */
+	protected $payerAccountData = null;
+	const GENERATOR_MAX_RECORDS_PER_BATCH = 50000;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -102,27 +113,42 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		Billrun_Factory::log()->log('Parameters are valid for file type ' . $this->configByType['file_type'] . '. Starting to pull entities..', Zend_Log::INFO);
 		$filtersQuery = Billrun_Bill_Payment::buildFilterQuery($this->chargeOptions);
 		$payMode = isset($this->chargeOptions['pay_mode']) ? $this->chargeOptions['pay_mode'] : 'one_payment';
-		$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode));
-		$message = 'generator entities loaded: ' . count($this->customers);
+		$numberOfRecordsToTreat = 0;
+		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : INF;
+		$maxRecordsPerTransaction = !empty($this->configByType['generator']['max_records_per_batch']) ? $this->configByType['generator']['max_records_per_batch'] : self::GENERATOR_MAX_RECORDS_PER_BATCH;
+		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
+		$loadedEntities = 0;
+		$afterGroupCursor = null;
+		$this->data = array();
+		do{
+			$customersAidsPerTransaction = [];
+			$this->customers = iterator_to_array(Billrun_Bill::getBillsAggregateValues($filtersQuery, $payMode, $maxRecordsPerTransaction, $afterGroupCursor));
+			$loadedEntities = count($this->customers);
+			$message = 'generator entities loaded: ' . $loadedEntities;
 		Billrun_Factory::log()->log($message, Zend_Log::INFO);
 		$this->logFile->updateLogFileField('info', $message);
+			if($loadedEntities == 0 ){
+				break;
+			}
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-		$this->data = array();
-		$customersAids = array_map(function($ele) {
+			$customersAids = array_unique(array_map(function($ele) {
 			return $ele['aid'];
-		}, $this->customers);
-
+			}, $this->customers));
+			$lastBllAggregateValue = end($this->customers);
+			$afterGroupCursor = $this->getAlreadyLoadedQuery($payMode, $lastBllAggregateValue);
+			Billrun_Factory::log()->log("Pulling $loadedEntities accounts", Zend_Log::INFO);
+			$accountsInArray = [];
 		$account = Billrun_Factory::account();
-		$accountQuery = array('aid' => array('$in' => $customersAids));
-		$accounts = $account->loadAccountsForQuery($accountQuery);
+			$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
+		$accountsInArray = array();
 		if (is_array($accounts)) {
 			foreach ($accounts as $account) {
 				$accountsInArray[$account['aid']] = $account;
 			}
 		}
-		$maxRecords = !empty($this->configByType['generator']['max_records']) ? $this->configByType['generator']['max_records'] : null;
-		Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers));
-		Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::INFO);
+		$this->resolvePayerAccounts($accountsInArray);
+		    Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers, $accountsInArray));
+			Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::DEBUG);
 		$this->setFileMandatoryFields();
 		$current_loop_bills = $this->customers;
 		$loop_counter = 0;
@@ -133,17 +159,22 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			Billrun_Factory::log()->log("Starting transactions request file charging loop number " . $loop_counter . " with " . count($current_loop_bills) . " bills", Zend_Log::DEBUG);
 			foreach ($current_loop_bills as $customer) {
 				$this->aid_to_lock = null;
+				$this->payerAccountData = null;
 				if (!is_null($maxRecords) && count($this->data) == $maxRecords) {
+						Billrun_Factory::log()->log("Reached max records limit of " . $maxRecords . " for file type " . $this->configByType['file_type'] . ". Stopping the charging loop", Zend_Log::INFO);						
 					break;
 				}
 				$paymentParams = array();
 				if (isset($accountsInArray[$customer['aid']])) {
 					$account = $accountsInArray[$customer['aid']];
-					$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, 'account');
-					if (!empty($mandatory_fields_res)) {
-						$message = implode(",", $mandatory_fields_res) . " fields are missing for account with aid: " . $customer['aid'] . ". No payment was created. Skipping this account..";
-						Billrun_Factory::log($message, Zend_Log::ALERT);
-						$this->logFile->updateLogFileField('errors', $message);
+					// BRCD-785: the account paying this bill - itself, or its nearest is_payer ancestor
+					$payerAid = isset($this->payerAidByAid[$customer['aid']]) ? $this->payerAidByAid[$customer['aid']] : $customer['aid'];
+					$payerAccount = isset($accountsInArray[$payerAid]) ? $accountsInArray[$payerAid] : $account;
+					$this->payerAccountData = $payerAccount->getRawData();
+					if (!$this->handleMandatoryFields($account, 'account', "account with aid: " . $customer['aid'])) {
+						continue;
+					}
+					if (!$this->handleMandatoryFields($payerAccount, 'payer', "payer account with aid: " . $payerAid . ", paying for account with aid: " . $customer['aid'])) {
 						continue;
 					}
 				} else {
@@ -154,6 +185,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 				$accountConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['accounts']) ? $this->generatorFilters['accounts'] : array();
 				if (!$this->isAccountUpholdConditions($account->getRawData(), $accountConditions)) {
+					continue;
+				}
+				// BRCD-785: conditions on the account paying the bill
+				$payerConditions = !empty($this->generatorFilters) && isset($this->generatorFilters['payers']) ? $this->generatorFilters['payers'] : array();
+				if (!$this->isAccountUpholdConditions($this->payerAccountData, $payerConditions)) {
 					continue;
 				}
 				$options = array('collect' => false, 'file_based_charge' => true, 'generated_pg_file_log' => $this->generatedLogFileStamp);
@@ -209,12 +245,8 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 					$currentPayment->setExtraFields([static::ASSUME_APPROVED_FILE_STATE => true]);
 				}
 				$params = is_array($currentPayment)? $currentPayment : $currentPayment->getRawData();
-				if (isset($account['payment_gateway']['active']['card_token'])) {
-					$params['card_token'] = $account['payment_gateway']['active']['card_token'];
-				}
-				if (isset($account['payment_gateway']['active']['card_expiration'])) {
-					$params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
-				}
+				$params = array_merge($params, $this->getPaymentDetailsFields());
+				$params['payer_aid'] = $payerAid;
 				if (!empty($this->validateMandatoryFieldsExistence($params, 'payment_request'))) {
 					$message = "One or more of the file's mandatory fields is missing for the payment request that was created for aid: " . $customer['aid'] . ". The payment was created anyway.";
 					Billrun_Factory::log($message, Zend_Log::WARN);
@@ -223,6 +255,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$extraFields = $this->getCustomPaymentGatewayFields();
 				$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
 				Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
+					$params['_account'] = is_array($account) ? $account : $account->getRawData();
 				$line = $this->getDataLine($params);
 				if ($this->affects_bills) {
 				$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);
@@ -230,6 +263,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				}
 				if (!empty($line)) {
 				$this->data[] = $line;
+						$numberOfRecordsToTreat++;
 				}
 			}
 			Billrun_Factory::log()->log("Finishing transactions request file charging loop number " . $loop_counter . " with " . (count($current_loop_bills) - count($this->locked_aid_bills_to_recharge)) . " charged bills. Checking if need to start a new one", Zend_Log::DEBUG);
@@ -241,6 +275,10 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		if ($loop_counter == 3) {
 			Billrun_Factory::log()->log("Stopped waiting for the skipped accounts to be released after " . $loop_counter . " charging attempts. Failed to load data to the request file, of aids " . implode(",", array_unique(array_keys($this->locked_aids_to_recharge))), Zend_Log::ALERT);
 		}
+		} while ($numberOfRecordsToTreat < $maxRecords && $loadedEntities == $maxRecordsPerTransaction);
+		if ($numberOfRecordsToTreat == $maxRecords) {
+			Billrun_Factory::log()->log("Transactions request number of records to treat in file got to the limit of max records: $maxRecords" , Zend_Log::DEBUG);
+		}
 		$numberOfRecordsToTreat = count($this->data);
 		$message = 'generator entities treated: ' . $numberOfRecordsToTreat;
 		$this->file_transactions_counter = $numberOfRecordsToTreat;
@@ -248,6 +286,32 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$this->logFile->updateLogFileField('info', $message);
 		$this->headers = !empty($header = $this->getHeaderLine()) ? [$header] : [];
 		$this->trailers = !empty($trailer = $this->getTrailerLine()) ? [$trailer] : [];
+	}
+
+	/**
+	 * Build the keyset (seek) cursor that resumes the aggregate right after the
+	 * last entity of the previous batch. It mirrors the aggregate ordering
+	 * (['unique_id_str' => -1], see Billrun_Bill::getBillsAggregateValues): a group
+	 * belongs to the next batch when its max invoice_id / txid (unique_id_str) is
+	 * lower than the last one loaded. unique_id_str is unique per group - invoice_id
+	 * and txid are each unique auto-increment sequences, and internal txids are
+	 * zero-padded so they never collide with invoice_ids - so a strict '<' is a
+	 * total order with no skipped or duplicated group.
+	 *
+	 * Returned as a post-$group $match (it references the grouped fields), which
+	 * keeps whole account atomicity for one_payment and, being a seek rather than
+	 * an accumulated exclusion list, keeps memory and query size constant across
+	 * batches.
+	 *
+	 * @param string $payMode
+	 * @param array $lastBllAggregateValue the last (lowest ordered) entity loaded
+	 * @return array|null a $match query, or null when there is nothing to resume from
+	 */
+	protected function getAlreadyLoadedQuery($payMode, $lastBllAggregateValue){
+		if (empty($lastBllAggregateValue) || !isset($lastBllAggregateValue['unique_id_str'])) {
+			return null;
+		}
+		return array('unique_id_str' => array('$lt' => (string)$lastBllAggregateValue['unique_id_str']));
 	}
 
 	/**
@@ -373,14 +437,73 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				'cpg_file_type' => [!empty($this->options['file_type']) ? $this->options['file_type'] : ""]
 			];
         }
+	/**
+	 * Validate the file's mandatory fields on an account, logging the missing ones.
+	 *
+	 * @param Mongodloid_Entity $account the account to validate
+	 * @param string $entity the linked entity the mandatory fields were configured under
+	 * @param string $subject how the account is named in the error message
+	 * @return bool false when a mandatory field is missing and the bill should be skipped
+	 */
+	protected function handleMandatoryFields($account, $entity, $subject) {
+		$mandatory_fields_res = $this->validateMandatoryFieldsExistence($account, $entity);
+		if (empty($mandatory_fields_res)) {
+			return true;
+		}
+		$message = implode(",", $mandatory_fields_res) . " fields are missing for " . $subject . ". No payment was created. Skipping this account..";
+		Billrun_Factory::log($message, Zend_Log::ALERT);
+		$this->logFile->updateLogFileField('errors', $message);
+		return false;
+		}
+
+	/**
+	 * BRCD-785: resolve which account pays each loaded account's bills, loading the payers that have no bills.
+	 *
+	 * @param array $accountsInArray aid => account entity, by reference
+	 */
+	protected function resolvePayerAccounts(&$accountsInArray) {
+		$this->payerAidByAid = array();
+		if (!Billrun_Cycle_Hierarchy::isInUse()) {
+			return;
+		}
+		$missingPayers = array();
+		foreach (array_keys($accountsInArray) as $aid) {
+			$payerAid = Billrun_Account::getPayerAid($aid);
+			$this->payerAidByAid[$aid] = $payerAid;
+			if (!isset($accountsInArray[$payerAid])) {
+				$missingPayers[$payerAid] = true;
+			}
+		}
+		if (empty($missingPayers)) {
+			return;
+		}
+		$payers = Billrun_Factory::account()->loadAccountsForQuery(array('aid' => array('$in' => array_keys($missingPayers))));
+		foreach ((is_array($payers) ? $payers : array()) as $payerAccount) {
+			$accountsInArray[$payerAccount['aid']] = $payerAccount;
+		}
+	}
+
+	/**
+	 * BRCD-785: the payment details the request is built with, taken from the account paying the bill.
+	 *
+	 * @return array
+	 */
+	protected function getPaymentDetailsFields() {
+		$fields = array();
+		foreach (array('card_token', 'card_expiration') as $fieldName) {
+			$value = Billrun_Util::getIn($this->payerAccountData, array('payment_gateway', 'active', $fieldName));
+			if (!is_null($value)) {
+				$fields[$fieldName] = $value;
+			}
+		}
+		return $fields;
+	}
+
 	public function handlePayment($account, $paymentParams, $customer, $options) {
-		$res_params = ['amount' => $paymentParams['amount'], 'aid' => $paymentParams['aid']];
-		if (isset($account['payment_gateway']['active']['card_token'])) {
-			$res_params['card_token'] = $account['payment_gateway']['active']['card_token'];
-		}
-		if (isset($account['payment_gateway']['active']['card_expiration'])) {
-			$res_params['card_expiration'] = $account['payment_gateway']['active']['card_expiration'];
-		}
+		$res_params = array_merge(
+			['amount' => $paymentParams['amount'], 'aid' => $paymentParams['aid']],
+			$this->getPaymentDetailsFields()
+		);
 		if ($this->affects_bills) {
 			try {
 				$options['account'] = $account->getRawData();
@@ -424,6 +547,11 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$this->logFile->updateLogFileField('warnings', $message);
 			}
 			$extraFields = array_merge_recursive($this->getCustomPaymentGatewayFields(), ['pg_request' => $this->billSavedFields]);
+			// BRCD-785: record which account's payment details paid this bill
+			$payerAid = Billrun_Util::getIn($this->payerAccountData, 'aid');
+			if (!is_null($payerAid)) {
+				$extraFields['payer_aid'] = $payerAid;
+			}
 			$currentPayment->setExtraFields($extraFields, ['cpg_name', 'cpg_type', 'cpg_file_type']);
 			Billrun_Factory::dispatcher()->trigger('beforeSavingRequestFilePayment', array(static::$type, &$currentPayment, &$res_params, $account, $this));
 			$currentPayment->save();

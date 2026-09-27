@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Button, Modal, FormGroup, ControlLabel } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import { apiBillRun } from '@/common/Api';
 import Json from './Json';
 import { showSuccess, showDanger } from '@/actions/alertsActions';
@@ -121,7 +122,7 @@ const ApiButton = (props) => {
     return (
         <div className="api-button-field">
             <Button
-                bsStyle={config.bsStyle || 'primary'}
+                variant={config.bsStyle || 'primary'}
                 onClick={() => setShowModal(true)}
                 disabled={disabled}
             >
@@ -138,13 +139,13 @@ const ApiButton = (props) => {
                         <Json
                             value={getVisibleQuery(currentQuery)}
                             onChange={handleQueryChange}
-                            viewOnly={!editable}
+                            editable={editable}
                         />
                     </FormGroup>
 
                     <div style={{ textAlign: 'center' }}>
                         <Button
-                            bsStyle="success"
+                            variant="success"
                             onClick={sendRequest}
                             disabled={isLoading}
                             style={{ minWidth: '200px' }}
@@ -177,11 +178,6 @@ ApiButton.propTypes = {
     editable: PropTypes.bool,
 };
 
-ApiButton.defaultProps = {
-    value: {},
-    onChange: () => { },
-    disabled: false,
-    editable: true,
-};
+
 
 export default connect()(ApiButton);

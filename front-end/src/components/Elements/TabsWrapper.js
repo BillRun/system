@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router';
+import withRouter from '@/common/withRouter';
 import { connect } from 'react-redux';
 import { Tabs } from 'react-bootstrap';
 import uuid from 'uuid';
@@ -41,7 +41,7 @@ class TabsWrapper extends Component {
       <div>
         <Tabs
           defaultActiveKey={activeTab}
-          animation={false}
+          transition={false}
           id={id}
           onSelect={this.handleSelectTab}
         >

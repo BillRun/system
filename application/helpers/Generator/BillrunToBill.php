@@ -27,6 +27,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $sendToRremoteServer = false;
 	protected $filtration = null;
 	protected $invoicing_days = [];
+	protected $accountsInArray = [];
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -83,6 +84,19 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 
 		$this->data = $invoices;
+		$customersAids = [];
+		foreach($this->data as $invoice){
+			$customersAids[] = $invoice['aid'];
+		}
+
+		$account = Billrun_Factory::account();
+		$accounts = $account->loadAccountsByAidsWithBatches($customersAids);
+		$this->accountsInArray = [];
+		if (is_array($accounts)) {
+			foreach ($accounts as $account) {
+				$this->accountsInArray[$account['aid']] = $account;
+			}
+		}
 	}
 
 	public function generate() {
@@ -133,58 +147,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 * @param type $invoice
 	 */
 	public function createBillFromInvoice($invoice, $callback = FALSE) {
-		$bill =array(
-				'type' => 'inv',
-				'invoice_id' => $invoice['invoice_id'],
-				'aid' => $invoice['aid'],
-				'bill_unit' => Billrun_Util::getFieldVal($invoice['attributes']['bill_unit_id'], NULL),
-				'due_date' => $this->updateDueDate($invoice),
-				'charge' => ['not_before' => $this->updateChargeDate($invoice)],
-				'due' => $invoice['totals']['after_vat_rounded'],
-				'due_before_vat' => $invoice['totals']['before_vat'],
-				'customer_status' => 'open',//$invoice['attributes']['account_status'],
-				'billrun_key' => $invoice['billrun_key'],
-				'amount' => abs($invoice['totals']['after_vat_rounded']),
-				'lastname' => $invoice['attributes']['lastname'],
-				'firstname' => $invoice['attributes']['firstname'],
-				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
-				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
-				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
-				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
-				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
-				'urt' => new Mongodloid_Date(),
-				'invoice_date' => $invoice['invoice_date'],
-				'invoice_file' => isset($invoice['invoice_file']) ? $invoice['invoice_file'] : null,
-        'invoice_type' => isset($invoice['attributes']['invoice_type']) ? $invoice['attributes']['invoice_type'] : 'regular',
-				'paid' => '0',
-				'total_paid' => 0
-			);
-		if (!empty($invoice['note'])) {
-			$bill['note'] = $invoice['note'];
-		}
-		if (!empty($invoice['invoicing_day'])) {
-			$bill['invoicing_day'] = $invoice['invoicing_day'];
-		}
-		if (!empty($invoice['uf'])) {
-			$bill['uf'] = $invoice['uf'];
-		}
-		if ($bill['due'] < 0) {
-			$bill['left'] = $bill['amount'];
-		}
-		else {
-			$bill['left_to_pay'] = $bill['due'];
-			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
-		}
-		if(!empty($invoice['attributes']['suspend_debit'])) {
-			$bill['suspend_debit'] = $invoice['attributes']['suspend_debit'];
-		}
+		$bill = Billrun_Bill::buildBaseBillFromInvoice($invoice, $this->updateDueDate($invoice), $this->updateChargeDate($invoice));
 		if (!empty($invoice['adjusted_from_invoices'])) {
 			$this->handleAdjustments($bill, $invoice['adjusted_from_invoices']);
 		}
 		
-		$account = Billrun_Factory::account();
-		$foreignData = $this->getForeignFields(array('account' => $account->loadAccountForQuery(['aid' => $invoice['aid']])));
+		$foreignData = $this->getForeignFields(array('account' => $this->accountsInArray[$invoice['aid']]));
 		$bill = array_merge_recursive($bill, $foreignData);
 		Billrun_Factory::log('Creating bill for '.$invoice['aid']. ' on billrun : '.$invoice['billrun_key'] . ' With invoice id : '. $invoice['invoice_id'],Zend_Log::DEBUG);
 		$invoice['confirmation_time'] = new MongoDate($this->confirmDate);

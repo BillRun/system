@@ -11,7 +11,4 @@ const StepImporting = () => (
 StepImporting.propTypes = {
 };
 
-StepImporting.defaultProps = {
-};
-
 export default StepImporting;
