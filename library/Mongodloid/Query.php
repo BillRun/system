@@ -145,6 +145,7 @@ class Mongodloid_Query implements IteratorAggregate {
 		return $this;
 	}
 
+	#[\ReturnTypeWillChange]
 	public function getIterator() {
 		return $this->cursor();
 	}

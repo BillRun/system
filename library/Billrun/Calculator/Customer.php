@@ -74,6 +74,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideMandatoryFields = TRUE;
+	public $plans;
+	public $lines_coll;
+	public $subscribers_by_stamp;
+	public $accounts_by_stamp;
 
 	/**
 	 * These mapping are required raw field that must be filled by the customer calculator.

@@ -45,6 +45,7 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Seria
     /**
      * @return stdClass
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         $object = new stdClass();
