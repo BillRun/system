@@ -762,8 +762,8 @@ class Billrun_Cycle_Account_Invoice {
 			}
 		}
 
-		$mainInvoiceData = $this->data;
-		unset($mainInvoiceData['subs']);
+		$billrunDoc = clone $this->data;
+		unset($billrunDoc['subs']);
 
 		$session = Billrun_Factory::db()->startSession();
 		$session->startTransaction();
@@ -776,7 +776,8 @@ class Billrun_Cycle_Account_Invoice {
 				$billrun_grouping_coll->batchInsert($allGroupItemsToSave, ['session' => $session]);
 			}
 
-			$this->billrun_coll->save($mainInvoiceData, null, ['session' => $session]);
+			$this->billrun_coll->save($billrunDoc, null, ['session' => $session]);
+			$this->data['_id'] = $billrunDoc['_id'];
 
 			$session->commitTransaction();
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
@@ -810,8 +811,8 @@ class Billrun_Cycle_Account_Invoice {
 			}
 		}
 
-		$mainInvoiceData = $this->data;
-		unset($mainInvoiceData['subs']);
+		$billrunDoc = clone $this->data;
+		unset($billrunDoc['subs']);
 		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
 		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
 
@@ -823,7 +824,8 @@ class Billrun_Cycle_Account_Invoice {
 				$billrun_grouping_coll->batchInsert($allGroupItemsToSave);
 			}
 
-			$this->billrun_coll->save($mainInvoiceData);
+			$this->billrun_coll->save($billrunDoc);
+			$this->data['_id'] = $billrunDoc['_id'];
 
 			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));

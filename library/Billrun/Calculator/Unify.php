@@ -149,6 +149,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				if ($key == '$inc' && !is_null($val)) {
 					$updatedVal  = Billrun_Util::getIn($updatedRow, $field, 0) + (($val && is_numeric($val)) ? $val : 0);
 					Billrun_Util::setIn($updatedRow, $field, $updatedVal);
+				} else if ($key == '$addToSet' && !is_null($val)) {
+					$updatedVal = Billrun_Util::getIn($updatedRow, $field, array());
+					if (!in_array($val, $updatedVal)) {
+						$updatedVal[] = $val;
+					}
+					Billrun_Util::setIn($updatedRow, $field, $updatedVal);
 				} else if ($key == '$set' && !is_null($val)) {
 					Billrun_Util::setIn($updatedRow, $field, $val);
 				}
@@ -275,7 +281,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				foreach ($fields as $field) {
 					$val = Billrun_Util::getIn($row, $field, null);
 					if (!is_null($val)) {
-						$update[$fkey][$field] = $val;
+						$update[$fkey][$field] = ($fkey == '$addToSet') ? array('$each' => is_array($val) ? $val : array($val)): $val;
 					}
 				}
 			}
@@ -325,6 +331,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					Billrun_Util::setIn($existingRow, $field, 0);
 				}
 			}
+			foreach ($typeFields['$addToSet'] ?? [] as $field) {
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				$existingVal = Billrun_Util::getIn($existingRow, $field, null);
+				if (!is_null($newVal) && is_null($existingVal)) {
+					Billrun_Util::setIn($existingRow, $field, array());
+				}
+			}
 		} else {
 			//Billrun_Factory::log(print_r($newRow,1),Zend_Log::ERR);
 			$existingRow = array('lcount' => 0, 'type' => $type, 'usaget' => $newRow['usaget'], 'linet' => $lineType);
@@ -333,6 +346,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					$newVal = Billrun_Util::getIn($newRow, $field, null);
 					if ($key == '$inc' && !is_null($newVal)) {
 						Billrun_Util::setIn($existingRow, $field, 0);
+					} else if ($key == '$addToSet' && !is_null($newVal)) {
+						Billrun_Util::setIn($existingRow, $field, array($newVal)); 
 					} else if (!is_null($newVal)) {
 						Billrun_Util::setIn($existingRow, $field, $newVal);
 					} else {
@@ -597,7 +612,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function tryUpdatingExistingRecord($query, $update) {
 		foreach ($update as $action => $def) {
-			if (!in_array($action, ['$set', '$inc', '$push'])) {
+			if (!in_array($action, ['$set', '$inc', '$push', '$addToSet'])) {
 				unset($update[$action]);
 			}
 		}

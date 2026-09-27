@@ -14,7 +14,7 @@ RUN apt-get update && \
         procps \
         python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
     && pecl install yaf \
-    && pecl install mongodb-2.3.1 \
+    && pecl install mongodb-2.3.3 \
     && pecl install memcached \
     && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
