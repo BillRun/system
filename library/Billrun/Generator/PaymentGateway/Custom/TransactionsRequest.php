@@ -35,6 +35,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	protected $affects_bills = true;
 	protected $locked_aid_bills_to_recharge = [];
 	protected $locked_aids_to_recharge = [];
+	public $customers;
 	const GENERATOR_MAX_RECORDS_PER_BATCH = 50000;
 
 

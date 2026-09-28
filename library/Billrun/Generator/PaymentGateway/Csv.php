@@ -25,6 +25,8 @@ class Billrun_Generator_PaymentGateway_Csv {
 	protected $transactionsCounter = 0;
 	protected $row_separator = "line_break";
 	protected $row_separator_after_last_line = false;
+	public $forceHeader;
+	public $forceFooter;
 
 	public function __construct($options) {
 		$this->fixedWidth = isset($options['type']) && ($options['type'] == 'fixed') ? true : false;

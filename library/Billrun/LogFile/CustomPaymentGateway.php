@@ -20,6 +20,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	 */
 	protected $source;
 	protected $orphanTime = '1 hour ago';
+	public $collection;
 
 	public function __construct($options = array()) {
 		if (empty($options['source'])) {

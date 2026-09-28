@@ -1530,7 +1530,7 @@ class Billrun_Util {
 		if (!is_string($regex)) {
 			return false;
 		}
-		return !(@preg_match($regex, null) === false);
+		return !(@preg_match($regex, '') === false);
 	}
 
 	public static function getCompanyName() {

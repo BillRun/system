@@ -41,6 +41,7 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
 	protected $billSavedFields = array();
 	protected $mandatory_fields_per_entity = [];
     public $aid_to_lock = null;
+	public $bills;
     
     public function __construct($options) {
         if (!isset($options['file_type'])) {

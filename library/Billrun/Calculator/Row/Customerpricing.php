@@ -1179,7 +1179,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 	}
 
-	protected function getServiceQuantity($servicesData = array(), $serviceName) {
+	/**
+	 * @param array $servicesData - pass [] when not needed
+	 * @param string $serviceName
+	 */
+	protected function getServiceQuantity($servicesData, $serviceName) {
 		$quantity = 1;
 		foreach ($servicesData as $service) {
 			if ($service['name'] == $serviceName && !empty($service['quantity'])) {

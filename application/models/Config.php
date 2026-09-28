@@ -346,7 +346,7 @@ class ConfigModel {
 			throw new Exception("Custom header template is too long, maximum size is {$max}.");
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
-			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
+			throw new Exception("Custom footer template is too long, maximum size is {$max}.");
 		} else if ($category === 'plugins') {
 			throw new Exception('Only one plugin can be saved');
 		} else if ($category === 'plugin') {
