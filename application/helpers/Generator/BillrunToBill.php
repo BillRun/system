@@ -28,6 +28,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $filtration = null;
 	protected $invoicing_days = [];
 	protected $accountsInArray = [];
+	public $data;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
