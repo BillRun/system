@@ -100,4 +100,20 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Seria
     {
         $this->setMongoID(new MongoDB\BSON\ObjectId($serialized));
     }
+
+    /**
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        return ['id' => $this->_stringID];
+    }
+
+    /**
+     * @param array $data
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->setMongoID(new MongoDB\BSON\ObjectId($data['id']));
+    }
 }
