@@ -1,3 +1,5 @@
+version: '3.7'
+
 services:
     web:
         image: nginx:latest
@@ -13,12 +15,12 @@ services:
             - "php"
             - "mongodb"
         environment:
-        - "APPLICATION_ENV=container"    
+        - "APPLICATION_ENV=container"
     php:
-        build: 
-            context: ./billrun-php74
+        build:
+            context: ./billrun-php85
             dockerfile: Dockerfile
-        image: billrun-php74
+        image: billrun-php85
         container_name: billrun-app
         restart: always
         user: "${USER_ID:-0}:${GROUP_ID:-0}"
@@ -28,40 +30,43 @@ services:
         - "BR_MDB_HOST=billrun-mongodb:27017"
         - "BR_MDB_DBNAME=billing_container"
         - "COMPOSER_HOME=/tmp/composer"
+        - "COMPOSER_CACHE_DIR=/tmp/composer-cache"
         volumes:
             - ${PWD}/../..:/billrun
             - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
-            - ./billrun-php74/composer.json:/billrun/composer.json:ro
-            - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
+            - ~/.cache/composer:/tmp/composer-cache
+            - ./billrun-php85/composer.json:/billrun/composer.json:ro
+            - ./billrun-php85/composer.lock:/billrun/composer.lock:ro
         healthcheck:
-            test: ["CMD-SHELL", "test -f /billrun/vendor/bin/codecept || exit 1"]
+            test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000"]
             interval: 20s
             timeout: 3s
             retries: 4
         command: sh -c "composer install && php-fpm"
+
     mongodb:
-        image: mongo:3.6
+        image: mongo:8.0
         container_name: billrun-mongodb
         restart: always
-        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
-            - ./data/mongodb-3.6-${PLUGIN_BASENAME:-default}:/data/db/
-            - ${PWD}/../..:/billrun:ro
-            # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
-            # - ${PWD}/../persist/backup:/backup
-            - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
-            - ${PWD}/mongo-entrypoint.sh:/mongo-entrypoint.sh
+            - ./data/mongodb-8.0-${PLUGIN_BASENAME:-default}:/data/db/
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
+        healthcheck:
+            test: ["CMD", "mongosh", "--host", "billrun-mongodb", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            interval: 3s
+            timeout: 5s
+            retries: 10
+            start_period: 40s
     chrome:
         image: selenium/standalone-chrome
         container_name: billrun-standalone-chrome
         restart: always
     mockup:
-        #image: php:7.3-fpm
+        image: billrun-mockups-php85
         build:
             context: ./mockup-servers
             dockerfile: Dockerfile-webserver
@@ -78,7 +83,27 @@ services:
         networks:
             default:
                 ipv4_address: 10.103.0.10
-
+    dbinit:
+        build: 
+            context: ./billrun-php85
+            dockerfile: Dockerfile
+        container_name: billrun-dbinit
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ./enable_client_plugin.sh:/enable_client_plugin.sh
+        depends_on:
+            php:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        command: php /billrun/public/index.php --env container --dbinit
+        restart: "no"
 networks:
   default:
     driver: bridge
@@ -86,4 +111,3 @@ networks:
       driver: default
       config:
       - subnet:  10.103.0.0/16
-

@@ -36,10 +36,7 @@ COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
 
-# install composer and run it
 COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
-COPY composer.json /var/www/html/
-RUN composer install -d /var/www/html/  # in production we need to add --no-dev
 
 ENTRYPOINT ["/enable_client_plugin.sh"]
 ARG EXTRA_PACKAGES=""
