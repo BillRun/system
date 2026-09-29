@@ -42,7 +42,7 @@ services:
             start_period: 300s
         command: sh -c "rm -f /tmp/composer-install-done; (composer install --no-interaction --no-progress --prefer-dist || (sleep 30 && composer install --no-interaction --no-progress --prefer-dist)) && touch /tmp/composer-install-done && exec php-fpm"
     mongodb:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongodb
         restart: always
         volumes:
