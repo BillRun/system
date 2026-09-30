@@ -465,6 +465,10 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
         return $this->configByType = $pg_config;
     }
 
+    public function getGatewayName() {
+        return $this->gatewayName;
+    }
+
     protected function getConflictingQuery() {
 		if (!empty($this->aid_to_lock)) {
 			return array(
