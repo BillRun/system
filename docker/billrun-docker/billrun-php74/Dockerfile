@@ -1,8 +1,10 @@
 FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN sed -i '/security.debian.org/d' /etc/apt/sources.list \
-    && sed -i '/bullseye-updates/d' /etc/apt/sources.list \
+# Debian 11 (bullseye) LTS ended 2026-08-31 and its packages are being removed from deb.debian.org;
+# install from archive.debian.org instead. The previous sed on 'security.debian.org' never matched
+# (php:7.4-fpm uses deb.debian.org/debian-security), so the security repo stayed enabled and now 404s.
+RUN echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list \
     && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -20,7 +22,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar
 
 RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
-	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb
+	&& apt install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb \
+	&& ln -sf /usr/local/bin/wkhtmltopdf /bin/wkhtmltopdf \
+	&& mkdir -p /opt/wkhtmltox/bin/ \
+	&& ln -sf /usr/local/bin/wkhtmltopdf /opt/wkhtmltox/bin/wkhtmltopdf
 
 RUN wget -O /tmp/jsignpdf.zip \
         'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \

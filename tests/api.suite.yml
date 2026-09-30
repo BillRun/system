@@ -27,4 +27,4 @@ modules:
         PhpBrowser:
             url: http://web
             curl:
-                CURLOPT_TIMEOUT: 180
+                CURLOPT_TIMEOUT: 240

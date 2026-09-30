@@ -60,6 +60,16 @@ class LogChecker extends \Codeception\Module
         }
     }
 
+    public function seeCountInLogFile($message, $expectedCount)
+    {
+        $content = $this->getNewLogContent();
+        $actualCount = substr_count($content, $message);
+
+        if ($actualCount !== (int) $expectedCount) {
+            $this->fail("Expected '$message' to appear $expectedCount time(s) in new logs, found $actualCount.");
+        }
+    }
+
     public function dontSeeInLogFile($message)
     {
         $content = $this->getNewLogContent();

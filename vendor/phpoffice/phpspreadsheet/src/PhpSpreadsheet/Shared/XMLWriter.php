@@ -2,8 +2,11 @@
 
 namespace PhpOffice\PhpSpreadsheet\Shared;
 
+use PhpOffice\PhpSpreadsheet\Exception as SpreadsheetException;
+
 class XMLWriter extends \XMLWriter
 {
+    /** @var bool */
     public static $debugEnabled = false;
 
     /** Temporary storage method */
@@ -20,23 +23,23 @@ class XMLWriter extends \XMLWriter
     /**
      * Create a new XMLWriter instance.
      *
-     * @param int $pTemporaryStorage Temporary storage location
-     * @param string $pTemporaryStorageFolder Temporary storage folder
+     * @param int $temporaryStorage Temporary storage location
+     * @param string $temporaryStorageFolder Temporary storage folder
      */
-    public function __construct($pTemporaryStorage = self::STORAGE_MEMORY, $pTemporaryStorageFolder = null)
+    public function __construct($temporaryStorage = self::STORAGE_MEMORY, $temporaryStorageFolder = null)
     {
         // Open temporary storage
-        if ($pTemporaryStorage == self::STORAGE_MEMORY) {
+        if ($temporaryStorage == self::STORAGE_MEMORY) {
             $this->openMemory();
         } else {
             // Create temporary filename
-            if ($pTemporaryStorageFolder === null) {
-                $pTemporaryStorageFolder = File::sysGetTempDir();
+            if ($temporaryStorageFolder === null) {
+                $temporaryStorageFolder = File::sysGetTempDir();
             }
-            $this->tempFileName = @tempnam($pTemporaryStorageFolder, 'xml');
+            $this->tempFileName = (string) @tempnam($temporaryStorageFolder, 'xml');
 
             // Open storage
-            if ($this->openUri($this->tempFileName) === false) {
+            if (empty($this->tempFileName) || $this->openUri($this->tempFileName) === false) {
                 // Fallback to memory...
                 $this->openMemory();
             }
@@ -54,9 +57,18 @@ class XMLWriter extends \XMLWriter
     public function __destruct()
     {
         // Unlink temporary files
+        // There is nothing reasonable to do if unlink fails.
         if ($this->tempFileName != '') {
+            /** @scrutinizer ignore-unhandled */
             @unlink($this->tempFileName);
         }
+    }
+
+    public function __wakeup(): void
+    {
+        $this->tempFileName = '';
+
+        throw new SpreadsheetException('Unserialize not permitted');
     }
 
     /**
@@ -71,22 +83,22 @@ class XMLWriter extends \XMLWriter
         }
         $this->flush();
 
-        return file_get_contents($this->tempFileName);
+        return file_get_contents($this->tempFileName) ?: '';
     }
 
     /**
      * Wrapper method for writeRaw.
      *
-     * @param string|string[] $text
+     * @param null|string|string[] $rawTextData
      *
      * @return bool
      */
-    public function writeRawData($text)
+    public function writeRawData($rawTextData)
     {
-        if (is_array($text)) {
-            $text = implode("\n", $text);
+        if (is_array($rawTextData)) {
+            $rawTextData = implode("\n", $rawTextData);
         }
 
-        return $this->writeRaw(htmlspecialchars($text));
+        return $this->writeRaw(htmlspecialchars($rawTextData ?? ''));
     }
 }
