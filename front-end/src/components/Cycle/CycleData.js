@@ -429,6 +429,11 @@ class CycleData extends Component {
             onApply={this.onApplyLineItem}
             onSuccess={this.onAddLineItemSuccess}
             onClose={this.onCloseAddLineItem}
+            title={
+              `Add a manual credit/charge line item to invoice ` +
+              `#${selectedInvoice.get('invoice_id')} of customer No. ` +
+              `${selectedInvoice.get('aid')}`
+            }
           />
         )}
       </div>

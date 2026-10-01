@@ -35,6 +35,7 @@ class Credit extends Component {
     subscribers: List(),
     onApply: null,
     onSuccess: () => {},
+    title: 'Manual charge / refund',
   };
 
   static propTypes = {
@@ -48,6 +49,7 @@ class Credit extends Component {
     subscribers: PropTypes.instanceOf(List),
     onApply: PropTypes.func,
     onSuccess: PropTypes.func,
+    title: PropTypes.string,
   };
 
   state = {
@@ -188,7 +190,7 @@ class Credit extends Component {
       const unit = getRateUnit(selectedRate, usaget);
       params.push({ usagev: getValueByUnit(propertyTypes, usageTypesData, usaget, unit, usagev) });
     }
-    
+
     const request = this.props.onApply ? this.props.onApply(params) : this.props.dispatch(creditCharge(params));
     request.then(this.afterCharge);
   };
@@ -260,7 +262,7 @@ class Credit extends Component {
         progress={progress}
         labelProgress="Processing..."
         labelOk="Apply"
-        title="Manual charge / refund"
+        title={this.props.title}
         onOk={this.onCreditCharge}
         onCancel={this.props.onClose}
       >

@@ -1,4 +1,4 @@
-import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler, delay } from '../common/Api';
+import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '../common/Api';
 import {
   pushToCycleQueueQuery,
   pushToConfirmQueueQuery,
@@ -9,6 +9,7 @@ import {
   getChargeAllCycleQuery,
   getConfirmationOperationAllQuery,
   getConfirmationOperationInvoiceQuery,
+  getAdjustInvoiceQuery,
 } from '../common/ApiQueries';
 import { startProgressIndicator, finishProgressIndicator } from './progressIndicatorActions';
 
@@ -52,20 +53,10 @@ export const adjustCycleInvoice = (
 ) => dispatch => {
   dispatch(startProgressIndicator());
 
-  const payload = {
-    aid,
-    billrun_key: billrunKey,
-    credit_lines: creditLines,
-  };
+  const query = getAdjustInvoiceQuery(aid, billrunKey, creditLines);
 
-  return delay(1, true, {
-    status: 1,
-    data: payload,
-  })
-    .then(response => {
-      dispatch(finishProgressIndicator());
-      return response;
-    })
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success)))
     .catch(error =>
       dispatch(apiBillRunErrorHandler(error, 'Error adjusting invoice'))
     );
