@@ -326,19 +326,19 @@ class ServiceProductsGroupCreate extends Component {
           <FormGroup key="group_shared" className="mb10">
             <Col sm={8} className="col-sm-offset-3">
               <Checkbox checked={shared} onChange={this.onChangeShared}>
-                {"Share with all account's subscribers"}
+                &nbsp;{"Share with all account's subscribers"}
                 <Help contents={GroupsInclude.shared_desc} />
               </Checkbox>
             </Col>
             <Col sm={8} className="col-sm-offset-3">
               <Checkbox disabled={!shared} checked={pooled} onChange={this.onChangePooled}>
-                {'Includes is pooled?'}
+                &nbsp;{'Includes is pooled?'}
                 <Help contents={GroupsInclude.pooled_desc} />
               </Checkbox>
             </Col>
             <Col sm={8} className="col-sm-offset-3">
               <Checkbox checked={quantityAffected} onChange={this.onChangeQuantityAffected}>
-                {'Multiply by Service Quantity'}
+                &nbsp;{'Multiply by Service Quantity'}
                 <Help contents={GroupsInclude.quantityAffected_desc} />
               </Checkbox>
             </Col>
