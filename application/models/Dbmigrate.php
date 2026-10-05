@@ -38,6 +38,7 @@ class DbmigrateModel {
 	 */
 	public function execute(Billrun_Db $db, $controller = null) {
 		$this->log($controller, 'Starting DB data migrations...');
+		$db->setReadPreference('RP_PRIMARY');
 
 		if (!$this->loadLastConfig($db)) {
 			$this->log($controller, 'Warning: no config record found, skipping db migrations');
