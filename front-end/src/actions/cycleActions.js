@@ -9,6 +9,7 @@ import {
   getChargeAllCycleQuery,
   getConfirmationOperationAllQuery,
   getConfirmationOperationInvoiceQuery,
+  getAdjustInvoiceQuery,
 } from '../common/ApiQueries';
 import { startProgressIndicator, finishProgressIndicator } from './progressIndicatorActions';
 
@@ -43,6 +44,22 @@ export const confirmCycleInvoice = (billrunKey, invoiceId) => (dispatch) => {
   return apiBillRun(query)
     .then(success => dispatch(apiBillRunSuccessHandler(success, 'Confirming invoice...')))
     .catch(error => dispatch(apiBillRunErrorHandler(error, 'Error confirming invoice')));
+};
+
+export const adjustCycleInvoice = (
+  aid,
+  billrunKey,
+  creditLines,
+) => dispatch => {
+  dispatch(startProgressIndicator());
+
+  const query = getAdjustInvoiceQuery(aid, billrunKey, creditLines);
+
+  return apiBillRun(query)
+    .then(success => dispatch(apiBillRunSuccessHandler(success)))
+    .catch(error =>
+      dispatch(apiBillRunErrorHandler(error, 'Error adjusting invoice'))
+    );
 };
 
 export const confirmCycle = billrunKey => (dispatch) => {

@@ -19,11 +19,13 @@ import {
   confirmCycleWithWorkers,
   getConfirmationAllStatus,
   getConfirmationInvoicesStatus,
+  adjustCycleInvoice,
 } from '@/actions/cycleActions';
 import {
   showFormModal,
   showConfirmModal,
 } from "@/actions/guiStateActions/pageActions";
+import Credit from '@/components/Credit/Credit';
 
 class CycleData extends Component {
 
@@ -60,6 +62,7 @@ class CycleData extends Component {
   state = {
     confirmingInvoices: List(),
     confirmingAll: false,
+    selectedInvoice: null,
   }
 
   componentDidMount() {
@@ -83,6 +86,38 @@ class CycleData extends Component {
   updateInvoicesNum = (billrunKey) => {
     this.props.dispatch(getList('billrunInvoices', getAllInvoicesQuery(billrunKey)));
   }
+
+  onClickAddLineItem = entity => {
+    this.setState({ selectedInvoice: entity });
+  };
+
+  onCloseAddLineItem = () => {
+    this.setState({ selectedInvoice: null });
+  };
+
+  onApplyLineItem = params => {
+    const { billrunKey } = this.props;
+    const { selectedInvoice } = this.state;
+
+    const creditLine = params.reduce(
+      (result, param) => ({ ...result, ...param }),
+      {},
+    );
+
+    return this.props.dispatch(adjustCycleInvoice(
+      selectedInvoice.get('aid'),
+      billrunKey,
+      [creditLine],
+    ));
+  };
+
+  onAddLineItemSuccess = () => {
+    this.setState({
+      refreshString: moment().format(),
+    });
+
+    this.props.reloadCycleData();
+  };
 
   parseCycleDataFirstName = entity => entity.getIn(['attributes', 'firstname'], '');
   parseCycleDataLastName = entity => entity.getIn(['attributes', 'lastname'], '');
@@ -277,7 +312,7 @@ class CycleData extends Component {
     }));
   }
 
-  parseCycleDataConfirm = (entity) => {
+  parseCycleDataActions = (entity) => {
     const { confirmingInvoices, confirmingAll } = this.state;
     if (entity.get('billed', false)) {
       return (<Label variant="success" className="non-editable-field">CONFIRMED</Label>);
@@ -285,10 +320,27 @@ class CycleData extends Component {
     if (confirmingAll || confirmingInvoices.includes(entity.get('invoice_id'))) {
       return (<Label variant="info" className="non-editable-field">CONFIRMING...</Label>);
     }
-    const onClickConfirm = () => {
-      this.onClickConfirmInvoice(entity);
-    }
-    return (<Button variant="primary" size="sm" onClick={onClickConfirm}>Confirm</Button>);
+
+    return (
+      <div className="text-nowrap">
+        <Button
+          variant="primary"
+          size="sm"
+          className="mr5"
+          onClick={() => this.onClickAddLineItem(entity)}
+        >
+          Add line item
+        </Button>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => this.onClickConfirmInvoice(entity)}
+        >
+          Confirm
+        </Button>
+      </div>
+    );
   };
 
   parseCycleDataEmailSent = (entity) => {
@@ -335,7 +387,7 @@ class CycleData extends Component {
 
   render() {
     const { baseFilter, settings } = this.props;
-    const { refreshString } = this.state;
+    const { refreshString, selectedInvoice } = this.state;
     const displayEmailSent = settings.get('billrun', Map()).get('email_after_confirmation', false);
 
     const filterFields = [
@@ -352,7 +404,7 @@ class CycleData extends Component {
       { id: 'subss', title: '# of Subscribers', parser: this.parseCycleDataSubscriptionNum },
       { id: 'invoice_id', title: 'Invoice ID', sort: true, parser: this.parseCycleDataInvoiceId },
       { id: 'download', title: 'Invoice', parser: this.parseCycleDataDownload },
-      { id: 'confirm', title: 'Confirm', parser: this.parseCycleDataConfirm },
+      { id: 'actions', title: 'Actions', parser: this.parseCycleDataActions},
       { id: 'email_sent', title: 'Email Sent', sort: true, parser: this.parseCycleDataEmailSent, display: displayEmailSent },
     ];
 
@@ -370,6 +422,20 @@ class CycleData extends Component {
           listActions={this.getListActions()}
           refreshString={refreshString}
         />
+
+        {selectedInvoice && (
+          <Credit
+            aid={selectedInvoice.get('aid')}
+            onApply={this.onApplyLineItem}
+            onSuccess={this.onAddLineItemSuccess}
+            onClose={this.onCloseAddLineItem}
+            title={
+              `Add a manual credit/charge line item to invoice ` +
+              `#${selectedInvoice.get('invoice_id')} of customer No. ` +
+              `${selectedInvoice.get('aid')}`
+            }
+          />
+        )}
       </div>
     );
   }
