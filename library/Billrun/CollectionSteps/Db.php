@@ -290,7 +290,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 */
 	protected function isChangeStateWithDebt($process) {
 		$includeDebt = $process['settings']['change_state_include_debt'] ??
-			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', true);
+			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', false);
 		return filter_var($includeDebt, FILTER_VALIDATE_BOOLEAN);
 	}
 
