@@ -670,6 +670,103 @@ class calculateCommandCest
     }
 
     /**
+     * A chain batch mixes entry stages, and the customer stage's bulk
+     * preparation must only load the subscribers of the lines that will RUN it.
+     * bulk_mixed.csv processed with the CRM in place but no rate gives such a
+     * batch in one go: its 4 lines of the two CRM phones are enriched and park
+     * at the rate stage, its 2 lines of a phone the CRM does not know fail the
+     * customer stage and stay fresh. The one gsd request of the run must carry
+     * the unknown phone and neither CRM phone, whose subscribers are already on
+     * their lines.
+     */
+    public function testBulkPreparationSkipsTheLinesThatJoinedMidChain(ApiTester $I): void
+    {
+        $unknownCrmPhone = '0587654321';
+        $parkedRows = 4; // 2 rows for each CRM phone
+        $freshRows = 2;  // the unknown phone's rows
+
+        $originalBulk = $this->getBulkSetting();
+        $this->setBulkSetting($I, 1);
+        $I->enableExternalModeSettings();
+        try {
+            $this->parkLinesAtTheRateStage($I, 'bulk_mixed.csv', $parkedRows);
+            $I->assertEquals($freshRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => false, 'calc_time' => false]),
+                'the lines of the phone the CRM does not know should fail the customer stage and stay fresh');
+            $this->generateCallRate($I);
+
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Entities loaded: ' . ($parkedRows + $freshRows));
+            $I->seeCountInLogFile($this->crmRequestMarker(), 1);
+            $I->seeInLogFile('"value":"' . $unknownCrmPhone . '"'); // the fresh lines' phone is in the request (the pattern the next lines rely on)
+            foreach (array_keys($this->crmFixtures) as $parkedPhone) {
+                $I->dontSeeInLogFile('"value":"' . $parkedPhone . '"'); // the parked lines' phones are not: they skip the customer stage
+            }
+            $I->seeInLogFile('Chain results: ' . $parkedRows . ' lines completed, 0 advanced and left for retry, ' . $freshRows . ' left unchanged');
+        } finally {
+            $I->enableDBModeSettings();
+            $this->setBulkSetting($I, $originalBulk);
+        }
+
+        foreach ($this->crmFixtures as $phone => $crm) {
+            $I->assertEquals(2, $this->countLines(['type' => $this->fileType, 'uf.firstname' => $phone, 'aid' => $crm['aid'], 'sid' => $crm['sid'], 'aprice' => ['$exists' => true]]),
+                "the parked lines of $phone must be priced, still carrying their own CRM subscriber");
+        }
+        $I->assertEquals($freshRows, $this->countQueue(['type' => $this->fileType, 'calc_name' => false]),
+            'the unknown phone\'s lines must stay queued, uncalculated, for a retry');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer']),
+            'every parked line should complete the chain and leave the queue');
+    }
+
+    /**
+     * The incident shape of the same rule: EVERY pulled line is parked at the
+     * rate stage (e.g. a rate was missing for a while), so no line runs the
+     * customer stage and the run must not query the CRM at all - instead of
+     * bulk-loading, on every retry, subscribers the lines already carry.
+     */
+    public function testBulkPreparationSendsNoRequestWhenNoLineRunsTheCustomerStage(ApiTester $I): void
+    {
+        $originalBulk = $this->getBulkSetting();
+        $this->setBulkSetting($I, 1);
+        $I->enableExternalModeSettings();
+        try {
+            $this->parkLinesAtTheRateStage($I, 'bulk_one_phone.csv', $this->csvRows);
+            $this->generateCallRate($I);
+
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Entities loaded: ' . $this->csvRows);
+            $I->seeCountInLogFile($this->crmRequestMarker(), 0);
+            $I->seeInLogFile('Chain results: ' . $this->csvRows . ' lines completed, 0 advanced and left for retry, 0 left unchanged');
+        } finally {
+            $I->enableDBModeSettings();
+            $this->setBulkSetting($I, $originalBulk);
+        }
+
+        $crm = $this->crmFixtures[$this->crmPhone];
+        $I->assertEquals($this->csvRows, $this->countLines(['type' => $this->fileType, 'aid' => $crm['aid'], 'sid' => $crm['sid'], 'aprice' => ['$exists' => true]]),
+            'every parked line must be priced, still carrying the subscriber it was enriched with while processing');
+        $I->assertEquals(0, $this->countQueue(['type' => $this->fileType]),
+            'every fully-calculated line should be removed from the queue');
+    }
+
+    /**
+     * Park the CSV lines at the rate stage (calc_name = 'customer'): processed
+     * in external mode with the CRM plan in place but no rate, the inline chain
+     * enriches them with their CRM subscriber and fails rating. Call it with the
+     * subscriber source already switched to the CRM mockup.
+     */
+    private function parkLinesAtTheRateStage(ApiTester $I, $csv, $rows)
+    {
+        $I->generatePlan(['name' => $this->crmFixturePlan, 'from' => '2025-01-01']);
+        $this->processToQueue($I, $csv);
+        $I->assertEquals($rows, $this->countQueue(['type' => $this->fileType, 'calc_name' => 'customer', 'calc_time' => false]),
+            "processing $csv with a subscriber but no rate should park its lines at the rate stage");
+        $I->assertEquals($rows, $this->countLines(['type' => $this->fileType, 'sid' => ['$exists' => true]]),
+            'the parked lines should already carry their CRM subscriber (the fresh ones, if any, carry none)');
+    }
+
+    /**
      * Shared body of the two single-phone tests: the CSV lines are queued
      * uncalculated (DB mode, no local subscriber), the plan the CRM subscribers
      * are on and the CALL rate are created locally, then the subscriber source is

@@ -41,6 +41,7 @@ class Billrun_Helpers_QueueCalculators {
 		$success = true;
 		$this->unifyCalc = null;
 		$this->queue_calculators = $this->getQueueCalculators();
+		$calc_name_in_queue = array_merge(array(false), $this->queue_calculators); // a line runs stage $index when its queue row waits at $calc_name_in_queue[$index] (calculateDataRow)
 		$index = 0;
 		foreach ($this->queue_calculators as $calc_name) {
 			Billrun_Factory::log('Plugin calc cpu ' . $calc_name, Zend_Log::INFO);
@@ -58,7 +59,16 @@ class Billrun_Helpers_QueueCalculators {
                 Billrun_Factory::log('calculator ' . $calc_name . ' is unknown', Zend_Log::ALERT);
                 throw new Exception('calculator ' . $calc_name . ' is unknown');
             }
-			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
+			// BRCD-3562: prepare only the lines this stage will run. A chain batch mixes entry
+			// stages, so a line that joined mid-chain (or failed earlier in this run) must not
+			// reach a stage's bulk preparation - the customer stage would load its subscriber
+			// for nothing. A stage none of the lines runs is not prepared at all.
+			$stageLines = array_filter($data['data'], function ($line) use ($queue_data, $calc_name_in_queue, $index) {
+				return isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index];
+			});
+			if (!empty($stageLines)) {
+				$calc->prepareData($stageLines);
+			}
             $allExtraLines = [];
 			foreach ($data['data'] as $key => &$line) {
                 $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
