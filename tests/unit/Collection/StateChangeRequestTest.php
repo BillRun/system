@@ -5,12 +5,11 @@
  * "collection state change" request sent to the CRM (httpnoack step). By default
  * the request lists the aids: {"state", "aids": [...], "process_name"}. With
  * change_state_include_debt enabled (per process settings, or globally under
- * collection.settings) the requests carry each account with its balance instead:
+ * collection.settings) the requests carry each account with its debt instead:
+ * {"state": ..., "accounts": [{"aid": ..., "debt": ...}], "process_name"}
  * - in_collection: the debt calculated by the collect run (BRCD-5519)
- *   {"state": "in_collection", "accounts": [{"aid": ..., "debt": ...}], "process_name"}
- * - out_of_collection: the balance loaded from the bills of the account - "credit"
- *   (0 when settled), or "debt" when the account still owes below the minimum debt
- *   {"state": "out_of_collection", "accounts": [{"aid": ..., "credit": ...}, {"aid": ..., "debt": ...}], "process_name"}
+ * - out_of_collection: the balance loaded from the bills of the account - the debt
+ *   left below the minimum debt, 0 when settled, negative when the account is in credit
  * The steps are captured before they are run, so no request leaves the test.
  */
 class StateChangeRequestTest extends \Codeception\Test\Unit {
@@ -86,19 +85,16 @@ class StateChangeRequestTest extends \Codeception\Test\Unit {
 		$aids = array_keys($debts);
 		$on = array(self::SETTING => true);
 		$off = array(self::SETTING => false);
-		// the amount each account is expected with: entering collection - the debt passed in, leaving it - the balance of the seeded bills
-		$inAmounts = array_map(function ($debt) {
-			return array('debt' => $debt);
-		}, $debts);
-		$outAmounts = array(
-			1001 => array('debt' => 5.0), // still owes 5
-			1002 => array('credit' => 30.0), // in credit
-			1003 => array('credit' => 0), // settled - no open bill
+		// the debt each account leaving collection is expected with - the balance of the seeded bills
+		$outDebts = array(
+			1001 => 5.0, // still owes 5
+			1002 => -30.0, // in credit
+			1003 => 0, // settled - no open bill
 		);
 		$aidsRequest = array('state' => 'in_collection', 'aids' => $aids, 'process_name' => self::PROCESS_NAME);
-		$accountsRequest = $this->getAccountsRequest('in_collection', $inAmounts);
+		$accountsRequest = $this->getAccountsRequest('in_collection', $debts);
 		$outRequest = array('state' => 'out_of_collection', 'aids' => $aids, 'process_name' => self::PROCESS_NAME);
-		$outAccountsRequest = $this->getAccountsRequest('out_of_collection', $outAmounts);
+		$outAccountsRequest = $this->getAccountsRequest('out_of_collection', $outDebts);
 		// row: [in, process settings, global setting, aids, debts, expected requests]
 		return array(
 			// default - the requests are unchanged
@@ -113,30 +109,30 @@ class StateChangeRequestTest extends \Codeception\Test\Unit {
 			// enabled, out_of_collection - the accounts with their balance, loaded from their bills (nothing is passed in)
 			'out_of_collection, process setting on - accounts with balance' => array(false, $on, false, $aids, array(), array($outAccountsRequest)),
 			'out_of_collection, global setting on - accounts with balance' => array(false, array(), true, $aids, array(), array($outAccountsRequest)),
-			// batches keep each account with its own amount, each out_of_collection batch loads the balance of its own accounts
+			// batches keep each account with its own debt, each out_of_collection batch loads the balance of its own accounts
 			'batches of 2 - accounts with debt' => array(true, $on + array('change_state_batch_size' => 2), false, $aids, $debts, array(
-				$this->getAccountsRequest('in_collection', array_slice($inAmounts, 0, 2, true)),
-				$this->getAccountsRequest('in_collection', array_slice($inAmounts, 2, null, true)),
+				$this->getAccountsRequest('in_collection', array_slice($debts, 0, 2, true)),
+				$this->getAccountsRequest('in_collection', array_slice($debts, 2, null, true)),
 			)),
 			'out_of_collection, batches of 2 - accounts with balance' => array(false, $on + array('change_state_batch_size' => 2), false, $aids, array(), array(
-				$this->getAccountsRequest('out_of_collection', array_slice($outAmounts, 0, 2, true)),
-				$this->getAccountsRequest('out_of_collection', array_slice($outAmounts, 2, null, true)),
+				$this->getAccountsRequest('out_of_collection', array_slice($outDebts, 0, 2, true)),
+				$this->getAccountsRequest('out_of_collection', array_slice($outDebts, 2, null, true)),
 			)),
 		);
 	}
 
 	/**
-	 * the expected extra_params of a state change request batch that carries the accounts with their amount
+	 * the expected extra_params of a state change request batch that carries the accounts with their debt
 	 *
 	 * @param string $state in_collection / out_of_collection
-	 * @param array $amountByAid aid => ['debt' => amount] or ['credit' => amount], in the order of the batch
+	 * @param array $debtByAid aid => debt, in the order of the batch
 	 *
-	 * @return array ['state', 'accounts' => [['aid' => aid, 'debt'|'credit' => amount], ...], 'process_name']
+	 * @return array ['state', 'accounts' => [['aid' => aid, 'debt' => debt], ...], 'process_name']
 	 */
-	protected function getAccountsRequest($state, $amountByAid) {
+	protected function getAccountsRequest($state, $debtByAid) {
 		$accounts = array();
-		foreach ($amountByAid as $aid => $amount) {
-			$accounts[] = array('aid' => $aid) + $amount;
+		foreach ($debtByAid as $aid => $debt) {
+			$accounts[] = array('aid' => $aid, 'debt' => $debt);
 		}
 		return array('state' => $state, 'accounts' => $accounts, 'process_name' => self::PROCESS_NAME);
 	}
