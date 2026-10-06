@@ -1,8 +1,10 @@
 FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN sed -i '/security.debian.org/d' /etc/apt/sources.list \
-    && sed -i '/bullseye-updates/d' /etc/apt/sources.list \
+# Debian 11 (bullseye) LTS ended 2026-08-31 and its packages are being removed from deb.debian.org;
+# install from archive.debian.org instead. The previous sed on 'security.debian.org' never matched
+# (php:7.4-fpm uses deb.debian.org/debian-security), so the security repo stayed enabled and now 404s.
+RUN echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list \
     && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
