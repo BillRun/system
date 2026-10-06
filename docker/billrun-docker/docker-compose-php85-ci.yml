@@ -43,13 +43,8 @@ services:
         image: mongo:8.0
         container_name: billrun-mongodb
         restart: always
-        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
-            - ${PWD}/../..:/billrun:ro
-            - ./mongo-entrypoint.sh:/mongo-entrypoint.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
-            - ./billrun-php85/composer.json:/billrun/composer.json:ro
-            - ./billrun-php85/composer.lock:/billrun/composer.lock:ro
         ports:
             - 27017:27017
         healthcheck:
@@ -58,6 +53,24 @@ services:
             timeout: 5s
             retries: 10
             start_period: 40s
+    dbinit:
+        image: git.bill.run:5050/sdoc/billrun/billrun-dev-base-php85:1.1.0
+        container_name: billrun-dbinit
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        depends_on:
+            php:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        command: php /billrun/public/index.php --env container --dbinit
+        restart: "no"
     chrome:
         image: selenium/standalone-chrome:4.44.0
         container_name: billrun-standalone-chrome

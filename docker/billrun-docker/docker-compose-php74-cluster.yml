@@ -31,7 +31,7 @@ services:
             - ./../../cache:/billrun/cache
             - ${PLUGIN_PATH:-/dev/null}:/plugin
     mongodb:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongodb
         restart: always
         command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
@@ -41,21 +41,21 @@ services:
         ports:
             - 27017:27017
     mongodb2:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongodb2
         restart: always
         command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
         ports:
             - 27018:27017
     mongodb3:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongodb3
         restart: always
         command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
         ports:
             - 27019:27017
     mongo-init:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongo-init
         restart: "no"
         depends_on:
