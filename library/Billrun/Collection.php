@@ -15,6 +15,12 @@
 class Billrun_Collection extends Billrun_Base {
 	use Billrun_Traits_ConditionsCheck;
 
+	/**
+	 * the minimum debt an account must have to be in collection, when the process (settings.min_debt) or the
+	 * configuration (collection.settings.min_debt) does not set one
+	 */
+	const DEFAULT_MIN_DEBT = 10;
+
 
 	protected $reallyInCollectionAids = [];
 	public function collect($aids = array(), $collectDir = '') {
@@ -92,7 +98,7 @@ class Billrun_Collection extends Billrun_Base {
 			if(!$matchProcess){
 				continue;
 			}
-			$processMinDebt = floatval($matchProcess['settings']['min_debt'] ?? '10');
+			$processMinDebt = floatval($matchProcess['settings']['min_debt'] ?? self::DEFAULT_MIN_DEBT);
 
 			$aid = intval($accountInConditions['aid']);
 			if(isset($accountInConditions['in_collection']) && $accountInConditions['in_collection'] == true ){
@@ -114,12 +120,12 @@ class Billrun_Collection extends Billrun_Base {
 	}
 
 	protected function getMinDebtOfAllProcesses($processes){
-		$minDebt = floatval($processes[0]['settings']['min_debt'] ?? '10');
+		$minDebt = floatval($processes[0]['settings']['min_debt'] ?? self::DEFAULT_MIN_DEBT);
 		if(!isset($minDebt)){
 			return $minDebt;
 		}
 		foreach ($processes as $process){
-			$minDebt = min(floatval($process['settings']['min_debt'] ?? '10'), $minDebt); 
+			$minDebt = min(floatval($process['settings']['min_debt'] ?? self::DEFAULT_MIN_DEBT), $minDebt); 
 		}
 		return $minDebt;
 	}

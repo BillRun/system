@@ -225,7 +225,10 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 * @param boolean $in true - the accounts entered collection, false - the accounts left collection
 	 * @param array $process the collection process the accounts belong to
 	 * @param array $debtByAid aid => debt of the accounts, as calculated by the collect run; sent in the in_collection
-	 *                         request instead of the plain aids when change_state_include_debt is enabled (see isChangeStateWithDebt)
+	 *                         request instead of the plain aids when change_state_include_debt is enabled (see isChangeStateWithDebt).
+	 *                         The out_of_collection request sends the balance of the accounts instead (credit, or the debt
+	 *                         left below the minimum), loaded from their bills, when change_state_include_credit is enabled
+	 *                         (see isChangeStateWithCredit)
 	 *
 	 * @return boolean false if any of the batches failed
 	 */
@@ -243,6 +246,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$state = $in ? 'in_collection' : 'out_of_collection';
 		$processName = $process['name'] ?? '';
 		$withDebt = $in && $this->isChangeStateWithDebt($process);
+		$withCredit = !$in && $this->isChangeStateWithCredit($process);
 		$batches = array_chunk($aids, $batchSize);
 		$batchesCount = count($batches);
 		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
@@ -252,6 +256,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			$extraParams = array('state' => $state);
 			if ($withDebt) {
 				$extraParams['accounts'] = $this->getChangeStateAccounts($batchAids, $debtByAid);
+			} else if ($withCredit) {
+				$balanceByAid = $this->getOutOfCollectionBalances($batchAids);
+				$extraParams['accounts'] = $this->getChangeStateAccounts($batchAids, $balanceByAid);
 			} else {
 				$extraParams['aids'] = $batchAids;
 			}
@@ -290,20 +297,54 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 
 	/**
-	 * builds the accounts list of a state change request batch
+	 * whether the out_of_collection state change request should carry the balance of each account -
+	 * {"accounts": [{"aid": ..., "credit": ...}, {"aid": ..., "debt": ...}]} instead of {"aids": [...]}
+	 * (see getOutOfCollectionBalances). Off by default (the request is unchanged), enabled per process
+	 * (settings.change_state_include_credit) or globally (collection.settings.change_state_include_credit)
+	 *
+	 * @param array $process the collection process
+	 *
+	 * @return boolean
+	 */
+	protected function isChangeStateWithCredit($process) {
+		$includeCredit = $process['settings']['change_state_include_credit'] ??
+			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_credit', false);
+		return filter_var($includeCredit, FILTER_VALIDATE_BOOLEAN);
+	}
+
+	/**
+	 * loads the balance of the accounts of an out_of_collection state change request batch from their bills (the collect run
+	 * only calculates the debt of accounts that reached the minimum debt, so the accounts leaving collection are queried here)
 	 *
 	 * @param array $aids the accounts of the batch
-	 * @param array $debtByAid aid => debt
 	 *
-	 * @return array [['aid' => aid, 'debt' => debt], ...]
+	 * @return array aid => balance: positive - the debt left (below the process minimum debt), 0 - settled, negative - credit
 	 */
-	protected function getChangeStateAccounts($aids, $debtByAid) {
+	protected function getOutOfCollectionBalances($aids) {
+		$balanceByAid = array_fill_keys($aids, 0); // settled accounts (no open bill) are not returned by the aggregation
+		foreach (Billrun_Bill::getBalanceByAids($aids) as $aid => $balance) { // total: positive - debt, negative - credit
+			$balanceByAid[$aid] = $balance['total'];
+		}
+		return $balanceByAid;
+	}
+
+	/**
+	 * builds the accounts list of a state change request batch, each account with its balance: 'debt' => the debt (the
+	 * collect run's debt of an account entering collection, or the debt left to an account leaving it), or 'credit' => the
+	 * credit of an account leaving collection (0 when settled)
+	 *
+	 * @param array $aids the accounts of the batch
+	 * @param array $balanceByAid aid => balance: positive - debt, negative - credit
+	 *
+	 * @return array [['aid' => aid, 'debt' => debt] or ['aid' => aid, 'credit' => credit], ...]
+	 */
+	protected function getChangeStateAccounts($aids, $balanceByAid) {
 		$accounts = array();
 		foreach ($aids as $aid) {
-			$accounts[] = array(
-				'aid' => $aid,
-				'debt' => $debtByAid[$aid] ?? null,
-			);
+			$balance = $balanceByAid[$aid] ?? null;
+			$accounts[] = !is_null($balance) && $balance <= 0
+				? array('aid' => $aid, 'credit' => -$balance)
+				: array('aid' => $aid, 'debt' => $balance);
 		}
 		return $accounts;
 	}
