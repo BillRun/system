@@ -226,9 +226,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 * @param array $process the collection process the accounts belong to
 	 * @param array $debtByAid aid => debt of the accounts, as calculated by the collect run; sent in the in_collection
 	 *                         request instead of the plain aids when change_state_include_debt is enabled (see isChangeStateWithDebt).
-	 *                         The out_of_collection request sends the balance of the accounts instead (credit, or the debt
-	 *                         left below the minimum), loaded from their bills, when change_state_include_credit is enabled
-	 *                         (see isChangeStateWithCredit)
+	 *                         Not needed for the out_of_collection request - it loads the balance of its accounts (credit, or
+	 *                         the debt left below the minimum) from their bills (see getOutOfCollectionBalances)
 	 *
 	 * @return boolean false if any of the batches failed
 	 */
@@ -245,8 +244,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 		$state = $in ? 'in_collection' : 'out_of_collection';
 		$processName = $process['name'] ?? '';
-		$withDebt = $in && $this->isChangeStateWithDebt($process);
-		$withCredit = !$in && $this->isChangeStateWithCredit($process);
+		$withDebt = $this->isChangeStateWithDebt($process);
 		$batches = array_chunk($aids, $batchSize);
 		$batchesCount = count($batches);
 		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
@@ -255,9 +253,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 			Billrun_Factory::log('Collection state change: sending batch ' . ($index + 1) . '/' . $batchesCount . ' with ' . count($batchAids) . ' accounts (state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
 			$extraParams = array('state' => $state);
 			if ($withDebt) {
-				$extraParams['accounts'] = $this->getChangeStateAccounts($batchAids, $debtByAid);
-			} else if ($withCredit) {
-				$balanceByAid = $this->getOutOfCollectionBalances($batchAids);
+				$balanceByAid = $in ? $debtByAid : $this->getOutOfCollectionBalances($batchAids);
 				$extraParams['accounts'] = $this->getChangeStateAccounts($batchAids, $balanceByAid);
 			} else {
 				$extraParams['aids'] = $batchAids;
@@ -282,9 +278,11 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 
 	/**
-	 * whether the in_collection state change request should carry the debt of each account -
-	 * {"accounts": [{"aid": ..., "debt": ...}]} instead of {"aids": [...]}. Off by default (the request is unchanged),
-	 * enabled per process (settings.change_state_include_debt) or globally (collection.settings.change_state_include_debt)
+	 * whether the state change requests should carry the balance of each account -
+	 * {"accounts": [{"aid": ..., "debt": ...}, {"aid": ..., "credit": ...}]} instead of {"aids": [...]}: the in_collection
+	 * request with the debt calculated by the collect run, the out_of_collection request with the balance loaded from the
+	 * bills (see getOutOfCollectionBalances). Off by default (the requests are unchanged), enabled per process
+	 * (settings.change_state_include_debt) or globally (collection.settings.change_state_include_debt)
 	 *
 	 * @param array $process the collection process
 	 *
@@ -294,22 +292,6 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$includeDebt = $process['settings']['change_state_include_debt'] ??
 			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', false);
 		return filter_var($includeDebt, FILTER_VALIDATE_BOOLEAN);
-	}
-
-	/**
-	 * whether the out_of_collection state change request should carry the balance of each account -
-	 * {"accounts": [{"aid": ..., "credit": ...}, {"aid": ..., "debt": ...}]} instead of {"aids": [...]}
-	 * (see getOutOfCollectionBalances). Off by default (the request is unchanged), enabled per process
-	 * (settings.change_state_include_credit) or globally (collection.settings.change_state_include_credit)
-	 *
-	 * @param array $process the collection process
-	 *
-	 * @return boolean
-	 */
-	protected function isChangeStateWithCredit($process) {
-		$includeCredit = $process['settings']['change_state_include_credit'] ??
-			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_credit', false);
-		return filter_var($includeCredit, FILTER_VALIDATE_BOOLEAN);
 	}
 
 	/**
