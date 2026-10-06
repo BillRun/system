@@ -290,7 +290,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 */
 	protected function isChangeStateWithDebt($process) {
 		$includeDebt = $process['settings']['change_state_include_debt'] ??
-			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', false);
+			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', true);
 		return filter_var($includeDebt, FILTER_VALIDATE_BOOLEAN);
 	}
 
@@ -303,10 +303,12 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 * @return array aid => balance: positive - the debt left (below the process minimum debt), 0 - settled, negative - credit
 	 */
 	protected function getOutOfCollectionBalances($aids) {
+		Billrun_Factory::log('Collection state change: loading the balance of ' . count($aids) . ' accounts leaving collection.', Zend_Log::DEBUG);
 		$balanceByAid = array_fill_keys($aids, 0); // settled accounts (no open bill) are not returned by the aggregation
 		foreach (Billrun_Bill::getBalanceByAids($aids) as $aid => $balance) { // total: positive - debt, negative - credit
 			$balanceByAid[$aid] = $balance['total'];
 		}
+		Billrun_Factory::log('Collection state change: loaded the balance of ' . count($aids) . ' accounts leaving collection.', Zend_Log::DEBUG);
 		return $balanceByAid;
 	}
 
