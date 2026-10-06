@@ -42,23 +42,37 @@ services:
             start_period: 300s
         command: sh -c "rm -f /tmp/composer-install-done; (composer install --no-interaction --no-progress --prefer-dist || (sleep 30 && composer install --no-interaction --no-progress --prefer-dist)) && touch /tmp/composer-install-done && exec php-fpm"
     mongodb:
-        image: mongo:3.6
+        image: mongo:7.0
         container_name: billrun-mongodb
         restart: always
-        entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
-            - ${PWD}/../..:/billrun:ro
-            - ${PWD}/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
-            - ${PWD}/mongo-entrypoint.sh:/mongo-entrypoint.sh
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
         healthcheck:
-            test: ["CMD", "mongo", "--host", "billrun-mongodb", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            test: ["CMD", "mongosh", "--host", "billrun-mongodb", "--quiet", "--eval", "db.adminCommand('ping').ok"]
             interval: 3s
             timeout: 5s
             retries: 10
             start_period: 40s
+    dbinit:
+        image: git.bill.run:5050/sdoc/billrun/billrun-dev-base:1.0.0
+        container_name: billrun-dbinit
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        depends_on:
+            php:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        command: php /billrun/public/index.php --env container --dbinit
+        restart: "no"
     chrome:
         image: selenium/standalone-chrome:4.44.0
         container_name: billrun-standalone-chrome

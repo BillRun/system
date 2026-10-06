@@ -145,8 +145,8 @@ class Billrun_HebrewCal {
 		}
 
 		if (cal_from_jd(jewishtojd(9, 28, $year), CAL_JEWISH)['dow'] == 5) { // prepone Jerusalem day
-			$retArr['08/27'] = $retArr['08/28'];
-			unset($retArr['08/28']);
+			$retArr['09/27'] = $retArr['09/28'];
+			unset($retArr['09/28']);
 		}
 
 		return $retArr;
