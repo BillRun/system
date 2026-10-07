@@ -345,12 +345,16 @@ abstract class Billrun_Account extends Billrun_Base {
 	 * @param array $updateCollectionStateChanged 'in_collection' => aid => the account debt as calculated by the collect run
 	 *                                            (see Billrun_Collection), 'out_of_collection' => aid => the account
 	 * @param array $process the collection process the accounts belong to
+	 * @param array $balanceByAids aid => the balance query item of the collect run (see Billrun_Bill::getContractorsInCollection);
+	 *                             the 'total' of the accounts leaving collection (the debt left, or negative - credit) is sent
+	 *                             with the out_of_collection state change
 	 */
-	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
+	public function updateCrmInCollection($updateCollectionStateChanged, $process, $balanceByAids = array()) {
 		Billrun_Factory::log()->log("Updating crm with collection information of process: " . $process['label'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 		$inCollectionDebts = array(); // aid => debt, sent with the in_collection state change when configured
+		$outCollectionDebts = array(); // aid => balance (the debt left, or negative - credit), sent with the out_of_collection state change when configured
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
 			Billrun_Factory::log()->log("Updating crm with accounts that are in collection", Zend_Log::DEBUG);
@@ -366,7 +370,7 @@ abstract class Billrun_Account extends Billrun_Base {
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
-						$inCollectionDebts[$aid] = $item['total'] ?? null;
+						$inCollectionDebts[$aid] = $item['total'] ?? 0;
 					} else {
 						$result['error'][] = $aid;
 					}
@@ -398,6 +402,7 @@ abstract class Billrun_Account extends Billrun_Base {
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew(array(), $remove_values)) {
 						$result['out_of_collection'][] = $aid;
+						$outCollectionDebts[$aid] = $balanceByAids[$aid]['total'] ?? 0; // not in the balance query - no balance, settled
 					} else {
 						$result['error'][] = $aid;
 					}
@@ -406,7 +411,7 @@ abstract class Billrun_Account extends Billrun_Base {
 		}
 		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
 		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process, $inCollectionDebts);
-		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process);
+		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process, $outCollectionDebts);
 		return $result;
 	}
 	

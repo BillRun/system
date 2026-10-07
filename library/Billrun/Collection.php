@@ -31,21 +31,25 @@ class Billrun_Collection extends Billrun_Base {
 		Billrun_Factory::log()->log("Processing accounts that are actually in collection", Zend_Log::DEBUG);
 		$processes = Billrun_Factory::config()->getConfigValue('collection.processes', array());
 		$minDebt = $this->getMinDebtOfAllProcesses($processes);
-		$debtByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt);
-		$aidsValues = array_values(array_map(function($debtByAid) {
-			return $debtByAid->getRawData()['aid'];
-		}, $debtByAids));
+		// with change_state_include_debt the state change requests carry the balance of the accounts, so the debt query returns
+		// every account with a balance - debt or credit, the credit offsetting the debt - and the minimum debt is applied here
+		$collectionStateChangeWithDebt = !empty(array_filter($processes, array(Billrun_Factory::collectionSteps(), 'isChangeStateWithDebt')));
+		$balanceByAids = Billrun_Bill::getContractorsInCollection($aids, $minDebt, $collectionStateChangeWithDebt);
+		// only the accounts that may be in collection (at least the minimum debt of some process) need their account for the conditions
+		$aidsValues = array_keys(array_filter($balanceByAids, function($balanceByAid) use ($minDebt) {
+			return $balanceByAid['total'] >= $minDebt;
+		}));
 
 		$updateCollectionStateChangedByProcess = [];
 		$query['read_preference'] = 'RP_PRIMARY';
 		$accountsInConditions = $account->loadAccountsByAidsWithBatches($aidsValues, $query);
 
-		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $debtByAids, $collectDir);
+		$updateCollectionStateChangedByProcess = $this->getUpdateCollectionStateChangedByProcess(array_merge($accountsInConditions, $markedAsInCollection), $balanceByAids, $collectDir);
 		Billrun_Factory::log()->log("Updating crm if needed", Zend_Log::DEBUG);
 		$result = [];
 		foreach($updateCollectionStateChangedByProcess as $processIndex => $updateCollectionStateChanged){
 			$matchProcess = $processes[$processIndex];
-			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess);
+			$result[$matchProcess['label']] = $account->updateCrmInCollection($updateCollectionStateChanged, $matchProcess, $balanceByAids);
 		}
 		if(empty($aids)){
 			$this->removeAllCollectionStepsOfCustomerNotInCollection();
