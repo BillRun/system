@@ -1,5 +1,8 @@
 <?php
 
+// The suite bootstrap re-points the Yaf local-namespace path to the Billapi module
+// (yaf < 3.2), so Action_Base can no longer be autoloaded - load it explicitly.
+require_once APPLICATION_PATH . '/application/helpers/Action/Base.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Reject.php';
 
 /**
