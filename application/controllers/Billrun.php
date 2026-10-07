@@ -528,11 +528,12 @@ class BillrunController extends ApiController {
 	protected function buildCommandByParams($params) {
 		$paramsString = '';
 		foreach ($params as $key => $value) {
-			if (is_null($value)) {
+			if (is_null($value) || !is_scalar($value)) {
 				continue;
 			}
 			
-			$paramsString .= $key . '=' . $value . ' ';
+			// values are escaped as a whole argument - validation runs on a casted copy, not on the raw value
+			$paramsString .= escapeshellarg($key . '=' . trim($value, '"')) . ' ';
 		}
 		
 		return $paramsString;
