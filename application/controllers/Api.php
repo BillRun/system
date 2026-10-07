@@ -44,6 +44,47 @@ class ApiController extends Yaf_Controller_Abstract {
 		if ($this->opencors) {
 			Billrun_Utils_Security::openCrossDomain();
 		}
+		$this->enforceActionPermission($this->getRequest()->getActionName());
+	}
+
+	/**
+	 * Central permission check for the API actions declared in api.actions, run
+	 * before the action executes. An action is admin-only unless its class states
+	 * a lower level in getPermissionLevel(). Actions that manage their own access
+	 * (public endpoints, forwarders, runtime-computed levels) opt out with
+	 * "protected $skipAutoPermissionCheck = true;".
+	 *
+	 * @param string $actionName the api action name (key of api.actions)
+	 */
+	protected function enforceActionPermission($actionName) {
+		if (RUNNING_FROM_CLI) {
+			return;
+		}
+		$actionName = strtolower($actionName);
+		if (!isset($this->actions[$actionName])) {
+			return; // the controller's own actions (index, locale, ...) check themselves
+		}
+		$className = ucfirst($actionName) . 'Action'; // same convention Yaf uses to load the action
+		if (!class_exists($className, false)) {
+			Yaf_Loader::import(APPLICATION_PATH . '/application/' . $this->actions[$actionName]);
+		}
+		if (!class_exists($className, false)) {
+			return; // let the dispatcher report the missing action
+		}
+		$reflection = new ReflectionClass($className);
+		$defaults = $reflection->getDefaultProperties();
+		if (!empty($defaults['skipAutoPermissionCheck'])) {
+			return;
+		}
+		$level = Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+		if ($reflection->hasMethod('getPermissionLevel')) {
+			$method = $reflection->getMethod('getPermissionLevel');
+			$method->setAccessible(true);
+			$level = $method->invoke($reflection->newInstanceWithoutConstructor());
+		}
+		$this->permissionLevel = $level;
+		$this->allowed();
+		$this->permissionLevel = null;
 	}
 	
 	/**
@@ -281,6 +322,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest();
 		$version = $request->get('api_version');
 		$action = $request->get('api_action');
+		$this->enforceActionPermission("v{$version}_{$action}");
 		$this->forward('Api', "v{$version}_{$action}");
 		return false;
 	}

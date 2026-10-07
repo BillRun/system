@@ -15,6 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class CreatetenantAction extends ApiAction {
 
+	// public, guarded by its own whitelist - skip the central permission check in ApiController
+	protected $skipAutoPermissionCheck = true;
+
 	protected $request;
 	protected $status = true;
 	protected $desc = '';

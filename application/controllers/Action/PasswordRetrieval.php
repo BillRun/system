@@ -16,6 +16,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class PasswordRetrievalAction extends ApiAction {
 
+	// public (password reset) - skip the central permission check in ApiController
+	protected $skipAutoPermissionCheck = true;
+
 	/**
 	 * The logic to be executed when this API plugin is called.
 	 */

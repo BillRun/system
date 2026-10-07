@@ -3,11 +3,13 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Reject.php';
 
 /**
- * The reject API (RejectAction) is available to admin users only (BRCD-5536):
- * without a logged-in user or without the admin role the call is refused with
- * Billrun_Exceptions_NoPermission; an admin call reaches the action body, which
- * fails on the missing "rejections" input (Billrun_Exceptions_Api) before any
- * payment is touched.
+ * The reject API (RejectAction) requires the write permission (BRCD-5536). The
+ * check runs centrally in ApiController::enforceActionPermission() before the
+ * action executes (admin unless the action states a lower level in
+ * getPermissionLevel(); reject states write). That runs only for web requests,
+ * so the permission gate (allowed()) at reject's level is exercised directly:
+ * no logged-in user or the read role is refused with
+ * Billrun_Exceptions_NoPermission, a write or admin user passes.
  */
 class RejectPermissionsTest extends \Codeception\Test\Unit {
 
@@ -25,27 +27,34 @@ class RejectPermissionsTest extends \Codeception\Test\Unit {
 	}
 
 	/**
-	 * label => [roles of the logged-in user (null - not logged in), expected exception class]
+	 * label => [roles of the logged-in user (null - not logged in), expected exception class (null - allowed)]
 	 */
 	protected function getPermissionTests() {
 		return array(
 			'not logged in - refused' => array(null, 'Billrun_Exceptions_NoPermission'),
-			'write user - refused' => array(array('write'), 'Billrun_Exceptions_NoPermission'),
-			'admin - reaches the action body' => array(array('admin'), 'Billrun_Exceptions_Api'),
+			'read user - refused' => array(array('read'), 'Billrun_Exceptions_NoPermission'),
+			'write user - allowed' => array(array('write'), null),
+			'admin - allowed' => array(array('admin'), null),
 		);
 	}
 
-	public function testRejectIsAllowedToAdminsOnly() {
+	public function testRejectRequiresWritePermission() {
 		foreach ($this->getPermissionTests() as $label => $test) {
 			list($roles, $expectedClass) = $test;
 			$this->login($roles);
 			$exception = null;
 			try {
-				$this->getRejectAction()->execute();
+				$allowed = new ReflectionMethod('RejectAction', 'allowed');
+				$allowed->setAccessible(true);
+				$allowed->invoke($this->getRejectAction());
 			} catch (Exception $e) {
 				$exception = $e;
 			}
-			$this->assertInstanceOf($expectedClass, $exception, $label);
+			if (is_null($expectedClass)) {
+				$this->assertNull($exception, $label . ($exception ? ': ' . $exception->getMessage() : ''));
+			} else {
+				$this->assertInstanceOf($expectedClass, $exception, $label);
+			}
 		}
 	}
 

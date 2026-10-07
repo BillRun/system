@@ -17,6 +17,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AuthAction extends ApiAction  {
 
+	// public (login) - skip the central permission check in ApiController
+	protected $skipAutoPermissionCheck = true;
+
 	protected $opencors = false;
 
 	public function execute() {

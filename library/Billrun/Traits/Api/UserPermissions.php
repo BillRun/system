@@ -14,7 +14,17 @@ trait Billrun_Traits_Api_UserPermissions {
 
 	protected $permissionLevel = null;
 	
-	protected abstract function getPermissionLevel();
+	/**
+	 * Required permission level of the API. Defaults to admin, so an API is
+	 * admin-only unless it states a lower level by overriding this method.
+	 * Must return a constant: ApiController reads it before the action is
+	 * constructed (no request or object state is available).
+	 *
+	 * @return string|array Billrun_Traits_Api_IUserPermissions::PERMISSION_*
+	 */
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
 	
 	private function permissionValue() {
 		if($this->permissionLevel === null) {

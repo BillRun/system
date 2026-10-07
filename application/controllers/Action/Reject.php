@@ -17,7 +17,6 @@ class RejectAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	public function execute() {
-		$this->allowed();
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Reject API call with params: ' . print_r($request, 1), Zend_Log::INFO);
 		try {
@@ -102,6 +101,6 @@ class RejectAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 }
