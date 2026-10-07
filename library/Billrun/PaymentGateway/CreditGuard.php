@@ -229,7 +229,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$authArray = $this->buildInquireQuery($params);
 		$authString = http_build_query($authArray);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Sending to Credit Guard (authenticateCredentials): " . $params['endpoint_url'] . ' ' . $authString, Zend_Log::DEBUG);
+			Billrun_Factory::log("Sending to Credit Guard (authenticateCredentials): " . $params['endpoint_url'] . ' ' . $this->logSafe($authString, [$params['password']]), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($params['endpoint_url'], $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
@@ -397,7 +397,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Creditguard payment request: " . print_R($paymentArray, 1), Zend_Log::DEBUG);
+			preg_match('/<cardId>([^<]*)<\/cardId>/', $paymentArray['int_in'] ?? '', $cardId);
+			Billrun_Factory::log("Creditguard payment request: " . $this->logSafe($paymentArray, [$cardId[1] ?? null]), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Creditguard payment response: " . print_R($result, 1), Zend_Log::DEBUG);
 		}
@@ -785,7 +786,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
-			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway token request: " . $this->logSafe($postArray, [$gatewayDetails['card_token'] ?? null]), Zend_Log::DEBUG);
 			$response = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($response, 1), Zend_Log::DEBUG);
 		}
@@ -917,7 +918,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'password' => $params['password'],
 			'int_in' => $xml
 		);
-		Billrun_Factory::log('CreditGuard send refund request: ' . print_R($req, 1));
+		Billrun_Factory::log('CreditGuard send refund request: ' . $this->logSafe($req, [$transaction['gateway_details']['card_token'] ?? null]));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		Billrun_Factory::log('CreditGuard send refund response: ' . print_R($res, 1));
 
@@ -977,7 +978,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'password' => $params['password'],
 			'int_in' => $xml
 		);
-		Billrun_Factory::log('CreditGuard send cancel request: ' . print_R($req, 1));
+		Billrun_Factory::log('CreditGuard send cancel request: ' . $this->logSafe($req, [$transaction['gateway_details']['card_token'] ?? null]));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		Billrun_Factory::log('CreditGuard send cancel response: ' . print_R($res, 1));
 

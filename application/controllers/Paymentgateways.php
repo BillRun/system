@@ -203,12 +203,12 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
-		Billrun_Factory::log("OKPage request is: " . json_encode($request->getRequest()), Zend_Log::DEBUG);
 		$name = urldecode($request->get("name"));
 		if (is_null($name)) {
 			return $this->setError("Missing payment gateway name", $request);
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+		Billrun_Factory::log("OKPage request is: " . $paymentGateway->logSafe(json_encode($request->getRequest())), Zend_Log::DEBUG);
 		$transactionName = $paymentGateway->getTransactionIdName();
 		$transactionId = $request->get($transactionName);
 		if (is_null($transactionId)) {
@@ -270,7 +270,7 @@ class PaymentGatewaysController extends ApiController {
 			$profileId = $paymentGateway->createRecurringBillingProfile($aid, $gatewayDetails);
 			if (empty($profileId)) {
 				$errorMessage = "Failed to create recurring billing profile for {$aid}";
-				Billrun_Factory::log("{$errorMessage}. Request: " . print_R($request, 1), Billrun_Log::ERR);
+				Billrun_Factory::log("{$errorMessage}. Request: " . $paymentGateway->logSafe($request), Billrun_Log::ERR);
 				return $this->setError($errorMessage, $request);
 			}
 		} catch (Exception $ex) {

@@ -1239,7 +1239,7 @@ class Billrun_Util {
 			}
 		}
 		if (empty($output)) {
-			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
+			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE), Zend_Log::WARN);
 			return FALSE;
 		}
 
