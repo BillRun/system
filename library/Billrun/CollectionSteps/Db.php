@@ -235,6 +235,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 		$url = $process['settings']['change_state_url'] ?? '';
 		$method = $process['settings']['change_state_method'] ?? 'POST';
+		$headers = $process['settings']['change_state_headers'] ?? array();
 		$batchSize = intval($process['settings']['change_state_batch_size'] ??
 			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_batch_size', self::CHANGE_STATE_DEFAULT_BATCH_SIZE));
 		if ($batchSize <= 0) {
@@ -266,6 +267,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 				'extra_params'=> $extraParams,
 				'creation_time' => date('c')
 			);
+			if (!empty($headers)) {
+				$step['step_config']['headers'] = $headers;
+			}
 			if ($this->runStep($step) === false) {
 				// Billrun_Factory::log('Collection state change: batch ' . ($index + 1) . '/' . $batchesCount . ' failed (' . count($batchAids) . ' accounts, state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::ERR);
 				$result = false;

@@ -1304,6 +1304,10 @@ class ConfigModel {
 			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
 				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
 			}
+			$headersErrors = Billrun_CollectionSteps_Notifiers_Http::getHeadersErrors($settings['change_state_headers'] ?? []);
+			if (!empty($headersErrors)) {
+				throw new Exception("Process #{$p_i} Settings: Collection State Change " . implode(', ', $headersErrors));
+			}
 			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
 			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
 				throw new Exception("Process #{$p_i} Settings: Minimum debt must be numeric equal or greater then 0");

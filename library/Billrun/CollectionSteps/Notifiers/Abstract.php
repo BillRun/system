@@ -42,10 +42,19 @@ abstract class Billrun_CollectionSteps_Notifiers_Abstract implements Billrun_Col
 		} catch (Exception $exc) {
 			Billrun_Factory::log('Collection steps notifier crashed with error: ' . $exc->getMessage(), Zend_Log::ERR);
 		}
-		Billrun_Factory::log('Collection steps notifier run failed for task: ' . print_r($this->task, 1), Zend_Log::WARN);
+		Billrun_Factory::log('Collection steps notifier run failed for task: ' . print_r($this->getTaskForLog(), 1), Zend_Log::WARN);
 		return $this->getFailureResponse();
 	}
 	
+	/**
+	 * the task as written to the log
+	 *
+	 * @return array
+	 */
+	protected function getTaskForLog() {
+		return $this->task;
+	}
+
 	/**
 	 * gets the relevant settings for the notifier
 	 * 
