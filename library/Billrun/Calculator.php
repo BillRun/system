@@ -726,13 +726,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}*/
 		
 		$options = array('multiple' => true);
-		static $updateHintSupported = null;
-		if ($updateHintSupported === null) {
-			$updateHintSupported = Billrun_Factory::db()->compareServerVersion('4.2.0', '>=');//hint on the update command requires mongo 4.2+
-		}
-		if ($updateHintSupported && $this->limit != 0 && $this->autosort) {//the sort-less update may lose the plan selection trial - force the right queue index
-			$options['hint'] = $this->getQueueUpdateHint();
-		}
 		Billrun_Factory::log('Queue hash update, query: ' . json_encode($query) . ', options: ' . json_encode($options), Zend_Log::DEBUG);
 		$res = $queue->update($query, $update, $options);
 		return $res;
@@ -1016,27 +1009,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		Billrun_Factory::log('Removing ' . count($this->completedStamps) . ' lines from queue', Zend_Log::INFO);
 		Billrun_Factory::db()->queueCollection()->remove(array('stamp' => array('$in' => $this->completedStamps)));
-	}
-
-	/**
-	 * The index the queue marking update is hinted with (the update has no sort,
-	 * so the planner may lose the plan-selection trial without it; requires the
-	 * BRCD-3562 migration): {calc_name, calc_time, urt}, or the type-prefixed
-	 * {calc_name, type, calc_time, urt} when --file_types narrows the pull. A
-	 * chain-mode pull filters calc_name with a low-selectivity $in, where the
-	 * branch-free {calc_time, urt} index is the right one ({type, calc_time, urt}
-	 * with --file_types).
-	 *
-	 * @return array index specification
-	 */
-	protected function getQueueUpdateHint() {
-		if ($this->chain) {
-			return isset($this->file_types) ? array('type' => 1, 'calc_time' => 1, 'urt' => 1) : array('calc_time' => 1, 'urt' => 1);
-		}
-		if (isset($this->file_types)) {
-			return array('calc_name' => 1, 'type' => 1, 'calc_time' => 1, 'urt' => 1);
-		}
-		return array('calc_name' => 1, 'calc_time' => 1, 'urt' => 1);
 	}
 
 	/**
