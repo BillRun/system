@@ -157,19 +157,13 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 	}
 
 	/**
-	 * the task without the custom headers values, which may be secrets
+	 * the task without the custom headers, which may be secrets
 	 *
 	 * @return array
 	 */
 	protected function getTaskForLog() {
 		$task = parent::getTaskForLog();
-		if (!empty($task['step_config']['headers']) && is_array($task['step_config']['headers'])) {
-			foreach ($task['step_config']['headers'] as &$row) {
-				if (is_array($row) && isset($row['value'])) {
-					$row['value'] = '***';
-				}
-			}
-		}
+		unset($task['step_config']['headers']);
 		return $task;
 	}
 
