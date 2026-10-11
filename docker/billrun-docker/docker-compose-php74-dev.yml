@@ -1,1 +1,112 @@
-docker-compose-php74-tests.yml
+services:
+    web:
+        image: nginx:latest
+        container_name: billrun-nginx
+        ports:
+            - "8074:80"
+        restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        volumes:
+            - ${PWD}/../..:/billrun:ro
+            - ${PWD}/nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+            - "mongodb"
+        environment:
+        - "APPLICATION_ENV=container"    
+    php:
+        build: 
+            context: ./billrun-php74
+            dockerfile: Dockerfile
+        image: billrun-php74
+        container_name: billrun-app
+        restart: always
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        - "COMPOSER_HOME=/tmp/composer"
+        - "COMPOSER_CACHE_DIR=/tmp/composer-cache"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ${PWD}/enable_client_plugin.sh:/enable_client_plugin.sh
+            - ./../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ~/.cache/composer:/tmp/composer-cache
+            - ./billrun-php74/composer.json:/billrun/composer.json:ro
+            - ./billrun-php74/composer.lock:/billrun/composer.lock:ro
+        healthcheck:
+            test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000"]
+            interval: 20s
+            timeout: 3s
+            retries: 4
+        command: sh -c "composer install && php-fpm"
+    mongodb:
+        image: mongo:7.0
+        container_name: billrun-mongodb
+        restart: always
+        volumes:
+            - ./data/mongodb-7.0-${PLUGIN_BASENAME:-default}:/data/db/
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        ports:
+            - 27017:27017
+        healthcheck:
+            test: ["CMD", "mongosh", "--host", "billrun-mongodb", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            interval: 3s
+            timeout: 5s
+            retries: 10
+            start_period: 40s
+    chrome:
+        image: selenium/standalone-chrome
+        container_name: billrun-standalone-chrome
+        restart: always
+    mockup:
+        #image: php:7.3-fpm
+        build:
+            context: ./mockup-servers
+            dockerfile: Dockerfile-webserver
+        container_name: billrun-mockups
+        environment:
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 discover_client_host=false mode=develop"
+        volumes:
+            - ${PWD}/mockup-servers:/mockups
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        command: php -S 0.0.0.0:8081 router.php
+        ports:
+        - 8081:8081
+        restart: always
+        networks:
+            default:
+                ipv4_address: 10.103.0.10
+    dbinit:
+        build: 
+            context: ./billrun-php74
+            dockerfile: Dockerfile
+        container_name: billrun-dbinit
+        user: "${USER_ID:-0}:${GROUP_ID:-0}"
+        environment:
+        - "APPLICATION_ENV=container"
+        - "BR_MDB_HOST=billrun-mongodb:27017"
+        - "BR_MDB_DBNAME=billing_container"
+        volumes:
+            - ${PWD}/../..:/billrun
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+            - ./enable_client_plugin.sh:/enable_client_plugin.sh
+        depends_on:
+            php:
+                condition: service_healthy
+            mongodb:
+                condition: service_healthy
+        command: php /billrun/public/index.php --env container --dbinit
+        restart: "no"
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.103.0.0/16
+
