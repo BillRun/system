@@ -28,9 +28,9 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 	const HEADER_NAME_REGEX = '/^[A-Za-z0-9-]+$/';
 
 	/**
-	 * header value - visible ASCII, space and tab only (no CR / LF, so no header injection)
+	 * characters a header value cannot contain - control characters except tab (CR / LF / NUL would allow header injection)
 	 */
-	const HEADER_VALUE_REGEX = '/^[\x20-\x7E\t]*$/';
+	const HEADER_VALUE_FORBIDDEN_REGEX = '/[\x00-\x08\x0A-\x1F\x7F]/';
 
 	const MAX_HEADERS = 20;
 	const MAX_HEADER_NAME_LENGTH = 128;
@@ -129,8 +129,12 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 				}
 				continue;
 			}
-			if (strlen($name) > static::MAX_HEADER_NAME_LENGTH || !preg_match(static::HEADER_NAME_REGEX, $name)) {
-				$errors[] = "header #{$rowNumber} key is invalid (letters, digits and '-' only, up to " . static::MAX_HEADER_NAME_LENGTH . ' characters)';
+			if (strlen($name) > static::MAX_HEADER_NAME_LENGTH) {
+				$errors[] = "header #{$rowNumber} key is too long (up to " . static::MAX_HEADER_NAME_LENGTH . ' characters)';
+				continue;
+			}
+			if (!preg_match(static::HEADER_NAME_REGEX, $name)) {
+				$errors[] = "header #{$rowNumber} key is invalid (letters, digits and '-' only)";
 				continue;
 			}
 			$normalizedName = strtolower($name);
@@ -143,8 +147,10 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 				continue;
 			}
 			$names[$normalizedName] = true;
-			if (strlen($value) > static::MAX_HEADER_VALUE_LENGTH || !preg_match(static::HEADER_VALUE_REGEX, $value)) {
-				$errors[] = "header {$name} value is invalid (printable characters only, up to " . static::MAX_HEADER_VALUE_LENGTH . ' characters)';
+			if (strlen($value) > static::MAX_HEADER_VALUE_LENGTH) {
+				$errors[] = "header {$name} value is too long (up to " . static::MAX_HEADER_VALUE_LENGTH . ' characters)';
+			} else if (preg_match(static::HEADER_VALUE_FORBIDDEN_REGEX, $value)) {
+				$errors[] = "header {$name} value is invalid (no line breaks or control characters)";
 			}
 		}
 		return $errors;
