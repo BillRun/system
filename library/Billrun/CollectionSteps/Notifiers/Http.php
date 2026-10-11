@@ -19,7 +19,7 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 	 * headers that cannot be set as custom headers (lower case) - authentication, transport / framing and content
 	 * negotiation headers are owned by BillRun and the HTTP client
 	 */
-	const BLACKLISTED_HEADERS = array('authorization', 'x-api-key', 'cookie', 'host', 'transfer-encoding', 'content-length',
+	const BLACKLISTED_HEADERS = array('authorization', 'x-api-key', 'cookie', 'host', 'transfer-encoding',
 		'connection', 'content-type', 'accept', 'x-custom-feature', 'prefer');
 
 	/**
