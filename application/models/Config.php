@@ -233,6 +233,10 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if ($category === 'collection') {
+			$data = $this->removeEmptyCollectionHeaders($data);
+		}
+
 		if(empty($category)) {
 			if (!$this->updateRoot($updatedData, $data)) {
 				return 0;
@@ -1288,6 +1292,44 @@ class ConfigModel {
 		return strlen($str) <= $size;
 	}
 	
+	/**
+	 * removes the custom headers rows with an empty key and an empty value, and the headers list of a process
+	 * that has no other rows, so they are not saved
+	 *
+	 * @param mixed $collections collection configuration
+	 *
+	 * @return mixed
+	 */
+	protected function removeEmptyCollectionHeaders($collections) {
+		if (empty($collections['processes']) || !is_array($collections['processes'])) {
+			return $collections;
+		}
+		foreach ($collections['processes'] as &$process) {
+			if (!isset($process['settings']['change_state_headers']) || !is_array($process['settings']['change_state_headers'])) {
+				continue;
+			}
+			$headers = array_values(array_filter($process['settings']['change_state_headers'], function($row) {
+				if (!is_array($row)) {
+					return true; // kept for the validation to reject
+				}
+				foreach (['key', 'value'] as $field) {
+					$value = $row[$field] ?? '';
+					if (!is_string($value) || trim($value) !== '') {
+						return true;
+					}
+				}
+				return false;
+			}));
+			if (empty($headers)) {
+				unset($process['settings']['change_state_headers']);
+			} else {
+				$process['settings']['change_state_headers'] = $headers;
+			}
+		}
+		unset($process);
+		return $collections;
+	}
+
 	protected function validateCollection($collections) {
 		$processes = Billrun_Util::getIn($collections, 'processes', []);
 		$processes_count = count($processes);
