@@ -21,6 +21,11 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	protected $source;
 	protected $orphanTime = '1 hour ago';
 
+	/**
+	 * maximum number of messages kept in each of the errors/warnings/info fields
+	 */
+	const MAX_MESSAGES_PER_TYPE = 100;
+
 	public function __construct($options = array()) {
 		if (empty($options['source'])) {
 			throw new Exception('Missing source');
@@ -96,6 +101,10 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 		foreach($fields as $field_name => $value) {
             if(in_array($field_name, ['errors', 'warnings', 'info'])){
                 $array = $this->data[$field_name];
+                if (count($array) >= static::MAX_MESSAGES_PER_TYPE) {
+                    Billrun_Factory::log("Log file reached the limit of " . static::MAX_MESSAGES_PER_TYPE . " " . $field_name . " messages. Message not saved to the log file: " . $value, Zend_Log::NOTICE);
+                    continue;
+                }
                 array_push($array, $value);
                 $this->data[$field_name] = $array;
             }else{
