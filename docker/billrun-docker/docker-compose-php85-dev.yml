@@ -15,9 +15,9 @@ services:
             - "php"
             - "mongodb"
         environment:
-        - "APPLICATION_ENV=container"
+        - "APPLICATION_ENV=container"    
     php:
-        build:
+        build: 
             context: ./billrun-php85
             dockerfile: Dockerfile
         image: billrun-php85
@@ -51,7 +51,7 @@ services:
         container_name: billrun-mongodb
         restart: always
         volumes:
-            - ./data/mongodb-8.0-${PLUGIN_BASENAME:-default}:/data/db/
+            # - ./data/mongodb-8.0-${PLUGIN_BASENAME:-default}:/data/db/
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
