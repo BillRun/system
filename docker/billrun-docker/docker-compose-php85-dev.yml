@@ -51,7 +51,7 @@ services:
         container_name: billrun-mongodb
         restart: always
         volumes:
-            - ./data/mongodb-8.0-${PLUGIN_BASENAME:-default}:/data/db/
+            # - ./data/mongodb-8.0-${PLUGIN_BASENAME:-default}:/data/db/
             - ${PLUGIN_PATH:-/dev/null}:/plugin
         ports:
             - 27017:27017
