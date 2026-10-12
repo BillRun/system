@@ -15,9 +15,9 @@ services:
             - "php"
             - "mongodb"
         environment:
-        - "APPLICATION_ENV=container"
+        - "APPLICATION_ENV=container"    
     php:
-        build:
+        build: 
             context: ./billrun-php85
             dockerfile: Dockerfile
         image: billrun-php85
