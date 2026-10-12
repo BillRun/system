@@ -44,7 +44,7 @@ services:
         restart: always
         entrypoint: ["/mongo-entrypoint.sh"]
         volumes:
-            - ./data/mongodb-3.6-${PLUGIN_BASENAME:-default}:/data/db/
+            # - ./data/mongodb-3.6-${PLUGIN_BASENAME:-default}:/data/db/
             - ${PWD}/../..:/billrun:ro
             # - ${PWD}/../persist/data/db/mongo-3.6:/data/db
             # - ${PWD}/../persist/backup:/backup
