@@ -20,11 +20,4 @@ class V3_payAction extends ApiAction {
 		return false;
 	}
 
-	/**
-	 * Same level as the pay action this forwards to.
-	 */
-	public static function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
-	}
-
 }

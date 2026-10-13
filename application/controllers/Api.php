@@ -44,40 +44,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		if ($this->opencors) {
 			Billrun_Utils_Security::openCrossDomain();
 		}
-		$this->enforceActionPermission($this->getRequest()->getActionName());
-	}
-
-	/**
-	 * Central permission check, run before the action executes, for this controller
-	 * and every controller extending it (billrun, queue, ...):
-	 * - skipped when "controller/action" or "controller/*" is listed in
-	 *   api.permission_whitelist (public endpoints, actions that check their own level)
-	 * - an action declared in api.actions is checked at its class's static
-	 *   getPermissionLevel() - admin when the class does not declare one
-	 * - any other action is checked at the controller's level, unless
-	 *   api.healthcheck.auth_required is turned off
-	 *
-	 * @param string $actionName the action name
-	 */
-	protected function enforceActionPermission($actionName) {
-		$actionName = strtolower($actionName);
-		$controller = strtolower($this->getRequest()->getControllerName());
-		// the defaults keep login and the gateway callbacks working if conf/api/permissions.ini is not loaded
-		$whitelist = Billrun_Factory::config()->getConfigValue('api.permission_whitelist', array('auth/*', 'oauth2/*'));
-		if (in_array("$controller/$actionName", $whitelist) || in_array("$controller/*", $whitelist)) {
-			return;
-		}
-		if (!isset($this->actions[$actionName])) {
-			if (Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1) || $actionName !== 'index') {
-				$this->allowed();
-			}
-			return;
-		}
-		Yaf_Loader::import(APPLICATION_PATH . '/application/' . $this->actions[$actionName]);
-		$className = ucfirst($actionName) . 'Action'; // the class name Yaf loads for this action
-		$this->permissionLevel = method_exists($className, 'getPermissionLevel') ? $className::getPermissionLevel() : Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
-		$this->allowed();
-		$this->permissionLevel = null;
 	}
 	
 	/**
@@ -91,6 +57,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
+		if (Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1)) {
+			$this->allowed();
+		}
 		try {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
@@ -312,12 +281,11 @@ class ApiController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest();
 		$version = $request->get('api_version');
 		$action = $request->get('api_action');
-		$this->enforceActionPermission("v{$version}_{$action}");
 		$this->forward('Api', "v{$version}_{$action}");
 		return false;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

@@ -50,7 +50,7 @@ class HealthcheckAction extends RealtimeeventAction {
 		return $this->_request->getParam($key);
 	}
 	
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }

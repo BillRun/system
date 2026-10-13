@@ -68,7 +68,7 @@ class PluginsController extends Yaf_Controller_Abstract {
 		$response->setHeader('Content-Type', $contentType);
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

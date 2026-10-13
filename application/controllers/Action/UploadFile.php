@@ -107,7 +107,7 @@ class UploadFileAction extends Action_Base {
 		return $connection;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

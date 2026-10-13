@@ -69,7 +69,7 @@ class CustompaymentgatewayController extends ApiController {
 		$this->setSuccess($output, $options);
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

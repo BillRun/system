@@ -79,7 +79,7 @@ class SettingsAction extends ApiAction {
 		return TRUE;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN; // this can be override by enforcePermissions method
 	}
 	

@@ -88,7 +88,7 @@ class StatisticsAction extends ApiAction {
 		$this->getController()->setOutput(array($output));
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

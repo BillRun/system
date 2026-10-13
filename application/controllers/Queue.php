@@ -148,7 +148,7 @@ class QueueController extends ApiController {
 		return parent::render('index', $parameters);
 	}
 	
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 

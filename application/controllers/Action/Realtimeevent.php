@@ -247,7 +247,7 @@ class RealtimeeventAction extends ApiAction {
 		return (in_array($this->usaget, Billrun_Util::getCallTypes()) && $event['record_type'] === 'start_call');
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

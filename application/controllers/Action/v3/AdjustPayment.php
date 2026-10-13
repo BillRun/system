@@ -20,11 +20,4 @@ class V3_adjustpaymentsAction extends ApiAction {
 		return false;
 	}
 
-	/**
-	 * Same level as the adjustpayments action this forwards to.
-	 */
-	public static function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
-	}
-
 }

@@ -56,7 +56,7 @@ class SaveversionAction extends ApiAction {
 		return true;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 

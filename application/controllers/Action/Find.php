@@ -125,7 +125,7 @@ class FindAction extends ApiAction {
 		return $query;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

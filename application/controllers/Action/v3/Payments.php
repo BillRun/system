@@ -20,11 +20,4 @@ class V3_paymentsAction extends ApiAction {
 		return false;
 	}
 
-	/**
-	 * Same level as the payments action this forwards to.
-	 */
-	public static function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-	}
-
 }

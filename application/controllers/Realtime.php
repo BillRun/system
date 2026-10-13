@@ -276,7 +276,7 @@ class RealtimeController extends ApiController {
 		return (isset($event['uf'][$pretendField]) && $event['uf'][$pretendField]);
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 	

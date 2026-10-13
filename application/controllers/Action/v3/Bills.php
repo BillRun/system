@@ -47,7 +47,7 @@ class V3_paymentHistoryAction extends ApiAction {
 		return Billrun_Bill_Payment::getPayments($aid, array(), array(), date('Y/m/d',  strtotime($to)), date('Y/m/d',  strtotime($from)), null, true, true, true);
 	}
 	
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }

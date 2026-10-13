@@ -117,7 +117,7 @@ class ReportAction extends ApiAction {
 		return true;
 	}
 
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return array(Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE, Billrun_Traits_Api_IUserPermissions::PERMISSION_REPORTS);
 	}
 	

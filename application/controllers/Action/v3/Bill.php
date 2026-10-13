@@ -140,7 +140,7 @@ class V3_billAction extends ApiAction {
 		return Billrun_Bill::getBalanceByAids($aids, false, $only_debt);
 	}
 	
-	public static function getPermissionLevel() {
+	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
