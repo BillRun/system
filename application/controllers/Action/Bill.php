@@ -184,7 +184,7 @@ class BillAction extends ApiAction {
 		return $result;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

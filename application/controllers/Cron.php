@@ -353,7 +353,7 @@ class CronController extends Yaf_Controller_Abstract {
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
 	}
 	
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
         

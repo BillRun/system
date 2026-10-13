@@ -86,7 +86,7 @@ class ClearcacheAction extends ApiAction {
 		return $retValue;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 }

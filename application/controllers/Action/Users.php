@@ -111,7 +111,7 @@ class UsersAction extends ApiAction {
 		return $this->_model->deleteUserById($userId);
 	}
 	
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 	

@@ -254,7 +254,7 @@ class V3_PlansAction extends ApiAction {
 		return $retParam;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

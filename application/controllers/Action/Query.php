@@ -298,7 +298,7 @@ class QueryAction extends ApiAction {
 		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

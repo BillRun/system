@@ -16,9 +16,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class SettingsAction extends ApiAction {
 
-	// computes its level at runtime and calls allowed() itself - skip the central permission check in ApiController
-	protected $skipAutoPermissionCheck = true;
-
 	use Billrun_Traits_Api_UserPermissions;
 
 	protected $model;
@@ -82,7 +79,7 @@ class SettingsAction extends ApiAction {
 		return TRUE;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN; // this can be override by enforcePermissions method
 	}
 	

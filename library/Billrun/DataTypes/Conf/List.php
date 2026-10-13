@@ -115,7 +115,7 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 		return $this->list;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 

@@ -48,41 +48,34 @@ class ApiController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * Central permission check for the API actions declared in api.actions, run
-	 * before the action executes. An action is admin-only unless its class states
-	 * a lower level in getPermissionLevel(). Actions that manage their own access
-	 * (public endpoints, forwarders, runtime-computed levels) opt out with
-	 * "protected $skipAutoPermissionCheck = true;".
+	 * Central permission check, run before the action executes, for this controller
+	 * and every controller extending it (billrun, queue, ...):
+	 * - skipped when "controller/action" or "controller/*" is listed in
+	 *   api.permission_whitelist (public endpoints, actions that check their own level)
+	 * - an action declared in api.actions is checked at its class's static
+	 *   getPermissionLevel() - admin when the class does not declare one
+	 * - any other action is checked at the controller's level, unless
+	 *   api.healthcheck.auth_required is turned off
 	 *
-	 * @param string $actionName the api action name (key of api.actions)
+	 * @param string $actionName the action name
 	 */
 	protected function enforceActionPermission($actionName) {
-		if (RUNNING_FROM_CLI) {
-			return;
-		}
 		$actionName = strtolower($actionName);
-		if (!isset($this->actions[$actionName])) {
-			return; // the controller's own actions (index, locale, ...) check themselves
-		}
-		$className = ucfirst($actionName) . 'Action'; // same convention Yaf uses to load the action
-		if (!class_exists($className, false)) {
-			Yaf_Loader::import(APPLICATION_PATH . '/application/' . $this->actions[$actionName]);
-		}
-		if (!class_exists($className, false)) {
-			return; // let the dispatcher report the missing action
-		}
-		$reflection = new ReflectionClass($className);
-		$defaults = $reflection->getDefaultProperties();
-		if (!empty($defaults['skipAutoPermissionCheck'])) {
+		$controller = strtolower($this->getRequest()->getControllerName());
+		// the defaults keep login and the gateway callbacks working if conf/api/permissions.ini is not loaded
+		$whitelist = Billrun_Factory::config()->getConfigValue('api.permission_whitelist', array('auth/*', 'oauth2/*'));
+		if (in_array("$controller/$actionName", $whitelist) || in_array("$controller/*", $whitelist)) {
 			return;
 		}
-		$level = Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
-		if ($reflection->hasMethod('getPermissionLevel')) {
-			$method = $reflection->getMethod('getPermissionLevel');
-			$method->setAccessible(true);
-			$level = $method->invoke($reflection->newInstanceWithoutConstructor());
+		if (!isset($this->actions[$actionName])) {
+			if (Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1) || $actionName !== 'index') {
+				$this->allowed();
+			}
+			return;
 		}
-		$this->permissionLevel = $level;
+		Yaf_Loader::import(APPLICATION_PATH . '/application/' . $this->actions[$actionName]);
+		$className = ucfirst($actionName) . 'Action'; // the class name Yaf loads for this action
+		$this->permissionLevel = method_exists($className, 'getPermissionLevel') ? $className::getPermissionLevel() : Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 		$this->allowed();
 		$this->permissionLevel = null;
 	}
@@ -98,9 +91,6 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		if (Billrun_Factory::config()->getConfigValue('api.healthcheck.auth_required', 1)) {
-			$this->allowed();
-		}
 		try {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
@@ -327,7 +317,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

@@ -56,7 +56,7 @@ class LocaleController extends ApiController {
 		$this->getView()->list = $output;
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

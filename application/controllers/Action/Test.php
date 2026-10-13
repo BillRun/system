@@ -22,7 +22,7 @@ class TestAction extends ApiAction {
 		$this->getController()->setOutput(array(array("test" => "action"), true));
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 

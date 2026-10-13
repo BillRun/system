@@ -84,7 +84,7 @@ class TestController extends Yaf_Controller_Abstract {
 		return implode("/", $translated);
 	}
 
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }

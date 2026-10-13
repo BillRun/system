@@ -96,7 +96,7 @@ class ChargesAction extends ApiAction {
 		return Billrun_Util::getIn($price, '0.price', 0);
 	}
 	
-	protected function getPermissionLevel() {
+	public static function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 

@@ -14,13 +14,17 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class V3_paymentsAction extends ApiAction {
-
-	// forwarder, the target action checks - skip the central permission check in ApiController
-	protected $skipAutoPermissionCheck = true;
 	
 	public function execute() {
 		$this->forward('payments');
 		return false;
+	}
+
+	/**
+	 * Same level as the payments action this forwards to.
+	 */
+	public static function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }
