@@ -26,6 +26,12 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	 */
 	const MAX_MESSAGES_PER_TYPE = 100;
 
+	/**
+	 * message types (errors/warnings/info) that reached MAX_MESSAGES_PER_TYPE, to log the limit only once per type
+	 * @var array
+	 */
+	protected $limitReachedTypes = [];
+
 	public function __construct($options = array()) {
 		if (empty($options['source'])) {
 			throw new Exception('Missing source');
@@ -102,7 +108,10 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
             if(in_array($field_name, ['errors', 'warnings', 'info'])){
                 $array = $this->data[$field_name];
                 if (count($array) >= static::MAX_MESSAGES_PER_TYPE) {
-                    Billrun_Factory::log("Log file reached the limit of " . static::MAX_MESSAGES_PER_TYPE . " " . $field_name . " messages. Message not saved to the log file: " . $value, Zend_Log::NOTICE);
+                    if (empty($this->limitReachedTypes[$field_name])) {
+                        Billrun_Factory::log("Log file reached the limit of " . static::MAX_MESSAGES_PER_TYPE . " " . $field_name . " messages. Further " . $field_name . " messages are not saved to the log file", Zend_Log::NOTICE);
+                        $this->limitReachedTypes[$field_name] = true;
+                    }
                     continue;
                 }
                 array_push($array, $value);
