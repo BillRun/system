@@ -703,7 +703,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (is_string($row) && isset($this->queue_data[$row])) {
 			return $this->queue_data[$row];
 		}
-		if (isset($this->queue_data[$row['stamp']])) {
+		if (!is_string($row) && isset($this->queue_data[$row['stamp']])) {
 			return $this->queue_data[$row['stamp']];
 		}
 		return false;

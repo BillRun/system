@@ -41,6 +41,7 @@ class Billrun_Helpers_QueueCalculators {
 		$success = true;
 		$this->unifyCalc = null;
 		$this->queue_calculators = $this->getQueueCalculators();
+		$calc_name_in_queue = array_merge(array(false), $this->queue_calculators); // a line runs stage $index when its queue row waits at $calc_name_in_queue[$index] (calculateDataRow)
 		$index = 0;
 		foreach ($this->queue_calculators as $calc_name) {
 			Billrun_Factory::log('Plugin calc cpu ' . $calc_name, Zend_Log::INFO);
@@ -58,7 +59,16 @@ class Billrun_Helpers_QueueCalculators {
                 Billrun_Factory::log('calculator ' . $calc_name . ' is unknown', Zend_Log::ALERT);
                 throw new Exception('calculator ' . $calc_name . ' is unknown');
             }
-			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
+			// BRCD-3562: prepare only the lines this stage will run. A chain batch mixes entry
+			// stages, so a line that joined mid-chain (or failed earlier in this run) must not
+			// reach a stage's bulk preparation - the customer stage would load its subscriber
+			// for nothing. A stage none of the lines runs is not prepared at all.
+			$stageLines = array_filter($data['data'], function ($line) use ($queue_data, $calc_name_in_queue, $index) {
+				return isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index];
+			});
+			if (!empty($stageLines)) {
+				$calc->prepareData($stageLines);
+			}
             $allExtraLines = [];
 			foreach ($data['data'] as $key => &$line) {
                 $extraLines = $this->addExtraLines($line, $queue_data, $calc, $processor);
@@ -115,6 +125,8 @@ class Billrun_Helpers_QueueCalculators {
 						}
 					}
 					$line = $entity->getRawData();
+				} else if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'], array_slice($calc_name_in_queue, $index + 1), true)) {
+					//BRCD-3562: the line entered the chain mid-way and is waiting for a later stage of this run - it is not stuck
 				} else {
 					Billrun_Factory::log('Line ' . $line['stamp'] . ' should go to the queue', Zend_Log::DEBUG);
 					$this->stuckInQueue[$line['stamp']] = true;
@@ -141,10 +153,24 @@ class Billrun_Helpers_QueueCalculators {
 	}
 	
 	protected function getCalcOptions($calc_name) {
+		return self::getCalculatorOptions($calc_name, $this->options);
+	}
+
+	/**
+	 * Map a queue calculator name (as configured in queue.calculators) to the
+	 * options needed to instantiate the concrete calculator for that stage.
+	 * The logical stage names 'rate' and 'pricing' resolve to the concrete
+	 * calculator types (rate_Usage/rate_Credit, customerPricing).
+	 *
+	 * @param string $calc_name the queue calculator name
+	 * @param array  $options   run options (e.g. 'credit' selects the rate calculator variant)
+	 * @return array calculator instantiation options, including 'type'
+	 */
+	public static function getCalculatorOptions($calc_name, $options = array()) {
 		$calc_options = array();
 		switch ($calc_name) {
 			case 'rate':
-				$type = (isset($this->options['credit']) && $this->options['credit'] ? 'rate_Credit' : 'rate_Usage');
+				$type = (isset($options['credit']) && $options['credit'] ? 'Rate_Credit' : 'Rate_Usage');
 				$calc_options = array('type' => $type);
 				break;
 
@@ -269,7 +295,7 @@ class Billrun_Helpers_QueueCalculators {
          * @return array $extraData - the extra lines we need to add to the calculator data. 
 	 */
 	protected function addExtraLines(&$line, &$queue_data, $calculator, $processor, $extraData = []) {
-            Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, 'calculator' => $calculator));
             if (!empty($extraData)) {
                 foreach ($extraData as $originalStamp => $extraDataByStamp) {
                     foreach ($extraDataByStamp as $newStamp => $extraRow) {
@@ -281,7 +307,7 @@ class Billrun_Helpers_QueueCalculators {
                     }
                 }
             }
-            Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, $calculator));
+            Billrun_Factory::dispatcher()->trigger('afterCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, 'calculator' => $calculator));
             return $extraData[$line['stamp']] ?? [];
 	}
 

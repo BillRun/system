@@ -328,12 +328,12 @@ class DbinitModel {
 				'coll' => 'queue',
 				'indexes' => [
 					['fields' => ['stamp' => 1], 'params' => ['unique' => true]],
-					['fields' => ['calc_name' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
-					['fields' => ['calc_time' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
-					['fields' => ['type' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
+					['fields' => ['calc_time' => 1, 'urt' => 1], 'params' => ['unique' => false, 'background' => true]],//BRCD-3562 chain mode: branch-free index for the cross-stage pull and its marking update
+					['fields' => ['type' => 1, 'calc_time' => 1, 'urt' => 1], 'params' => ['unique' => false, 'background' => true]],//BRCD-3562 chain mode: the same pull and marking update when narrowed by --file_types
 					['fields' => ['aid' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
-					['fields' => ['hash' => 1, 'calc_time' => 1, 'type' => 1], 'params' => ['background' => true]],
-					['fields' => ['urt' => 1, 'type' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
+					['fields' => ['hash' => 1, 'calc_time' => 1, 'urt' => 1], 'params' => ['unique' => false, 'background' => true]],
+					['fields' => ['calc_name' => 1, 'type' => 1, 'calc_time' => 1, 'urt' => 1], 'params' => ['unique' => false, 'background' => true]],
+					['fields' => ['calc_name' => 1, 'calc_time' => 1, 'urt' => 1], 'params' => ['unique' => false, 'background' => true]],
 				],
 			],
 			[
