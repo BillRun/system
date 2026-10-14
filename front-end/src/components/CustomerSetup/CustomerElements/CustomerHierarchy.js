@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
 import isNumber from 'is-number';
-import { Form, FormGroup, Col, ControlLabel, Button, Modal } from 'react-bootstrap';
+import { Form, Col, Button, Modal } from 'react-bootstrap';
+import { ControlLabel, FormGroup } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
 import { EntityField } from '@/components/Entity';
 import { getList } from '@/actions/listActions';
@@ -79,12 +80,12 @@ const CustomerHierarchy = ({
   const currentAid = customer.get('aid', null);
 
   return (
-    <Form horizontal className="hierarchy-account">
+    <Form className="form-horizontal hierarchy-account">
       <FormGroup>
-        <Col smOffset={3} lgOffset={2} sm={8} lg={9}>
+        <Col sm={{ span: 8, offset: 3 }} lg={{ span: 9, offset: 2 }}>
           <Button
-            bsSize="small"
-            bsStyle="primary"
+            size="sm"
+            variant="primary"
             onClick={() => setShowTree(true)}
             disabled={disabledTreeView}
           >
@@ -95,7 +96,7 @@ const CustomerHierarchy = ({
         </Col>
       </FormGroup>
       <FormGroup>
-        <Col componentClass={ControlLabel} sm={3} lg={2}>
+        <Col as={ControlLabel} sm={3} lg={2}>
           {getFieldName('parent_aid', 'account')}
         </Col>
         <Col sm={8} lg={9}>
@@ -126,7 +127,7 @@ const CustomerHierarchy = ({
       />
 
       {/* Hierarchy tree modal — uses local state to avoid storing React elements in Redux */}
-      <Modal show={showTree} onHide={() => setShowTree(false)} bsSize="large">
+      <Modal show={showTree} onHide={() => setShowTree(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
             <i className="fa fa-sitemap" aria-hidden="true" />
