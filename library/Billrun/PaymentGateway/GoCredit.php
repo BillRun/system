@@ -266,9 +266,9 @@ class Billrun_PaymentGateway_GoCredit extends Billrun_PaymentGateway {
 		$additionalParams = array();
 		$codeResult = '';
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Go Credit payment request: " . $this->logSafe($paymentString, [$gatewayDetails['card_token'] ?? null]), Zend_Log::DEBUG);
+			Billrun_Factory::log("Go Credit payment request: " . $this->logSafe($paymentString, [$gatewayDetails['card_token']]), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-			Billrun_Factory::log("Go Credit payment response: " . print_R($result, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Go Credit payment response: " . $this->logSafe($result, [$gatewayDetails['card_token']]), Zend_Log::DEBUG);
 		}
 		$body = $this->convertSoap($result);
 		if ($body !== false) {

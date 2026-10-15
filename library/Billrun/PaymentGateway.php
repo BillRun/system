@@ -514,8 +514,13 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
 			Billrun_Factory::log("Payment gateway transaction details request: " . $this->logSafe($postString), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
-			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
+			try {
+				$retParams = $this->getResponseDetails($result);
+			} finally {
+				// logged after parsing so the card token first seen in this response can be encrypted
+				Billrun_Factory::log("Payment gateway transaction details response: " . $this->logSafe($result, [$this->saveDetails['card_token'] ?? null]), Zend_Log::DEBUG);
+			}
+			if ($retParams === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
 			}

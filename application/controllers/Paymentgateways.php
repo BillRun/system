@@ -208,7 +208,7 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("Missing payment gateway name", $request);
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		Billrun_Factory::log("OKPage request is: " . $paymentGateway->logSafe(json_encode($request->getRequest())), Zend_Log::DEBUG);
+		Billrun_Factory::log("OKPage request is: " . $paymentGateway->logSafe(json_encode($request->getRequest()), [$request->get('cardToken')]), Zend_Log::DEBUG);
 		$transactionName = $paymentGateway->getTransactionIdName();
 		$transactionId = $request->get($transactionName);
 		if (is_null($transactionId)) {

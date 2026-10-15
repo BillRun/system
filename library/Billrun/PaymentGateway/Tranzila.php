@@ -417,9 +417,9 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 		$this->setAuthHeaders();
 		
 		Billrun_Factory::log("Tranzila payment pay request url: " . print_R($this->EndpointUrl, 1), Zend_Log::DEBUG);
-		Billrun_Factory::log("Tranzila payment pay request params: " . $this->logSafe($params, [$params['card_number'] ?? null]), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment pay request params: " . $this->logSafe($params, [$params['card_number']]), Zend_Log::DEBUG);
 		$result = Billrun_Util::sendRequest($this->EndpointUrl, $this->encodeParams($params), Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-		Billrun_Factory::log("Tranzila payment pay response: " . print_R($result, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment pay response: " . $this->logSafe($result, [$params['card_number']]), Zend_Log::DEBUG);
 		$resultObj = json_decode($result, true);
 		
 		if (!is_array($resultObj) || !isset($resultObj['transaction_result'])) {
@@ -483,9 +483,9 @@ class Billrun_PaymentGateway_Tranzila extends Billrun_PaymentGateway {
 			],
 		];
 		$this->EndpointUrl = $this->getEndpointApi() . self::PAY_PATH;
-		Billrun_Factory::log("Tranzila payment query request: " . $this->logSafe($params, [$params['card_number'] ?? null]), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment query request: " . $this->logSafe($params, [$params['card_number']]), Zend_Log::DEBUG);
 		$queryResult = Billrun_Util::sendRequest($this->EndpointUrl, $this->encodeParams($params), Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-		Billrun_Factory::log("Tranzila payment query response: " . print_R($queryResult, 1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Tranzila payment query response: " . $this->logSafe($queryResult, [$params['card_number']]), Zend_Log::DEBUG);
 
 		$resultObj = json_decode($queryResult, true);
 		if (!is_array($resultObj) || !isset($resultObj['transaction_result'])) {
