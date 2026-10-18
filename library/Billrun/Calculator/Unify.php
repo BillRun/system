@@ -365,7 +365,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * @param type $newRow the single line to extract the unified row stamp from.
 	 * @return a string  with the unified row stamp.
 	 */
-	protected function getLineUnifiedLineStamp($newRow) {
+	public function getLineUnifiedLineStamp($newRow) {
 		$usaget = $newRow['usaget'];
 		$lineType = $newRow['linet'] ?? 'default';
 		$unifyConf  = $this->unificationFields[$newRow['type']][$lineType] ?? ($this->unificationFields[$newRow['type']]['default']?? null);
