@@ -158,6 +158,26 @@ class Billrun_Jobsmanager {
 	}
 
 	/**
+	 * set fields on a message of a queue - a job's own data on its message, e.g. a stamp it leaves for
+	 * whoever reads the message later; the queue's own fields (done, try, timeout...) are not meant to be set here
+	 * 
+	 * @param string $md5 the message id
+	 * @param array $fields the fields to set, e.g. ['notified_at' => new Mongodloid_Date()]
+	 * @param string $queueName the queue of the message; the jobs queue by default
+	 * 
+	 * @return bool true if the update succeeded, else false
+	 */
+	public static function updateMessage($md5, $fields, $queueName = 'jobs') {
+		Billrun_Factory::log("Update " . $queueName . " message " . $md5 . " fields " . implode(', ', array_keys($fields)), Zend_Log::DEBUG);
+		$result = Billrun_Factory::db()->getCollection($queueName . '_messages')->update(['md5' => $md5], ['$set' => $fields]);
+		if (empty($result['n'])) {
+			Billrun_Factory::log("Update " . $queueName . " message " . $md5 . " failed. Result: " . print_r($result, 1), Zend_Log::DEBUG);
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * singletone of queue instance
 	 * 
 	 * @param Zend_Queue $queue the queue that the job manager is running on
