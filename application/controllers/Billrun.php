@@ -551,17 +551,9 @@ class BillrunController extends ApiController {
 				case 'invoices':
 				case 'aids':
 				case 'exclude_accounts':
-					if (is_null($value)) {
-						break;
-					}
-					$values_array = Billrun_Util::verify_array(is_string($value) ? trim($value, '"') : $value);
-					if (empty($values_array)) {
+					$values_array = !is_null($value) ? Billrun_Util::verify_array(is_string($value) ? trim($value, '"') : $value) : [];
+					if (!is_null($value) && (empty($values_array) || count(array_filter($values_array, 'is_numeric')) !== count($values_array))) {
 						return false;
-					}
-					foreach ($values_array as $id) {
-						if (!is_scalar($id) || !ctype_digit(trim((string) $id))) {
-							return false;
-						}
 					}
 					break;
 				case 'billrun_key':
