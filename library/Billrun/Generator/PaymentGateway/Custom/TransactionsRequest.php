@@ -110,6 +110,7 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 		$maxRecordsPerTransaction = min($maxRecords, $maxRecordsPerTransaction);
 		$loadedEntities = 0;
 		$afterGroupCursor = null;
+		$this->setFileMandatoryFields();
 		$this->data = array();
 		do{
 			$customersAidsPerTransaction = [];
@@ -138,7 +139,6 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 			}
 		    Billrun_Factory::dispatcher()->trigger('beforeGeneratingCustomPaymentGatewayFile', array(static::$type, $this->configByType['file_type'], $this->options, &$this->customers, $accountsInArray));
 			Billrun_Factory::log()->log("Processing the pulled entities..", Zend_Log::DEBUG);
-			$this->setFileMandatoryFields();
 			$current_loop_bills = $this->customers;
 			$loop_counter = 0;
 			do {
