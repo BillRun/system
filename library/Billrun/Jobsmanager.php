@@ -125,6 +125,39 @@ class Billrun_Jobsmanager {
 	}
 
 	/**
+	 * query the messages of a queue (the jobs pushed to it - pending or done)
+	 * 
+	 * @param array $query mongo query on the message fields, e.g. body.type, body.config.<field>, done
+	 * @param array $sort sort of the result, e.g. ['created' => -1] for the latest message first
+	 * @param int $limit max number of messages to return; 0 for all
+	 * @param string $queueName the queue whose messages to query; the jobs queue by default
+	 * 
+	 * @return Mongodloid_Cursor the matching messages
+	 */
+	public static function getMessages($query, $sort = [], $limit = 0, $queueName = 'jobs') {
+		$cursor = Billrun_Factory::db()->getCollection($queueName . '_messages')->query($query)->cursor();
+		if (!empty($sort)) {
+			$cursor->sort($sort);
+		}
+		if (!empty($limit)) {
+			$cursor->limit($limit);
+		}
+		return $cursor;
+	}
+
+	/**
+	 * check if a job message is done: the job ran to its end (deleteMessage), gave up (its run limit
+	 * exceeded) or was cancelled; until then the message is pending - waiting to be pulled (again)
+	 * 
+	 * @param Mongodloid_Entity|array $message a message of the queue (see getMessages)
+	 * 
+	 * @return bool true if done, false if still pending
+	 */
+	public static function isDone($message) {
+		return !empty($message['done']);
+	}
+
+	/**
 	 * singletone of queue instance
 	 * 
 	 * @param Zend_Queue $queue the queue that the job manager is running on
