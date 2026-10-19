@@ -256,6 +256,9 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 				$mergeToExistingArrayFields = ['cpg_name', 'cpg_type', 'cpg_file_type'];
 				Billrun_Factory::dispatcher()->trigger('beforeGettingRequestFilePaymentDataLine', array(static::$type, $currentPayment, &$params, &$extraFields, &$mergeToExistingArrayFields, $account, $this));
 					$params['_account'] = is_array($account) ? $account : $account->getRawData();
+				if (!empty($this->payerAccountData)) {
+					$params['_payer_account'] = $this->payerAccountData;
+				}
 				$line = $this->getDataLine($params);
 				if ($this->affects_bills) {
 				$currentPayment->setExtraFields(array_merge_recursive($extraFields, ['pg_request' => $this->billSavedFields]), $mergeToExistingArrayFields);

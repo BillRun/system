@@ -919,7 +919,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 *
 	 * Intentionally resolves from each account's CURRENT (latest) revision, not an end-of-cycle snapshot:
 	 * per spec, charging/collection uses the payer in effect at execution time, so debt on older invoices
-	 * follows the account's latest is_payer/parent_aid. (This is why it loads via Billrun_Account_Db
+	 * follows the account's latest is_payer/parent_aid. (This is why it loads via the account source
 	 * directly rather than through the cycle-scoped Billrun_Cycle_Hierarchy resolver.)
 	 *
 	 * @param array $data account raw data
@@ -935,13 +935,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$hops = 0;
 		while (!is_null($parentAid) && !isset($visited[$parentAid]) && $hops <= $maxDepth) {
 			$visited[$parentAid] = true;
-			$account = new Billrun_Account_Db();
-			$account->loadAccountForQuery(array('aid' => $parentAid, 'type' => 'account'));
-			$customerData = $account->getCustomerData();
-			if (!$customerData || $customerData->isEmpty()) {
+			// only query keys allowed by Billrun_Account::buildQuery may be passed (an unknown key, e.g.
+			// 'type', makes the load fail and the charge silently falls back to the child's own gateway)
+			$parent = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $parentAid));
+			if (empty($parent)) {
 				return null; // dangling parent
 			}
-			$parentData = $customerData->getRawData();
+			$parentData = ($parent instanceof Mongodloid_Entity) ? $parent->getRawData() : (array) $parent;
 			if (self::accountIsPayer($parentData)) {
 				return $parentData;
 			}

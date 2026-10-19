@@ -71,6 +71,13 @@ class Models_Accounts extends Models_Entity {
 	 * unaffected.
 	 */
 	protected function verifyHierarchy() {
+		// Removing the parent (UI sends parent_aid="", API may send null) is dropped by the request
+		// translation (empty update parameters are skipped), so restore it from the raw request.
+		if (is_array($this->originalUpdate) && array_key_exists('parent_aid', $this->originalUpdate)
+			&& !array_key_exists('parent_aid', $this->update)
+			&& (is_null($this->originalUpdate['parent_aid']) || $this->originalUpdate['parent_aid'] === '')) {
+			$this->update['parent_aid'] = null;
+		}
 		$touchesHierarchy = array_key_exists('parent_aid', $this->update)
 			|| array_key_exists('issues_invoice', $this->update)
 			|| array_key_exists('is_payer', $this->update);

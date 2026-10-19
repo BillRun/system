@@ -169,13 +169,16 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'account':
+            case 'payer':
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-		if (!empty($params['_account']) && is_array($params['_account'])) {
-                    $accountData = $params['_account'];
+		// BRCD-785: the payer (the account itself, or its nearest is_payer ancestor) is preloaded separately
+		$preloadedKey = ($entity == 'payer') ? '_payer_account' : '_account';
+		if (!empty($params[$preloadedKey]) && is_array($params[$preloadedKey])) {
+                    $accountData = $params[$preloadedKey];
                 } else {
- 			Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+ 			Billrun_Factory::log('Custom PG generator: preloaded ' . $entity . ' missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
 			$accountAid = $params['aid'];
 			if ($entity == 'payer') {
 			    // BRCD-785: the account paying the bill - itself, or its nearest is_payer ancestor
