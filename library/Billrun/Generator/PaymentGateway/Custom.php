@@ -169,23 +169,32 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
     protected function getLinkedEntityData($entity, $params, $field) {
         switch ($entity) {
             case 'account':
+            case 'payer':
                 if (!isset($params['aid'])) {
                     throw new Exception('Missing account id');
                 }
-                if (!empty($params['_account']) && is_array($params['_account'])) {
-                    $accountData = $params['_account'];
+		// BRCD-785: the payer (the account itself, or its nearest is_payer ancestor) is preloaded separately
+		$preloadedKey = ($entity == 'payer') ? '_payer_account' : '_account';
+		if (!empty($params[$preloadedKey]) && is_array($params[$preloadedKey])) {
+                    $accountData = $params[$preloadedKey];
                 } else {
-                    Billrun_Factory::log('Custom PG generator: preloaded account missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
-                    $account = Billrun_Factory::account();
-                    $account->loadAccountForQuery(array('aid' => $params['aid']));
-                    $accountData = $account->getCustomerData();
-                }
-                if (is_null(Billrun_Util::getIn($accountData, $field))) {
-                    $message = "Field name $field does not exist under entity " . $entity;
-                    Billrun_Factory::log($message, Zend_Log::ERR);
-                    $this->logFile->updateLogFileField('errors', $message);
-                }
-                return Billrun_Util::getIn($accountData, $field);
+ 			Billrun_Factory::log('Custom PG generator: preloaded ' . $entity . ' missing for aid ' . $params['aid'] . ', falling back to loadAccountForQuery', Zend_Log::DEBUG);
+			$accountAid = $params['aid'];
+			if ($entity == 'payer') {
+			    // BRCD-785: the account paying the bill - itself, or its nearest is_payer ancestor
+			    if (isset($params['payer_aid'])) {
+				$accountAid = $params['payer_aid'];
+			    } else {
+				$message = 'Field "' . $field . '" is configured as a "payer" field, but no payer was found for aid "' . $params['aid'] . '" - using aid "' . $params['aid'] . '" own "' . $field . '" field';
+				Billrun_Factory::log($message, Zend_Log::ERR);
+				$this->logFile->updateLogFileField('errors', $message);
+			    }
+			}
+			$account = Billrun_Factory::account();
+                	$account->loadAccountForQuery(array('aid' => $accountAid));
+			$accountData = $account->getCustomerData();
+		}
+                return $this->getAccountField($field, $accountData);
 
             case 'payment_request':
                 if (!isset($params[$field])) {
@@ -200,6 +209,23 @@ abstract class Billrun_Generator_PaymentGateway_Custom {
                 $this->logFile->updateLogFileField('errors', $message);
                 Billrun_Factory::log($message, Zend_Log::ERR);
         }
+    }
+
+    /**
+     * Value of a field on an account revision, for the account and payer linked entities.
+     *
+     * @param string $field full path of the field
+     * @param array $accountData the account revision to read from
+     * @return mixed the field value, null when the revision does not carry it
+     */
+    protected function getAccountField($field, $accountData) {
+        $value = Billrun_Util::getIn($accountData, $field);
+        if (is_null($value)) {
+            $message = "Field name " . $field . " does not exist for account " . Billrun_Util::getIn($accountData, 'aid');
+            Billrun_Factory::log($message, Zend_Log::ERR);
+            $this->logFile->updateLogFileField('errors', $message);
+        }
+        return $value;
     }
 
     protected function buildGeneratorOptions() {

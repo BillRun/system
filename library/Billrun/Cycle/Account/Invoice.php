@@ -345,12 +345,49 @@ class Billrun_Cycle_Account_Invoice {
 	protected function setSubscribers(array $invoiceRawData) {
 		// Add the subscribers.
 		$invoiceSubs = Billrun_Util::getFieldVal($invoiceRawData['subs'], array());
+		// BRCD-785: tag each subs entry with its source account's parent_aid and full ancestor chain from
+		// the hierarchy metadata persisted on this invoice (attributes.hierarchy). Consumers can identify
+		// each sub's position in the tree without re-querying. The lookup is a no-op for non-hierarchy
+		// invoices (no metadata present), so flat-tenant invoices keep their existing subs shape.
+		$hierarchyMeta = Billrun_Util::getIn($invoiceRawData, array('attributes', 'hierarchy'), array());
 		foreach ($this->subscribers as $currSub) {
-			$invoiceSubs[] = $currSub->getData();
+			$subData = $currSub->getData();
+			if (!empty($hierarchyMeta) && isset($subData['aid'])) {
+				$subAid = intval($subData['aid']);
+				$subData['parent_aid'] = Billrun_Util::getIn($hierarchyMeta, array($subAid, 'parent_aid'), null);
+				$subData['hierarchy_ancestors'] = $this->buildAncestorAids($subAid, $hierarchyMeta);
+			}
+			$invoiceSubs[] = $subData;
 		}
-		
+
 		$invoiceRawData['subs'] = $invoiceSubs;
 		return $invoiceRawData;
+	}
+
+	/**
+	 * BRCD-785: ordered list of ancestor aids for a contributing account, walking up the persisted
+	 * hierarchy metadata. Order is root -> immediate parent; the account itself is NOT included. Returns
+	 * an empty array for a root or when the metadata has no entry for the account.
+	 *
+	 * @param int $aid
+	 * @param array $hierarchyMeta
+	 * @return int[]
+	 */
+	protected function buildAncestorAids($aid, array $hierarchyMeta) {
+		$ancestors = array();
+		if (empty($hierarchyMeta) || !isset($hierarchyMeta[$aid])) {
+			return $ancestors;
+		}
+		$visited = array($aid => true); // don't include the account itself, and guard against cycles
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		$current = Billrun_Util::getIn($hierarchyMeta, array($aid, 'parent_aid'), null);
+		while (!is_null($current) && !isset($visited[intval($current)]) && count($ancestors) <= $maxDepth) {
+			$current = intval($current);
+			$visited[$current] = true;
+			array_unshift($ancestors, $current);
+			$current = Billrun_Util::getIn($hierarchyMeta, array($current, 'parent_aid'), null);
+		}
+		return $ancestors;
 	}
 	
 	public function shouldKeepLinesinMemory($recordCount = 0) {

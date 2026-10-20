@@ -22,8 +22,7 @@ abstract class Billrun_Bill_Payment_Transfer extends Billrun_Bill_Payment {
 			throw new Exception('dir not supplied.');
 		}
 		parent::__construct($options);
-		if (isset($options['payer_name']) && isset($options['deposit_slip_bank'])) {
-			$this->data['payer_name'] = $options['payer_name'];
+		if (isset($options['deposit_slip_bank'])) {
 			$this->data['deposit_slip_bank'] = $options['deposit_slip_bank'];
 		} else {
 			throw new Exception('Billrun_Bill_Payment_Transfer: Insufficient options supplied.');

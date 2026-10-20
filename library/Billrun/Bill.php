@@ -118,13 +118,6 @@ abstract class Billrun_Bill {
 		return NULL;
 	}
 
-	public function getCustomerName() {
-		if (isset($this->data['payer_name'])) {
-			return $this->data['payer_name'];
-		}
-		return NULL;
-	}
-
 	public function getCustomerAddress() {
 		if (isset($this->data['aaddress'])) {
 			return $this->data['aaddress'];

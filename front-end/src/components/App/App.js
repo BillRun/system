@@ -160,7 +160,7 @@ class App extends Component {
     // by individual route components dispatching setPageTitle.
     if (auth !== true && this.props.auth === true) { // user did success login
       // get global system settings
-      this.props.dispatch(getSettings(['pricing', 'tenant', 'menu', 'billrun', 'usage_types', 'property_types', 'plays', 'taxation']))
+      this.props.dispatch(getSettings(['pricing', 'tenant', 'menu', 'billrun', 'usage_types', 'property_types', 'plays', 'taxation', 'system']))
         .then(response => {
           if (response) {
             return response;

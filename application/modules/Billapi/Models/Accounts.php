@@ -26,6 +26,7 @@ class Models_Accounts extends Models_Entity {
 		$this->verifyAllowances();
 		$this->verifyServices();
 		$this->verifyOverrides();
+		$this->verifyHierarchy();
 	}
 
 	public function get() {
@@ -55,6 +56,202 @@ class Models_Accounts extends Models_Entity {
 	 */
 	protected function getKeyField() {
 		return 'aid';
+	}
+
+	/**
+	 * Validate the customer-hierarchy fields (parent_aid / issues_invoice / is_payer) before save.
+	 *
+	 * Rules (BRCD-785 / BRCD-2824 / BRCD-2827):
+	 *  - issues_invoice=false implies is_payer=false.
+	 *  - a root (no parent_aid) must issue invoices and be a payer; on disconnect both are auto-set true.
+	 *  - parent_aid must reference an existing account, must not be the account itself, must not create a
+	 *    cycle, and the resulting tree depth must not exceed the configured maximum (default 4 levels).
+	 *
+	 * Only runs when one of the hierarchy fields is part of the update, so ordinary account updates are
+	 * unaffected.
+	 */
+	protected function verifyHierarchy() {
+		// Removing the parent (UI sends parent_aid="", API may send null) is dropped by the request
+		// translation (empty update parameters are skipped), so restore it from the raw request.
+		if (is_array($this->originalUpdate) && array_key_exists('parent_aid', $this->originalUpdate)
+			&& !array_key_exists('parent_aid', $this->update)
+			&& (is_null($this->originalUpdate['parent_aid']) || $this->originalUpdate['parent_aid'] === '')) {
+			$this->update['parent_aid'] = null;
+		}
+		$touchesHierarchy = array_key_exists('parent_aid', $this->update)
+			|| array_key_exists('issues_invoice', $this->update)
+			|| array_key_exists('is_payer', $this->update);
+		if (!$touchesHierarchy) {
+			return true;
+		}
+
+		// This save may introduce/remove hierarchy in the current process; invalidate the in-use memo so a
+		// subsequent getBillable()/aggregation re-probes the DB rather than trusting a stale "flat" result.
+		Billrun_Cycle_Hierarchy::resetInUseCache();
+
+		// Normalize the values being written so they are stored with their proper types.
+		if (array_key_exists('issues_invoice', $this->update)) {
+			$this->update['issues_invoice'] = Billrun_Util::toBool($this->update['issues_invoice'], true);
+		}
+		if (array_key_exists('is_payer', $this->update)) {
+			$this->update['is_payer'] = Billrun_Util::toBool($this->update['is_payer'], true);
+		}
+		if (array_key_exists('parent_aid', $this->update)) {
+			if (is_null($this->update['parent_aid']) || $this->update['parent_aid'] === '' || $this->update['parent_aid'] === 0) {
+				// Write null explicitly so the new revision actually detaches the account; just unsetting
+				// the key would leave the previous parent_aid in place (the field would not be touched on
+				// save).
+				$this->update['parent_aid'] = null;
+			} else {
+				$this->update['parent_aid'] = intval($this->update['parent_aid']);
+			}
+		}
+
+		$aid = isset($this->update['aid']) ? intval($this->update['aid'])
+			: (!empty($this->before) ? intval(Billrun_Util::getIn($this->before, 'aid', 0)) : 0);
+		$aid = $aid ?: null;
+
+		$parentAid = $this->getEffectiveHierarchyValue('parent_aid', null);
+		$parentAid = (is_null($parentAid) || $parentAid === '') ? null : intval($parentAid);
+
+		$issuesInvoice = Billrun_Util::toBool($this->getEffectiveHierarchyValue('issues_invoice', true), true);
+		$isPayer = Billrun_Util::toBool($this->getEffectiveHierarchyValue('is_payer', true), true);
+
+		// Root account: must issue invoices and be a payer. On disconnect auto-set both (BRCD-2824).
+		if (is_null($parentAid)) {
+			if ($issuesInvoice !== true || $isPayer !== true) {
+				$this->update['issues_invoice'] = true;
+				$this->update['is_payer'] = true;
+				$issuesInvoice = true;
+				$isPayer = true;
+			}
+		}
+
+		// A non-invoicing account cannot be a payer.
+		if ($issuesInvoice === false && $isPayer !== false) {
+			throw new Billrun_Exceptions_Api(0, array(), "A non-invoicing account (issues_invoice=false) must also have is_payer=false");
+		}
+
+		if (is_null($parentAid)) {
+			return true;
+		}
+
+		if (!is_null($aid) && $parentAid === $aid) {
+			throw new Billrun_Exceptions_Api(0, array(), "Account {$aid} cannot be its own parent");
+		}
+
+		// Parent must exist; the chain must not cycle; the resulting tree depth must not exceed the limit.
+		$ancestorLevels = $this->getAncestorLevels($parentAid, $aid);
+		$descendantLevels = is_null($aid) ? 0 : $this->getSubtreeDepthBelow($aid);
+		$resultingDepth = $ancestorLevels + 1 + $descendantLevels;
+		$maxDepth = $this->getMaxHierarchyDepth();
+		if ($resultingDepth > $maxDepth) {
+			throw new Billrun_Exceptions_Api(0, array(), "Customer hierarchy depth ({$resultingDepth}) exceeds the maximum of {$maxDepth} levels");
+		}
+
+		return true;
+	}
+
+	/**
+	 * Effective value of a hierarchy field: the incoming update wins, otherwise the current revision,
+	 * otherwise the provided default.
+	 */
+	protected function getEffectiveHierarchyValue($field, $default) {
+		if (array_key_exists($field, $this->update)) {
+			return $this->update[$field];
+		}
+		if (!empty($this->before)) {
+			return Billrun_Util::getIn($this->before, $field, $default);
+		}
+		return $default;
+	}
+
+	protected function getMaxHierarchyDepth() {
+		return Billrun_Cycle_Hierarchy::getMaxDepth();
+	}
+
+	/**
+	 * Latest (most recent 'from') account revision for an aid, or null when none exists.
+	 */
+	protected function getAccountRevision($aid) {
+		$revision = $this->collection->query(array('aid' => intval($aid), 'type' => 'account'))
+			->cursor()->sort(array('from' => -1))->limit(1)->current();
+		if (!$revision || $revision->isEmpty()) {
+			return null;
+		}
+		return $revision->getRawData();
+	}
+
+	/**
+	 * Number of ancestor levels from $parentAid up to the root (inclusive of $parentAid).
+	 * Throws when the immediate parent does not exist or a cycle is detected.
+	 */
+	protected function getAncestorLevels($parentAid, $editedAid) {
+		$levels = 0;
+		$visited = array();
+		if (!is_null($editedAid)) {
+			$visited[intval($editedAid)] = true;
+		}
+		$currentAid = intval($parentAid);
+		while (!is_null($currentAid)) {
+			// The visited-set guard both detects cycles and bounds the walk (max iterations = distinct
+			// accounts in the chain). The depth LIMIT is enforced authoritatively by the resultingDepth
+			// check in verifyHierarchy() (ancestorLevels + self + descendantLevels), so this method only
+			// counts ancestors and rejects structural corruption (cycles / dangling links).
+			if (isset($visited[$currentAid])) {
+				throw new Billrun_Exceptions_Api(0, array(), "Customer hierarchy cycle detected at account {$currentAid}");
+			}
+			$visited[$currentAid] = true;
+			$revision = $this->getAccountRevision($currentAid);
+			if (is_null($revision)) {
+				// Reject any dangling reference in the chain (immediate or higher up) rather than silently
+				// treating it as a root, which could let a deeper-than-allowed tree pass validation.
+				throw new Billrun_Exceptions_Api(0, array(), "Parent account {$currentAid} does not exist");
+			}
+			$levels++;
+			$nextParent = isset($revision['parent_aid']) && $revision['parent_aid'] !== '' && !is_null($revision['parent_aid'])
+				? intval($revision['parent_aid'])
+				: null;
+			$currentAid = $nextParent;
+		}
+		return $levels;
+	}
+
+	/**
+	 * Maximum number of descendant levels below $aid (0 when it has no children).
+	 */
+	protected function getSubtreeDepthBelow($aid, $depth = 0) {
+		if ($depth > $this->getMaxHierarchyDepth()) {
+			return 0; // safety guard against corrupted/looping data
+		}
+		$max = 0;
+		foreach ($this->getChildAids($aid) as $childAid) {
+			$below = 1 + $this->getSubtreeDepthBelow($childAid, $depth + 1);
+			if ($below > $max) {
+				$max = $below;
+			}
+		}
+		return $max;
+	}
+
+	/**
+	 * Distinct child aids whose latest revision points to $aid as their parent.
+	 */
+	protected function getChildAids($aid) {
+		$childAids = array();
+		$cursor = $this->collection->query(array('parent_aid' => intval($aid), 'type' => 'account'))->cursor();
+		foreach ($cursor as $revision) {
+			$childAid = intval($revision['aid']);
+			if ($childAid === intval($aid) || isset($childAids[$childAid])) {
+				continue;
+			}
+			// confirm the child's latest revision still points to this parent (handles close-and-new re-parenting)
+			$latest = $this->getAccountRevision($childAid);
+			if ($latest && isset($latest['parent_aid']) && intval($latest['parent_aid']) === intval($aid)) {
+				$childAids[$childAid] = true;
+			}
+		}
+		return array_keys($childAids);
 	}
 
 	/**

@@ -320,6 +320,11 @@ export const closedCycleChangesSelector = createSelector(
   (system = Immutable.Map()) => system.get('closed_cycle_changes'),
 );
 
+export const isCustomerHierarchyEnabledSelector = createSelector(
+  systemSettingsSelector,
+  (system = Immutable.Map()) => system.get('enable_customer_hierarchy'),
+);
+
 export const billrunSelector = getBillrun;
 
 export const minEntityDateSelector = createSelector(

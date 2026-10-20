@@ -22,6 +22,11 @@ class System extends Component {
     this.props.onChange('system', 'closed_cycle_changes', value);
   }
 
+  onToggleEnableCustomerHierarchy = (e) => {
+    const { value } = e.target;
+    this.props.onChange('system', 'enable_customer_hierarchy', value);
+  }
+
   render() {
     const { data } = this.props;
     const checkboxStyle = { marginTop: 10 };
@@ -36,6 +41,18 @@ class System extends Component {
                 value={data.get('closed_cycle_changes', '')}
                 onChange={this.onToggleClosedCycleChanges}
                 label="Allow making changes to entities in closed billing cycles"
+              />
+            </Col>
+          </FormGroup>
+
+          <FormGroup>
+            <Col componentClass={ControlLabel} md={2} />
+            <Col sm={6} style={checkboxStyle}>
+              <Field
+                fieldType="checkbox"
+                value={data.get('enable_customer_hierarchy', false)}
+                onChange={this.onToggleEnableCustomerHierarchy}
+                label="Enable customer hierarchy"
               />
             </Col>
           </FormGroup>

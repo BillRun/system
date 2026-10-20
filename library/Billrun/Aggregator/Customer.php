@@ -79,6 +79,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected $forceAccountIds = array();
 
 	/**
+	 * BRCD-785: ownerAid => [contributing aids] for the current page, populated by
+	 * consolidateHierarchyAccounts() from the in-memory feed. The pre-aggregate line cleanup reads it to
+	 * expand an invoicing owner to its subtree without re-resolving the (possibly non-local) account tree.
+	 * @var array
+	 */
+	protected $hierarchySubtrees = array();
+
+	/**
 	 * the amount of account lines to preload from the db at a time.
 	 * @param int $bulkAccountPreload
 	 */
@@ -346,8 +354,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$billed = $billrunColl->query($billrunQuery)->cursor();
 		$protectedAids = array();
+		$billedDocs = array();
+		// In external mode the protected subtree is read from each billed doc's subs[].aid; keep the docs
+		// (only when hierarchy is actually in use) so expandProtectedAidsToSubtrees needs no extra query.
+		$collectBilledSubs = Billrun_Cycle_Hierarchy::isExternalMode() && Billrun_Cycle_Hierarchy::isInUse();
 		foreach ($billed as $account) {
 			$protectedAids[] = $account['aid'];
+			if ($collectBilledSubs) {
+				$billedDocs[] = $account;
+			}
+		}
+		// BRCD-785: rolled-up child lines carry the child's aid (not the invoicing owner's), so a
+		// protected (billed) invoicing account must also protect its whole subtree's lines from removal.
+		if (!empty($protectedAids)) {
+			$protectedAids = self::expandProtectedAidsToSubtrees($billrunKey, $protectedAids, $billedDocs);
 		}
 		if (empty($aids)) {
 			$linesRemoveQuery = array('aid' => array('$nin' => $protectedAids), 'billrun' => $billrunKey,
@@ -421,6 +441,108 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$billrunColl->remove($billrunRemoveQuery);
 		$billrunSubsColl->remove($subsCascadeRemoveQuery);
 		$billrunGroupingColl->remove($groupingCascadeRemoveQuery);
+	}
+
+	/**
+	 * BRCD-785: expand a set of protected (billed) invoicing-account aids to include their full subtrees,
+	 * so the rolled-up child lines of a billed account are not deleted on re-run. No-op for flat tenants.
+	 *
+	 * @param string $billrunKey
+	 * @param int[] $protectedAids
+	 * @return int[]
+	 */
+	protected static function expandProtectedAidsToSubtrees($billrunKey, $protectedAids, $billedDocs = null) {
+		if (!Billrun_Cycle_Hierarchy::isInUse()) {
+			return $protectedAids; // no hierarchy in use
+		}
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			// External mode has no local account tree to walk. A protected account is by definition already
+			// billed, so its full subtree is recorded on its own (existing) billrun document as subs[].aid -
+			// the same snapshot the invoice/PDF generators read. We collect it from the billed documents
+			// removeBeforeAggregate has already fetched (no extra query, and never the not-yet-written doc of
+			// an account we are about to bill).
+			$expanded = array();
+			foreach ($protectedAids as $protectedAid) {
+				$expanded[intval($protectedAid)] = true;
+			}
+			foreach ((array) $billedDocs as $billedDoc) {
+				foreach (Billrun_Util::getFieldVal($billedDoc['subs'], array()) as $sub) {
+					if (isset($sub['aid'])) {
+						$expanded[intval($sub['aid'])] = true;
+					}
+				}
+			}
+			return array_keys($expanded);
+		}
+		$hierarchy = new Billrun_Cycle_Hierarchy(new Billrun_DataTypes_CycleTime($billrunKey));
+		$expanded = array();
+		foreach ($protectedAids as $protectedAid) {
+			foreach ($hierarchy->getSubtreeAids($protectedAid) as $subtreeAid) {
+				$expanded[$subtreeAid] = true;
+			}
+		}
+		return array_keys($expanded);
+	}
+
+	/**
+	 * BRCD-785: expand invoicing-account aids to include their rollup descendants for the current cycle.
+	 * No-op (returns the input) for flat tenants.
+	 *
+	 * @param int[] $aids
+	 * @return int[]
+	 */
+	protected function expandAidsToSubtrees($aids) {
+		if (empty($aids) || !$this->isHierarchyInUse()) {
+			return $aids;
+		}
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			// External mode: the account tree is not in Mongo, so resolve each owner's subtree from the
+			// in-memory feed captured during consolidation (this page's CRM response), never from the billrun
+			// collection - the billrun doc of an account we are about to (re)bill may not exist yet.
+			$expanded = array();
+			foreach ($aids as $aid) {
+				$aid = intval($aid);
+				$expanded[$aid] = true;
+				foreach (Billrun_Util::getFieldVal($this->hierarchySubtrees[$aid], array()) as $subtreeAid) {
+					$expanded[intval($subtreeAid)] = true;
+				}
+			}
+			return array_values($expanded);
+		}
+		$hierarchy = new Billrun_Cycle_Hierarchy($this->getCycle());
+		$expanded = array();
+		foreach ($aids as $aid) {
+			$expanded[intval($aid)] = true;
+			foreach ($hierarchy->getRollupDescendants($aid) as $descendantAid) {
+				$expanded[$descendantAid] = true;
+			}
+		}
+		return array_values($expanded);
+	}
+
+	/**
+	 * BRCD-785: whether any account uses customer hierarchy (has a non-null parent_aid).
+	 *
+	 * @return bool
+	 */
+	protected function isHierarchyInUse() {
+		return Billrun_Cycle_Hierarchy::isInUse();
+	}
+
+	/**
+	 * BRCD-785: the hierarchy resolver for the current cycle. DB mode resolves from the Mongo subscribers
+	 * collection; external subscribers mode resolves from the in-memory account feed the CRM returned for
+	 * this page (the invoicing account plus its full subtree), so consolidation works without any local
+	 * account persistence.
+	 *
+	 * @param array $accounts the parsed per-page accounts, required to seed the feed resolver
+	 * @return Billrun_Cycle_Hierarchy
+	 */
+	protected function getHierarchyResolver($accounts = array()) {
+		if (Billrun_Cycle_Hierarchy::isExternalMode()) {
+			return new Billrun_Cycle_Hierarchy_Feed($this->getCycle(), (array) $accounts);
+		}
+		return new Billrun_Cycle_Hierarchy($this->getCycle());
 	}
 
 	public function isFakeCycle() {
@@ -621,6 +743,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 		}
 
+		// BRCD-785: roll non-invoicing sub-accounts' subscribers up into their invoicing owner so only
+		// invoicing accounts produce a billrun document.
+		$accounts = $this->consolidateHierarchyAccounts($accounts);
+
 		$accountsToRet = array();
 		foreach($accounts as $aid => $accountData) {
 			$accountToAdd = $this->getAccount($billrunData, $accountData, intval($aid));
@@ -630,6 +756,104 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		Billrun_Factory::dispatcher()->trigger('afterParseToAccounts',[&$accountsToRet, $outputArr]);
 		return $accountsToRet;
+	}
+
+	/**
+	 * BRCD-785: consolidate a page's accounts by customer hierarchy.
+	 *
+	 * Each non-invoicing sub-account's subscriber revisions are moved into its invoicing owner's bucket
+	 * (the owner is co-located on the same page because getBillable() loads each invoicing account with
+	 * its full subtree). Every revision keeps its own aid, so the owner's flat subs array stays
+	 * self-describing. Non-invoicing accounts are removed and therefore produce no billrun document.
+	 *
+	 * No-op for flat pages (no account carries a parent_aid), so behavior is unchanged for non-hierarchy
+	 * tenants.
+	 *
+	 * @param array $accounts aid => ['attributes'=>..., 'subscribers'=>[sid=>[revisions]]]
+	 * @return array
+	 */
+	protected function consolidateHierarchyAccounts($accounts) {
+		// Single source of truth for "does this tenant use hierarchy" (memoized DB probe). Avoids probing
+		// the per-page subscriber buckets, which is both fragile (the account-level fields live only in the
+		// sid=0 bucket, which may be absent) and a silent-failure risk if the probe wrongly returns false.
+		if (!$this->isHierarchyInUse()) {
+			return $accounts; // flat tenant: every account is its own invoicing owner
+		}
+
+		$hierarchy = $this->getHierarchyResolver($accounts);
+		$hierarchyMeta = array(); // ownerAid => [contributingAid => ['name'=>..., 'parent_aid'=>...]]
+		foreach (array_keys($accounts) as $aidStr) {
+			if (!isset($accounts[$aidStr])) {
+				continue;
+			}
+			$aid = intval($aidStr);
+			$ownerAid = $hierarchy->getInvoiceOwner($aid);
+			// Record per-contributing-account metadata on the owner's invoice (display name + parent link)
+			// so the generate step can render BRCD-2826 breadcrumbs/subtotals without re-querying the DB.
+			$hierarchyMeta[$ownerAid][$aid] = array(
+				'name' => $this->getHierarchyAccountName(Billrun_Util::getFieldVal($accounts[$aidStr]['attributes'], array()), $aid),
+				'parent_aid' => $hierarchy->getParentAid($aid),
+			);
+			if ($ownerAid === $aid) {
+				continue; // invoicing account keeps its own data
+			}
+			if (!isset($accounts[(string) $ownerAid])) {
+				// Should never happen: getBillable loads each invoicing account with its full subtree, so the
+				// owner is always co-located on the page. If it ever does, keep the account as its own invoice
+				// (never drop its charges) and surface it loudly.
+				Billrun_Factory::log("Hierarchy: invoice owner {$ownerAid} for account {$aid} is not loaded on this page; leaving the account as its own invoice", Zend_Log::ALERT);
+				continue;
+			}
+			$accountData = $accounts[$aidStr];
+			if (isset($accountData['subscribers'])) {
+				foreach ($accountData['subscribers'] as $sid => $revisions) {
+					if (intval($sid) === 0) {
+						continue; // the child's account-level (sid=0) revision is dropped from the owner's invoice
+					}
+					if (!isset($accounts[(string) $ownerAid]['subscribers'][$sid])) {
+						$accounts[(string) $ownerAid]['subscribers'][$sid] = array();
+					}
+					foreach ($revisions as $revision) {
+						$accounts[(string) $ownerAid]['subscribers'][$sid][] = $revision;
+					}
+				}
+			}
+			unset($accounts[$aidStr]); // non-invoicing account -> no billrun document
+		}
+
+		// Persist the per-account hierarchy map onto each owner's attributes (stored verbatim in the billrun
+		// doc). Every owner gets at least its own entry, so each subs entry in setSubscribers() can resolve
+		// parent_aid uniformly - including the case of a standalone invoicing account that itself has a
+		// parent. The isset(...owner...attributes) guard catches the "owner not on page" ALERT case: the
+		// orphan child's entry was recorded under a missing owner aid that is absent from $accounts, so
+		// nothing is written for that ghost owner.
+		foreach ($hierarchyMeta as $ownerAid => $contributors) {
+			if (isset($accounts[(string) $ownerAid]['attributes'])) {
+				$accounts[(string) $ownerAid]['attributes']['hierarchy'] = $contributors;
+			}
+		}
+
+		// BRCD-785: stash ownerAid => [contributing aids] (the owner plus its rolled-up sub-accounts, exactly
+		// the keys of the hierarchy meta) for this page. expandAidsToSubtrees() reuses it during the pre-
+		// aggregate line cleanup so it never has to re-resolve the tree - which, in external mode, is not in
+		// Mongo and may not yet be in the billrun collection (the billrun doc is only written at cycle finish).
+		foreach ($hierarchyMeta as $ownerAid => $contributors) {
+			$this->hierarchySubtrees[intval($ownerAid)] = array_map('intval', array_keys($contributors));
+		}
+		return $accounts;
+	}
+
+	/**
+	 * Display name for an account from its constructed invoice attributes (used in hierarchy breadcrumbs).
+	 */
+	protected function getHierarchyAccountName($attributes, $aid) {
+		foreach (array('company_name', 'fullname') as $field) {
+			if (!empty($attributes[$field])) {
+				return $attributes[$field];
+			}
+		}
+		$name = trim(Billrun_Util::getIn($attributes, 'firstname', '') . ' ' . Billrun_Util::getIn($attributes, 'lastname', ''));
+		return $name !== '' ? $name : ('Account ' . $aid);
 	}
 
 	/**
@@ -740,6 +964,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				}
 				$billrunKey = $this->billrun->key();
 
+				// BRCD-785: also clean the rolled-up child accounts' prior lines (they carry the child's aid).
+				$aids = $this->expandAidsToSubtrees($aids);
 				self::removeBeforeAggregate($billrunKey, $aids, $this->overrideMode);
 			}
 			$accountsToPrepone = [];

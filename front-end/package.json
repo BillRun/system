@@ -67,6 +67,7 @@
     "postcss-safe-parser": "4.0.1",
     "prop-types": "^15.7.2",
     "react": "^19.0.0",
+    "react-hierarchy-tree-graph": "1.0.3",
     "react-app-polyfill": "^1.0.1",
     "react-bootstrap": "^2.10.0",
     "json5": "^2.2.3",

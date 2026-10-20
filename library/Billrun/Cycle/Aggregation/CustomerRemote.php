@@ -68,6 +68,16 @@ class Billrun_Cycle_Aggregation_CustomerRemote {
 					}
 				}
 				$retResults[$revStamp]['id'] = array_filter($revision, function ($key) use ($idFields) { return in_array($key, $idFields); }, ARRAY_FILTER_USE_KEY);
+				// BRCD-785: carry the customer-hierarchy fields on the account revision so the feed-backed
+				// resolver can rebuild the tree (parseToAccounts copies 'id' verbatim into the sid=0 account
+				// revision). Kept out of $idFields so the dedup stamp is unaffected; no-op for flat tenants.
+				if ($revision['type'] == 'account' && Billrun_Cycle_Hierarchy::isInUse()) {
+					foreach (array('parent_aid', 'issues_invoice', 'is_payer') as $hierarchyField) {
+						if (array_key_exists($hierarchyField, $revision)) {
+							$retResults[$revStamp]['id'][$hierarchyField] = $revision[$hierarchyField];
+						}
+					}
+				}
 				$passthroughFields = ($revision['type'] == 'account') ? $this->passthroughFields : $this->subsPassthroughFields;
 				foreach ($passthroughFields as $passthroughField) {
 					if (!is_string($passthroughField) && !is_int($passthroughField)) {
