@@ -36,8 +36,18 @@ class CreatetenantAction extends ApiAction {
 			Billrun_Factory::log('Create Tenant - not allowed', Zend_Log::INFO);
 			return false;
 		}
+		if (!Billrun_Utils_Security::validateData($this->getRequest()->getRequest())) {
+			Billrun_Factory::log('Create Tenant - unauthorized request', Zend_Log::WARN);
+			return false;
+		}
 
 		$this->init();
+
+		if (!$this->validateRequest()) {
+			$this->desc = 'Invalid tenant name.';
+			Billrun_Factory::log('Create Tenant - invalid tenant name', Zend_Log::INFO);
+			return false;
+		}
 
 		// Check if tenant already exists
 		if (file_exists(Billrun_Config::getMultitenantConfigPath() . $this->tenant . '.ini')) {
@@ -155,10 +165,20 @@ class CreatetenantAction extends ApiAction {
 	public function init() {
 		Billrun_Factory::log('Create Tenant - initializing...', Zend_Log::INFO);
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
-		$this->tenant = strtolower($this->request['tenant']);
+		$this->tenant = strtolower($this->request['tenant'] ?? '');
 		$this->db_name = 'billing_' . $this->tenant;
 		$this->userName = $this->request['email'];
 		$this->password = $this->request['password'];
+	}
+
+	/**
+	 * validate the request input before anything is written to disk or DB
+	 *
+	 * @return boolean true if the input is valid, else false
+	 */
+	protected function validateRequest() {
+		// DNS label, and 'billing_' + name stays inside Mongo's 63-byte DB name limit
+		return (bool) preg_match('/^[a-z0-9][a-z0-9-]{0,54}$/', $this->tenant);
 	}
 
 	protected function buildResponse() {
@@ -298,8 +318,7 @@ class CreatetenantAction extends ApiAction {
 	protected function generateDbUsernameAndPassword() {
 		Billrun_Factory::log('Create Tenant - Generating username and password', Zend_Log::INFO);
 		$this->db_user = 'user_' . $this->tenant;
-		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());
-		$this->db_pass = Billrun_Util::generateArrayStamp($arr);
+		$this->db_pass = bin2hex(random_bytes(24));
 		return true;
 	}
 
