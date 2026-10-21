@@ -65,15 +65,18 @@ class Billrun_EventsManager {
 	public function getEventsSettings($type, $activeOnly = true) {
 		$cacheKey = $type.$activeOnly;
 		if(empty($this->eventsSettingsCache[$cacheKey])) {
-			$now = new Mongodloid_Date();
-			$query = [
-				'type' => $type,
-				'from' => ['$lte' => $now],
-				'to' => ['$gte' => $now],
-			];
-			$events = [];
-			foreach ($this->eventsSettingsCollection->query($query)->cursor() as $event) {
-				$events[] = $event->getRawData();
+			// backward compatibility: event definitions that were not migrated yet are still under config "events"
+			$events = Billrun_Factory::config()->getConfigValue('events.' . $type, []);
+			if (empty($events)) {
+				$now = new Mongodloid_Date();
+				$query = [
+					'type' => $type,
+					'from' => ['$lte' => $now],
+					'to' => ['$gte' => $now],
+				];
+				foreach ($this->eventsSettingsCollection->query($query)->cursor() as $event) {
+					$events[] = $event->getRawData();
+				}
 			}
 			if ($activeOnly) {
 				$events = array_values(array_filter($events, function ($event) {
@@ -562,7 +565,7 @@ class Billrun_EventsManager {
 		foreach ($events as $event) {
 			if ($this->shouldSendEmailNotification($event)) {
 				$eventType = $event['event_type'];
-				$key = $event['key'];
+				$key = $event['key'] ?? $event['event_code'];
 				$aid = $event['extra_params']['aid'];
 				$sid = $event['extra_params']['sid'];
 
