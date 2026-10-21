@@ -12,10 +12,44 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
     return $this->getDomain() . 'plugins/israel-tax';
   }
 
+  /**
+   * Set the israelInvoice plugin settings.
+   * $data is merged recursively, so nested overrides work, e.g.
+   *   ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => true]]]
+   */
   public function setIsraelInvoiceSettings(\AcceptanceTester $a, $data = [])
   {
-    $data = array_merge($this->InvoicePluginConfiguration(), $data);
+    $data = array_replace_recursive($this->InvoicePluginConfiguration(), $data);
     $a->setPluginSettings($data);
+  }
+
+  /**
+   * Make sure the account has the custom field the plugin reads the customer
+   * vat number from (account_vat_number_field), so it is passed through to
+   * the billrun document attributes.
+   */
+  public function addAccountVatNumberField(\AcceptanceTester $a, $fieldName = 'company_id')
+  {
+    $fields = $a->getSettings('subscribers.account', [])['details']['fields'];
+    foreach ($fields as $field) {
+      if ($field['field_name'] === $fieldName) {
+        return;
+      }
+    }
+    $fields[] = [
+      "system" => false,
+      "select_list" => false,
+      "display" => true,
+      "editable" => true,
+      "multiple" => false,
+      "searchable" => false,
+      "field_name" => $fieldName,
+      "unique" => false,
+      "title" => $fieldName,
+      "mandatory" => false,
+      "type" => "text"
+    ];
+    $a->setSettings('subscribers.account.fields', $fields);
   }
 
 
@@ -54,6 +88,3 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
 
   }
 }
-
-
-
