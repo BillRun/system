@@ -845,4 +845,24 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		return true;
 	}
 			
+
+	/**
+	 * Get the generator export paths (html, pdf, tmp)
+	 * 
+	 * @return array
+	 */
+	public function getPaths() {
+		return $this->paths;
+	}
+
+	/**
+	 * Set a single generator export path
+	 * 
+	 * @param string $type path type (html, pdf, tmp)
+	 * @param string $path the path to set
+	 */
+	public function setPath($type, $path) {
+		$this->paths[$type] = $path;
+	}
+
 }
