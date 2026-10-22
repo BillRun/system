@@ -211,7 +211,8 @@
                 "unique": true,
                 "editable": false,
                 "display": false,
-                "mandatory": true
+                "mandatory": true,
+                "searchable": true
             }, {
                 "field_name": "aid",
                 "mandatory": true,
@@ -224,14 +225,16 @@
                 "mandatory": true,
 		"title": "First name",
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "lastname",
                 "system": true,
                 "mandatory": true,
 		"title": "Last name",
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "plan",
                 "system": true,
@@ -266,7 +269,8 @@
                 "generated": true,
                 "system": true,
                 "unique": true,
-                "editable": false
+                "editable": false,
+                "searchable": true
             }, {
                 "field_name": "firstname",
                 "mandatory": true,
@@ -274,7 +278,8 @@
                 "title": "First name",
                 "show_in_list" : true,
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "lastname",
                 "mandatory": true,
@@ -282,7 +287,8 @@
                 "title": "Last name",
                 "show_in_list" : true,
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "email",
                 "mandatory": true,
@@ -421,7 +427,8 @@
         "fields": [{
             "field_name": "key",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "from",
             "system": true,
@@ -435,7 +442,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "rates",
             "system": true,
@@ -478,7 +486,8 @@
         }, {
             "field_name": "name",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "price",
             "system": true,
@@ -486,7 +495,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "upfront",
             "system": true,
@@ -508,11 +518,13 @@
         }, {
             "field_name": "key",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }]
     },
     "charges": {
@@ -550,7 +562,8 @@
         }, {
             "field_name": "name",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "price",
             "system": true,
@@ -558,7 +571,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "include",
             "system": true
