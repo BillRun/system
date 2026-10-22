@@ -294,6 +294,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 
 	/**
 	 * check if the line is a partial charge of a rounded session: round the whole session and charge the delta from the unified line
+	 * NOTE: the session_* fields are a temporary contract, set on the line by the plugin from the unified line.
+	 * They will be replaced by the session context of BRCD-5553.
 	 * @param array $line the billing line
 	 * @param string $field aprice (before tax) or final_charge (after tax); the line carries the unified line's rounded
 	 *                      (session_<field>) and before rounding (session_before_rounding_<field>) totals of the previous charges
