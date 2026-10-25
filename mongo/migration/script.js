@@ -2316,7 +2316,7 @@ runOnce(lastConfig, 'BRCD-4748', function () {
 // BRCD-5499: update jsignpdf exec_path to the bundled jsignpdf 3.1.0 launcher script.
 runOnce(lastConfig, 'BRCD-5499', function () {
 	if (typeof lastConfig.signer !== 'undefined' && typeof lastConfig.signer.jsignpdf !== 'undefined') {
-		lastConfig.signer.jsignpdf.exec_path = "/opt/jsignpdf-3.1.0/bin/jsignpdf.sh";
+		lastConfig.signer.jsignpdf.exec_path = "/opt/jsignpdf-3.2.1/bin/jsignpdf.sh";
 	}
 });
 
