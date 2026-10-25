@@ -211,7 +211,8 @@
                 "unique": true,
                 "editable": false,
                 "display": false,
-                "mandatory": true
+                "mandatory": true,
+                "searchable": true
             }, {
                 "field_name": "aid",
                 "mandatory": true,
@@ -224,14 +225,16 @@
                 "mandatory": true,
 		"title": "First name",
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "lastname",
                 "system": true,
                 "mandatory": true,
 		"title": "Last name",
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "plan",
                 "system": true,
@@ -266,7 +269,8 @@
                 "generated": true,
                 "system": true,
                 "unique": true,
-                "editable": false
+                "editable": false,
+                "searchable": true
             }, {
                 "field_name": "firstname",
                 "mandatory": true,
@@ -274,7 +278,8 @@
                 "title": "First name",
                 "show_in_list" : true,
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "lastname",
                 "mandatory": true,
@@ -282,7 +287,8 @@
                 "title": "Last name",
                 "show_in_list" : true,
 		"editable": true,
-		"display": true
+		"display": true,
+                "searchable": true
             }, {
                 "field_name": "email",
                 "mandatory": true,
@@ -348,6 +354,72 @@
                 "mandatory": false,
                 "select_options": "email",
                 "changeable_props": ["select_options"]
+            }, {
+                "field_name": "invoicing_day",
+                "title": "Invoicing Day",
+                "mandatory": false,
+                "system": true,
+                "show_in_list": true,
+                "select_list": true,
+                "editable": false,
+                "display": false,
+                "select_options": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28",
+                "default_value": null
+            }, {
+                "select_list": false,
+                "display": true,
+                "editable": true,
+                "generated": false,
+                "multiple": false,
+                "system": true,
+                "field_name": "invoice_detailed",
+                "unique": false,
+                "show_in_list": false,
+                "title": "Detailed Invoice",
+                "type": "boolean",
+                "mandatory": false,
+                "select_options": ""
+            }, {
+                "field_name": "allowances",
+                "system": true,
+                "display": false
+            }, {
+                "select_list": true,
+                "display": true,
+                "editable": true,
+                "system": true,
+                "field_name": "invoice_language",
+                "default_value": "en_GB",
+                "show_in_list": true,
+                "title": "Invoice language",
+                "mandatory": true,
+                "changeable_props": [
+                    "select_options"
+                ],
+                "select_options": "en_GB,fr_CH,de_CH"
+            }, {
+                "field_name": "ebill_id",
+                "title": "eBill ID",
+                "mandatory": false,
+                "system": true,
+                "editable": true,
+                "display": false
+            }, {
+                "field_name": "ebill_vendor_number",
+                "title": "eBill vendor number",
+                "mandatory": false,
+                "system": true,
+                "editable": true,
+                "display": false
+            }, {
+                "field_name": "invoice_config",
+                "title": "Invoice Configuration",
+                "mandatory": false,
+                "system": true,
+                "editable": true,
+                "display": false,
+                "type": "json",
+                "description": "Holds configuration regarding the formatting and appearance of the invoice (banners, etc.)"
             }]
         }
     },
@@ -355,7 +427,8 @@
         "fields": [{
             "field_name": "key",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "from",
             "system": true,
@@ -369,7 +442,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "rates",
             "system": true,
@@ -403,7 +477,8 @@
         }, {
             "field_name": "name",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "price",
             "system": true,
@@ -411,7 +486,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "upfront",
             "system": true,
@@ -433,11 +509,13 @@
         }, {
             "field_name": "key",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }]
     },
     "charges": {
@@ -475,7 +553,8 @@
         }, {
             "field_name": "name",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "price",
             "system": true,
@@ -483,7 +562,8 @@
         }, {
             "field_name": "description",
             "system": true,
-            "mandatory": true
+            "mandatory": true,
+            "searchable": true
         }, {
             "field_name": "include",
             "system": true
