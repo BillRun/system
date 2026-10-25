@@ -279,6 +279,7 @@ class DbinitModel {
 					['fields' => ['sid' => 1, 'call_reference' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['call_reference' => 1, 'call_id' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['sid' => 1, 'billrun' => 1, 'urt' => 1], 'params' => ['unique' => false, 'sparse' => false, 'background' => true]],
+					['fields' => ['aid' => 1, 'billrun' => 1, 'type' => 1, 'sid' => 1], 'params' => ['unique' => false, 'sparse' => false, 'background' => true, 'partialFilterExpression' => ['is_upfront' => true]]],//BRCD-5421
 				],
 			],
 			[
@@ -339,7 +340,7 @@ class DbinitModel {
 			[
 				'coll' => 'rebalance_queue',
 				'indexes' => [
-					['fields' => ['aid' => 1, 'billrun_key' => 1], 'params' => ['unique' => false, 'background' => true]],
+					['fields' => ['aid' => 1, 'billrun_key' => 1, 'conditions_hash' => 1], 'params' => ['unique' => true, 'background' => true]],//BRCD-3474
 					['fields' => ['creation_date' => 1, 'end_time' => 1], 'params' => ['unique' => false, 'background' => true]],
 				],
 			],
@@ -453,6 +454,7 @@ class DbinitModel {
 				'coll' => 'events',
 				'indexes' => [
 					['fields' => ['creation_time' => 1], 'params' => ['unique' => false, 'sparse' => true, 'background' => true]],
+					['fields' => ['notify_time' => 1, 'start_notify_time' => 1], 'params' => ['unique' => false, 'sparse' => false, 'background' => true]],//BRCD-4748
 				],
 			],
 			['coll' => 'carriers', 'indexes' => []],
@@ -553,6 +555,36 @@ class DbinitModel {
 					['fields' => ['queue_name' => 1, 'done' => 1, 'schedule' => 1, 'timeout' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['body.parent' => 1], 'params' => ['unique' => false, 'background' => true]],
 					['fields' => ['body.type' => 1, 'created' => -1], 'params' => ['unique' => false, 'background' => true]],
+				],
+			],
+			[
+				'coll' => 'billrun_subs',
+				'indexes' => [
+					['fields' => ['aid' => 1, 'key' => 1], 'params' => []],//BRCD-4969
+				],
+			],
+			[
+				'coll' => 'billrun_grouping',
+				'indexes' => [
+					['fields' => ['aid' => 1, 'billrun_key' => 1], 'params' => []],//BRCD-4969
+				],
+			],
+			[
+				'coll' => 'plugin_teldas_ina_numbers',
+				'indexes' => [
+					['fields' => ['subscriberNumber' => 1, 'transactionDatetime' => 1, 'tariffProfile' => 1, 'tspId' => 1, 'accessAbroad' => 1, 'futureModify' => 1], 'params' => ['unique' => true, 'sparse' => false, 'background' => true, 'name' => 'ina_numbers_unique_index_2']],//BRCD-4739/4915
+				],
+			],
+			[
+				'coll' => 'plugin_teldas_tariffs_profiles',
+				'indexes' => [
+					['fields' => ['id' => 1, 'transactionDateTime' => 1], 'params' => ['unique' => true, 'sparse' => false, 'background' => true, 'name' => 'tariffs_profiles_unique_index']],//BRCD-4739
+				],
+			],
+			[
+				'coll' => 'plugin_teldas_tariff_switching_classes',
+				'indexes' => [
+					['fields' => ['id' => 1, 'transactionDateTime' => 1], 'params' => ['unique' => false, 'sparse' => false, 'background' => true]],//BRCD-4739
 				],
 			],
 		];
