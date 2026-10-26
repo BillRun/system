@@ -13,7 +13,7 @@ return new class extends Billrun_Migration_Base {
 		if (!isset($this->lastConfig['signer']['jsignpdf']) || !is_array($this->lastConfig['signer']['jsignpdf'])) {
 			return;
 		}
-		$this->lastConfig['signer']['jsignpdf']['exec_path'] = 'java -jar /opt/jsignpdf-3.2.1/bin/jsignpdf.sh';
+		$this->lastConfig['signer']['jsignpdf']['exec_path'] = '/opt/jsignpdf-3.2.1/bin/jsignpdf.sh';
 	}
 
 };
