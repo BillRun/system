@@ -573,7 +573,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 						  </getTransactionDetailsRequest>";
 
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Request for pending payment status: " . $transDetails, Zend_Log::DEBUG);
+			Billrun_Factory::log("Request for pending payment status: " . $this->logSafe($transDetails), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $transDetails, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Response for Authorize.Net for pending payment status request: " . $result, Zend_Log::DEBUG);
 		}
@@ -616,7 +616,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							</createCustomerProfileRequest>";
 
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
+			Billrun_Factory::log("Request for creating customer: " . $this->logSafe($customerRequest), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			Billrun_Factory::log("Response for Authorize.Net for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
