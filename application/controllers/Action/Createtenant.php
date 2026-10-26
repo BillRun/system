@@ -15,6 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class CreatetenantAction extends ApiAction {
 
+	use Billrun_Traits_Api_UserPermissions;
+
 	protected $request;
 	protected $status = true;
 	protected $desc = '';
@@ -36,10 +38,7 @@ class CreatetenantAction extends ApiAction {
 			Billrun_Factory::log('Create Tenant - not allowed', Zend_Log::INFO);
 			return false;
 		}
-		if (!Billrun_Utils_Security::validateData($this->getRequest()->getRequest())) {
-			Billrun_Factory::log('Create Tenant - unauthorized request', Zend_Log::WARN);
-			return false;
-		}
+		$this->allowed();
 
 		$this->init();
 
@@ -339,6 +338,10 @@ class CreatetenantAction extends ApiAction {
 			mkdir($path, 0777, true);
 		}
 		return true;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }
