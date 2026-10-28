@@ -231,7 +231,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		);
 		$customerRequest = json_encode($data);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
+			Billrun_Factory::log("Request for creating customer: " . $this->logSafe($customerRequest), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->redirectHostUrl, $customerRequest, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
 			Billrun_Factory::log("Response for Paysafe for creating customer request: " . $result, Zend_Log::DEBUG);
 		}

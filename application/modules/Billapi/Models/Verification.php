@@ -211,7 +211,7 @@ trait Models_Verification {
 			throw new Exception('No unique record was found');
 		}
 		if($docCount == 0){
-			throw new Exception('No record was found. stack:' . print_r(debug_backtrace(), 1));
+			throw new Exception('No record was found');
 		}
 		
 		$entity = reset($resultsArray);

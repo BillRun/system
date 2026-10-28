@@ -47,7 +47,10 @@ DB_PASSWORD="`grep -e '^db.password=' $DB_CONFIG_PATH | sed 's/db\.password\=//'
 DB_HOST="`grep -e '^db.host=' $DB_CONFIG_PATH | sed 's/db\.host\=//' | sed 's/[\\"]//g'`"
 DB_NAME="`grep -e '^db.name=' $DB_CONFIG_PATH | sed 's/db\.name\=//' | sed 's/[\\"]//g'`"
 DB_AUTHSRC="`grep -e '^db.options.authSource=' $DB_CONFIG_PATH | sed 's/db\.options\.authSource\=//' | sed 's/[\\"]//g'`"
-DB_SSL_CERT="`grep -e '^db.options.context.ssl.local_cert=' $DB_CONFIG_PATH | sed 's/db\.options\.context\.ssl\.local_cert\=//' | sed 's/[\\"]//g'`"
+DB_SSL_CERT="`grep -e '^db.options.tlsCertificateKeyFile=' $DB_CONFIG_PATH | sed 's/db\.options\.tlsCertificateKeyFile\=//' | sed 's/[\\"]//g'`"
+if [ -z "$DB_SSL_CERT" ]; then
+	DB_SSL_CERT="`grep -e '^db.options.context.ssl.local_cert=' $DB_CONFIG_PATH | sed 's/db\.options\.context\.ssl\.local_cert\=//' | sed 's/[\\"]//g'`"
+fi
 
 if [ -z $DB_HOST ] && [ -z $DB_NAME ]; then
 	echo "Missing DB or hostname";

@@ -307,8 +307,9 @@ class teldasPricingCest
             'Online single-sequence pricing must apply baseCharge plus chargeRate over duration past startInterval');
     }
 
-    public function testOnlinePricing_zeroDuration_onlyBaseCharge(AcceptanceTester $I)
+    public function testOnlinePricing_zeroDuration_noBaseCharge(AcceptanceTester $I)
     {
+        // Zero duration = unanswered call. baseCharge fires on answer, so nothing is charged.
         $this->insertOnlineTariffProfileSingleSequence($I, 10002, [
             'chargeRate' => 12, 'baseCharge' => 5, 'startInterval' => 10,
         ]);
@@ -317,8 +318,8 @@ class teldasPricingCest
         $line = $this->makeLine('0844111222', 0, '2026-05-13 10:00:00');
         $price = $this->priceLine($line);
 
-        $I->assertEqualsWithDelta(0.05, $price, $this->epsilon,
-            'Zero-duration first CDR should still bill the online baseCharge');
+        $I->assertEqualsWithDelta(0.0, $price, $this->epsilon,
+            'Unanswered (zero-duration) call must not be charged the online baseCharge');
     }
 
     public function testOnlinePricing_durationWithinStartInterval_onlyBaseCharge(AcceptanceTester $I)
