@@ -236,6 +236,11 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$url = $process['settings']['change_state_url'] ?? '';
 		$method = $process['settings']['change_state_method'] ?? 'POST';
 		$headers = $process['settings']['change_state_headers'] ?? array();
+		if (!is_array($headers)) {
+			$headers = array();
+		}
+		// set by BillRun - Accept cannot be configured by the user (blacklisted on configuration save)
+		$headers[] = array('key' => 'Accept', 'value' => 'application/json');
 		$batchSize = intval($process['settings']['change_state_batch_size'] ??
 			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_batch_size', self::CHANGE_STATE_DEFAULT_BATCH_SIZE));
 		if ($batchSize <= 0) {

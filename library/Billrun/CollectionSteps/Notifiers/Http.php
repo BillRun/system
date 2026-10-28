@@ -71,18 +71,12 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 
 	/**
 	 * the custom headers of the request (step_config.headers - [['key' => name, 'value' => value], ...]).
-	 * rows with an empty name or value are not sent; invalid rows (see getHeadersErrors) are not sent either, they are
-	 * rejected on configuration save so this only guards configurations that did not go through it
+	 * rows with an empty name or value are not sent. the user's rows are validated on configuration save (see getHeadersErrors)
 	 *
 	 * @return array name => value
 	 */
 	protected function getCustomHeaders() {
 		$rows = $this->task['step_config']['headers'] ?? array();
-		$errors = static::getHeadersErrors($rows);
-		if (!empty($errors)) {
-			Billrun_Factory::log('HTTP request - custom headers were not sent: ' . implode(', ', $errors), Zend_Log::WARN);
-			return array();
-		}
 		$headers = array();
 		foreach ($rows as $row) {
 			$name = trim($row['key'] ?? '');
