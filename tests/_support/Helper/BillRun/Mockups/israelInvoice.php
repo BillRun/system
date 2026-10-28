@@ -50,6 +50,9 @@ class israelInvoice extends \Helper\BillRun\Mockups\Mockup
       "type" => "text"
     ];
     $a->setSettings('subscribers.account.fields', $fields);
+    // the cycle (runCycle) runs inside this test process, whose BillRun config was loaded once at
+    // bootstrap - reload it so the aggregator passthrough sees the new account field on a clean env
+    \Billrun_Config::getInstance()->loadDbConfig();
   }
 
 
