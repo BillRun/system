@@ -410,10 +410,10 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		//Prevent command line injection
-		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
+		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey) || (!is_null($invoicing_day) && !ctype_digit((string) $invoicing_day))) {
 			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . $invoicing_day : "");
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . escapeshellarg($billrunKey) . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . escapeshellarg($invoicing_day) : "");
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 
