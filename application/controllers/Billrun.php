@@ -528,11 +528,12 @@ class BillrunController extends ApiController {
 	protected function buildCommandByParams($params) {
 		$paramsString = '';
 		foreach ($params as $key => $value) {
-			if (is_null($value)) {
+			if (is_null($value) || !is_scalar($value)) {
 				continue;
 			}
 			
-			$paramsString .= $key . '=' . $value . ' ';
+			// values are escaped as a whole argument - validation runs on a casted copy, not on the raw value
+			$paramsString .= escapeshellarg($key . '=' . trim($value, '"')) . ' ';
 		}
 		
 		return $paramsString;
@@ -550,8 +551,8 @@ class BillrunController extends ApiController {
 				case 'invoices':
 				case 'aids':
 				case 'exclude_accounts':
-					$values_array = !is_null($value) ? Billrun_Util::verify_array($value, 'int') : [];
-					if (!is_null($value) && empty($values_array)) {
+					$values_array = !is_null($value) ? Billrun_Util::verify_array(is_string($value) ? trim($value, '"') : $value) : [];
+					if (!is_null($value) && (empty($values_array) || count(array_filter($values_array, 'is_numeric')) !== count($values_array))) {
 						return false;
 					}
 					break;
