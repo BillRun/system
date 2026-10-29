@@ -176,8 +176,8 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean true if the input is valid, else false
 	 */
 	protected function validateRequest() {
-		// DNS label, and 'billing_' + name stays inside Mongo's 63-byte DB name limit
-		return (bool) preg_match('/^[a-z0-9][a-z0-9-]{0,54}$/', $this->tenant);
+		// DNS label, min 6 chars, and 'billing_' + name stays inside Mongo's 63-byte DB name limit
+		return (bool) preg_match('/^[a-z0-9][a-z0-9-]{5,54}$/', $this->tenant);
 	}
 
 	protected function buildResponse() {
