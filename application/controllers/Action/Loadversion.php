@@ -38,6 +38,10 @@ class LoadversionAction extends ApiAction {
 		$fileName = $request['fileName'];
 		$collection = $request['collection'];
 		$removeNew = ($request['remove_new'] === 'true');
+		if (!VersionsModel::isValidPathPart($collection) || !VersionsModel::isValidPathPart($fileName)) {
+			Billrun_Factory::log('Loadversion - invalid collection ' . $collection . ' or file name ' . $fileName, Zend_Log::ERR);
+			return false;
+		}
 		if (!$entities = $this->getPreviousVersion($fileName, $collection)) {
 			Billrun_Factory::log('Loadversion - cannot getPreviousVersion of collection ' . $collection . ' from file ' . $fileName, Zend_Log::ERR);
 			return false;

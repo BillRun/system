@@ -15,6 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class CreatetenantAction extends ApiAction {
 
+	use Billrun_Traits_Api_UserPermissions;
+
 	protected $requestData;
 	protected $status = true;
 	protected $desc = '';
@@ -36,8 +38,15 @@ class CreatetenantAction extends ApiAction {
 			Billrun_Factory::log('Create Tenant - not allowed', Zend_Log::INFO);
 			return false;
 		}
+		$this->allowed();
 
 		$this->init();
+
+		if (!$this->validateRequest()) {
+			$this->desc = 'Invalid tenant name.';
+			Billrun_Factory::log('Create Tenant - invalid tenant name', Zend_Log::INFO);
+			return false;
+		}
 
 		// Check if tenant already exists
 		if (file_exists(Billrun_Config::getMultitenantConfigPath() . $this->tenant . '.ini')) {
@@ -157,10 +166,20 @@ class CreatetenantAction extends ApiAction {
 	public function init() {
 		Billrun_Factory::log('Create Tenant - initializing...', Zend_Log::INFO);
 		$this->requestData = $this->getRequest()->getRequest(); // supports GET / POST requests 
-		$this->tenant = strtolower($this->requestData['tenant']);
+		$this->tenant = strtolower($this->requestData['tenant'] ?? '');
 		$this->db_name = 'billing_' . $this->tenant;
 		$this->userName = $this->requestData['email'];
 		$this->password = $this->requestData['password'];
+	}
+
+	/**
+	 * validate the request input before anything is written to disk or DB
+	 *
+	 * @return boolean true if the input is valid, else false
+	 */
+	protected function validateRequest() {
+		// DNS label, min 6 chars, and 'billing_' + name stays inside Mongo's 63-byte DB name limit
+		return (bool) preg_match('/^[a-z0-9][a-z0-9-]{5,54}$/', $this->tenant);
 	}
 
 	protected function buildResponse() {
@@ -300,8 +319,7 @@ class CreatetenantAction extends ApiAction {
 	protected function generateDbUsernameAndPassword() {
 		Billrun_Factory::log('Create Tenant - Generating username and password', Zend_Log::INFO);
 		$this->db_user = 'user_' . $this->tenant;
-		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());
-		$this->db_pass = Billrun_Util::generateArrayStamp($arr);
+		$this->db_pass = bin2hex(random_bytes(24));
 		return true;
 	}
 
@@ -322,6 +340,10 @@ class CreatetenantAction extends ApiAction {
 			mkdir($path, 0777, true);
 		}
 		return true;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

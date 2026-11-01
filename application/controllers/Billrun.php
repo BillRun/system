@@ -410,10 +410,10 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		//Prevent command line injection
-		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey)) {
+		if ((!in_array($generatedPdf,['true', 'false'])) || !is_numeric($billrunKey) || (!is_null($invoicing_day) && !ctype_digit((string) $invoicing_day))) {
 			throw new Exception("One or more of the parameters of the 'cycle' command is not valid");
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . $invoicing_day : "");
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . escapeshellarg($billrunKey) . ' generate_pdf=' . $generatedPdf . (!is_null($invoicing_day) ? ' invoicing_days=' . escapeshellarg($invoicing_day) : "");
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 
@@ -528,11 +528,12 @@ class BillrunController extends ApiController {
 	protected function buildCommandByParams($params) {
 		$paramsString = '';
 		foreach ($params as $key => $value) {
-			if (is_null($value)) {
+			if (is_null($value) || !is_scalar($value)) {
 				continue;
 			}
 			
-			$paramsString .= $key . '=' . $value . ' ';
+			// values are escaped as a whole argument - validation runs on a casted copy, not on the raw value
+			$paramsString .= escapeshellarg($key . '=' . trim($value, '"')) . ' ';
 		}
 		
 		return $paramsString;
@@ -550,8 +551,8 @@ class BillrunController extends ApiController {
 				case 'invoices':
 				case 'aids':
 				case 'exclude_accounts':
-					$values_array = !is_null($value) ? Billrun_Util::verify_array($value, 'int') : [];
-					if (!is_null($value) && empty($values_array)) {
+					$values_array = !is_null($value) ? Billrun_Util::verify_array(is_string($value) ? trim($value, '"') : $value) : [];
+					if (!is_null($value) && (empty($values_array) || count(array_filter($values_array, 'is_numeric')) !== count($values_array))) {
 						return false;
 					}
 					break;
