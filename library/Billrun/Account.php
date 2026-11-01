@@ -114,6 +114,27 @@ abstract class Billrun_Account extends Billrun_Base {
 	public abstract function getBillable(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $size, $aids = []);
 
 	/**
+	 * The end of the billable revisions window for a cycle - the cycle end, or one cycle (month)
+	 * ahead when the billrun.upfront.billable_next_cycle configuration is set: the next cycle
+	 * revisions are needed to pay upfront plans in advance by the changes that are already
+	 * recorded (BRCD-5421). Irrelevant in the full fraction (legacy upfront) mode, which ignores
+	 * the known future - the window is never extended there.
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle
+	 * @return int unix timestamp
+	 */
+	protected function getBillableWindowEnd(\Billrun_DataTypes_MongoCycleTime $cycle) {
+		$config = Billrun_Factory::config();
+		if (!$config->getConfigValue('billrun.upfront.billable_next_cycle', false) ||
+				$config->getConfigValue('billrun.upfront.full_fraction', false) ||
+				!Billrun_Util::isBillrunKey($cycle->key())) { // onetime (immediate invoice) cycles are never extended
+			return $cycle->end()->sec;
+		}
+		$windowEnd = strtotime('+1 month', $cycle->end()->sec);
+		Billrun_Factory::log("getBillable window of cycle {$cycle->key()} extended to " . date('Y-m-d', $windowEnd) . " (billrun.upfront.billable_next_cycle) - requesting the next cycle revisions as well", Zend_Log::DEBUG);
+		return $windowEnd;
+	}
+
+	/**
 	 * get account revision by params
 	 * @return mongodloid entity
 	 */
@@ -320,11 +341,16 @@ abstract class Billrun_Account extends Billrun_Base {
 
 	/**
 	 * method to update account collection status
+	 * 
+	 * @param array $updateCollectionStateChanged 'in_collection' => aid => the account debt as calculated by the collect run
+	 *                                            (see Billrun_Collection), 'out_of_collection' => aid => the account
+	 * @param array $process the collection process the accounts belong to
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged, $process) {
 		Billrun_Factory::log()->log("Updating crm with collection information of process: " . $process['label'], Zend_Log::DEBUG);
 		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
+		$inCollectionDebts = array(); // aid => debt, sent with the in_collection state change when configured
 
 		if (!empty($updateCollectionStateChanged['in_collection'])) {
 			Billrun_Factory::log()->log("Updating crm with accounts that are in collection", Zend_Log::DEBUG);
@@ -340,6 +366,7 @@ abstract class Billrun_Account extends Billrun_Base {
 					Billrun_Factory::log()->log("Updating account " . $aid . " with new collection values", Zend_Log::DEBUG);
 					if ($this->closeAndNew($new_values)) {
 						$result['in_collection'][] = $aid;
+						$inCollectionDebts[$aid] = $item['total'] ?? null;
 					} else {
 						$result['error'][] = $aid;
 					}
@@ -378,7 +405,7 @@ abstract class Billrun_Account extends Billrun_Base {
 			}
 		}
 		Billrun_Factory::log()->log("Running 'collection state changed', for both in_collection and out_of_collection states", Zend_Log::DEBUG);
-		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process);
+		$collectionSteps->runCollectionStateChange($result['in_collection'], true, $process, $inCollectionDebts);
 		$collectionSteps->runCollectionStateChange($result['out_of_collection'], false, $process);
 		return $result;
 	}

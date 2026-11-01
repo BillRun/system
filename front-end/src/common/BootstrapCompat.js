@@ -173,15 +173,15 @@ export const PanelGroup = ({ children, className = '', accordion, ...props }) =>
 // RB2 Form.Group no longer emits form-group class; validationState maps to
 // has-error / has-warning / has-success for BS3 CSS selectors.
 // ---------------------------------------------------------------------------
-export const FormGroup = ({ children, className = '', validationState, ...props }) => {
+export const FormGroup = ({ children, className = '', validationState, controlId, ...props }) => {
   const stateClass = validationState === 'error' ? 'has-error'
                    : validationState === 'warning' ? 'has-warning'
                    : validationState === 'success' ? 'has-success'
                    : '';
   return (
-    <div className={`form-group ${stateClass} ${className}`.trim()} {...props}>
+    <Form.Group controlId={controlId} className={`form-group ${stateClass} ${className}`.trim()} {...props}>
       {children}
-    </div>
+    </Form.Group>
   );
 };
 

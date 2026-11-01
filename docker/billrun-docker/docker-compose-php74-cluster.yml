@@ -1,0 +1,77 @@
+services:
+    web:
+        image: nginx:latest
+        container_name: billrun-nginx
+        ports:
+            - "8074:80"
+        restart: always
+        volumes:
+            - ./../..:/billrun:ro
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - "php"
+            - "mongodb"
+        environment:
+        - "APPLICATION_ENV=container"
+    php:
+        build:
+            context: ./billrun-php74
+            dockerfile: Dockerfile
+        image: billrun-php74
+        container_name: billrun-app
+        privileged: true
+        restart: always
+        environment:
+        - "APPLICATION_ENV=container"
+        - "XDEBUG_CONFIG=client_host=10.103.0.1 client_port=9090 mode=develop"
+        - "BR_MDB_HOST=billrun-mongodb:27017,billrun-mongodb2:27017,billrun-mongodb3:27017/?replicaSet=rs0"
+        - "BR_MDB_DBNAME=billing_container"
+        volumes:
+            - ./../..:/billrun
+            - ./../../cache:/billrun/cache
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+    mongodb:
+        image: mongo:3.6
+        container_name: billrun-mongodb
+        restart: always
+        command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+        volumes:
+            - ./../..:/billrun:ro
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        ports:
+            - 27017:27017
+    mongodb2:
+        image: mongo:3.6
+        container_name: billrun-mongodb2
+        restart: always
+        command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+        ports:
+            - 27018:27017
+    mongodb3:
+        image: mongo:3.6
+        container_name: billrun-mongodb3
+        restart: always
+        command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+        ports:
+            - 27019:27017
+    mongo-init:
+        image: mongo:3.6
+        container_name: billrun-mongo-init
+        restart: "no"
+        depends_on:
+            - "mongodb"
+            - "mongodb2"
+            - "mongodb3"
+        volumes:
+            - ./../..:/billrun:ro
+            - ./init-replica.sh:/init-replica.sh:ro
+            - ${PLUGIN_PATH:-/dev/null}:/plugin
+        entrypoint: ["bash", "/init-replica.sh"]
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.103.0.0/16

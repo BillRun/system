@@ -1,6 +1,9 @@
 FROM php:7.4-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
+RUN echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+
 RUN apt-get update && apt-get install --no-install-recommends -y \
         wkhtmltopdf wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
@@ -9,6 +12,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
+        procps \
     && pecl install yaf-3.1.4 \
     && pecl install mongodb-1.19.4 \
     && pecl install memcached \
@@ -47,7 +51,7 @@ RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN mkdir -p /data /run/nginx /var/cache/nginx \
+RUN mkdir -p /data /run/nginx /var/cache/nginx /billrun/cache \
     && chown -R www-data:www-data \
         /data /billrun /run/nginx /var/cache/nginx \
         /etc/nginx/sites-available /etc/nginx/sites-enabled

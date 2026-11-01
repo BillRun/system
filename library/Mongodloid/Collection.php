@@ -497,7 +497,7 @@ class Mongodloid_Collection {
 			'readPreference' => new \MongoDB\Driver\ReadPreference($mode, $tags),
 			'writeConcern' => $this->_collection->getWriteConcern(),
 		];
-		$this->withOptions($options);
+		$this->_collection = $this->withOptions($options);
 		return $this;
 	}
 

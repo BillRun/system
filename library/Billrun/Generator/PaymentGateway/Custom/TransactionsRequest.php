@@ -258,6 +258,14 @@ class Billrun_Generator_PaymentGateway_Custom_TransactionsRequest extends Billru
 	public function setFileStatus($newStatus) {
 		$this->logFile->updateLogFileField('file_status',$newStatus);
 	}
+
+	public function getGeneratorFilters() {
+		return $this->generatorFilters;
+	}
+
+	public function setGeneratorFilters($generatorFilters) {
+		$this->generatorFilters = $generatorFilters;
+	}
 	protected function isGatewayActive($account) {
 		return $account['payment_gateway']['active']['name'] == $this->gatewayName;
 	}
