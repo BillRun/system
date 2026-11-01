@@ -15,13 +15,13 @@ class MongodloidReadPreferenceTest extends \Codeception\Test\Unit
     /**
      * original db-level read preference mode, restored after each test so the
      * process-wide Billrun_Factory::db() singleton does not leak between tests
-     * @var int
+     * @var string
      */
     private $origMode;
 
     protected function _before()
     {
-        $this->origMode = Billrun_Factory::db()->getDb()->getReadPreference()->getMode();
+        $this->origMode = Billrun_Factory::db()->getDb()->getReadPreference()->getModeString();
     }
 
     protected function _after()

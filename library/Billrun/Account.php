@@ -49,6 +49,12 @@ abstract class Billrun_Account extends Billrun_Base {
 	protected $customerExtraData = array();
 	
 	protected static $allowedQueryKeys = ['id', 'time', 'read_preference'];
+
+	/**
+	 * Resolved payers, keyed by aid and revision time.
+	 * @var array
+	 */
+	protected static $payerAidCache = array();
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -245,6 +251,45 @@ abstract class Billrun_Account extends Billrun_Base {
 	}
 	
 	
+	/**
+	 * The account paying this account's bills: itself, or its nearest is_payer ancestor.
+	 *
+	 * @param int $aid
+	 * @param string|null $time revision date to resolve by, defaults to now
+	 * @return int payer aid
+	 */
+	public static function getPayerAid($aid, $time = null) {
+		$aid = intval($aid);
+		$cacheKey = $aid . '_' . $time;
+		if (isset(self::$payerAidCache[$cacheKey])) {
+			return self::$payerAidCache[$cacheKey];
+		}
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		$visited = array();
+		$current = $aid;
+		$payerAid = $aid;
+		$hops = 0;
+		while (!is_null($current) && !isset($visited[$current]) && $hops <= $maxDepth) {
+			$visited[$current] = true;
+			$query = array('aid' => $current);
+			if (!is_null($time)) {
+				$query['time'] = $time;
+			}
+			$revision = Billrun_Factory::account()->loadAccountForQuery($query);
+			if (empty($revision)) {
+				break; // dangling parent, the deepest account reached pays for itself
+			}
+			$payerAid = $current;
+			if (Billrun_Util::toBool(Billrun_Util::getIn($revision, 'is_payer', true), true)) {
+				break;
+			}
+			$parentAid = Billrun_Util::getIn($revision, 'parent_aid');
+			$current = ($parentAid === '' || is_null($parentAid)) ? null : intval($parentAid);
+			$hops++;
+		}
+		return self::$payerAidCache[$cacheKey] = $payerAid;
+	}
+
 	/**
 	 * @param array $queries to load one subscriber per query
 	 * @return array of account instances

@@ -121,7 +121,7 @@ class ReportAction extends ApiAction {
 		return array(Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE, Billrun_Traits_Api_IUserPermissions::PERMISSION_REPORTS);
 	}
 	
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		$request = array_merge($this->getRequest()->getParams(),$this->getRequest()->getRequest());
 		$type = !empty($this->type) ? $this->type : $this->request->getRequest('type', '');
 		if($type === 'csv') {

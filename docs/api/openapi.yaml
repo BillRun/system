@@ -1,0 +1,267 @@
+openapi: 3.1.0
+info:
+  title: BillRun REST API
+  version: "6.0"
+  summary: Open-source billing & rating platform - REST API reference.
+  description: |
+    BillRun exposes three families of HTTP endpoints:
+
+    - `/billapi/{collection}/{action}` - the modern entity API (CRUD + lifecycle
+      actions on accounts, subscribers, plans, services, rates, balances, bills,
+      discounts, charges, taxes, users, reports, etc).
+    - `/api/{action}` - the legacy action API used for one-off operations such as
+      credit, payment, refunds, reports, subscribers lookup, and admin tasks.
+    - `/realtime` - the realtime rating/charging endpoint used by network
+      elements (OCS-style start / update / release events).
+
+    Authentication is one of:
+
+    - Session cookie obtained via `POST /auth/login`.
+    - OAuth2 access token issued by `POST /oauth2/token`.
+    - Per-request signature using a shared secret (the `signature` parameter)
+      for machine-to-machine integrations.
+
+    See [docs.bill.run](https://docs.bill.run/en/api/security) for the
+    authoritative behavior documentation; this OpenAPI document mirrors that
+    interface.
+  contact:
+    name: BillRun
+    url: https://bill.run
+    email: cloud_support@billrun.com
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  termsOfService: https://bill.run/terms
+
+servers:
+  - url: https://{host}
+    description: Self-hosted BillRun instance
+    variables:
+      host:
+        default: billing.example.com
+        description: Hostname of your BillRun deployment
+
+security:
+  - sessionCookie: []
+  - oauth2: [read, write, admin]
+  - secretSignature: []
+
+tags:
+  - name: Auth
+    description: Login, logout, available authentication protocols.
+  - name: OAuth2
+    description: OAuth2 token endpoint.
+  - name: BillAPI
+    description: |
+      Modern entity API at `/billapi/{collection}/{action}`. The same set of
+      actions (get, uniqueget, create, update, close, closeandnew, reopen,
+      delete, move, permanentchange, import, export) is applied to a range of
+      collections (accounts, subscribers, plans, services, rates, balances,
+      bills, charges, discounts, prepaidincludes, prepaidgroups, taxes,
+      reports, users, etc).
+  - name: Credit
+    description: Credit lines (one-off charges or refunds).
+  - name: Payment
+    description: Payments, bills, payment methods, adjustments.
+  - name: Realtime
+    description: Realtime charging events (start / update / release).
+  - name: Reports
+    description: Run/list/export reports.
+  - name: Outgoing
+    description: |
+      Endpoints that **BillRun calls on a 3rd-party CRM** when running in
+      external-subscribers mode (accounts and subscribers are stored in the CRM,
+      not in BillRun). Implement these on the CRM side.
+
+paths:
+  # ---- Auth ----------------------------------------------------------------
+  /auth/login:
+    $ref: "paths/auth.yaml#/login"
+  /auth/logout:
+    $ref: "paths/auth.yaml#/logout"
+  /auth/options:
+    $ref: "paths/auth.yaml#/options"
+
+  # ---- OAuth2 --------------------------------------------------------------
+  /oauth2/token:
+    $ref: "paths/oauth2.yaml#/token"
+
+  # ---- BillAPI (generic collection + action) -------------------------------
+  /billapi/{collection}/{action}:
+    $ref: "paths/billapi.yaml#/generic"
+
+  # Collection-specific path stubs (exist so each collection appears in the
+  # generated docs sidebar). All resolve to the same underlying operation
+  # shape, differing only in the parameter list per action - see
+  # paths/billapi.yaml for the canonical reference.
+  /billapi/accounts/{action}:
+    $ref: "paths/billapi.yaml#/accounts"
+  /billapi/subscribers/{action}:
+    $ref: "paths/billapi.yaml#/subscribers"
+  /billapi/plans/{action}:
+    $ref: "paths/billapi.yaml#/plans"
+  /billapi/services/{action}:
+    $ref: "paths/billapi.yaml#/services"
+  /billapi/rates/{action}:
+    $ref: "paths/billapi.yaml#/rates"
+  /billapi/balances/{action}:
+    $ref: "paths/billapi.yaml#/balances"
+  /billapi/bills/{action}:
+    $ref: "paths/billapi.yaml#/bills"
+  /billapi/charges/{action}:
+    $ref: "paths/billapi.yaml#/charges"
+  /billapi/discounts/{action}:
+    $ref: "paths/billapi.yaml#/discounts"
+  /billapi/prepaidincludes/{action}:
+    $ref: "paths/billapi.yaml#/prepaidincludes"
+  /billapi/prepaidgroups/{action}:
+    $ref: "paths/billapi.yaml#/prepaidgroups"
+  /billapi/taxes/{action}:
+    $ref: "paths/billapi.yaml#/taxes"
+  /billapi/reports/{action}:
+    $ref: "paths/billapi.yaml#/reports"
+  /billapi/users/{action}:
+    $ref: "paths/billapi.yaml#/users"
+  /billapi/lines/{action}:
+    $ref: "paths/billapi.yaml#/lines"
+  /billapi/autorenew/{action}:
+    $ref: "paths/billapi.yaml#/autorenew"
+
+  # ---- Credit --------------------------------------------------------------
+  /api/credit:
+    $ref: "paths/credit.yaml#/credit"
+  /api/bulkcredit:
+    $ref: "paths/credit.yaml#/bulkcredit"
+
+  # ---- Payment -------------------------------------------------------------
+  /api/pay:
+    $ref: "paths/payment.yaml#/pay"
+  /api/bill:
+    $ref: "paths/payment.yaml#/bill"
+  /api/cards:
+    $ref: "paths/payment.yaml#/cards"
+  /api/adjustpayments:
+    $ref: "paths/payment.yaml#/adjustpayments"
+  /api/onetimeinvoice:
+    $ref: "paths/payment.yaml#/onetimeinvoice"
+  /api/accountinvoices:
+    $ref: "paths/payment.yaml#/accountinvoices"
+
+  # ---- Realtime ------------------------------------------------------------
+  /realtime:
+    $ref: "paths/realtime.yaml#/realtime"
+
+  # ---- Reports -------------------------------------------------------------
+  /api/reports:
+    $ref: "paths/reports.yaml#/reports"
+  /api/report:
+    $ref: "paths/reports.yaml#/report"
+
+  # ---- Outgoing (BillRun -> CRM) -------------------------------------------
+  # GBA - Get Billable Accounts (subscribers.billable.url)
+  /crm/billable:
+    $ref: "paths/outgoing.yaml#/getBillableAccounts"
+  # GAD - Get Account Details (subscribers.account.external_url)
+  /crm/account:
+    $ref: "paths/outgoing.yaml#/getAccountDetails"
+  # GSD - Get Subscriber Details (subscribers.subscriber.external_url)
+  /crm/subscriber:
+    $ref: "paths/outgoing.yaml#/getSubscriberDetails"
+
+  # ---- Health --------------------------------------------------------------
+  /api:
+    get:
+      tags: [BillAPI]
+      summary: Health check
+      description: Heartbeat. Verifies the DB is reachable.
+      security: []
+      parameters:
+        - name: simple
+          in: query
+          schema: { type: boolean }
+          description: When true, returns a plain `SUCCESS`/`FAILED` string instead of JSON.
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: integer, enum: [0, 1] }
+                  message: { type: string, example: "BillRun API Success" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      $ref: "components/securitySchemes.yaml#/sessionCookie"
+    oauth2:
+      $ref: "components/securitySchemes.yaml#/oauth2"
+    secretSignature:
+      $ref: "components/securitySchemes.yaml#/secretSignature"
+
+  parameters:
+    Collection:
+      $ref: "components/parameters.yaml#/Collection"
+    Action:
+      $ref: "components/parameters.yaml#/Action"
+    Query:
+      $ref: "components/parameters.yaml#/Query"
+    Update:
+      $ref: "components/parameters.yaml#/Update"
+    Page:
+      $ref: "components/parameters.yaml#/Page"
+    Size:
+      $ref: "components/parameters.yaml#/Size"
+    Sort:
+      $ref: "components/parameters.yaml#/Sort"
+    Project:
+      $ref: "components/parameters.yaml#/Project"
+
+  responses:
+    Envelope:
+      $ref: "components/responses.yaml#/Envelope"
+    BadRequest:
+      $ref: "components/responses.yaml#/BadRequest"
+    Unauthorized:
+      $ref: "components/responses.yaml#/Unauthorized"
+    Forbidden:
+      $ref: "components/responses.yaml#/Forbidden"
+    NotFound:
+      $ref: "components/responses.yaml#/NotFound"
+
+  schemas:
+    Envelope:
+      $ref: "components/responses.yaml#/EnvelopeSchema"
+    Error:
+      $ref: "components/responses.yaml#/ErrorSchema"
+    Account:
+      $ref: "components/schemas/account.yaml#/Account"
+    Subscriber:
+      $ref: "components/schemas/subscriber.yaml#/Subscriber"
+    Plan:
+      $ref: "components/schemas/plan.yaml#/Plan"
+    Service:
+      $ref: "components/schemas/service.yaml#/Service"
+    Rate:
+      $ref: "components/schemas/rate.yaml#/Rate"
+    Balance:
+      $ref: "components/schemas/balance.yaml#/Balance"
+    Bill:
+      $ref: "components/schemas/bill.yaml#/Bill"
+    Line:
+      $ref: "components/schemas/line.yaml#/Line"
+    Discount:
+      $ref: "components/schemas/common.yaml#/Discount"
+    Charge:
+      $ref: "components/schemas/common.yaml#/Charge"
+    Tax:
+      $ref: "components/schemas/common.yaml#/Tax"
+    PrepaidInclude:
+      $ref: "components/schemas/common.yaml#/PrepaidInclude"
+    User:
+      $ref: "components/schemas/common.yaml#/User"
+    Report:
+      $ref: "components/schemas/common.yaml#/Report"
+    Revision:
+      $ref: "components/schemas/common.yaml#/Revision"

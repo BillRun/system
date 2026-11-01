@@ -1,0 +1,112 @@
+Collection:
+  name: collection
+  in: path
+  required: true
+  description: |
+    The entity collection to operate on. One of the supported BillRun
+    collections.
+  schema:
+    type: string
+    enum:
+      - accounts
+      - subscribers
+      - plans
+      - services
+      - rates
+      - balances
+      - bills
+      - charges
+      - discounts
+      - prepaidincludes
+      - prepaidgroups
+      - taxes
+      - reports
+      - users
+      - lines
+      - autorenew
+      - archive
+      - audit
+      - billrun
+      - events
+      - log
+      - queue
+      - suggestions
+
+Action:
+  name: action
+  in: path
+  required: true
+  description: |
+    The action to perform on the collection. Not every collection supports
+    every action - the BillAPI loads `conf/modules/billapi/<collection>.ini`
+    at runtime and rejects unconfigured action/collection combinations.
+  schema:
+    type: string
+    enum:
+      - get
+      - uniqueget
+      - create
+      - update
+      - close
+      - closeandnew
+      - reopen
+      - delete
+      - move
+      - permanentchange
+      - import
+      - export
+      - changepassword
+
+Query:
+  name: query
+  in: query
+  description: |
+    JSON-encoded MongoDB-style filter. Fields available for filtering are
+    declared per collection/action in the billapi ini config.
+  schema:
+    type: string
+    example: '{"sid":12345}'
+
+Update:
+  name: update
+  in: query
+  description: |
+    JSON-encoded entity payload for create / update / close / closeandnew /
+    permanentchange / move actions. Validated against the
+    `update_parameters` list in the collection's ini config.
+  schema:
+    type: string
+    example: '{"plan":"GOLD","from":"2026-01-01T00:00:00+00:00"}'
+
+Page:
+  name: page
+  in: query
+  description: 0-based page index for paginated reads (`get` / `uniqueget`).
+  schema: { type: integer, minimum: 0, default: 0 }
+
+Size:
+  name: size
+  in: query
+  description: Page size for paginated reads.
+  schema: { type: integer, minimum: 1, maximum: 1000, default: 10 }
+
+Sort:
+  name: sort
+  in: query
+  description: |
+    JSON object mapping field name -> direction (`1` ascending, `-1`
+    descending). Only fields explicitly allowed by the collection are
+    accepted; `enable_sort=1` must be set on the action.
+  schema:
+    type: string
+    example: '{"creation_time":-1}'
+
+Project:
+  name: project
+  in: query
+  description: |
+    JSON projection of fields to include (`1`) or exclude (`0`) from the
+    response - MongoDB projection semantics.
+  schema:
+    type: string
+    example: '{"firstname":1,"lastname":1,"sid":1}'
