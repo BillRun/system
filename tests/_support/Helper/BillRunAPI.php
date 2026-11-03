@@ -295,6 +295,34 @@ class BillRunAPI extends \Codeception\Module{
     }
 
     /**
+     * Ask for a rebalance (reset lines) of the given account(s) for a billing
+     * cycle through the resetlines API - what the UI calls. The request only
+     * queues the work (a rebalance_queue entry); `--calculate --type rebalance`
+     * performs it.
+     *
+     * @param int|int[]   $aids       account id(s) to reset
+     * @param string|null $billrunKey the cycle to reset (default: the current one)
+     * @param array|null  $query      optional line conditions, sent as JSON
+     * @return string the raw API response
+     */
+    public function resetLines($aids, $billrunKey = null, $query = null)
+    {
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = ['aid' => is_array($aids) ? implode(',', $aids) : $aids];
+        if ($billrunKey !== null) {
+            $params['billrun_key'] = $billrunKey;
+        }
+        if ($query !== null) {
+            $params['query'] = json_encode($query);
+        }
+
+        return $rest->sendPOST('/api/resetlines', $params);
+    }
+
+    /**
      * Retrieves settings for a specified category.
      *
      * This function sends a GET request to fetch settings for a given category.

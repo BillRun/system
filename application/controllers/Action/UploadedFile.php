@@ -28,6 +28,10 @@ class UploadedFileAction extends ApiAction {
 		if (empty($category)) {
 			throw new Exception("Need to pass input processor name");
 		}
+		// file_type is used as part of the target file name, so only allow a plain name (no directory separators, no leading dot)
+		if (!is_string($fileType) || preg_match('/^[A-Za-z0-9_-][A-Za-z0-9._-]*$/', $fileType) !== 1) {
+			throw new Exception("Invalid file_type");
+		}
 		$result = 0;
 		$message = "There was an error uploading the file, please try again!";
 		if (is_uploaded_file($_FILES['file']['tmp_name'])) {

@@ -431,6 +431,12 @@ export const getDeleteLineQuery = id => ({
 // List
 export const getAccountsQuery = (project = { aid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('accounts', project, {type: 'account'});
+
+export const getHierarchyQuery = (aid) => ({
+  action: 'gethierarchy',
+  entity: 'accounts',
+  params: [{ query: JSON.stringify({ aid }) }],
+});
 export const getSubscriptionsWithAidQuery = (project = { aid: 1, sid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('subscribers', project, {type: 'subscriber'});
 export const getSubscribersByAidQuery = (aid) =>

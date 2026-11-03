@@ -478,7 +478,7 @@ abstract class Billrun_PaymentGateway {
 		}
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
-			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway token request: " . $this->logSafe($postArray), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, $this->getTokenRequestType(), $this->requestHeaders, null, 0);
 			Billrun_Factory::log("Payment gateway token response: " . print_R($result, 1), Zend_Log::DEBUG);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
@@ -512,10 +512,15 @@ abstract class Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			Billrun_Factory::log("Requesting transaction details for txId " . $txId, Zend_Log::DEBUG);
-			Billrun_Factory::log("Payment gateway transaction details request: " . print_R($postString, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway transaction details request: " . $this->logSafe($postString), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, $this->requestHeaders, null, 0);
-			Billrun_Factory::log("Payment gateway transaction details response: " . print_R($result, 1), Zend_Log::DEBUG);
-			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
+			try {
+				$retParams = $this->getResponseDetails($result);
+			} finally {
+				// logged after parsing so the card token first seen in this response can be encrypted
+				Billrun_Factory::log("Payment gateway transaction details response: " . $this->logSafe($result, [$this->saveDetails['card_token'] ?? null]), Zend_Log::DEBUG);
+			}
+			if ($retParams === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
 			}
@@ -824,6 +829,31 @@ abstract class Billrun_PaymentGateway {
 
 	public function getExportParameters() {
 		return array();
+	}
+
+	/**
+	 * Render a request/response payload for logging with the gateway's secret
+	 * fields and card tokens 2-way encrypted (BRCD-5542). Never throws - if no encryption key is
+	 * configured the value is masked and a warning is logged.
+	 *
+	 * @param mixed $payload array or string about to be logged
+	 * @param array $extraSecrets per-call secrets (e.g. the card token)
+	 * @return string
+	 */
+	public function logSafe($payload, array $extraSecrets = []) {
+		$credentials = $this->getGatewayCredentials() ?: [];
+		$secrets = array_merge(array_intersect_key($credentials, array_flip($this->getSecretFields())), $extraSecrets);
+		$text = is_string($payload) ? $payload : print_r($payload, 1);
+		foreach (array_filter($secrets) as $secret) {
+			try {
+				$replacement = Billrun_Utils_Encryption::encryptValue($secret);
+			} catch (Exception $e) {
+				Billrun_Factory::log('Payment gateway log sanitization: encryption unavailable, masking value', Zend_Log::WARN);
+				$replacement = '***';
+			}
+			$text = str_replace([$secret, urlencode($secret), trim(json_encode($secret), '"')], $replacement, $text);
+		}
+		return $text;
 	}
 
 	public function makeOnlineTransaction($gatewayDetails, $addonData) {

@@ -220,4 +220,40 @@ class TestHelper extends \Codeception\Module {
         return $processor->processorByPath($options);
     }
 
+    /**
+     * Run the real `--calculate` CLI command as a subprocess and return its exit
+     * code (BRCD-3562: no type = whole chain in one pull, a type = chain from
+     * that calculator's stage, one_calc=true = that calculator only).
+     *
+     * The LogChecker offset is cleared first, so the log assertions that follow
+     * see only what THIS run logged. An uncaught exception is logged as CRIT
+     * "Crashed When running..." while the CLI still exits 0, so that marker is
+     * asserted absent here - the exit code alone proves nothing.
+     *
+     * @param string|null $type      the --type value (calculator or stage name); null = no --type
+     * @param string|null $fileTypes the file_types parameter
+     * @param bool        $oneCalc   pass one_calc=true (meaningful only with $type)
+     * @return int the CLI exit code
+     */
+    public function runCalculate($type = null, $fileTypes = null, $oneCalc = false)
+    {
+        $cmd = 'php ' . APPLICATION_PATH . '/public/index.php --calculate';
+        if ($type !== null) {
+            $cmd .= ' --type ' . $type;
+        }
+        if ($fileTypes !== null) {
+            $cmd .= ' file_types=' . $fileTypes;
+        }
+        if ($oneCalc) {
+            $cmd .= ' one_calc=true';
+        }
+        $log = $this->getModule('\Helper\LogChecker');
+        $log->clearLogFile();
+        $out = [];
+        $code = null;
+        exec($cmd . ' 2>&1', $out, $code); // output captured only to keep it out of the test report
+        $log->dontSeeInLogFile('Crashed When running');
+        return $code;
+    }
+
 }

@@ -267,6 +267,7 @@
 	}
   },
 	"system" : {
+		"enable_customer_hierarchy": false,
 		"closed_cycle_changes": false
 	},
 	"plays": [

@@ -88,6 +88,16 @@ if test -d "/plugin/docker/billrun-docker/mockup-servers/crm_data/plugins/"; the
      done
 fi
 
+if test -d "/plugin/application/migrations/"; then
+     cd /plugin/application/migrations/
+     mkdir -p "/billrun/application/migrations/plugins/"
+     for f in *.php
+     do
+          rm -f "/billrun/application/migrations/plugins/"$f
+          ln -s /plugin/application/migrations/$f "/billrun/application/migrations/plugins/"$f
+     done
+fi
+
 cd /billrun
 
 exec "$@"
