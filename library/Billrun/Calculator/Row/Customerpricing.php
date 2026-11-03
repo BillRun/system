@@ -139,7 +139,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		$this->services = [];
 		$this->servicesUsed = array();
-		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
+		$this->setCallOffset($this->row['usagev_offset'] ?? $this->row['call_offset'] ?? 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
