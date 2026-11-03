@@ -25,6 +25,10 @@ class SaveversionAction extends ApiAction {
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$collection = $request['collection'];
 		$name = $request['name'];
+		if (!VersionsModel::isValidPathPart($collection) || !VersionsModel::isValidPathPart($name)) {
+			Billrun_Factory::log('Saveversion - invalid collection ' . $collection . ' or file name ' . $name, Zend_Log::ERR);
+			return false;
+		}
 		Billrun_Factory::log("Exporting " . $collection, Zend_Log::INFO);
 
 		$dir = VersionsModel::getVersionsPath($collection);

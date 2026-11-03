@@ -132,7 +132,7 @@ class AggregateAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 	
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		$request = $this->getRequest()->getRequest();
 		if (isset($request['response_type']) && $request['response_type'] === 'csv') {
 			return $this->renderCsv($request, $parameters);

@@ -15,8 +15,8 @@ class EventsCest
     const FIRSTNAME = 'events_cond_sub';
     const TEST_FILES_PATH = 'tests/all/events/postpaidBalance/test_files/';
 
-    /** original in-process events config, restored in _after */
-    protected $originalEventsConfig;
+    /** event keys this test seeds into event_settings, removed in _after */
+    const SEEDED_EVENT_KEYS = [self::EVENT_CODE, self::EVENT_CODE_OR, self::EVENT_CODE_OR_CHANGED];
 
     /** sid of the generated subscriber, resolved by the customer calculator */
     protected $sid;
@@ -29,17 +29,17 @@ class EventsCest
         // cleanDB wipes the events collection too - leftovers from a previous
         // run would break the exact-count assertions
         $I->cleanDB();
+        // cleanDB does not touch event_settings - drop our definitions in case
+        // a previous run died before _after
+        $this->removeSeededEventSettings();
         Billrun_Config::getInstance()->loadDbConfig();
-        $this->originalEventsConfig = Billrun_Factory::config()->getConfigValue('events', []);
-        // the events under test are applied per-test by seedCatalog, see
-        // replaceEventsConfig for why setConfigValue must not be used
         $this->resetEventsManager();
         $I->resetBillrunInstances();
     }
 
     public function _after(ApiTester $I)
     {
-        Billrun_Factory::config()->setConfigValue('events', $this->originalEventsConfig);
+        $this->removeSeededEventSettings();
         $this->resetEventsManager();
     }
     
@@ -246,8 +246,9 @@ class EventsCest
      * Input processor, rates, plan, one service with the two groups, and the
      * account + subscriber holding it - all created with the suite
      * generators. Ends with a config reload so the processor flow sees the
-     * new file_type, and re-applies the in-process events override that the
-     * reload wipes.
+     * new file_type, and seeds the event definition under test into the
+     * event_settings collection (BRCD-5355: event definitions live there, not
+     * in the config).
      */
     protected function seedCatalog(ApiTester $I, $eventSettings = null)
     {
@@ -309,31 +310,40 @@ class EventsCest
         ]);
         $this->sid = json_decode($I->grabResponse(), true)['entity']['sid'];
 
-        // load the new file_type into this process, then apply the events
-        // under test on top of the loaded config
+        // load the new file_type into this process
         Billrun_Config::getInstance()->loadDbConfig();
         Billrun_Factory::config()->setConfigValue('queue.calculators', ['customer', 'rate', 'pricing']);
-        $this->replaceEventsConfig($eventSettings);
+        $this->seedEventSettings($eventSettings);
         $I->resetBillrunInstances();
     }
 
     /**
-     * Fully replace the in-process events config with the event under test.
-     * setConfigValue cannot be used here: it merges recursively over the
-     * loaded config, so events left in the DB config (cleanDB does not clean
-     * the config collection - e.g. a restored dump) would merge index-wise
-     * into the event under test and silently change its conditions.
+     * Store the event definition under test in the event_settings collection,
+     * the way the UI / billapi eventsettings entity does (see
+     * library/Tests/EventtestData/eventsettings.json for the same shape):
+     * the definition itself plus type, a unique key, and a from/to validity
+     * range covering now. Billrun_EventsManager::getEventsSettings() loads
+     * only documents of the triggered type whose range covers the current
+     * time, so a wrong type or range silently yields no events.
      */
-    protected function replaceEventsConfig($eventSettings)
+    protected function seedEventSettings($eventSettings)
     {
-        $config = Billrun_Factory::config();
-        $configProp = new ReflectionProperty('Billrun_Config', 'config');
-        $configProp->setAccessible(true);
-        $values = $configProp->getValue($config)->toArray();
-        $values['events'] = ['balance' => [$eventSettings]];
-        $configProp->setValue($config, new Yaf_Config_Simple($values));
-        // the manager caches the events config at construction time
+        $collection = Billrun_Factory::db()->eventsettingsCollection();
+        $collection->remove(['key' => $eventSettings['event_code']]);
+        $definition = array_merge($eventSettings, [
+            'type' => 'balance',
+            'key' => $eventSettings['event_code'],
+            'from' => new Mongodloid_Date(strtotime('-1 day')),
+            'to' => new Mongodloid_Date(strtotime('+100 years')),
+        ]);
+        $collection->insert($definition);
+        // the manager caches the loaded definitions per type
         $this->resetEventsManager();
+    }
+
+    protected function removeSeededEventSettings()
+    {
+        Billrun_Factory::db()->eventsettingsCollection()->remove(['key' => ['$in' => self::SEEDED_EVENT_KEYS]]);
     }
 
     /**

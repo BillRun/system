@@ -304,11 +304,12 @@ export default class ServiceDetails extends Component {
                     id="balance-period-unit"
                     title={balancePeriodUnitTitle}
                     disabled={isByCycles}
+                    onSelect={this.onSelectPeriodUnit}
                     >
-                    <Dropdown.Item eventKey="days" onSelect={this.onSelectPeriodUnit}>Days</Dropdown.Item>
-                    <Dropdown.Item eventKey="weeks" onSelect={this.onSelectPeriodUnit}>Weeks</Dropdown.Item>
-                    <Dropdown.Item eventKey="months" onSelect={this.onSelectPeriodUnit}>Months</Dropdown.Item>
-                    <Dropdown.Item eventKey="years" onSelect={this.onSelectPeriodUnit}>Years</Dropdown.Item>
+                    <Dropdown.Item eventKey="days">Days</Dropdown.Item>
+                    <Dropdown.Item eventKey="weeks">Weeks</Dropdown.Item>
+                    <Dropdown.Item eventKey="months">Months</Dropdown.Item>
+                    <Dropdown.Item eventKey="years">Years</Dropdown.Item>
                     </DropdownButton>
                   </InputGroupButton>
                 )}

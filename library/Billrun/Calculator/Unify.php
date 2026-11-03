@@ -136,8 +136,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$this->archivedLines[$newRow['stamp']] = $rawRow->getRawData();
 		$this->unifiedToRawLines[$updatedRowStamp]['remove'][$newRow['stamp']] = $newRow['stamp'];
 
-		if (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
-			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp'])))) {
+		if (!Billrun_Runtime::isRealtimeRequest() && (($this->protectedConcurrentFiles && $this->isLinesLocked($updatedRowStamp, array($newRow['stamp']))) ||
+			(!$this->acceptArchivedLines && $this->isLinesArchived(array($newRow['stamp']))))) {
 			Billrun_Factory::log("Line {$newRow['stamp']} was already applied to unified line $updatedRowStamp", Zend_Log::NOTICE);
 			return true;
 		}
@@ -224,7 +224,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$saveOptions = array('w' => $this->writeConcern);
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
-				$failedArchived = $this->dealWithDuplicateArchivedLines($failedArchived);
+				if (!Billrun_Runtime::isRealtimeRequest()) {
+					$failedArchived = $this->dealWithDuplicateArchivedLines($failedArchived);
+				}
 				$archLinesColl->batchInsert($this->archivedLines, $saveOptions);
 				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
@@ -232,8 +234,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 				Billrun_Factory::log("Failed to insert to archive. " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
 				// todo: dump lines into file 
 			}
-			Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
-			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)), $saveOptions);
+			if (!Billrun_Runtime::isRealtimeRequest()) {
+				Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
+				$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)), $saveOptions);
+			}
 		}
 		return $failedArchived;
 	}
@@ -258,7 +262,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		Billrun_Factory::log('Updating ' . count($this->unifiedLines) . ' unified lines...', Zend_Log::INFO);
 		$updateFailedLines = array();
 		foreach ($this->unifiedLines as $key => $row) {
-			$query = array('stamp' => $key, 'type' => $row['type'], 'tx' => array('$nin' => $this->unifiedToRawLines[$key]['update']));
+			$query = array('stamp' => $key, 'type' => $row['type']);
+			if (!Billrun_Runtime::isRealtimeRequest()) {
+				$query['tx'] = array('$nin' => $this->unifiedToRawLines[$key]['update']);
+			}
 			$lineType = $row['linet'] ?? 'default';
 			$base_update = array(
 				'$setOnInsert' => array(
@@ -267,7 +274,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'type' => $row['type'],
 //					'billrun' => $this->activeBillrun,
 			));
-			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
+			$update = Billrun_Runtime::isRealtimeRequest() ? $base_update : array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
 			$mergedUpdateFields = $this->mergedUpdateFields[$row['type']][$lineType] ?? ($this->mergedUpdateFields[$row['type']]['default'] ?? []);
 			foreach ($mergedUpdateFields as $operations) {
 				$fkey = $operations['operation'];
@@ -497,6 +504,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 * 
 	 */
 	public function releaseAllLines() {
+		if (Billrun_Runtime::isRealtimeRequest()) {
+			return;
+		}
 		Billrun_Factory::log('Removing locks from  ' . count($this->unifiedToRawLines) . ' unified lines...', Zend_Log::DEBUG);
 		foreach ($this->unifiedToRawLines as $key => $value) {
 			$this->releaseLines($key, $value['remove']);
