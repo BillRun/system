@@ -62,6 +62,7 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $aggregationTranslations = [];
 	protected $constructOptions = [];
+	protected $useMongoTransactions = false;
 
 
         /**
@@ -75,6 +76,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->initInvoiceDates();
 		$this->groupingEnabled = Billrun_Factory::config()->getConfigValue('billrun.grouping.enabled', true);
 		$this->groupingSumExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.sum_fields', array());
+		$this->useMongoTransactions = Billrun_Factory::config()->getConfigValue('customer.aggregator.db_transactions', false);
 		$this->groupingMinExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.min_fields', array());
 		$this->groupingMaxExtraFields = Billrun_Factory::config()->getConfigValue('billrun.grouping.max_fields', array());
 
@@ -343,12 +345,49 @@ class Billrun_Cycle_Account_Invoice {
 	protected function setSubscribers(array $invoiceRawData) {
 		// Add the subscribers.
 		$invoiceSubs = Billrun_Util::getFieldVal($invoiceRawData['subs'], array());
+		// BRCD-785: tag each subs entry with its source account's parent_aid and full ancestor chain from
+		// the hierarchy metadata persisted on this invoice (attributes.hierarchy). Consumers can identify
+		// each sub's position in the tree without re-querying. The lookup is a no-op for non-hierarchy
+		// invoices (no metadata present), so flat-tenant invoices keep their existing subs shape.
+		$hierarchyMeta = Billrun_Util::getIn($invoiceRawData, array('attributes', 'hierarchy'), array());
 		foreach ($this->subscribers as $currSub) {
-			$invoiceSubs[] = $currSub->getData();
+			$subData = $currSub->getData();
+			if (!empty($hierarchyMeta) && isset($subData['aid'])) {
+				$subAid = intval($subData['aid']);
+				$subData['parent_aid'] = Billrun_Util::getIn($hierarchyMeta, array($subAid, 'parent_aid'), null);
+				$subData['hierarchy_ancestors'] = $this->buildAncestorAids($subAid, $hierarchyMeta);
+			}
+			$invoiceSubs[] = $subData;
 		}
-		
+
 		$invoiceRawData['subs'] = $invoiceSubs;
 		return $invoiceRawData;
+	}
+
+	/**
+	 * BRCD-785: ordered list of ancestor aids for a contributing account, walking up the persisted
+	 * hierarchy metadata. Order is root -> immediate parent; the account itself is NOT included. Returns
+	 * an empty array for a root or when the metadata has no entry for the account.
+	 *
+	 * @param int $aid
+	 * @param array $hierarchyMeta
+	 * @return int[]
+	 */
+	protected function buildAncestorAids($aid, array $hierarchyMeta) {
+		$ancestors = array();
+		if (empty($hierarchyMeta) || !isset($hierarchyMeta[$aid])) {
+			return $ancestors;
+		}
+		$visited = array($aid => true); // don't include the account itself, and guard against cycles
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		$current = Billrun_Util::getIn($hierarchyMeta, array($aid, 'parent_aid'), null);
+		while (!is_null($current) && !isset($visited[intval($current)]) && count($ancestors) <= $maxDepth) {
+			$current = intval($current);
+			$visited[$current] = true;
+			array_unshift($ancestors, $current);
+			$current = Billrun_Util::getIn($hierarchyMeta, array($current, 'parent_aid'), null);
+		}
+		return $ancestors;
 	}
 	
 	public function shouldKeepLinesinMemory($recordCount = 0) {
@@ -481,23 +520,17 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
-
-		if(count($this->data['subs']) > Billrun_Factory::config()->getConfigValue('billrun.save_to_file_subs_limit',10000)) {
-			$rawData = $this->data->getRawData();
-			$failedPath = Billrun_Factory::config()->getConfigValue('billrun.failed_invoices_path','/tmp').DIRECTORY_SEPARATOR."{$rawData['aid']}_{$rawData['billrun_key']}_{$rawData['invoice_id']}.json";
-			Billrun_Factory::log("Crashed when saving invoice for account {$this->aid} , saved to {$failedPath} ", Zend_Log::NOTICE);
-			file_put_contents($failedPath,json_encode($rawData));
-			$rawData['subs'] = [];
-			$this->data->setRawData($rawData);
-		}
-
-		$ret = $this->billrun_coll->save($this->data);
-
-		if (!$ret) {
-			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		
+		$rawData = $this->data->getRawData();
+		if ($this->useMongoTransactions) {
+			if (Billrun_Factory::db()->supportsTransactions()) {
+				$this->_saveWithTransaction($rawData);
+			} else {
+				Billrun_Factory::log("Mongo transactions enabled for cycle but not supported on this version. Proceeding without transaction.", Zend_Log::WARN);
+				$this->_saveWithoutTransaction($rawData);
+			}
 		} else {
-			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
-			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+			$this->_saveWithoutTransaction($rawData);
 		}
 	}
 	
@@ -742,4 +775,137 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData['adjusted_from_invoices'] = $adj;
 		$this->data->setRawData($invoiceRawData);
 	}
+
+	protected function _saveWithTransaction(array $rawData)
+	{
+		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+		$allSubscribersToSave = [];
+		$allGroupItemsToSave = [];
+
+		if (!empty($rawData['subs'])) {
+			foreach ($rawData['subs'] as &$subscriber) {
+				if (isset($subscriber['totals']['grouping']) && is_array($subscriber['totals']['grouping'])) {
+					foreach ($subscriber['totals']['grouping'] as $groupItem) {
+						$groupItem['sid'] = $subscriber['sid'];
+						$groupItem['billrun_key'] = $this->key;
+						$groupItem['aid'] = $this->aid;
+						$allGroupItemsToSave[] = new Mongodloid_Entity($groupItem);
+					}
+					unset($subscriber['totals']['grouping']);
+				}
+				$allSubscribersToSave[] = new Mongodloid_Entity($subscriber);
+			}
+		}
+
+		$billrunDoc = clone $this->data;
+		unset($billrunDoc['subs']);
+
+		$session = Billrun_Factory::db()->startSession();
+		$session->startTransaction();
+
+		try {
+			if (!empty($allSubscribersToSave)) {
+				$billrun_subs_coll->batchInsert($allSubscribersToSave, ['session' => $session]);
+			}
+			if (!empty($allGroupItemsToSave)) {
+				$billrun_grouping_coll->batchInsert($allGroupItemsToSave, ['session' => $session]);
+			}
+
+			$this->billrun_coll->save($billrunDoc, null, ['session' => $session]);
+			$this->data['_id'] = $billrunDoc['_id'];
+
+			$session->commitTransaction();
+			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		} catch (Exception $e) {
+			$session->abortTransaction();
+			$errorMessage = $e->getMessage();
+			Billrun_Factory::log("Failed to create invoice for account {$this->aid}. Reason: " . $errorMessage, Zend_Log::ERR);
+			throw $e;
+		} finally {
+			$session->endSession();
+		}
+	}
+
+	protected function _saveWithoutTransaction(array $rawData)
+	{
+		$allSubscribersToSave = [];
+		$allGroupItemsToSave = [];
+		if (!empty($rawData['subs'])) {
+			foreach ($rawData['subs'] as &$subscriber) {
+				if (isset($subscriber['totals']['grouping']) && is_array($subscriber['totals']['grouping'])) {
+					foreach ($subscriber['totals']['grouping'] as $groupItem) {
+						$groupItem['sid'] = $subscriber['sid'];
+						$groupItem['billrun_key'] = $this->key;
+						$groupItem['aid'] = $this->aid;
+						$allGroupItemsToSave[] = new Mongodloid_Entity($groupItem);
+					}
+					unset($subscriber['totals']['grouping']);
+				}
+				$allSubscribersToSave[] = new Mongodloid_Entity($subscriber);
+			}
+		}
+
+		$billrunDoc = clone $this->data;
+		unset($billrunDoc['subs']);
+		$billrun_subs_coll = Billrun_Factory::db()->billrun_subsCollection();
+		$billrun_grouping_coll = Billrun_Factory::db()->billrun_groupingCollection();
+
+		try {
+			if (!empty($allSubscribersToSave)) {
+				$billrun_subs_coll->batchInsert($allSubscribersToSave);
+			}
+			if (!empty($allGroupItemsToSave)) {
+				$billrun_grouping_coll->batchInsert($allGroupItemsToSave);
+			}
+
+			$this->billrun_coll->save($billrunDoc);
+			$this->data['_id'] = $billrunDoc['_id'];
+
+			Billrun_Factory::log("Created invoice " . $this->data['invoice_id'] . " for account " . $this->aid, Zend_Log::INFO);
+			Billrun_Factory::dispatcher()->trigger('afterAccountInvoiceSaved', array($this->data, &$this));
+		} catch (Exception $e) {
+			$errorMessage = $e->getMessage();
+			Billrun_Factory::log("Failed to create invoice for account {$this->aid}. Reason: " . $errorMessage, Zend_Log::ERR);
+			$this->cleanupFailedCycleData($billrun_subs_coll, $billrun_grouping_coll, $this->billrun_coll);
+			throw $e;
+		}
+	}
+
+	protected function cleanupFailedCycleData($subsColl, $groupingColl, $billrunColl)
+	{
+
+		$billrunKey = $this->key;
+		$accountId = $this->aid;
+
+		try {
+			$subsColl->remove([
+				'key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for subscribers in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
+		}
+
+		try {
+			$groupingColl->remove([
+				'billrun_key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for grouping items in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
+		}
+
+		try {
+			$billrunColl->remove([
+				'billrun_key' => $billrunKey,
+				'aid' => $accountId
+			]);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Cleanup failed for main invoice in account {$accountId}: " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
+
 }

@@ -18,9 +18,8 @@ FIRST_RUN=0
 mongod --fork --dbpath /data/db --logpath /tmp/mongod-init.log --bind_ip localhost
 
 if [ "$FIRST_RUN" = "1" ]; then
-    sh /docker-entrypoint-initdb.d/init-mongo.sh
+    sh /billrun/docker/billrun-docker/init-mongo.sh
 fi
-
 $MONGOC billing_container /billrun/mongo/migration/script.js
 
 for f in /plugin/mongo/migration/*.js

@@ -41,7 +41,10 @@ class BillRunAPI extends \Codeception\Module{
             /** @var REST $rest */
             $rest = $this->getModule('REST');
 
-            $rest->sendPOST('oauth2/token', [
+            // Leading slash is required: PhpBrowser resolves a relative URI
+            // against the last visited page, so after e.g. /api/settings a
+            // bare 'oauth2/token' becomes /api/oauth2/token (404).
+            $rest->sendPOST('/oauth2/token', [
                 'grant_type' => 'client_credentials',
                 'client_id' => $testUser,
                 'client_secret' => $testSecret,
@@ -292,6 +295,34 @@ class BillRunAPI extends \Codeception\Module{
     }
 
     /**
+     * Ask for a rebalance (reset lines) of the given account(s) for a billing
+     * cycle through the resetlines API - what the UI calls. The request only
+     * queues the work (a rebalance_queue entry); `--calculate --type rebalance`
+     * performs it.
+     *
+     * @param int|int[]   $aids       account id(s) to reset
+     * @param string|null $billrunKey the cycle to reset (default: the current one)
+     * @param array|null  $query      optional line conditions, sent as JSON
+     * @return string the raw API response
+     */
+    public function resetLines($aids, $billrunKey = null, $query = null)
+    {
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+
+        $params = ['aid' => is_array($aids) ? implode(',', $aids) : $aids];
+        if ($billrunKey !== null) {
+            $params['billrun_key'] = $billrunKey;
+        }
+        if ($query !== null) {
+            $params['query'] = json_encode($query);
+        }
+
+        return $rest->sendPOST('/api/resetlines', $params);
+    }
+
+    /**
      * Retrieves settings for a specified category.
      *
      * This function sends a GET request to fetch settings for a given category.
@@ -356,10 +387,10 @@ class BillRunAPI extends \Codeception\Module{
             case 'service':
                 $model = new \Models_Services(['collection' => 'services', 'no_init' => true]);
                 break;
-            case 'rates';
+            case 'rates':
                 $model = new \Models_Rates(['collection' => 'rates', 'no_init' => true]);
                 break;
-            case 'discount';
+            case 'discount':
                 $model = new \Models_Discounts(['collection' => 'discounts', 'no_init' => true]);
                 break;
         }
@@ -866,34 +897,47 @@ class BillRunAPI extends \Codeception\Module{
         return json_decode($ret, true);
     }
 
+    /**
+     * Clear Billrun_Base's process-wide singleton cache. Callers that change
+     * file_types / queue.calculators / similar config mid-test should call
+     * this before getInstance() so the new config is picked up rather than a
+     * cached calc/processor built against the previous config.
+     */
+    public function resetBillrunSingletons()
+    {
+        $instances = new \ReflectionProperty('Billrun_Base', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
+    }
+
     public static function cleanDB(){
 
-        $subs = \Billrun_Factory::db()->subscribersCollection();
-        $subs->remove(['_id'=>['$exists' => true]]);
-        $lines = \Billrun_Factory::db()->linesCollection();
-        $lines->remove(['_id'=>['$exists' => true]]);
-        $queue = \Billrun_Factory::db()->queueCollection();
-        $queue->remove(['_id'=>['$exists' => true]]);
-        $log = \Billrun_Factory::db()->logCollection();
-        $log->remove(['_id'=>['$exists' => true]]);
-        $archive = \Billrun_Factory::db()->archiveCollection();
-        $archive->remove(['_id'=>['$exists' => true]]);
-        $balances = \Billrun_Factory::db()->balancesCollection();
-        $balances->remove(['_id'=>['$exists' => true]]);
-        $services = \Billrun_Factory::db()->servicesCollection();
-        $services->remove(['_id'=>['$exists' => true]]);
-        $plans = \Billrun_Factory::db()->plansCollection();
-        $plans->remove(['_id'=>['$exists' => true]]);
-        $rates = \Billrun_Factory::db()->ratesCollection();
-        $rates->remove(['_id'=>['$exists' => true]]);
-        $discounts = \Billrun_Factory::db()->discountsCollection();
-        $discounts->remove(['_id'=>['$exists' => true]]);
-        $charges = \Billrun_Factory::db()->chargesCollection();
-        $charges->remove(['_id'=>['$exists' => true]]);
-        $billruns =\Billrun_Factory::db()->billrunCollection();
-        $billruns->remove(['_id'=>['$exists' => true]]);
-        $billing_cycleCollection = \Billrun_Factory::db()->billing_cycleCollection();
-        $billing_cycleCollection->remove(['_id'=>['$exists' => true]]);
+
+        $collections = [
+            'subscribersCollection',
+            'linesCollection',
+            'queueCollection',
+            'servicesCollection',
+            'plansCollection',
+            'discountsCollection',
+            'billrunCollection',
+            'billing_cycleCollection',
+            'ratesCollection',
+            'billsCollection',
+            'operationsCollection',
+            'balancesCollection',
+	        'logCollection',
+	        'archiveCollection',
+            'chargesCollection',
+            'collection_stepsCollection',
+        ];
+
+        foreach ($collections as $collectionMethod) {
+            $collection = \Billrun_Factory::db()->$collectionMethod();
+            if ($collection) {
+                $collection->remove(['_id' => ['$exists' => true]]);
+            }
+        }
         $events = \Billrun_Factory::db()->eventsCollection();
         $events->remove(['_id'=>['$exists' => true]]);
     }

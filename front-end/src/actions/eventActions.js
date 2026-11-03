@@ -4,10 +4,9 @@ import isNumber from 'is-number';
 import {
   saveSettings,
   updateSetting,
-  removeSettingField,
-  pushToSetting,
   getSettings,
 } from './settingsActions';
+import { saveEntity, deleteEntity } from './entityActions';
 import { pushToList } from './listActions';
 import {
   setFormModalError,
@@ -15,7 +14,6 @@ import {
 import {
   usageTypesDataSelector,
   propertyTypeSelector,
-  eventsSelector,
 } from '@/selectors/settingsSelector';
 import {
   effectOnEventUsagetFieldsSelector,
@@ -23,12 +21,11 @@ import {
 import {
   servicesDataSelector,
 } from '@/selectors/listSelectors';
-import { apiBillRun, apiBillRunErrorHandler, apiBillRunSuccessHandler } from '@/common/Api';
 import {
   getProductsByKeysQuery,
-  saveSettingsQuery,
 } from '@/common/ApiQueries';
 import { getValueByUnit } from '@/common/Util';
+import { validateKey } from '@/common/Validators';
 import {
 	getPathParams,
   buildBalanceConditionPath,
@@ -148,45 +145,14 @@ const convertFromUiToApi = (event, eventType, params) =>
     }
   });
 
-export const getEvents = (eventType = '') => (dispatch, getState) => {
-  const eventCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
-  const settingsPath = (eventCategory === '') ? 'events' : `events.${eventCategory}`;
-  return dispatch(getSettings(settingsPath)).then(() => {
-    // Add local ID to events
-    const state = getState();
-    const usageTypesData = usageTypesDataSelector(state);
-    const propertyTypes = propertyTypeSelector(state);
-    const effectOnUsagetFields = effectOnEventUsagetFieldsSelector(state, { eventType: 'fraud' });
-    const servicesData = servicesDataSelector(state, {}) || Immutable.Map();
-    const params = ({ usageTypesData, propertyTypes, effectOnUsagetFields });
-    const settingsEvents = state.settings.get('events', Immutable.List());
-    settingsEvents.forEach((events, eventType) => {
-      if (!['settings'].includes(eventType) && (eventCategory === '' || eventCategory === eventType)) {
-        const eventsWithId = events
-          .map(event => convertFromApiToUi(event, eventType, params))
-          .map(event => convertOldEventStructure(event, servicesData));
-        dispatch(updateSetting('events', eventType, eventsWithId));
-      }
-    });
-  });
-};
-
-export const saveEvents = (eventType = '') => (dispatch, getState) => {
-  // remove local ID to events
+export const prepareEventForEdit = (eventType, item) => (dispatch, getState) => {
   const state = getState();
   const usageTypesData = usageTypesDataSelector(state);
   const propertyTypes = propertyTypeSelector(state);
-  const eventCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
-  const settingsEvents = state.settings.get('events', Immutable.List());
-  const params = ({ usageTypesData, propertyTypes });
-  settingsEvents.forEach((events, eventType) => {
-    if (!['settings'].includes(eventType) && (eventCategory === '' || eventCategory === eventType)) {
-      const eventsWithId = events.map(event => convertFromUiToApi(event, eventType, params));
-      dispatch(updateSetting('events', eventType, eventsWithId));
-    }
-  });
-  const settingsPath = (eventType === '') ? 'events' : `events.${eventCategory}`;
-  return dispatch(saveSettings([settingsPath]));
+  const effectOnUsagetFields = effectOnEventUsagetFieldsSelector(state, { eventType: 'fraud' });
+  const servicesData = servicesDataSelector(state, {}) || Immutable.Map();
+  const params = ({ usageTypesData, propertyTypes, effectOnUsagetFields });
+  return convertOldEventStructure(convertFromApiToUi(item, eventType, params), servicesData);
 };
 
 export const saveEvent = (eventType, event) => (dispatch, getState) => {
@@ -195,41 +161,17 @@ export const saveEvent = (eventType, event) => (dispatch, getState) => {
   const propertyTypes = propertyTypeSelector(state);
   const eventCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
   const params = ({ usageTypesData, propertyTypes });
-  const convertedEvent = convertFromUiToApi(event, eventCategory, params);
-  const category = `event.${eventCategory}`;
-  const queries = saveSettingsQuery(convertedEvent, category);
-  return apiBillRun(queries)
-    .then(success => dispatch(apiBillRunSuccessHandler(success)))
-    .catch(error => dispatch(apiBillRunErrorHandler(error)));
+  const convertedEvent = convertFromUiToApi(event, eventCategory, params)
+    .set('type', eventCategory);
+  const action = convertedEvent.has('_id') ? 'update' : 'create';
+  return dispatch(saveEntity('eventsettings', convertedEvent, action));
 };
 
-export const addEvent = (eventType, event) => (dispatch) => {
-  const eventCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
-  const newEvent = event.setIn(['ui_flags', 'id'], uuid.v4());
-  return dispatch(pushToSetting('events', newEvent, eventCategory));
-};
+export const deleteEvent = event => dispatch =>
+  dispatch(deleteEntity('eventsettings', event));
 
-export const updateEvent = (eventType, event) => (dispatch, getState) => {
-  const eventCategory = ['balancePrepaid', 'balance'].includes(eventType) ? 'balances' : eventType;
-  const events = eventsSelector(getState(), { eventType: eventCategory });
-  const index = events.findIndex(e => e.getIn(['ui_flags', 'id'], '') === event.getIn(['ui_flags', 'id'], ''));
-  if (index !== -1) {
-    const eventMainCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
-    return dispatch(updateSetting('events', [eventMainCategory, index], event));
-  }
-  return Promise.reject();
-};
-
-export const removeEvent = (eventType, event) => (dispatch, getState) => {
-  const eventCategory = ['balancePrepaid', 'balance'].includes(eventType) ? 'balances' : eventType;
-  const events = eventsSelector(getState(), { eventType: eventCategory });
-  const index = events.findIndex(e => e.getIn(['ui_flags', 'id'], '') === event.getIn(['ui_flags', 'id'], ''));
-  if (index !== -1) {
-    const eventMainCategory = eventType === 'balancePrepaid' ? 'balance' : eventType;
-    return dispatch(removeSettingField('events', [eventMainCategory, index]));
-  }
-  return false;
-};
+export const setEventActive = (item, active) => dispatch =>
+  dispatch(saveEntity('eventsettings', Immutable.Map({ _id: item.get('_id'), active }), 'update'));
 
 export const saveEventSettings = () => dispatch => dispatch(saveSettings(['events.settings']));
 
@@ -246,6 +188,12 @@ export const validateFieldEventCode = (value = '') => {
   }
   return true;
 };
+
+export const validateFieldKey = (value = '') => (
+  validateKey(value)
+    ? true
+    : 'Key contains illegal characters, key should contain only alphabets, numbers and underscores (A-Z, 0-9, _)'
+);
 
 export const validateFieldRecurrenceValue = (value = '') => {
   if (value === '') {
@@ -300,6 +248,11 @@ export const validateFieldBalancePrepaidBucketCondition = (condition) => {
 
 export const validateEvent = (item, eventType) => (dispatch) => {
   let isValid = true;
+  const keyValid = validateFieldKey(item.get('key', ''));
+  if (keyValid !== true) {
+    isValid = false;
+    dispatch(setFormModalError('key', keyValid));
+  }
   const eventCodeValid = validateFieldEventCode(item.get('event_code', ''));
   if (eventCodeValid !== true) {
     isValid = false;
