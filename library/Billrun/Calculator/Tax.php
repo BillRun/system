@@ -293,6 +293,19 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	/**
+	 * check if the line is a partial charge of a rounded session: round the whole session and charge the delta from the unified line
+	 * NOTE: the session_* fields are a temporary contract, set on the line by the plugin from the unified line.
+	 * They will be replaced by the session context of BRCD-5553.
+	 * @param array $line the billing line
+	 * @param string $field aprice (before tax) or final_charge (after tax); the line carries the unified line's rounded
+	 *                      (session_<field>) and before rounding (session_before_rounding_<field>) totals of the previous charges
+	 * @return boolean
+	 */
+	protected function isRoundedSessionDelta($line, $field) {
+		return isset($line['session_' . $field]) && isset($line['session_before_rounding_' . $field]);
+	}
+
+	/**
 	 * method to round final charge after tax
 	 * 
 	 * @param mixed $row the line record to round
@@ -314,11 +327,16 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
 			return;
 		}
-		$newFinalCharge = Billrun_Util::roundingNumber($current['final_charge'], $current['rounding_rules']['rounding_type'], $decimals);
+		$isRoundedSessionDelta = $this->isRoundedSessionDelta($current, 'final_charge');
+		$finalChargeToRound = $isRoundedSessionDelta ? $current['session_before_rounding_final_charge'] + $current['final_charge'] : $current['final_charge'];
+		$newFinalCharge = Billrun_Util::roundingNumber($finalChargeToRound, $current['rounding_rules']['rounding_type'], $decimals);
 		//check if $newFinalCharge is not valid 
 		if (!is_numeric($newFinalCharge)) {
 			Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
 			return;
+		}
+		if ($isRoundedSessionDelta) {
+			$newFinalCharge -= $current['session_final_charge'];
 		}
 		$div = $newFinalCharge / $current['final_charge'];
 		$current['before_rounding']['final_charge'] = $current['final_charge'];
@@ -361,11 +379,16 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 			Billrun_Factory::log("Line {$current['stamp']} rounding_decimals didn't supported", Zend_Log::ALERT);
 			return;
 		}
-		$newAprice = Billrun_Util::roundingNumber($current['aprice'], $current['rounding_rules']['rounding_type'], $decimals);
+		$isRoundedSessionDelta = $this->isRoundedSessionDelta($current, 'aprice');
+		$apriceToRound = $isRoundedSessionDelta ? $current['session_before_rounding_aprice'] + $current['aprice'] : $current['aprice'];
+		$newAprice = Billrun_Util::roundingNumber($apriceToRound, $current['rounding_rules']['rounding_type'], $decimals);
 		//check if $newAprice is not valid 
 		if (!is_numeric($newAprice)) {
 			Billrun_Factory::log("Line {$current['stamp']} rounding didn't success", Zend_Log::ALERT);
 			return;
+		}
+		if ($isRoundedSessionDelta) {
+			$newAprice -= $current['session_aprice'];
 		}
 
 		$current['before_rounding']['aprice'] = $current['aprice'];
