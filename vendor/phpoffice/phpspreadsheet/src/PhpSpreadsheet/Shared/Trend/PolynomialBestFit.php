@@ -2,8 +2,12 @@
 
 namespace PhpOffice\PhpSpreadsheet\Shared\Trend;
 
-use PhpOffice\PhpSpreadsheet\Shared\JAMA\Matrix;
+use Matrix\Matrix;
 
+// Phpstan and Scrutinizer seem to have legitimate complaints.
+// $this->slope is specified where an array is expected in several places.
+// But it seems that it should always be float.
+// This code is probably not exercised at all in unit tests.
 class PolynomialBestFit extends BestFit
 {
     /**
@@ -42,6 +46,8 @@ class PolynomialBestFit extends BestFit
     {
         $retVal = $this->getIntersect();
         $slope = $this->getSlope();
+        // Phpstan and Scrutinizer are both correct - getSlope returns float, not array.
+        // @phpstan-ignore-next-line
         foreach ($slope as $key => $value) {
             if ($value != 0.0) {
                 $retVal += $value * $xValue ** ($key + 1);
@@ -76,6 +82,8 @@ class PolynomialBestFit extends BestFit
         $intersect = $this->getIntersect($dp);
 
         $equation = 'Y = ' . $intersect;
+        // Phpstan and Scrutinizer are both correct - getSlope returns float, not array.
+        // @phpstan-ignore-next-line
         foreach ($slope as $key => $value) {
             if ($value != 0.0) {
                 $equation .= ' + ' . $value . ' * X';
@@ -93,24 +101,34 @@ class PolynomialBestFit extends BestFit
      *
      * @param int $dp Number of places of decimal precision to display
      *
-     * @return string
+     * @return float
      */
     public function getSlope($dp = 0)
     {
         if ($dp != 0) {
             $coefficients = [];
+            // Scrutinizer is correct - $this->slope is float, not array.
+            //* @phpstan-ignore-next-line
             foreach ($this->slope as $coefficient) {
                 $coefficients[] = round($coefficient, $dp);
             }
 
+            // @phpstan-ignore-next-line
             return $coefficients;
         }
 
         return $this->slope;
     }
 
+    /**
+     * @param int $dp
+     *
+     * @return array
+     */
     public function getCoefficients($dp = 0)
     {
+        // Phpstan and Scrutinizer are both correct - getSlope returns float, not array.
+        // @phpstan-ignore-next-line
         return array_merge([$this->getIntersect($dp)], $this->getSlope($dp));
     }
 
@@ -155,8 +173,8 @@ class PolynomialBestFit extends BestFit
         $C = $matrixA->solve($matrixB);
 
         $coefficients = [];
-        for ($i = 0; $i < $C->getRowDimension(); ++$i) {
-            $r = $C->get($i, 0);
+        for ($i = 0; $i < $C->rows; ++$i) {
+            $r = $C->getValue($i + 1, 1); // row and column are origin-1
             if (abs($r) <= 10 ** (-9)) {
                 $r = 0;
             }
@@ -164,6 +182,8 @@ class PolynomialBestFit extends BestFit
         }
 
         $this->intersect = array_shift($coefficients);
+        // Phpstan (and maybe Scrutinizer) are correct
+        //* @phpstan-ignore-next-line
         $this->slope = $coefficients;
 
         $this->calculateGoodnessOfFit($x_sum, $y_sum, $xx_sum, $yy_sum, $xy_sum, 0, 0, 0);
@@ -178,9 +198,8 @@ class PolynomialBestFit extends BestFit
      * @param int $order Order of Polynomial for this regression
      * @param float[] $yValues The set of Y-values for this regression
      * @param float[] $xValues The set of X-values for this regression
-     * @param bool $const
      */
-    public function __construct($order, $yValues, $xValues = [], $const = true)
+    public function __construct($order, $yValues, $xValues = [])
     {
         parent::__construct($yValues, $xValues);
 

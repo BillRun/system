@@ -25,6 +25,7 @@ class All extends \Codeception\Module
 	        'logCollection',
 	        'archiveCollection',
             'chargesCollection',
+            'eventsCollection',
             'collection_stepsCollection',
             'logCollection'
         ];
