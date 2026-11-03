@@ -7,12 +7,7 @@ class bcCest
         //temp solution for the issue of the test failing (BRCD-4730)
         sleep(1);
     }
-    public function updateRowT(ApiTester $I)
-    {
-        $I->sendAuthenticatedGET('/test/updaterowt?rebalance=1&skip=z5,z7');
-        $response = $I->grabResponse();
-        $I->assertRegExp('/<strong>[1-9]\d*<\/strong> passes, <strong>0<\/strong> fails/', $response);
-    }
+    // updateRowT was migrated to tests/all/calculators/customerpricing/updateRowCest.php
 
     public function Aggregatortest(ApiTester $I)
     {
