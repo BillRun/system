@@ -29,4 +29,12 @@ class VersionsModel {
 		return Billrun_Factory::config()->getConfigValue('saveversion.delimiter', '***');
 	}
 
+	/**
+	 * collection and version file name are used as a single path segment under the versions directory,
+	 * so only plain names are allowed: letters, digits, underscore, dash and (not as the first character) dot
+	 */
+	public static function isValidPathPart($part) {
+		return is_string($part) && preg_match('/^[A-Za-z0-9_-][A-Za-z0-9._-]*$/', $part) === 1;
+	}
+
 }

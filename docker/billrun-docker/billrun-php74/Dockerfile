@@ -27,6 +27,8 @@ RUN  wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/w
 	&& mkdir -p /opt/wkhtmltox/bin/ \
 	&& ln -sf /usr/local/bin/wkhtmltopdf /opt/wkhtmltox/bin/wkhtmltopdf
 
+RUN docker-php-ext-configure calendar && docker-php-ext-install calendar
+
 RUN wget -O /tmp/jsignpdf.zip \
         'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
@@ -35,9 +37,9 @@ RUN wget -O /tmp/jsignpdf.zip \
 COPY php-fpm.conf /usr/local/etc/
 COPY php.ini /usr/local/etc/php/
 COPY xdebug.ini /usr/local/etc/php/conf.d/
+
 COPY --from=composer:2.6.6 /usr/bin/composer /usr/bin/composer
-COPY enable_client_plugin.sh /enable_client_plugin.sh
-RUN chmod ug+x /enable_client_plugin.sh
+
 ENTRYPOINT ["/enable_client_plugin.sh"]
 ARG EXTRA_PACKAGES=""
 RUN if [ -n "${EXTRA_PACKAGES}" ]; then \

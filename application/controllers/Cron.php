@@ -84,7 +84,7 @@ class CronController extends Yaf_Controller_Abstract {
 		Billrun_Factory::dispatcher()->trigger('cronYear');
 	}
 
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return parent::render('index', $parameters);
 	}
 	

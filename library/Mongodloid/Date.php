@@ -121,4 +121,13 @@ class Mongodloid_Date implements Mongodloid_TypeInterface{
         return $mongoFormat;
     }    
 
+    public static function equals($a, $b): bool
+    {
+        if(!($a instanceof Mongodloid_Date) || !($b instanceof Mongodloid_Date)){
+            return $a === $b;
+        }
+        return $a->sec === $b->sec
+            && $a->usec === $b->usec;
+    }
+
 }

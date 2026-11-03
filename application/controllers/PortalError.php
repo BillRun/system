@@ -30,7 +30,7 @@ class PortalerrorController extends Yaf_Controller_Abstract {
 		$response->setHeader($request->getServer('SERVER_PROTOCOL'), self::UNAUTHENTICATED_STATUS_CODE);
 	}
 
-	protected function render($tpl, array $parameters = null) {
+	protected function render(string $tpl, array $parameters = null): string {
 		return $this->getView()->render('api/index.phtml', $parameters);
 	}
 

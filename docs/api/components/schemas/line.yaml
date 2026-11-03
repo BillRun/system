@@ -1,0 +1,52 @@
+Line:
+  type: object
+  description: |
+    Usage line / CDR. The atomic unit of billable activity in BillRun -
+    every call, SMS, data session, credit, recurring charge, etc.
+    becomes a row in the `lines` collection.
+  properties:
+    _id:    { type: string }
+    stamp:
+      type: string
+      description: Unique record ID (typically a hash of the source fields).
+    type:
+      type: string
+      description: |
+        Line origin. Common values: `nsn`, `tap3`, `cdr`, `flat`,
+        `credit`, `service`, `discount`, `automatic_payment`.
+    usaget:
+      type: string
+      description: Usage type. e.g. `call`, `sms`, `mms`, `data`, `flat`.
+    usagev: { type: number, description: "Usage volume in the unit of `usaget`" }
+    aprice: { type: number, description: "Charge amount before tax" }
+    final_charge: { type: number, description: "Charge amount after tax" }
+    aid:    { type: integer }
+    sid:    { type: integer }
+    plan:   { type: string }
+    arate:
+      type: string
+      description: Reference to the rate document (Mongo DBRef).
+    arate_key:    { type: string, description: "Rate key (denormalized)" }
+    arategroup:   { type: string }
+    in_group:     { type: number, description: "Volume covered by inclusive units" }
+    over_group:   { type: number }
+    billrun:
+      type: string
+      description: Billing cycle (YYYYMM).
+    urt:
+      type: string
+      format: date-time
+      description: Unified record time - the rating timestamp.
+    process_time: { type: string, format: date-time }
+    src:    { type: string, description: "Calling ID / source" }
+    dst:    { type: string, description: "Destination" }
+    channel: { type: string }
+    charging_type:
+      type: string
+      enum: [postpaid, prepaid]
+    tax_data:
+      type: object
+      additionalProperties: true
+    log_stamp: { type: string }
+    file:      { type: string }
+  additionalProperties: true

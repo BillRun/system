@@ -86,6 +86,7 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
         $this->processResponseFile($account['aid'], $fcTxid, self::RESPONSE_REJECTED_FIXTURE);
         $this->assertUrtMatchesTransmissionDate($fcTxid, 'rejected payment');
         $this->assertRejectionUrtMatchesTransmissionDate($fcTxid);
+        $this->assertRejectionBillHasNoRemainingBalance($fcTxid);
     }
 
     // -------------------------------------------------------------------------
@@ -197,6 +198,18 @@ class CreditguardFileBasedTest extends \Codeception\Test\Unit
             $actualUrt,
             'urt on rejection record must match the Transmission Date from the response file'
         );
+    }
+
+    /**
+     * BRCD-4676: a voided (rejection) bill must never carry a positive
+     * left / left_to_pay - the app zeroes it on save.
+     */
+    private function assertRejectionBillHasNoRemainingBalance(string $originalTxid): void
+    {
+        $rejection = $this->tester->grabFromCollection('bills', ['original_txid' => $originalTxid, 'rejection' => true]);
+        $this->assertNotEmpty($rejection, "No rejection bill found for original txid $originalTxid");
+        $this->assertLessThanOrEqual(0, $rejection['left'] ?? 0, 'rejection bill left must not be positive');
+        $this->assertLessThanOrEqual(0, $rejection['left_to_pay'] ?? 0, 'rejection bill left_to_pay must not be positive');
     }
 
     private function getProcessedBill(string $txid): array

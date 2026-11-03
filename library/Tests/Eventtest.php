@@ -40,8 +40,9 @@ class Tests_Eventtest extends UnitTestCase {
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->eventsCol = Billrun_Factory::db()->eventsCollection();
+        $this->event_settingsCol = Billrun_Factory::db()->eventsettingsCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		$this->construct(basename(__FILE__, '.php'), ['lines', 'balances', 'events']);
+		$this->construct(basename(__FILE__, '.php'), ['lines', 'balances', 'events', 'eventsettings']);
 		$this->setColletions();
 		$this->loadDbConfig();
 	}

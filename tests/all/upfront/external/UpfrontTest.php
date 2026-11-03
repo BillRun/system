@@ -1,6 +1,6 @@
 <?php
 
-class UpfrontTest extends \Codeception\Test\Unit
+class UpfrontExternalTest extends \Codeception\Test\Unit
 {
     /**
      * @var \UnitTester

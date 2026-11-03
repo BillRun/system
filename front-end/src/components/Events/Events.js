@@ -7,24 +7,16 @@ import { titleCase } from 'change-case';
 import { TabsWrapper } from '@/components/Elements';
 import EventSettings from './EventSettingsContainer';
 import EventsList from './EventsListContainer';
-import { getEvents } from '@/actions/eventActions';
 import { getConfig } from '@/common/Util';
 
 class Events extends Component {
 
   static propTypes = {
     location: PropTypes.object.isRequired,
-    dispatch: PropTypes.func.isRequired,
   };
 
   static defaultProps = {
   };
-
-  
-  
-  componentDidMount() {
-    this.props.dispatch(getEvents());
-  }
 
   render() {
     const { location } = this.props;
