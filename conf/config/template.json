@@ -112,8 +112,6 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"balance" : [],
-		"fraud" : [],
 		"settings": {
 			"http": {
 				"url": "",
@@ -126,6 +124,9 @@
 			}
 		}
 	},
+	"eventsettings" : {
+		"fields": []
+	},
 	"suggestions" : {
 		"fields": []
 	},
@@ -133,6 +134,9 @@
 		"fields": []
 	},
 	"user" : {
+		"fields": []
+	},
+	"export_generator" : {
 		"fields": []
 	},
 	"taxation" :{
@@ -263,6 +267,7 @@
 	}
   },
 	"system" : {
+		"enable_customer_hierarchy": false,
 		"closed_cycle_changes": false
 	},
 	"plays": [

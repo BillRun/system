@@ -203,7 +203,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				if (!$payment->getId()) {
 					$payment->setTxid();
 				}
-				$rawPayments[] = $payment->getRawData();
+				$rawPayments[] = $payment->zeroVoidedBalance()->getRawData();
 			}
 			$options = array(
 				'w' => 1,
@@ -255,7 +255,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$rawData['due'] = $rawData['due'] * -1;
 		$rawData['cancel'] = $this->getId();
 		$rawData['urt'] = date('c');
-		return new $className($rawData);
+		$cancellation = new $className($rawData);
+		// the constructor recomputes left / left_to_pay (updateLeft / updateLeftToPay),
+		// so the zeroing must run on the constructed object - zeroing $rawData
+		// would just be overwritten.
+		return $cancellation->zeroVoidedBalance();
 	}
 
 	public static function getClassByPaymentMethod($paymentMethod) {
@@ -287,7 +291,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
         if (isset($response['urt'])) {
 			$rawData['force_urt'] = $response['urt'];
 		}
-		return new $className($rawData);
+		$rejection = new $className($rawData);
+		// the constructor recomputes left / left_to_pay (updateLeft / updateLeftToPay),
+		// so the zeroing must run on the constructed object - zeroing $rawData
+		// would just be overwritten.
+		return $rejection->zeroVoidedBalance();
 	}
         
 	public function getId() {
@@ -414,6 +422,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function markRejected() {
 		$this->data['rejected'] = true;
 		$this->data['waiting_for_confirmation'] = false;
+		$this->zeroVoidedBalance();
 		$this->detachPaidBills(false, false);
 		$this->detachPayingBills();
                 $this->unsetAllPendingLinkedBills();
@@ -462,6 +471,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 
 	public function markCancelled() {
 		$this->data['cancelled'] = true;
+		$this->zeroVoidedBalance();
                 $this->unsetAllPendingLinkedBills();
                 $this->setPending(false);
                 $this->setConfirmationStatus(false);
@@ -602,8 +612,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		];
 		Billrun_Factory::log("Checking if any aids were sent to the function", Zend_Log::DEBUG);
 		if (!empty($chargeOptions['aids'])) {
-			Billrun_Factory::log("Found " . count($chargeOptions['aids']) . " aids in the charge options. Verifying aids array", Zend_Log::DEBUG);
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
+			Billrun_Factory::log("Found " . count(self::$aids) . " aids in the charge options. Verifying aids array", Zend_Log::DEBUG);
+
 		}
 		Billrun_Factory::log("Processing size and page options", Zend_Log::DEBUG);
 		$size = !empty($chargeOptions['size']) ? (int) $chargeOptions['size'] : 100;
@@ -685,7 +696,11 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 					Billrun_Factory::log("Processing bills for account " . $billDetails['aid'], Zend_Log::DEBUG);
 					$paymentParams = array();
 					$subscriber = $accounts_in_array[$billDetails['aid']];
-					$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $subscriber['payment_gateway']['active']);
+					// BRCD-785: when this account does not pay itself (is_payer=false), charge using the
+					// nearest payer ancestor's payment gateway. Resolved from current flags at execution time;
+					// the bill/payment still references the account's own aid (A/R stays put).
+					$defaultGatewayDetails = self::resolvePayerGatewayDetails($subscriber);
+					$gatewayDetails = Billrun_Util::getIn($paymentData, $billDetails['aid'], $defaultGatewayDetails);
 					if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {
 						Billrun_Factory::log("Non valid payment gateway for aid = " . $billDetails['aid'], Zend_Log::ALERT);
 						continue;
@@ -850,7 +865,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return $paymentResponses;
 	}
 
-	protected function getAccountsToCharge($customersAids) {
+	public static function getAccountsToCharge($customersAids) {
 		Billrun_Factory::log("Trying to pull " . count($customersAids) . " accounts" , Zend_Log::DEBUG);
 		$query['aid'] = array(
 			'$in' => $customersAids
@@ -863,6 +878,84 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 		}
 		return $accounts_in_array;
+	}
+
+	/**
+	 * BRCD-785: the payment-gateway details that should be charged for the given account.
+	 *
+	 * If the account pays itself (is_payer=true/absent) its own active gateway is used. Otherwise the
+	 * nearest ancestor up the parent_aid chain with is_payer=true is located (at execution time, from the
+	 * accounts' current revisions) and that ancestor's active gateway is used. Falls back to the account's
+	 * own gateway when no payer ancestor resolves (the caller's gateway-validity check then handles it).
+	 *
+	 * @param array|Mongodloid_Entity $account
+	 * @return mixed payment_gateway.active details (or null)
+	 */
+	protected static function resolvePayerGatewayDetails($account) {
+		$data = ($account instanceof Mongodloid_Entity) ? $account->getRawData() : (array) $account;
+		$ownGateway = Billrun_Util::getIn($data, array('payment_gateway', 'active'), null);
+		if (self::accountIsPayer($data)) {
+			return $ownGateway;
+		}
+		$payerData = self::findPayerAccount($data);
+		if (!empty($payerData)) {
+			return Billrun_Util::getIn($payerData, array('payment_gateway', 'active'), $ownGateway);
+		}
+		return $ownGateway;
+	}
+
+	/**
+	 * Whether an account pays its own bills (is_payer true/absent).
+	 */
+	protected static function accountIsPayer($data) {
+		if (!array_key_exists('is_payer', $data) || is_null($data['is_payer'])) {
+			return true;
+		}
+		return Billrun_Util::toBool($data['is_payer'], true);
+	}
+
+	/**
+	 * Walk up the parent_aid chain to the nearest payer ancestor; null if none resolves.
+	 *
+	 * Intentionally resolves from each account's CURRENT (latest) revision, not an end-of-cycle snapshot:
+	 * per spec, charging/collection uses the payer in effect at execution time, so debt on older invoices
+	 * follows the account's latest is_payer/parent_aid. (This is why it loads via the account source
+	 * directly rather than through the cycle-scoped Billrun_Cycle_Hierarchy resolver.)
+	 *
+	 * @param array $data account raw data
+	 * @return array|null payer account raw data
+	 */
+	protected static function findPayerAccount($data) {
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		$visited = array();
+		if (isset($data['aid'])) {
+			$visited[intval($data['aid'])] = true;
+		}
+		$parentAid = self::parentAidOf($data);
+		$hops = 0;
+		while (!is_null($parentAid) && !isset($visited[$parentAid]) && $hops <= $maxDepth) {
+			$visited[$parentAid] = true;
+			// only query keys allowed by Billrun_Account::buildQuery may be passed (an unknown key, e.g.
+			// 'type', makes the load fail and the charge silently falls back to the child's own gateway)
+			$parent = Billrun_Factory::account()->loadAccountForQuery(array('aid' => $parentAid));
+			if (empty($parent)) {
+				return null; // dangling parent
+			}
+			$parentData = ($parent instanceof Mongodloid_Entity) ? $parent->getRawData() : (array) $parent;
+			if (self::accountIsPayer($parentData)) {
+				return $parentData;
+			}
+			$parentAid = self::parentAidOf($parentData);
+			$hops++;
+		}
+		return null;
+	}
+
+	protected static function parentAidOf($data) {
+		if (!isset($data['parent_aid']) || $data['parent_aid'] === '' || is_null($data['parent_aid'])) {
+			return null;
+		}
+		return intval($data['parent_aid']);
 	}
 
 	/**
@@ -1236,6 +1329,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$deniedBy[$txId] = $amount;
 		$this->data['denied_by'] = isset($this->data['denied_by']) ? array_merge($this->data['denied_by'], $deniedBy) : $deniedBy;
 		$this->data['denied_amount'] = isset($this->data['denied_amount']) ? $this->data['denied_amount'] + $amount : $amount;
+		$this->zeroVoidedBalance();
 		$this->detachPaidBills();
 		$this->detachPayingBills();
 		$paymentSaved = $this->save();

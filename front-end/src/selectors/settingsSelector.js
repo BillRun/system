@@ -17,9 +17,6 @@ import {
 const getTaxation = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['taxation']);
 
-const getExportGenerators = (state, props) => // eslint-disable-line no-unused-vars
-  state.settings.get('export_generators');
-
 const getPluginActions = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.getIn(['plugin_actions']);
 
@@ -51,8 +48,6 @@ const getEntityFields = (state, props) => {
   const entityName = Array.isArray(props.entityName) ? props.entityName : [props.entityName];
   return state.settings.getIn([...entityName, 'fields']);
 };
-
-const getEventType = (state, props) => props.eventType;
 
 const getMinEntityDate = (state, props) => // eslint-disable-line no-unused-vars
   state.settings.get('minimum_entity_start_date');
@@ -268,8 +263,6 @@ export const taxMappingSelector = createSelector(
   (tax = Immutable.Map()) => tax.get('mapping'),
 );
 
-export const exportGeneratorsSelector = (state, props) => getExportGenerators(state, props) || Immutable.List();
-
 export const importersSelector = createSelector(
   getPluginActions,
   (actions = Immutable.Map()) => actions
@@ -325,6 +318,11 @@ export const availablePlaysSettingsSelector = createSelector(
 export const closedCycleChangesSelector = createSelector(
   systemSettingsSelector,
   (system = Immutable.Map()) => system.get('closed_cycle_changes'),
+);
+
+export const isCustomerHierarchyEnabledSelector = createSelector(
+  systemSettingsSelector,
+  (system = Immutable.Map()) => system.get('enable_customer_hierarchy'),
 );
 
 export const billrunSelector = getBillrun;
@@ -731,28 +729,6 @@ export const invoiceTemplateStatusSelector = createSelector(
 export const paymentGatewaysSelector = getPaymentGateways;
 
 export const emailTemplatesSelector = getEmailTemplates;
-
-export const eventsSelector = createSelector(
-  getEvents,
-  getEventType,
-  (events = Immutable.Map(), type) => {
-    // all balances types, Prepaid and Normal
-    if (type === 'balances') {
-      return events.get('balance');
-    }
-    if (type === 'balance') {
-      return events
-        .get('balance', Immutable.List())
-        .filter(event => !event.get('prepaid', false));
-    }
-    if (type === 'balancePrepaid') {
-      return events
-        .get('balance', Immutable.List())
-        .filter(event => event.get('prepaid', false));
-    }
-    return events.get(type);
-  },
-);
 
 export const taxParamsKeyOptionsSelector = createSelector(
   taxFieldsSelector,

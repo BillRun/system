@@ -1,0 +1,76 @@
+Rate:
+  type: object
+  description: |
+    Rate definition (called "Product" in the UI). Describes how a unit of
+    usage is priced. Identified by `key`.
+  allOf:
+    - $ref: "common.yaml#/Revision"
+    - type: object
+      properties:
+        key:
+          type: string
+          description: Rate identifier (must match `/^[A-Z0-9_]+$/`).
+          example: CALL_INTL
+        description:   { type: string }
+        invoice_label: { type: string }
+        pricing_method:
+          type: string
+          enum: [tiered, flat, customRate]
+        tariff_category:
+          type: string
+          description: e.g. `retail`, `wholesale`.
+        add_to_retail: { type: boolean }
+        play:          { type: string }
+        rates:
+          type: object
+          description: |
+            Per-usaget pricing tables. Keys are usage types
+            (`call`, `sms`, `data`, ...); values are arrays of price
+            tiers.
+          additionalProperties:
+            type: object
+            properties:
+              rate:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    from:       { type: number }
+                    to:         { type: number }
+                    interval:   { type: number }
+                    price:      { type: number }
+                    ceil:       { type: boolean }
+              category: { type: string }
+              access:   { type: number }
+        params:
+          type: object
+          additionalProperties: true
+        tax:
+          type: array
+          items: { type: string }
+        rounding_rules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+  additionalProperties: true
+
+RateUpdate:
+  type: object
+  description: Payload for create/update on `/billapi/rates`.
+  properties:
+    from:           { type: string, format: date-time }
+    to:             { type: string, format: date-time }
+    key:            { type: string, pattern: "^[A-Z0-9_]+$" }
+    rates:          { type: object, additionalProperties: true }
+    description:    { type: string }
+    params:         { type: object, additionalProperties: true }
+    pricing_method: { type: string, enum: [tiered, flat, customRate] }
+    tariff_category: { type: string }
+    add_to_retail:  { type: boolean }
+    play:           { type: string }
+    tax:            { type: array, items: { type: string } }
+    invoice_label:  { type: string }
+    rounding_rules: { type: array, items: { type: object, additionalProperties: true } }
+  required: [key, rates, pricing_method, tariff_category]
+  additionalProperties: true
