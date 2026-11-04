@@ -104,7 +104,7 @@ class AdjustInvoiceAction extends CreditAction {
 	protected function buildEvents($creditLines) {
 		$cycleEndTime = Billrun_Billingcycle::getEndTimeByCustomer($this->billrunKey, $this->account);
 		foreach ($creditLines as $creditLine) {
-			$this->request = $creditLine;
+			$this->requestData = $creditLine;
 			if ($this->hasInstallments()) {
 				throw new Exception('Installments are not supported when adjusting an invoice');
 			}
