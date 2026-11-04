@@ -45,7 +45,12 @@ class LogChecker extends \Codeception\Module
         }
 
         fseek($fp, $this->startOffset);
-        $this->cachedContent = stream_get_contents($fp) ?: '';
+        // bounded read: on PHP 7.4.26 (the php74 CI image) an unbounded
+        // stream_get_contents() sizes its buffer by the whole file instead of
+        // the remainder after fseek, so on a large log it tries to allocate
+        // the entire file and dies on memory_limit
+        $length = $currentSize - $this->startOffset;
+        $this->cachedContent = $length > 0 ? (stream_get_contents($fp, $length) ?: '') : '';
         fclose($fp);
 
         return $this->cachedContent;
@@ -60,12 +65,51 @@ class LogChecker extends \Codeception\Module
         }
     }
 
+    public function seeCountInLogFile($message, $expectedCount)
+    {
+        $content = $this->getNewLogContent();
+        $actualCount = substr_count($content, $message);
+
+        if ($actualCount !== (int) $expectedCount) {
+            $this->fail("Expected '$message' to appear $expectedCount time(s) in new logs, found $actualCount.");
+        }
+    }
+
     public function dontSeeInLogFile($message)
     {
         $content = $this->getNewLogContent();
 
         if (str_contains($content, $message)) {
             $this->fail("Found unexpected message '$message' in new logs.");
+        }
+    }
+
+    /**
+     * Check whether a log line carries the given message at the given level.
+     * Log line format: "2026-07-15 11:14:27:461.143 ALERT: [container:id:pid] message..."
+     * - the level and the message are on the same line, with variable data between them.
+     */
+    protected function logLineHasMessageWithLevel(string $line, string $message, string $level): bool
+    {
+        return str_contains($line, $message) && str_contains($line, ' ' . $level . ': [');
+    }
+
+    public function seeInLogFileWithLevel($message, $level)
+    {
+        foreach (explode(PHP_EOL, $this->getNewLogContent()) as $line) {
+            if ($this->logLineHasMessageWithLevel($line, $message, $level)) {
+                return;
+            }
+        }
+        $this->fail("Failed to find '$message' with level $level in new logs.");
+    }
+
+    public function dontSeeInLogFileWithLevel($message, $level)
+    {
+        foreach (explode(PHP_EOL, $this->getNewLogContent()) as $line) {
+            if ($this->logLineHasMessageWithLevel($line, $message, $level)) {
+                $this->fail("Found unexpected $level message '$message' in new logs.");
+            }
         }
     }
 

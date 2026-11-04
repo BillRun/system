@@ -6,6 +6,9 @@
  * - Billable endpoint returns paged billable data across CRM fixtures.
  * The endpoints read CRM fixtures from crm_data/<aid>.json and shape the payload
  * to mimic the original CRM behavior for tests and local development.
+ * Billable requests also carry the cycle window (start_date/end_date), so a cycle
+ * scoped fixture crm_data/<aid>_<start_date>_<end_date>.json takes precedence there -
+ * tests can serve different data per cycle run without rewriting the shared fixture.
  */
 
 // Fixtures are json_decoded whole into memory per request; large ones (e.g. 300K
@@ -30,8 +33,12 @@ if (preg_match('/\/gad/', $_SERVER["REQUEST_URI"])) {
 	$subscribers = resolveGsdSubscribers($payload, $aid, $sid, $subNumber);
 	echo json_encode($subscribers);
 } elseif (preg_match('/\/billable/', $_SERVER["REQUEST_URI"])) {
-	$billable = resolveBillable($payload);
-	echo json_encode($billable);
+	// Billable returns the raw CRM fixture for the requested aid, exactly as it
+	// did before BRCD-4564 — no directory-wide scan or pagination, which was
+	// prohibitively heavy when crm_data holds many fixtures. A fixture scoped to
+	// the requested cycle window wins over <aid>.json (gad/gsd carry no window,
+	// so only billable resolves per cycle).
+	echo loadBillableData($aid, $payload);
 } else {
 	// unsupported endpoint
 }
@@ -156,6 +163,47 @@ function extractSubNumber($payload) {
 }
 
 /**
+ * Resolve the CRM fixture base folder for the current request.
+ * Plugin requests (/crm/<plugin>/<endpoint>) read from
+ * crm_data/plugins/<plugin>; everything else falls back to crm_data.
+ */
+function crmDataFolder() {
+	static $folder = null;
+	if ($folder !== null) {
+		return $folder;
+	}
+
+	$folder = 'crm_data';
+	$plugin = extractPluginFromUri();
+	if ($plugin !== null) {
+		$pluginFolder = "crm_data/plugins/{$plugin}";
+		if (is_dir($pluginFolder) && is_readable($pluginFolder)) {
+			$folder = $pluginFolder;
+		}
+	}
+
+	return $folder;
+}
+
+/**
+ * Extract the plugin name from a /crm/<plugin>/<endpoint> request URI.
+ */
+function extractPluginFromUri() {
+	$path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+	if (!is_string($path) || $path === '') {
+		return null;
+	}
+
+	// crm/<plugin>/<endpoint> => the plugin sits between the prefix and endpoint.
+	$parts = explode('/', trim($path, '/'));
+	if (count($parts) === 3 && $parts[0] === 'crm' && preg_match('/^[A-Za-z0-9_-]+$/', $parts[1])) {
+		return $parts[1];
+	}
+
+	return null;
+}
+
+/**
  * Load the CRM fixture for the given aid.
  * Returns an empty string when aid is missing or file unreadable.
  */
@@ -176,7 +224,7 @@ function loadAidDataByKey($aidKey) {
 		return '';
 	}
 
-	$filePath = "crm_data/{$aidKey}.json";
+	$filePath = crmDataFolder() . "/{$aidKey}.json";
 	if (!is_readable($filePath)) {
 		return '';
 	}
@@ -185,132 +233,42 @@ function loadAidDataByKey($aidKey) {
 }
 
 /**
- * Return billable payload with pagination and optional aids filtering.
+ * Load the CRM fixture for a billable request.
+ * A cycle scoped fixture <aid>_<start_date>_<end_date>.json (the request window,
+ * date part only) takes precedence; falls back to the plain <aid>.json fixture.
  */
-function resolveBillable($payload) {
-	$page = max(0, extractRequestInt($payload, 'page', 0));
-	$size = extractRequestInt($payload, 'size', 100);
-	if ($size <= 0) {
-		$size = 100;
+function loadBillableData($aid, $payload) {
+	if ($aid === null) {
+		return '';
 	}
 
-	$requestedAids = extractBillableAids($payload);
-	$availableAids = listBillableAids();
-	if (!empty($requestedAids)) {
-		$requestedAidSet = array_fill_keys($requestedAids, true);
-		$selectedAids = array_values(array_filter($availableAids, function ($aidKey) use ($requestedAidSet) {
-			return isset($requestedAidSet[$aidKey]);
-		}));
-	} else {
-		$selectedAids = $availableAids;
-	}
-
-	$totalAids = count($selectedAids);
-	$offset = $page * $size;
-	$pagedAids = $offset < $totalAids ? array_slice($selectedAids, $offset, $size) : [];
-
-	$data = [];
-	$billableAccounts = [];
-	foreach ($pagedAids as $aidKey) {
-		$rawData = loadAidDataByKey($aidKey);
-		if ($rawData === '') {
-			continue;
-		}
-
-		$decoded = json_decode($rawData, true);
-		if (!is_array($decoded)) {
-			continue;
-		}
-
-		if (!empty($decoded['data']) && is_array($decoded['data'])) {
-			foreach ($decoded['data'] as $entry) {
-				$data[] = $entry;
-			}
-		}
-
-		if (!empty($decoded['billableAccounts']) && is_array($decoded['billableAccounts'])) {
-			$billableAccounts = array_replace_recursive($billableAccounts, $decoded['billableAccounts']);
+	$startDate = extractRequestDate($payload, 'start_date');
+	$endDate = extractRequestDate($payload, 'end_date');
+	if ($startDate !== null && $endDate !== null) {
+		$filePath = crmDataFolder() . "/{$aid}_{$startDate}_{$endDate}.json";
+		if (is_readable($filePath)) {
+			return file_get_contents($filePath, true);
 		}
 	}
 
-	$totalPages = $size > 0 ? (int) ceil($totalAids / $size) : 0;
-	return [
-		'status' => 1,
-		'data' => $data,
-		'options' => [
-			'page' => $page,
-			'size' => $size,
-			'total' => $totalAids,
-			'total_pages' => $totalPages,
-			'returned' => count($pagedAids),
-			'start_date' => extractRequestValue($payload, 'start_date'),
-			'end_date' => extractRequestValue($payload, 'end_date'),
-		],
-		'billableAccounts' => $billableAccounts,
-	];
+	return loadAidData($aid);
 }
 
 /**
- * Return request value from POST/GET first, then JSON payload.
+ * Extract a date field from POST/GET arrays or JSON payload, normalized to the
+ * Y-m-d date part (same-day cycle requests send a full datetime).
  */
-function extractRequestValue($payload, $key, $default = null) {
+function extractRequestDate($payload, $key) {
+	$value = null;
 	foreach ([ $_POST, $_GET ] as $source) {
-		if (array_key_exists($key, $source)) {
-			return $source[$key];
+		if (isset($source[$key]) && is_scalar($source[$key])) {
+			$value = (string) $source[$key];
+			break;
 		}
 	}
 
-	if (is_array($payload) && array_key_exists($key, $payload)) {
-		return $payload[$key];
-	}
-
-	return $default;
-}
-
-/**
- * Extract numeric request value with fallback.
- */
-function extractRequestInt($payload, $key, $default) {
-	$value = extractRequestValue($payload, $key, $default);
-	return is_numeric($value) ? (int) $value : (int) $default;
-}
-
-/**
- * Parse aids filter from request payload.
- */
-function extractBillableAids($payload) {
-	$rawAids = extractRequestValue($payload, 'aids');
-	if ($rawAids === null) {
-		$rawAids = extractRequestValue($payload, 'aid');
-	}
-	if ($rawAids === null) {
-		return [];
-	}
-
-	$chunks = [];
-	if (is_array($rawAids)) {
-		foreach ($rawAids as $item) {
-			if (is_scalar($item)) {
-				$chunks[] = (string) $item;
-			}
-		}
-	} elseif (is_scalar($rawAids)) {
-		$chunks[] = (string) $rawAids;
-	}
-
-	$parsedAids = [];
-	foreach ($chunks as $chunk) {
-		foreach (explode(',', $chunk) as $part) {
-			$trimmed = trim($part);
-			if ($trimmed === '' || !ctype_digit($trimmed)) {
-				continue;
-			}
-			$normalized = (string) ((int) $trimmed);
-			$parsedAids[$normalized] = true;
-		}
-	}
-
-	return array_keys($parsedAids);
+	$datePart = substr(trim($value), 0, 10);
+	return preg_match('/^\d{4}-\d{2}-\d{2}$/', $datePart) ? $datePart : null;
 }
 
 /**

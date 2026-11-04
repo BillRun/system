@@ -1023,6 +1023,37 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Coerce a value to a strict boolean, handling bool, int and string ('true'/'false'/'1'/'0'/'yes'/
+	 * 'no'/'on'/'off') representations. Null and empty string return the provided default.
+	 *
+	 * @param mixed $value
+	 * @param bool $default
+	 * @return bool
+	 */
+	static public function toBool($value, $default = false) {
+		if (is_null($value)) {
+			return $default;
+		}
+		if (is_bool($value)) {
+			return $value;
+		}
+		if (is_int($value)) {
+			return $value !== 0;
+		}
+		if (is_float($value)) {
+			return $value != 0.0;
+		}
+		if (is_string($value)) {
+			$normalized = strtolower(trim($value));
+			if ($normalized === '') {
+				return $default;
+			}
+			return !in_array($normalized, array('0', 'false', 'no', 'off'), true);
+		}
+		return (bool) $value;
+	}
+
+	/**
 	 * method to log failed credit
 	 * 
 	 * @param array $row row to log
@@ -1239,7 +1270,7 @@ class Billrun_Util {
 			}
 		}
 		if (empty($output)) {
-			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
+			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE), Zend_Log::WARN);
 			return FALSE;
 		}
 
@@ -1524,6 +1555,9 @@ class Billrun_Util {
 	}
 
 	public static function isValidRegex($regex) {
+		if (!is_string($regex)) {
+			return false;
+		}
 		return !(@preg_match($regex, null) === false);
 	}
 
@@ -1800,6 +1834,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (is_object($keys)) {
+				$keys = (string) $keys;
+			}
 			if (isset($arr[$keys])) {
 				return $arr[$keys];
 			}

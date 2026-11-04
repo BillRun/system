@@ -1,36 +1,43 @@
-FROM php:7.4-fpm
+FROM php:8.5-fpm
 # https://github.com/netroby/docker-php-fpm/blob/master/Dockerfile
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
-        wkhtmltopdf wget  \
+RUN apt-get update && \
+        apt-get upgrade -y perl perl-base && \
+        apt-get install --no-install-recommends -y \
+        wget  \
         libpng-dev zlib1g-dev libzip-dev libgmp-dev \
-        unzip openjdk-11-jre-headless \
+        unzip openjdk-21-jre-headless \
         libssl-dev pkg-config openssl \
         libmemcached-dev \
         nginx supervisor \
         gettext-base \
-    && pecl install yaf-3.1.4 \
-    && pecl install mongodb-1.19.4 \
+        procps \
+        python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
+    && pecl install yaf \
+    && pecl install mongodb-2.4.1 \
     && pecl install memcached \
-    && pecl install redis-6.2.0 \
+    && pecl install redis \
     && docker-php-ext-enable yaf mongodb memcached redis \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp calendar \
+    && pip3 install --break-system-packages 'weasyprint>=62' \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget 'https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb' \
-    && apt-get update && apt-get install -y ./wkhtmltox_0.12.5-1.buster_amd64.deb \
+RUN apt-get update \
+    && wget 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb' \
+    && apt-get install -y ./wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
+    && rm wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
 RUN wget -O /tmp/jsignpdf.zip \
-        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/2.3.0/jsignpdf-distribution-2.3.0.zip' \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/3.2.1/jsignpdf-distribution-3.2.1-minimal.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
     && rm -f /tmp/jsignpdf.zip
 
 WORKDIR /billrun
 # Copy over custom configurations
 
-COPY docker/billrun-docker/billrun-php74/php-fpm.conf /usr/local/etc/
-COPY docker/billrun-docker/billrun-php74/php.ini /usr/local/etc/php/
+COPY docker/billrun-docker/billrun-php85/php-fpm.conf /usr/local/etc/
+COPY docker/billrun-docker/billrun-php85/php.ini /usr/local/etc/php/
 
 COPY docker/cicd/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/cicd/billrun.conf /etc/supervisor/conf.d/billrun.conf
@@ -41,13 +48,19 @@ RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 COPY ./ /billrun
 
+# Install Composer and project PHP dependencies (vendor/ is gitignored, so it is
+# not part of the build context and must be generated at image build time).
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
+    && rm /usr/local/bin/composer
+
 RUN mkdir -p /billrun/logs && touch /billrun/logs/debug.log && chmod 777 /billrun/logs/debug.log
 RUN mkdir -p /billrun/logs/container && touch /billrun/logs/container/debug.log && chmod 777 /billrun/logs/container/debug.log
 
 COPY docker/cicd/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN mkdir -p /data /run/nginx /var/cache/nginx \
+RUN mkdir -p /data /run/nginx /var/cache/nginx /billrun/cache \
     && chown -R www-data:www-data \
         /data /billrun /run/nginx /var/cache/nginx \
         /etc/nginx/sites-available /etc/nginx/sites-enabled

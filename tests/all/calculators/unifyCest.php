@@ -14,8 +14,13 @@ class unifyCest
             // $this->createServices($I);
         }
         $I->cleanDB();
-        $I->resetBillrunInstances();
+        $this->clearBillrunCalculatorInstance();
+    }
 
+    protected function clearBillrunCalculatorInstance(){
+        $instances = new ReflectionProperty('Billrun_Calculator', 'instance');
+        $instances->setAccessible(true);
+        $instances->setValue(null, []);
     }
 
     protected function setUP(ApiTester $I, $inputProcessor = null)
@@ -34,6 +39,7 @@ class unifyCest
         ];
         $I->setSettings('usage_types', $type);
         Billrun_Factory::config()->setConfigValue('queue.calculators', ["customer", "rate", "pricing", "tax", "unify"]);
+        $I->resetBillrunSingletons();
     }
 
     /**
@@ -710,5 +716,258 @@ class unifyCest
             'aid' => $this->accountDetails['aid'],
             'sid' => $subscriberDetails2['sid']
         ]));
+    }
+
+    /**
+     * Normalize a mongo array value (BSONArray or plain array) to a sorted,
+     * re-indexed PHP array so sets can be compared exactly but order-insensitively.
+     */
+    protected function toSortedArray($value): array
+    {
+        $arr = is_array($value) ? $value : iterator_to_array($value);
+        $arr = array_values($arr);
+        sort($arr);
+        return $arr;
+    }
+
+    // BRCD-5486: '$addToSet' operation in unify.unification_fields.fields[].update
+    public function testUnifyWithAddToSetOperation(ApiTester $I): void
+    {
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => [
+                            "CALL"
+                        ],
+                        "value" => 300000,
+                        "usage_types" => [
+                            "call" => [
+                                "unit" => "minutes"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => [
+                "call" => [
+                    "BASE" => [
+                        "rate" => [
+                            [
+                                "from" => 0,
+                                "to" => "UNLIMITED",
+                                "interval" => 1,
+                                "price" => 1,
+                                "uom_display" => [
+                                    "range" => "seconds",
+                                    "interval" => "seconds"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ]);
+        $I->generateSubscriber(
+            [
+                'from' => '2025-01-01',
+                'firstname' => '0531234567',
+                'aid' => $this->accountDetails['aid'],
+                'plan' => $this->planDetails['name'],
+                'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+            ]
+        );
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        $customProcessor = $this->inputProcessor;
+        $customProcessor['file_type'] = 'abc_addtoset';
+        // two extra CSV columns; parsed checked columns land under uf.<name> on the line
+        $customProcessor['parser']['structure'][] = ["name" => "cell", "checked" => true];
+        $customProcessor['parser']['structure'][] = ["name" => "net", "checked" => true];
+        // collect them as sets on the unified line
+        $customProcessor['unify']['unification_fields']['fields'][0]['update'][] = [
+            "operation" => '$addToSet',
+            "data" => [
+                "uf.cell",
+                "uf.net"
+            ]
+        ];
+        $this->applyCustomFileType($I, $customProcessor);
+
+        // 4 same-day rows for one subscriber: cell = CELL_A, CELL_B, CELL_B (dup), '' (empty)
+        $this->process(
+            [
+                'type' => 'abc_addtoset',
+                'path' => 'tests/all/calculators/test_files/addtoset1.csv'
+            ]
+        );
+
+        // the regular aggregation is intact: 1 unified line, summed usagev, all sources archived
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 117,
+            'aprice' => 0,
+            'arategroups.0.left' => 299883
+        ]);
+
+        $I->assertEquals(4, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $unifiedLine = $I->grabFromCollection('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'source' => 'unify'
+        ]);
+        // uf.cell is a set: CELL_B appears once despite 2 source rows; the empty
+        // CSV cell parses to '' (not null), so it is collected as well
+        $I->assertFalse(is_scalar($unifiedLine['uf']['cell']), 'uf.cell on the unified line should be an array');
+        $I->assertSame(['', 'CELL_A', 'CELL_B'], $this->toSortedArray($unifiedLine['uf']['cell']));
+        // constant value across all rows collapses to a single-element set
+        $I->assertSame(['NET1'], $this->toSortedArray($unifiedLine['uf']['net']));
+
+        // archived source rows keep their original scalar values (unify must not mutate them)
+        $archivedLine = $I->grabFromCollection('archive', [
+            'sid' => $this->subscriberDetails['sid'],
+            'uf.cell' => 'CELL_A'
+        ]);
+        $I->assertIsString($archivedLine['uf']['cell']);
+        $I->assertSame('CELL_A', $archivedLine['uf']['cell']);
+
+        // second file for the same subscriber/day (same unified line): one already-seen
+        // value (CELL_B) and one new value (CELL_C) - exercises the mongo-side
+        // '$addToSet' with '$each' against the persisted unified line
+        $this->process(
+            [
+                'type' => 'abc_addtoset',
+                'path' => 'tests/all/calculators/test_files/addtoset2.csv'
+            ]
+        );
+
+        $I->assertEquals(1, $I->grabCollectionCount('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'usaget' => 'call',
+            'usagev' => 122,
+            'arategroups.0.left' => 299878
+        ]);
+
+        $I->assertEquals(6, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+
+        $unifiedLine = $I->grabFromCollection('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'source' => 'unify'
+        ]);
+        // the set gained only the new value
+        $I->assertSame(['', 'CELL_A', 'CELL_B', 'CELL_C'], $this->toSortedArray($unifiedLine['uf']['cell']));
+        $I->assertSame(['NET1'], $this->toSortedArray($unifiedLine['uf']['net']));
+    }
+    
+    // ------------------------------------------------ BRCD-3562 chain mode
+
+    /**
+     * Chain mode (no --type) with unify as the LAST queue stage: lines queued
+     * uncalculated (processed before their subscriber existed) must go through
+     * customer, rate, pricing, tax AND unify in the single --calculate run, and
+     * end exactly as the inline path of testUnifyShouldUnifyAllCdrs leaves them:
+     * ONE unified line in lines, the 3 source lines in the archive and gone from
+     * lines, and nothing left in the queue.
+     *
+     * queue.calculators is a global setting (the CLI reads it from DB config),
+     * restored at the end.
+     */
+    public function testChainModeCalculateUnifiesAsTheLastStage(ApiTester $I): void
+    {
+        // Queue the lines uncalculated: no subscriber exists yet, so the inline
+        // calculation stops at the customer stage and the lines wait in the queue.
+        $this->process(['type' => 'abc', 'path' => 'tests/all/calculators/test_files/test1.csv']);
+        $I->assertEquals(3, $I->grabCollectionCount('queue', ['type' => 'abc', 'calc_name' => false]),
+            'processing before the subscriber exists should leave every line queued and uncalculated');
+        $I->assertEquals(3, $I->grabCollectionCount('lines', ['type' => 'abc']));
+
+        // Now everything the chain needs exists (the setup of testUnifyShouldUnifyAllCdrs).
+        $this->createData($I, ['firstname' => 'aaa'], ['from' => '2025-01-01'], [
+            'from' => '2025-01-01',
+            "include" => [
+                "groups" => [
+                    "LOCAL_CALLS_5000" => [
+                        "account_shared" => false,
+                        "account_pool" => false,
+                        "rates" => ["CALL"],
+                        "value" => 300000,
+                        "usage_types" => ["call" => ["unit" => "minutes"]]
+                    ]
+                ]
+            ]
+        ], [
+            'key' => 'CALL',
+            "rates" => ["call" => ["BASE" => ["rate" => [[
+                "from" => 0, "to" => "UNLIMITED", "interval" => 1, "price" => 1,
+                "uom_display" => ["range" => "seconds", "interval" => "seconds"]
+            ]]]]],
+        ]);
+        $I->generateSubscriber([
+            'from' => '2025-01-01',
+            'firstname' => '0531234567',
+            'aid' => $this->accountDetails['aid'],
+            'plan' => $this->planDetails['name'],
+            'services' => [['from' => '2025-02-01', 'name' => $this->serviceDetails['name']]]
+        ]);
+        $this->subscriberDetails = json_decode($I->grabResponse(), true)['entity'];
+
+        // The CLI must see unify as the last stage of the chain.
+        $originalCalculators = Billrun_Util::getIn((new ConfigModel())->getConfig(), ['queue', 'calculators'], ['customer', 'rate', 'pricing', 'tax']);
+        $I->overrideConfigValue('queue.calculators', ['customer', 'rate', 'pricing', 'tax', 'unify']);
+        try {
+            $code = $I->runCalculate();
+            $I->assertEquals(0, $code, 'the calculate command should exit cleanly');
+            $I->seeInLogFile('Entities loaded: 3');
+            $I->seeInLogFile('Plugin calc Cpu unifying 3 lines');
+            $I->seeInLogFile('Chain results: 3 lines completed, 0 advanced and left for retry, 0 left unchanged');
+        } finally {
+            $I->overrideConfigValue('queue.calculators', $originalCalculators);
+        }
+
+        // The same end state the inline unification produces.
+        $I->assertEquals(1, $I->grabCollectionCount('lines', ['type' => 'abc']),
+            'only the unified line may remain in lines - the 3 source lines belong in the archive');
+        $I->verifyCollectionRecord('lines', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid'],
+            'source' => 'unify',
+            'lcount' => 3,
+            'usaget' => 'call',
+            'usagev' => 112,
+            'aprice' => 0,
+            'arategroups.0.left' => 299888
+        ]);
+        $I->assertEquals(3, $I->grabCollectionCount('archive', [
+            'aid' => $this->accountDetails['aid'],
+            'sid' => $this->subscriberDetails['sid']
+        ]));
+        $I->assertEquals(0, $I->grabCollectionCount('queue', ['type' => 'abc']),
+            'every unified source line must leave the queue');
     }
 }

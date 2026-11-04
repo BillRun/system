@@ -132,8 +132,8 @@ lastConfig = addFieldToConfig(lastConfig, invoice_language_field, 'account');
 for (var i in lastConfig['file_types']) {
 	var rc = lastConfig['file_types'][i]['rate_calculators'];
 	if (!rc || typeof rc !== 'object') {
-		continue;
-	}
+				continue;
+			}
 
 	var firstKeys = Object.keys(rc);
 	if (firstKeys.length === 0) {
@@ -410,7 +410,7 @@ for (var field_key in fields) {
 	}
 	if (fields[field_key].field_name === "invoicing_day") {
 		fields[field_key].default_value = null;
-	}
+}
 }
 if (!found) {
 	fields.push({
@@ -2161,6 +2161,21 @@ runOnce(lastConfig, 'BRCD-5060', function () {
 	lastConfig.plugins.push(ebillPlugin);
 });
 
+runOnce(lastConfig, 'BRCD-4969', function () {
+	db.billrun_subs.createIndex({
+		"aid": 1,
+		"key": 1
+	});
+	db.billrun_grouping.createIndex({
+		"aid": 1,
+		"billrun_key": 1
+	});
+	if (db.serverStatus().ok != 0 && db.serverStatus().process == 'mongos') {
+		sh.shardCollection(db.getName() + ".billrun_subs", { "aid": 1, "key": 1 });
+		sh.shardCollection(db.getName() + ".billrun_grouping", { "aid": 1, "billrun_key": 1 });
+	}
+});
+	
 runOnce(lastConfig, 'BRCD-4948', function () {
 	db.plugin_teldas_tariff_switching_classes.createIndex({'id': 1 , 'transactionDateTime':1}, { unique: true , sparse: false, background: true, name: "tariff_switching_classes_unique_index" });
 });
@@ -2262,6 +2277,21 @@ runOnce(lastConfig, 'BRCD-5278', function () {
 	configValues.response_sftp_remote_directory = "";
 });
 
+// BRCD-785 customer hierarchy: add the three system account fields (parent_aid / issues_invoice /
+// is_payer) and the parent_aid index. Wrapped in runOnce so the task code is recorded in
+// past_migration_tasks and the block is skipped on subsequent script runs.
+lastConfig = runOnce(lastConfig, 'BRCD-785', function () {
+    var brcd785_fields = [
+        { "field_name": "parent_aid", "system": true, "type": "integer", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "unique": false, "default_value": null, "title": "Parent account" },
+        { "field_name": "issues_invoice", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Issues invoice" },
+        { "field_name": "is_payer", "system": true, "type": "boolean", "mandatory": false, "editable": true, "display": true, "show_in_list": false, "default_value": true, "title": "Is payer" }
+    ];
+    for (var brcd785_idx in brcd785_fields) {
+        lastConfig['subscribers'] = addFieldToConfig(lastConfig['subscribers'], brcd785_fields[brcd785_idx], 'account');
+    }
+    db.subscribers.createIndex({ 'parent_aid': 1 }, { unique: false, sparse: true, background: true });
+});
+
 runOnce(lastConfig, 'BRCD-4950', function () {
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'transactionDatetimeTo':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_1" });
 	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index");
@@ -2272,6 +2302,22 @@ runOnce(lastConfig, 'BRCD-4915', function () {
 	db.plugin_teldas_ina_numbers.createIndex({'subscriberNumber': 1 , 'transactionDatetime':1, 'tariffProfile':1, 'tspId':1, 'accessAbroad':1, 'futureModify':1}, { unique: true , sparse: false, background: true, name:"ina_numbers_unique_index_2" });
 	_dropIndex("plugin_teldas_ina_numbers", "ina_numbers_unique_index_1");
 
+});
+
+// BRCD-5421: upfront reconciliation - load the previous cycle upfront lines.
+runOnce(lastConfig, 'BRCD-5421', function () {
+	db.lines.createIndex({ 'aid': 1, 'billrun': 1, 'type': 1, 'sid': 1 }, { unique: false, sparse: false, background: true, partialFilterExpression: { 'is_upfront': true }});
+});
+
+runOnce(lastConfig, 'BRCD-4748', function () {
+	db.events.ensureIndex({'notify_time': 1 , 'start_notify_time': 1}, { unique: false , sparse: false, background: true });
+});
+
+// BRCD-5499: update jsignpdf exec_path to the bundled jsignpdf 3.1.0 launcher script.
+runOnce(lastConfig, 'BRCD-5499', function () {
+	if (typeof lastConfig.signer !== 'undefined' && typeof lastConfig.signer.jsignpdf !== 'undefined') {
+		lastConfig.signer.jsignpdf.exec_path = "/opt/jsignpdf-3.2.1/bin/jsignpdf.sh";
+	}
 });
 
 db.config.insertOne(lastConfig);

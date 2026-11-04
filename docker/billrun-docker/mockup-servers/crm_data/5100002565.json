@@ -1,0 +1,128 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "aid": 5100002565,
+      "crm_account_id": null,
+      "type": "account",
+      "from": "2025-11-26 15:05:14",
+      "to": "2200-01-01 02:00:00",
+      "firstname": "",
+      "lastname": "",
+      "title": null,
+      "email": null,
+      "invoice_shipping_method": "post",
+      "category": "RES",
+      "sub_category": "RESIDENTIAL",
+      "invoice_message": null,
+      "invoice_language": "gr_CY",
+      "invoice_detailed": false,
+      "street": "",
+      "house_number": "",
+      "apartment": "",
+      "province": "",
+      "city": "",
+      "country": "",
+      "zip_code": "",
+      "po_box": "",
+      "creation_time": "2025-11-26 15:05:14",
+      "activation_date": "2025-11-26 15:06:42",
+      "deactivation_date": "2200-01-01 02:00:00"
+    },
+    {
+      "sid": 39253,
+      "aid": 5100002565,
+      "type": "subscriber",
+      "from": "2025-11-26 15:06:42",
+      "to": "2025-11-28 10:42:32",
+      "plan": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
+      "play": "MOBILE",
+      "firstname": "",
+      "lastname": "",
+      "activation_date": "2025-11-26 15:06:42",
+      "deactivation_date": "2025-11-28 10:42:32",
+      "plan_activation": "2025-11-26 15:06:42",
+      "plan_deactivation": "2025-11-28 10:42:32",
+      "creation_time": null,
+      "former_plan": null,
+      "services": [],
+      "imsi": [],
+      "sub_number": "",
+      "portability_code": "",
+      "discounts": [
+        {
+          "priority": "",
+          "params": {},
+          "from": null,
+          "subject": {
+            "plan": {
+              "UPFRONT_PLAN_PORATED_TERMINATION_FALSE": {
+                "value": 2.521
+              }
+            }
+          },
+          "proration": "inherited",
+          "cycles": 12,
+          "type": "monetary",
+          "to": "2025-11-26 13:06:30",
+          "description": "",
+          "key": "SUBSCRIBER_DISCOUNT_1"
+        },
+        {
+          "priority": "",
+          "params": {},
+          "from": "2025-11-26 13:06:42",
+          "subject": {
+            "plan": {
+              "UPFRONT_PLAN_PORATED_TERMINATION_FALSE": {
+                "value": 16.806
+              }
+            }
+          },
+          "proration": "inherited",
+          "cycles": 24,
+          "type": "monetary",
+          "to": "2025-11-28 08:42:32",
+          "description": "",
+          "key": "SUBSCRIBER_DISCOUNT_2"
+        },
+        {
+          "priority": "",
+          "params": {},
+          "from": "2025-11-28 08:42:32",
+          "subject": {
+            "plan": {
+              "UPFRONT_PLAN_PORATED_TERMINATION_FALSE": {
+                "value": 4.201
+              }
+            }
+          },
+          "proration": "inherited",
+          "cycles": 24,
+          "type": "monetary",
+          "to": "2027-11-28 08:42:32",
+          "description": "",
+          "key": "SUBSCRIBER_DISCOUNT_3"
+        }
+      ],
+      "overrides": [
+        {
+          "type": "plan",
+          "id": null,
+          "key": "UPFRONT_PLAN_PORATED_TERMINATION_FALSE",
+          "value": {
+            "price": [
+              {
+                "price": 33.605,
+                "from": 0,
+                "to": "UNLIMITED"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "options": null,
+  "billableAccounts": {}
+}

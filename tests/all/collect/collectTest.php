@@ -139,6 +139,7 @@ class collectTest extends \Codeception\Test\Unit
         //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         $payment['dir'] = 'fc';
         $this->tester->payApi($payment);
         // $this->sendCollectCommand($options);
@@ -168,6 +169,7 @@ class collectTest extends \Codeception\Test\Unit
         //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'condition_process');
         $payment['dir'] = 'fc';
         $this->tester->payApi($payment);
         // $this->sendCollectCommand($options);
@@ -194,6 +196,7 @@ class collectTest extends \Codeception\Test\Unit
         //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         $payment['dir'] = 'fc';
         $this->tester->payApi($payment);
         // $this->sendCollectCommand($options);
@@ -225,6 +228,7 @@ class collectTest extends \Codeception\Test\Unit
         //in collection
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'condition_process');
         $payment['dir'] = 'fc';
         $this->tester->payApi($payment);
         // $this->sendCollectCommand($options);
@@ -249,6 +253,7 @@ class collectTest extends \Codeception\Test\Unit
         $this->sendCollectCommand($options);
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->tester->dontSeeInLogFile('Collection state change:');
 
     }
 
@@ -270,6 +275,7 @@ class collectTest extends \Codeception\Test\Unit
         $this->sendCollectCommand($options);
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+        $this->tester->dontSeeInLogFile('Collection state change:');
 
     }
 
@@ -291,6 +297,7 @@ class collectTest extends \Codeception\Test\Unit
         $this->sendCollectCommand($options);
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->tester->dontSeeInLogFile('Collection state change:');
 
     }
 
@@ -311,6 +318,7 @@ class collectTest extends \Codeception\Test\Unit
         $this->sendCollectCommand($options);
         $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
         $this->tester->dontSeeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid, 'step_type'=>"mail"]);
+        $this->tester->dontSeeInLogFile('Collection state change:');
 
     }
 
@@ -334,6 +342,7 @@ class collectTest extends \Codeception\Test\Unit
             //in collection on the debt alone, since no rejection is required
             $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
             $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+            $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         } finally {
             // the config collection is not cleaned by cleanDB, and once rejection_required is null
             // ConfigModel::updateConfig throws "Category not found" for it - restore a real value
@@ -361,6 +370,7 @@ class collectTest extends \Codeception\Test\Unit
             $this->sendCollectCommand($options);
             //debt alone is not collectible when every account requires a rejection
             $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->dontSeeInLogFile('Collection state change:');
             //pay the debt, then reject the payment so the debt bill gets a past rejection
             $payment['dir'] = 'fc';
             $this->tester->payApi($payment);
@@ -371,6 +381,7 @@ class collectTest extends \Codeception\Test\Unit
             //in collection
             $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
             $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+            $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         } finally {
             $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
         }
@@ -395,6 +406,7 @@ class collectTest extends \Codeception\Test\Unit
             //in collection on the debt alone, since no rejection is required
             $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
             $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+            $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         } finally {
             $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
         }
@@ -418,6 +430,7 @@ class collectTest extends \Codeception\Test\Unit
             $this->sendCollectCommand();
             //debt alone is not collectible when every account requires a rejection
             $this->tester->dontSeeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
+            $this->tester->dontSeeInLogFile('Collection state change:');
             //pay the debt, then reject the payment so the debt bill gets a past rejection
             $payment['dir'] = 'fc';
             $this->tester->payApi($payment);
@@ -428,6 +441,7 @@ class collectTest extends \Codeception\Test\Unit
             //in collection
             $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid, 'type'=>"account"]);
             $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid, 'step_type'=>"http"]);
+            $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
         } finally {
             $this->setRejectionRequiredSettings($this->defaultWithoutRejectionSettings);
         }
@@ -459,6 +473,8 @@ public function testCollectInCollectionWithoutAids()
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'default_process', 'extra_params.aid' =>  $aid1, 'step_type'=>"http"]);
         $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' =>  $aid2, 'type'=>"account"]);
         $this->tester->seeInCollection('collection_steps', ['process_name' => 'condition_process', 'extra_params.aid' =>  $aid2, 'step_type'=>"mail"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'condition_process');
 
         
     }
@@ -482,9 +498,128 @@ public function testCollectInCollectionWithoutAids()
        
         $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid1, 'type'=>"account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
         $this->tester->seeInCollection('subscribers', [ 'in_collection' => ['$exists' => false], 'aid' =>  $aid2, 'type'=>"account", 'to' => ['$gt' =>new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'out_of_collection', 'default_process');
+        $this->seeStateChangeInSingleDefaultBatch(1, 'out_of_collection', 'condition_process');
     }
 
 
+
+    public function testCollectStateChangeInBatches()
+    {
+        // configure a batch size of 2 on the default process, so 3 accounts entering
+        // collection get their state change notification split into 2 requests (2 + 1)
+        $processes = $this->defaultCollectionProcesses;
+        $processes[1]['settings']['change_state_batch_size'] = 2;
+        $this->initCollectionConfig($processes, $this->defaultWithoutRejectionSettings);
+
+        $aids = [];
+        for ($i = 0; $i < 3; $i++) {
+            $this->tester->createAccountWithAllMandatoryCustomFields();
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $aids[] = $account['aid'];
+            $this->tester->payApi([
+                "amount" => 10,
+                "aid" => $account['aid'],
+                "dir" => "tc",
+            ]);
+        }
+
+        $this->sendCollectCommand(['aids' => implode(',', $aids)]);
+
+        foreach ($aids as $aid) {
+            $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $aid, 'type' => "account"]);
+        }
+        $this->tester->seeInLogFile('Collection state change: notifying 3 accounts in 2 batches (batch size: 2, state: in_collection, process: default_process)');
+        $this->tester->seeInLogFile('Collection state change: sending batch 1/2 with 2 accounts (state: in_collection, process: default_process)');
+        $this->tester->seeInLogFile('Collection state change: sending batch 2/2 with 1 accounts (state: in_collection, process: default_process)');
+        $this->tester->dontSeeInLogFile('Collection state change: sending batch 3/');
+
+        // out direction: 3 accounts leaving collection in one run are batched the same way
+        $outAids = [];
+        for ($i = 0; $i < 3; $i++) {
+            $this->tester->createAccountWithAllMandatoryCustomFields(['in_collection' => true]);
+            $account = json_decode($this->tester->grabResponse(), true)['entity'];
+            $outAids[] = $account['aid'];
+        }
+
+        $this->sendCollectCommand(['aids' => implode(',', $outAids)]);
+
+        foreach ($outAids as $aid) {
+            $this->tester->seeInCollection('subscribers', ['in_collection' => ['$exists' => false], 'aid' => $aid, 'type' => "account", 'to' => ['$gt' => new \MongoDB\BSON\UTCDateTime(strtotime('2027-01-01'))]]);
+        }
+        $this->tester->seeInLogFile('Collection state change: notifying 3 accounts in 2 batches (batch size: 2, state: out_of_collection, process: default_process)');
+        $this->tester->seeInLogFile('Collection state change: sending batch 1/2 with 2 accounts (state: out_of_collection, process: default_process)');
+        $this->tester->seeInLogFile('Collection state change: sending batch 2/2 with 1 accounts (state: out_of_collection, process: default_process)');
+        $this->tester->dontSeeInLogFile('Collection state change: sending batch 3/');
+    }
+
+    /**
+     * BRCD-5519: a process with change_state_include_debt enabled notifies the CRM of accounts entering
+     * collection with each account's debt as calculated by the collect run - {"accounts": [{"aid", "debt"}]} -
+     * instead of the plain {"aids": [...]}; a process without the flag keeps the request as before.
+     * The requests are asserted as the CRM receives them, through the state change receiver mock
+     * (mockup-servers/collectionStateChange.php), configured as the change_state_url of both processes.
+     */
+    public function testCollectStateChangeWithDebtOnlyOnFlaggedProcess()
+    {
+        $run = uniqid('brcd5519_');
+        $processes = $this->defaultCollectionProcesses;
+        $this->assertSame('condition_process', $processes[0]['name']);
+        $this->assertSame('default_process', $processes[1]['name']);
+        foreach (array_keys($processes) as $index) {
+            $processes[$index]['settings']['change_state_url'] = $this->tester->getCollectionStateChangeUrl($run);
+        }
+        $processes[1]['settings']['change_state_include_debt'] = true; // default_process only
+        $this->initCollectionConfig($processes, $this->defaultWithoutRejectionSettings);
+        $this->tester->resetCollectionStateChangeRequests($run);
+
+        // enters default_process (the flagged one) with a debt made of two bills
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $withDebtAid = json_decode($this->tester->grabResponse(), true)['entity']['aid'];
+        $this->tester->payApi(["amount" => 10, "aid" => $withDebtAid, "dir" => "tc"]);
+        $this->tester->payApi(["amount" => 5.5, "aid" => $withDebtAid, "dir" => "tc"]);
+        // enters condition_process (no flag)
+        $this->tester->createAccountWithAllMandatoryCustomFields(['country' => 'ISREAL']);
+        $aidsOnlyAid = json_decode($this->tester->grabResponse(), true)['entity']['aid'];
+        $this->tester->payApi(["amount" => 12, "aid" => $aidsOnlyAid, "dir" => "tc"]);
+
+        $this->sendCollectCommand(['aids' => $withDebtAid . ',' . $aidsOnlyAid]);
+
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $withDebtAid, 'type' => "account"]);
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $aidsOnlyAid, 'type' => "account"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'condition_process');
+
+        $requests = $this->tester->grabCollectionStateChangeRequests($run);
+        $this->assertCount(2, $requests, 'one state change request per process');
+        $extraParamsByProcess = [];
+        foreach ($requests as $request) {
+            $received = $request['post'];
+            $this->assertSame('collection state change', $received['step_code']);
+            $this->assertSame('httpnoack', $received['step_type']);
+            $this->assertSame('in_collection', $received['extra_params']['state']);
+            $extraParamsByProcess[$received['extra_params']['process_name']] = $received['extra_params'];
+        }
+        $this->assertEqualsCanonicalizing(['condition_process', 'default_process'], array_keys($extraParamsByProcess));
+
+        // the flagged process: the account with its debt, and no aids
+        $withDebt = $extraParamsByProcess['default_process'];
+        $this->assertArrayNotHasKey('aids', $withDebt);
+        $this->assertCount(1, $withDebt['accounts']);
+        $this->assertEquals($withDebtAid, $withDebt['accounts'][0]['aid']);
+        $this->assertArrayHasKey('debt', $withDebt['accounts'][0]);
+        $this->assertEqualsWithDelta(15.5, (float) $withDebt['accounts'][0]['debt'], 0.001, 'debt is the sum of the account bills');
+        \Billrun_Config::getInstance()->loadDbConfig();
+        $collectQueryDebt = \Billrun_Bill::getBalanceByAids([$withDebtAid], false, true, $processes[1]['settings']['min_debt'])[$withDebtAid]['total'];
+        $this->assertEqualsWithDelta($collectQueryDebt, (float) $withDebt['accounts'][0]['debt'], 0.001, 'debt sent is the one of the collect query');
+
+        // the process without the flag: the aids as before, and no accounts
+        $aidsOnly = $extraParamsByProcess['condition_process'];
+        $this->assertArrayNotHasKey('accounts', $aidsOnly);
+        $this->assertEquals([$aidsOnlyAid], array_map('intval', $aidsOnly['aids']));
+
+        $this->tester->resetCollectionStateChangeRequests($run);
+    }
 
     protected function initCollectionConfig($collectionProcesses, $rejectionSettings){
         $this->tester->setSettings('collection', ['processes' => $collectionProcesses, 'settings' => [
@@ -545,7 +680,19 @@ public function testCollectInCollectionWithoutAids()
         if (isset($options['aids'])) {
             $command .= " aids=" . $options['aids'];
         }
+        // scope the log assertions to this collect run
+        $this->tester->clearLogFile();
         $this->cli->runShellCommand($command);
         return $this->cli;
+    }
+
+    /**
+     * Asserts the last collect run notified the state change of $accountsCount accounts
+     * in a single batch of the default batch size.
+     */
+    protected function seeStateChangeInSingleDefaultBatch($accountsCount, $state, $processName) {
+        $defaultBatchSize = \Billrun_CollectionSteps_Db::CHANGE_STATE_DEFAULT_BATCH_SIZE;
+        $this->tester->seeInLogFile("Collection state change: notifying {$accountsCount} accounts in 1 batches (batch size: {$defaultBatchSize}, state: {$state}, process: {$processName})");
+        $this->tester->seeInLogFile("Collection state change: sending batch 1/1 with {$accountsCount} accounts (state: {$state}, process: {$processName})");
     }
 }
