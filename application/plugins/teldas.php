@@ -832,7 +832,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
       $query = array('subscriberNumber' => $inaNumber, 'transactionDatetime' => array('$lte' => new MongoDate($urt)), '$or' => array(array('transactionDatetimeTo' => array('$gt' => new MongoDate($urt))), array('transactionDatetimeTo' => array('$eq' => null))));
       $inaNumberRevision = $this->inaNumbersCollection->query($query)->cursor()->limit(1)->current();//can be more then 1 but with the same info (future modify)
       if ($inaNumberRevision->isEmpty()) {
-          Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query), Zend_Log::NOTICE);
+          Billrun_Factory::log("Not found matching subscriberNumber for Dest_Number in INA numbers collection. query: " . print_r($query, 1), Zend_Log::NOTICE);
           return false;
       }
             return $inaNumberRevision;
@@ -1004,7 +1004,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
           return false;
       }
       if (($matchingRecords = $tariffsProfilesRevisions->count()) > 1) {
-          Billrun_Factory::log("Something wrong. need to find only one matching online tariff profiles. found " . $matchingRecords . " matching INA number records." . print_r(iterator_to_array($tariffsProfilesRevisions)), Zend_Log::ERR);
+          Billrun_Factory::log("Something wrong. need to find only one matching online tariff profiles. found " . $matchingRecords . " matching INA number records." . print_r(iterator_to_array($tariffsProfilesRevisions), 1), Zend_Log::ERR);
           return false;
       }
       return $tariffsProfilesRevisions->current();
@@ -1106,8 +1106,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
       $segmentDuration = (float) $duration / $durationDivide;
 
-      // baseCharge only on the first CDR of the call (call_offset == 0 or absent)
-      $applyBaseCharge = ($callDurationBefore == 0.0);
+      // baseCharge fires on answer: only on the first CDR of the call (call_offset == 0
+      // or absent) and only if the call was actually answered (duration > 0).
+      // An unanswered call (duration = 0) is not charged at all.
+      $applyBaseCharge = ($callDurationBefore == 0.0 && $segmentDuration > 0);
 
       // How much of the free startInterval pool is still remaining for this segment
       $startIntervalRemaining = max($startInterval - $callDurationBefore, 0.0);

@@ -15,14 +15,31 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
     $model = new \ConfigModel();
     $model->updateConfig('subscribers', $this->getExternalConfiguration($pluginName));
     \Billrun_Config::getInstance()->loadDbConfig();
-
+    $this->resetSubscriberSources();
   }
 
   public function enableDBModeSettings($data = []) {
     $model = new \ConfigModel();
     $model->updateConfig('subscribers', $this->getDBConfiguration());
     \Billrun_Config::getInstance()->loadDbConfig();
+    $this->resetSubscriberSources();
+  }
 
+  /**
+   * Billrun_Factory::subscriber()/account() latch the subscriber source
+   * (Billrun_Subscriber_Db / Billrun_Subscriber_External) in process-wide
+   * statics on first access, so a mode switch through the config alone leaks
+   * the previous mode into every later test of the same codecept process
+   * (e.g. an external-mode cycle leaves the customer calculator querying the
+   * CRM mockup). Drop the cached instances so the next factory call rebuilds
+   * them against the configuration that was just loaded.
+   */
+  protected function resetSubscriberSources() {
+    foreach (['subscriber', 'accounts'] as $prop) {
+      $factoryProp = new \ReflectionProperty('Billrun_Factory', $prop);
+      $factoryProp->setAccessible(true);
+      $factoryProp->setValue(null, null);
+    }
   }
 
   protected function getSampleConfiguration2() {
@@ -66,4 +83,41 @@ public function getDBConfiguration() {
       
   ];
 }
+
+  /**
+   * URL of the collection "state change" receiver mock (mockup-servers/collectionStateChange.php),
+   * to configure as a collection process change_state_url.
+   *
+   * @param string $run isolates the requests recorded for this test from other runs
+   */
+  public function getCollectionStateChangeUrl($run) {
+    return $this->getDomain() . 'collection-state-change/' . $run;
+  }
+
+  /**
+   * forgets the state change requests recorded for $run
+   */
+  public function resetCollectionStateChangeRequests($run) {
+    $this->sendMockupRequest('DELETE', $this->getCollectionStateChangeUrl($run));
+  }
+
+  /**
+   * the state change requests the mock received for $run, in the order they arrived, as the CRM sees them:
+   * each has 'post' (the parsed form fields: step_code, step_type, extra_params, creation_time) and 'raw' (the body as sent)
+   *
+   * @return array
+   */
+  public function grabCollectionStateChangeRequests($run) {
+    $requests = json_decode($this->sendMockupRequest('GET', $this->getCollectionStateChangeUrl($run)), true);
+    return is_array($requests) ? $requests : [];
+  }
+
+  protected function sendMockupRequest($method, $url) {
+    $context = stream_context_create(['http' => ['method' => $method, 'ignore_errors' => true, 'timeout' => 10]]);
+    $response = file_get_contents($url, false, $context);
+    if ($response === false) {
+      $this->fail("Mockup request failed: {$method} {$url}");
+    }
+    return $response;
+  }
 }

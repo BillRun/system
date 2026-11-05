@@ -507,11 +507,13 @@ class OnetimeinvoiceAction extends ApiAction {
 		return Billrun_Processor::getInstance($options);
 	}
 
+	/**
+	 * Calculators the one-time invoice credit skips.
+	 * Pricing is not skipped: the credit is marked "prepriced", so the pricing
+	 * calculator keeps the amount set here and applies the tax to it.
+	 */
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if (!empty($row['prepriced'])) {
-			$skipArray[] = 'pricing';
-		}
 		return Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.skip_calcs', $skipArray);
 	}
 

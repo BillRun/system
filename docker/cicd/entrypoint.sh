@@ -31,8 +31,6 @@ for dir in shared files export workspace; do
     link_persistent "$dir"
 done
 
-chown -R www-data:www-data "$PERSIST_DIR" 2>/dev/null || true
-
 # Render the nginx site config from the template so APPLICATION_MULTITENANT
 # (and any future runtime-configurable param) can be supplied via env vars.
 # Defaults preserve the previous baked-in behaviour (single-tenant).

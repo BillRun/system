@@ -10,6 +10,8 @@ if (preg_match('/^\/payment-gateways\/creditguard\//', $path)) {
     require 'auth.php';
 }elseif(preg_match('/^\/plugins\/israel-tax\//', $path)) {
     require 'israelInvoice.php';
+}elseif(preg_match('/^\/collection-state-change\//', $path)) {
+    require 'collectionStateChange.php';
 }
  else { 
     //echo '<p>' . print_r($_SERVER,true) . '</p>';

@@ -164,7 +164,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
+			if ($this->isPrepricedCredit()) {
+				$charges = $this->getPrepricedCreditCharges();
+			} else {
+				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
+			}
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -1177,6 +1181,27 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	*/
 	public function isPrepriced() {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
+	}
+
+	/**
+	 * A credit whose amount was fixed by its creator (credit API / one-time
+	 * invoice) carries the "prepriced" flag and its amount in the pricing field.
+	 * Such a line is not re-priced from its rate: pricing keeps the amount and
+	 * only enriches the line (rate pricing data, tax).
+	 *
+	 * @return boolean
+	 */
+	protected function isPrepricedCredit() {
+		return $this->row['type'] === 'credit' && $this->isPrepriced() && isset($this->row[$this->pricingField]);
+	}
+
+	/**
+	 * Get the charges of a pre-priced credit - the amount already on the line.
+	 *
+	 * @return float
+	 */
+	protected function getPrepricedCreditCharges() {
+		return (float) $this->row[$this->pricingField];
 	}
 
 	protected function getServiceQuantity($servicesData = array(), $serviceName) {
