@@ -1215,7 +1215,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
    * switch only needs to write one unit consistently.
    */
   protected function getCallDurationBefore($line, $matchingPaths) {
-      $raw = $line['call_offset'] ?? null;
+      $raw = $line['usagev_offset'] ?? $line['call_offset'] ?? null;
       if (is_null($raw) || $raw === '') {
           return 0.0;
       }
