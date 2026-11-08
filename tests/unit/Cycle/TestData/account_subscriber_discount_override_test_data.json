@@ -1,0 +1,256 @@
+{
+    "Account discount does not override subscriber discount - same from date (BRCD-5033)": {
+        "account_revs": [
+            {
+                "aid": 8000,
+                "sid": 0,
+                "type": "account",
+                "discounts": [
+                    {
+                        "key": "DISCOUNT_1",
+                        "description": "Account Discount 1",
+                        "type": "percentage",
+                        "proration": "no",
+                        "from": "2026-01-01T00:00:00Z",
+                        "to": "2127-01-01T00:00:00Z",
+                        "subject": {
+                            "plan": {
+                                "PLAN_A": {
+                                    "value": 1.0
+                                }
+                            }
+                        },
+                        "params": {}
+                    }
+                ],
+                "from": "2026-01-01T00:00:00Z",
+                "to": "2127-01-01T00:00:00Z"
+            }
+        ],
+        "subscribers_revs": {
+            "80001": [
+                {
+                    "sid": 80001,
+                    "aid": 8000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [
+                        {
+                            "key": "DISCOUNT_1",
+                            "description": "Subscriber Discount 1",
+                            "type": "percentage",
+                            "proration": "no",
+                            "from": "2026-01-01T00:00:00Z",
+                            "to": "2127-01-01T00:00:00Z",
+                            "subject": {
+                                "plan": {
+                                    "PLAN_A": {
+                                        "value": 0.5
+                                    }
+                                }
+                            },
+                            "params": {}
+                        }
+                    ],
+                    "from": "2026-06-01T00:00:00Z",
+                    "to": "2026-07-01T00:00:00Z"
+                }
+            ],
+            "80002": [
+                {
+                    "sid": 80002,
+                    "aid": 8000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [],
+                    "from": "2026-06-01T00:00:00Z",
+                    "to": "2026-07-01T00:00:00Z"
+                }
+            ]
+        },
+        "cycle": "202607",
+        "flat_lines": [
+            {
+                "_id": "flat_sub80001_case1",
+                "aid": 8000,
+                "sid": 80001,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-30T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 100.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-01T00:00:00Z",
+                "end_date": "2026-07-01T00:00:00Z",
+                "stamp": "flat_sub80001_case1",
+                "tax_data": {"total_amount": 0, "total_tax": 0, "taxes": []}
+            },
+            {
+                "_id": "flat_sub80002_case1",
+                "aid": 8000,
+                "sid": 80002,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-30T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 100.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-01T00:00:00Z",
+                "end_date": "2026-07-01T00:00:00Z",
+                "stamp": "flat_sub80002_case1",
+                "tax_data": {"total_amount": 0, "total_tax": 0, "taxes": []}
+            }
+        ],
+        "result": [
+            {
+                "aprice": -100.0,
+                "eligible_line": "flat_sub80002_case1"
+            },
+            {
+                "aprice": -50.0,
+                "eligible_line": "flat_sub80001_case1"
+            }
+        ]
+    },
+    "Account discount does not override subscriber discount - different from date (BRCD-5033)": {
+        "account_revs": [
+            {
+                "aid": 8000,
+                "sid": 0,
+                "type": "account",
+                "discounts": [
+                    {
+                        "key": "DISCOUNT_1",
+                        "description": "Account Discount 1",
+                        "type": "percentage",
+                        "proration": "no",
+                        "from": "2026-01-01T00:00:00Z",
+                        "to": "2127-01-01T00:00:00Z",
+                        "subject": {
+                            "plan": {
+                                "PLAN_A": {
+                                    "value": 1.0
+                                }
+                            }
+                        },
+                        "params": {}
+                    }
+                ],
+                "from": "2026-01-01T00:00:00Z",
+                "to": "2127-01-01T00:00:00Z"
+            }
+        ],
+        "subscribers_revs": {
+            "80001": [
+                {
+                    "sid": 80001,
+                    "aid": 8000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [
+                        {
+                            "key": "DISCOUNT_1",
+                            "description": "Subscriber Discount 1",
+                            "type": "percentage",
+                            "proration": "no",
+                            "from": "2026-04-01T00:00:00Z",
+                            "to": "2127-01-01T00:00:00Z",
+                            "subject": {
+                                "plan": {
+                                    "PLAN_A": {
+                                        "value": 0.5
+                                    }
+                                }
+                            },
+                            "params": {}
+                        }
+                    ],
+                    "from": "2026-06-01T00:00:00Z",
+                    "to": "2026-07-01T00:00:00Z"
+                }
+            ],
+            "80002": [
+                {
+                    "sid": 80002,
+                    "aid": 8000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [],
+                    "from": "2026-06-01T00:00:00Z",
+                    "to": "2026-07-01T00:00:00Z"
+                }
+            ]
+        },
+        "cycle": "202607",
+        "flat_lines": [
+            {
+                "_id": "flat_sub80001_case2",
+                "aid": 8000,
+                "sid": 80001,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-30T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 100.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-01T00:00:00Z",
+                "end_date": "2026-07-01T00:00:00Z",
+                "stamp": "flat_sub80001_case2",
+                "tax_data": {"total_amount": 0, "total_tax": 0, "taxes": []}
+            },
+            {
+                "_id": "flat_sub80002_case2",
+                "aid": 8000,
+                "sid": 80002,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-30T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 100.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-01T00:00:00Z",
+                "end_date": "2026-07-01T00:00:00Z",
+                "stamp": "flat_sub80002_case2",
+                "tax_data": {"total_amount": 0, "total_tax": 0, "taxes": []}
+            }
+        ],
+        "result": [
+            {
+                "aprice": -100.0,
+                "eligible_line": "flat_sub80002_case2"
+            },
+            {
+                "aprice": -50.0,
+                "eligible_line": "flat_sub80001_case2"
+            }
+        ]
+    }
+}
