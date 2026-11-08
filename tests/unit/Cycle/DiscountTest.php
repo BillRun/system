@@ -19,7 +19,7 @@ class DiscountTest extends \Codeception\Test\Unit {
 	protected $tester;
 	protected $isRun = false;
 
-	private $defaultTimezone;
+	private $defaultTimezone = null;
 
 	protected function _before() {
 		//Set the default timezone to UTC for the tests
@@ -33,6 +33,9 @@ class DiscountTest extends \Codeception\Test\Unit {
 	}
 
 	protected function _after() {
+		if ($this->defaultTimezone !== null) {
+			date_default_timezone_set($this->defaultTimezone);
+		}
 	}
 
 	public function testSubscriberOnTheFlyDiscounts() {
@@ -46,9 +49,6 @@ class DiscountTest extends \Codeception\Test\Unit {
 			'discount_from'    => 1,
 			'discount_to'      => 1,
 		]);
-
-		//Reset the timezone to the default one, put it on the last test
-		date_default_timezone_set($this->defaultTimezone);
 	}
 
 	/**
