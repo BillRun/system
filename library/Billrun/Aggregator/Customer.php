@@ -1420,7 +1420,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if(in_array('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::subscriber())) &&
 			in_array ('Billrun_Subscriber_External_Cacheable',class_uses(Billrun_Factory::account())) ) {
 			if( Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.clear_on_start',false) &&
-				( !$this->isCycle || $this->page == 0 ) ) {
+				( $this->page === null || ($this->page === 0 && empty($this->forceAccountIds)) ) ) {
 					Billrun_Factory::subscriber()->cleanExternalCache();
 					Billrun_Factory::account()->cleanExternalCache();
 			}
@@ -1443,7 +1443,15 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Factory::subscriber()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.enabled',false));
 			Billrun_Factory::subscriber()->setCachingTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gsd.ttl',600));
 			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.enabled',false));
-			Billrun_Factory::account()->setCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.ttl',600));
+			Billrun_Factory::account()->setCachingTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gad.ttl',600));
+
+			if(!empty(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba.prefix',''))) {
+				Billrun_Factory::account()->setGbaCachePrefix(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba.prefix',''));
+			}
+			Billrun_Factory::account()->setGbaCacheEnabled(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba.enabled',
+				Billrun_Factory::config()->getConfigValue('subscribers.account.gba_cache.enabled', 0)));
+			Billrun_Factory::account()->setGbaCacheTTL(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba.ttl',
+				Billrun_Factory::config()->getConfigValue('subscribers.account.gba_cache.ttl', 86400)));
 
 			Billrun_Factory::account()->setCacheGBAtoGSD(Billrun_Factory::config()->getConfigValue('customer.aggregator.cache.gba_to_gsd.enabled',false));
 		} else {
