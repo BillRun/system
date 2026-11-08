@@ -17,11 +17,6 @@ br_yaf_register_autoload('Customjob', APPLICATION_PATH . '/application/helpers')
 class Billrun_Jobsmanager {
 
 	protected $method = 'jobmanager';
-
-	/**
-	 * how far back getMessages looks when not told otherwise
-	 */
-	const MESSAGES_DEFAULT_WINDOW = '-3 months';
 	
 	/**
 	 * array container of singleton
@@ -127,54 +122,6 @@ class Billrun_Jobsmanager {
 			$job = new $class($entry);
 		}
 		return $job ?? false;
-	}
-
-	/**
-	 * query the messages of a job type pushed to a queue since a point in time (pending or done).
-	 * The type and the time are the keys of the collection's (body.type, created) index, so the query
-	 * reads the index range of that type only - never the whole collection - whatever the additional
-	 * conditions filter on
-	 * 
-	 * @param string $type the job type (body.type)
-	 * @param mixed $createdFrom the oldest message to consider: a unix timestamp, a strtotime
-	 * expression or a Mongodloid_Date; null for the default, 3 months back
-	 * @param array $additionalQuery more conditions on the message fields, e.g. body.config.<field>, done
-	 * @param array $sort sort of the result, e.g. ['created' => -1] for the latest message first
-	 * @param int $limit max number of messages to return; 0 for all
-	 * @param string $queueName the queue whose messages to query; the jobs queue by default
-	 * 
-	 * @return Mongodloid_Cursor the matching messages
-	 */
-	public static function getMessages($type, $createdFrom = null, $additionalQuery = [], $sort = [], $limit = 0, $queueName = 'jobs') {
-		if (is_null($createdFrom)) {
-			$createdFrom = strtotime(self::MESSAGES_DEFAULT_WINDOW);
-		} elseif (!($createdFrom instanceof Mongodloid_Date) && !is_numeric($createdFrom)) {
-			$createdFrom = strtotime($createdFrom);
-		}
-		$query = array_merge([
-			'body.type' => (string) $type,
-			'created' => ['$gte' => $createdFrom instanceof Mongodloid_Date ? $createdFrom : new Mongodloid_Date((int) $createdFrom)],
-		], (array) $additionalQuery);
-		$cursor = Billrun_Factory::db()->getCollection($queueName . '_messages')->query($query)->cursor();
-		if (!empty($sort)) {
-			$cursor->sort($sort);
-		}
-		if (!empty($limit)) {
-			$cursor->limit($limit);
-		}
-		return $cursor;
-	}
-
-	/**
-	 * check if a job message is done: the job ran to its end (deleteMessage), gave up (its run limit
-	 * exceeded) or was cancelled; until then the message is pending - waiting to be pulled (again)
-	 * 
-	 * @param Mongodloid_Entity|array $message a message of the queue (see getMessages)
-	 * 
-	 * @return bool true if done, false if still pending
-	 */
-	public static function isDone($message) {
-		return !empty($message['done']);
 	}
 
 	/**
