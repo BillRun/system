@@ -38,6 +38,11 @@ class DiscountTest extends \Codeception\Test\Unit {
 		}
 	}
 
+	/**
+	 * General subscriber discount scenarios: on-the-fly discounts, account-level discounts
+	 * applied to subscribers, proration (inherited and fixed), and multi-revision plan lines.
+	 * Covers the full CDR field set including amounts, tax, subject, and eligibility window.
+	 */
 	public function testSubscriberOnTheFlyDiscounts() {
 		$this->runDiscountTestCasesFromFile('discount_test_data.json', [
 			'final_charge'     => 1,
