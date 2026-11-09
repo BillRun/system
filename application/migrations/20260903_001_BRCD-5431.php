@@ -18,6 +18,7 @@ return new class extends Billrun_Migration_Base {
 	}
 
 	public function run() {
+		br_yaf_register_autoload('Models', APPLICATION_PATH . '/application/modules/Billapi');
 		$migrated = 0;
 		$cursor = $this->db->servicesCollection()->query(['include.groups' => ['$exists' => true]])->cursor()->setReadPreference('RP_PRIMARY');
 		foreach ($cursor as $service) {
