@@ -9,7 +9,7 @@
     "require": {
         "phpoffice/phpspreadsheet": "^2.0",
         "mongodb/mongodb": "~2.4.2",
-        "bshaffer/oauth2-server-php": "1.11.1",
+        "bshaffer/oauth2-server-php": "1.14.2",
         "league/omnipay": ">=3.2",
         "payrexx/omnipay-payrexx": "1.1",
         "payrexx/payrexx": "1.7.6",

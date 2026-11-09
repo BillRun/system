@@ -17,7 +17,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	use Billrun_Traits_ForeignFields {
 		getForeignFieldsFromConfig as baseGetForeignFieldsFromConfig;
 	}
-	
+
 	/**
 	 * the type of the object
 	 *
@@ -54,7 +54,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * The  time that  the queue lines were signed in for this calculator run.
-	 * @var type 
+	 * @var type
 	 */
 	protected $signedMicrotime = 0;
 
@@ -114,7 +114,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * auto sort lines and queue on pull from db
 	 * useful for time consumption
-	 * 
+	 *
 	 * @var boolean
 	 */
 	protected $autosort = true;
@@ -130,7 +130,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * constructor of the class
-	 * 
+	 *
 	 * @param array $options the options of object load
 	 */
 	public function __construct($options = array()) {
@@ -187,9 +187,9 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * load the data to run the calculator for
-	 * 
+	 *
 	 * @param boolean $initData reset the data in the calculator before loading
-	 * 
+	 *
 	 */
 	public function load($initData = true) {
 
@@ -199,11 +199,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		if ($this->isEnabled()) {
 			$this->lines = $this->getLines();
-			
+
 			/* foreach ($resource as $entity) {
 			$this->data[] = $entity;
 			} */
-			
+
 			Billrun_Factory::log("Entities loaded: " . count($this->lines), Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorLoadData', array('calculator' => $this));
 		}
@@ -213,12 +213,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * make the calculation
 	 */
 	abstract public function updateRow($row);
-	
-	
+
+
 	abstract public function prepareData($lines);
 
-	
-	
+
+
 	/**
 	 * execute the calculation process
 	 */
@@ -236,7 +236,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculateData', array('data' => $this->data));
 	}
-	
+
         protected function calculateDataRow($line) {
             $lines_coll = Billrun_Factory::db()->linesCollection();
 			if ($line) {
@@ -253,10 +253,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 		}
         /**
-         * Adding extra lines to calculated lines. 
+         * Adding extra lines to calculated lines.
          * @param Mongodloid_Entity $line- that we want to check if generate extra lines (inside the trigger)
-         * @param array $extraData - the extra lines we need to add to the calculator data. 
-         * @return array $extraData - the extra lines we need to add to the calculator data. 
+         * @param array $extraData - the extra lines we need to add to the calculator data.
+         * @return array $extraData - the extra lines we need to add to the calculator data.
          */
 	protected function addExtraLines($line, $extraData = []){
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorAddExtraLines', array('data' => &$line, 'extraData' => &$extraData, 'calculator' => $this));
@@ -291,7 +291,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	/**
 	 * Batch inserting lines to collection
 	 * @param array $linesToInsert
-	 * @param type $collection 
+	 * @param type $collection
 	 */
 	protected function batchInsertLines($linesToInsert, $collection) {
 		try {
@@ -316,7 +316,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			}
 		}
 	}
-	
+
 	/**
 	 * Remove all the lines that are in $archivedLinesToInsert and also already in lines collection
 	 * @param array $archivedLinesToInsert
@@ -331,7 +331,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		return array_values($linesToInsert);
 	}
-	
+
 	protected function restoringLinesLineByLine($linesToInsert, $collection) {
 		foreach ($linesToInsert as $stamp => $line) {
 			try {
@@ -382,8 +382,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * Pull all the lines from the lines collection from their associated queue lines.
-	 * @param type $queueLines 
-	 * @return boolean|mixed a DB cursor of all the lines the 
+	 * @param type $queueLines
+	 * @return boolean|mixed a DB cursor of all the lines the
 	 */
 	protected function pullLines($queueLines) {
 		$stamps = array();
@@ -398,7 +398,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$lines->sort(array('calc_time'=> 1, 'urt' => 1));
 		}
 
-		//Billrun_Factory::log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);			
+		//Billrun_Factory::log("Lines : ".print_r($lines->count(),1),Zend_Log::DEBUG);
 		return $lines;
 	}
 
@@ -491,7 +491,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				)),
 		);
 		if(isset($this->file_types) ){
-			
+
 			$query['$and'][0]['type'] = array('$in' => $this->file_types);
 		}
 //		$queryData['hint'] = $current_calculator_queue_tag;
@@ -514,7 +514,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 //	/**
-//	 * 
+//	 *
 //	 * @return array
 //	 */
 //	static protected function getBaseOptions() {
@@ -612,7 +612,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				$updateQuery = $this->getBaseUpdateQuery($query, $hq);
 				if(!$updateQuery){
 					return $retLines;
-				}		
+				}
 			}
 
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
@@ -649,11 +649,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if ($queue_id > 0) {
 			$previous_calculator = $queue_calculators[$queue_id - 1];
 		}
-		$horizonlineCount = $hq->count(true);
 		$fields = array(
 			'urt' => 1,
 			'calc_time' => 1
 		);
+		$horizonlineCount = $hq->fields($fields)->count(true);
 		// First document
 		$first = (clone $hq)->limit(1)->fields($fields)->current();
 
@@ -684,10 +684,10 @@ abstract class Billrun_Calculator extends Billrun_Base {
 							]
 						];
 					}else{
-						$query['$and'][] = ['calc_time' => ['$gte' => $first['calc_time'], '$lt' => $last['calc_time']]];//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more. 
+						$query['$and'][] = ['calc_time' => ['$gte' => $first['calc_time'], '$lt' => $last['calc_time']]];//$lt will not update the exect limit but this prevent to update (2limit) and than can grow to more.
 
 					}
-				}	
+				}
 			} else {
 				$query['_id'] = array('$lte' => $last->getId()->getMongoID());
 			}
@@ -699,11 +699,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 	/**
 	 * method to apply query update hash
-	 * 
+	 *
 	 * @param array $query the query to filter
 	 * @param array $update the update to be applied
 	 * @param Collection $queue the mongodb collection
-	 * 
+	 *
 	 * @return boolean true on success else false
 	 */
 	protected function applyQueueHash($query, $update, $queue) {
@@ -724,7 +724,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		} else {
 			Billrun_Factory::log("No support for transactions or \$isolated; Please upgrade MongoDB server or client", Zend_Log::WARN);
 		}*/
-		
+
 		$options = array('multiple' => true);
 		Billrun_Factory::log('Queue hash update, query: ' . json_encode($query) . ', options: ' . json_encode($options), Zend_Log::DEBUG);
 		$res = $queue->update($query, $update, $options);
@@ -790,14 +790,14 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return array
 	 * @todo change this one to be abstract
 	 */
 	public function getPossiblyUpdatedFields() {
 		return $this->getAddedFoerignFields();
 	}
-	
+
 	/**
 	 * Get the ordered list of queue calculator types the --calculate command
 	 * should run.
@@ -1021,7 +1021,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$calculatorType = $this->getCalculatorQueueType();
 		return in_array($calculatorType, $queueCalculators);
 	}
-	
+
 	/**
 	 * should the calculator be configured as a queue calculator
 	 *
@@ -1030,7 +1030,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function isQueueType() {
 		return $this->isQueueCalc;
 	}
-		
+
 	/**
 	 * is the calculator enabled (allowed to run)
 	 *

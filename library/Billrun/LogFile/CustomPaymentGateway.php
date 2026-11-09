@@ -20,6 +20,7 @@ class Billrun_LogFile_CustomPaymentGateway extends Billrun_LogFile {
 	 */
 	protected $source;
 	protected $orphanTime = '1 hour ago';
+	public $collection;
 
 	/**
 	 * maximum number of messages kept in each of the errors/warnings/info fields
