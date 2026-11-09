@@ -23,7 +23,6 @@ class Billrun_Bill_Payment_InstallmentAgreement extends Billrun_Bill_Payment {
 	protected $attachDueDateToCycleEnd = false;
 	protected $initialChargeNotBefore;
 	protected $payment_uf = [];
-	protected $forced_uf = [];
 
 	public function __construct($options) {
 		parent::__construct($options);

@@ -183,6 +183,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
         public $merge_credit_installments;
 
+	public $aggregationLogic;
+	public $plansCache;
+	public $servicesCache;
+	public $ratesCache;
+	public $discountsCache;
+	public $chargesCache;
+
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);

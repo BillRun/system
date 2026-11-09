@@ -37,6 +37,21 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 *      This variable stores information about the subscriber's parent account.
 	 **/
 	protected $parentAccount = [];
+
+	/**
+	 * @var array
+	 */
+	public $mongoPlans;
+
+	/**
+	 * @var int
+	 */
+	public $sid;
+
+	/**
+	 * @var int
+	 */
+	public $aid;
 	/**
 	 * Validate the input
 	 * @param array $input
@@ -328,7 +343,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$mongoPlans = $this->cycleAggregator->getPlans($this->parentAccount,$value);
 			// Plan name
 			$index = $value['plan'];
-			if(!isset($mongoPlans[$index])) {
+			if($index === null || !isset($mongoPlans[$index])) {
 				if(!empty($value['sid'])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
 				}
@@ -527,7 +542,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$includedServices = array();
 		if(!empty($plansData['plans']) ) {
 			foreach($plansData['plans'] as $planData) {
-				if(!empty($this->mongoPlans[$planData['plan']]['include']['services'])) {
+				if(!empty($planData['plan']) && !empty($this->mongoPlans[$planData['plan']]['include']['services'])) {
 					foreach($this->mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
 						$includedServices[] = array(
 												'name'=> $srvName,

@@ -22,6 +22,7 @@ class CreditAction extends ApiAction {
 	protected $events = [];
 	protected $status = 1;
 	protected $desc = 'success';
+	public $originRequest;
 	
 	/**
 	 * method to execute the refund

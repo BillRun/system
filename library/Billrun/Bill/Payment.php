@@ -40,6 +40,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country', 'paid_by', 'vendor_response', 'payment_method', 'legacy_migration');
 	protected $known_sources;
+	public $forced_uf;
 	protected static $aids;
         
         const txIdLength = 13;

@@ -31,6 +31,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	 * @var array
 	 */
 	protected $processsedCdrs = array();
+	public $invoice;
 
 	public function execute($arg = null) {
 		$this->allowed();
@@ -287,7 +288,7 @@ class OnetimeinvoiceAction extends ApiAction {
 				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
 
 			} catch (\Exception $ex) {
-				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
+				$this->setError("Failed  when  trying to preform payment  for AID: {$inputPayment['aid']} for an amount of {$inputPayment['amount']}");
 				Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
 				return false;
 			}
@@ -353,7 +354,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	protected function sumCdrsAprice() {
 		$sum = 0;
 		foreach ($this->processsedCdrs as $cdr) {
-			$sum += (double) $cdr['aprice'];
+			$sum += (float) $cdr['aprice'];
 		}
 		return $sum;
 	}
