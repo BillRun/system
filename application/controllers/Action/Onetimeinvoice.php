@@ -31,6 +31,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	 * @var array
 	 */
 	protected $processsedCdrs = array();
+	public $invoice;
 
 	public function execute($arg = null) {
 		$this->allowed();
@@ -273,7 +274,6 @@ class OnetimeinvoiceAction extends ApiAction {
 						array(
 							'aid' => $current_account['aid'],
 							'gateway_details' => $current_account['payment_gateway']['active'],
-							'payer_name' => $current_account['first_name'] . ' ' . $current_account['last_name'],
 							'payment_method' => 'automatic',
 						)
 					),
@@ -288,7 +288,7 @@ class OnetimeinvoiceAction extends ApiAction {
 				$paymentStatus = Billrun_Bill_Payment::makePayment($paymentOptions);
 
 			} catch (\Exception $ex) {
-				$this->setError("Failed  when  trying to preform payment  for AID: ${inputPayment['aid']} for an amount of ${inputPayment['amount']}");
+				$this->setError("Failed  when  trying to preform payment  for AID: {$inputPayment['aid']} for an amount of {$inputPayment['amount']}");
 				Billrun_Factory::log()->logCrash($ex, Zend_Log::ERR);
 				return false;
 			}
@@ -354,7 +354,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	protected function sumCdrsAprice() {
 		$sum = 0;
 		foreach ($this->processsedCdrs as $cdr) {
-			$sum += (double) $cdr['aprice'];
+			$sum += (float) $cdr['aprice'];
 		}
 		return $sum;
 	}
@@ -507,11 +507,13 @@ class OnetimeinvoiceAction extends ApiAction {
 		return Billrun_Processor::getInstance($options);
 	}
 
+	/**
+	 * Calculators the one-time invoice credit skips.
+	 * Pricing is not skipped: the credit is marked "prepriced", so the pricing
+	 * calculator keeps the amount set here and applies the tax to it.
+	 */
 	protected function getSkipCalcs($row) {
 		$skipArray = array('unify');
-		if (!empty($row['prepriced'])) {
-			$skipArray[] = 'pricing';
-		}
 		return Billrun_Factory::config()->getConfigValue('billrun.immediate_invoice.skip_calcs', $skipArray);
 	}
 

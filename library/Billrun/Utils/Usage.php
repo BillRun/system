@@ -117,7 +117,7 @@ class Billrun_Utils_Usage {
 	
 	public static function conditionsMet($fieldConf, $rowData) {
 		$conditionsMet = true;
-		if (!empty($conditions = @$fieldConf['conditions'])) {
+		if (isset($fieldConf['conditions']) && !empty($conditions = $fieldConf['conditions'])) {
 			foreach($conditions as $condition) {
 				$conditionsMet &= Billrun_Util::isConditionMet($rowData, $condition);
 			}
@@ -150,7 +150,7 @@ class Billrun_Utils_Usage {
 								@Billrun_Util::getFieldVal($row[$timeField],$defaultTime);
 				$retQueries[] =array_merge( $baseQuery , ['time'=> date(Billrun_Base::base_datetimeformat,$timeValue + $offset) ]);
 			};
-			$retQueries[] = array_merge( $baseQuery ,[	'time'=> $defaultTime ]);
+			$retQueries[] = array_merge( $baseQuery ,[	'time'=> date(Billrun_Base::base_datetimeformat, $defaultTime) ]);
 
 			return  $retQueries;
 	}

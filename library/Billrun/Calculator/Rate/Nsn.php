@@ -67,9 +67,15 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * @see Billrun_Calculator_Rate::getLineRate
+	 * Get the associate rate object for a given CDR line.
+	 * @param $row the CDR line to get the for.
+	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @param $type CDR type
+	 * @param $tariffCategory rate category
+	 * @param $filters array of filters used to find the rate
+	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
 		$record_type = $row->get('record_type');
 		$called_number = $row->get('called_number');
 		$ocg = $row->get('out_circuit_group');
@@ -81,10 +87,10 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
-			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
+			$matchedRate = $this->getRateByParams($called_number, $usaget, $line_time, $ocg);
 		} else if ($record_type == '30' && isset($row['ild_prefix'])) {
 			$called_number = preg_replace('/^016/', '', $called_number);
-			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+			$matchedRate = $this->getRateByParams($called_number, $usaget, $line_time);
 		}
 
 		return $matchedRate;

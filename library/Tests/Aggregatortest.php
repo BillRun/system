@@ -311,6 +311,27 @@
          return $passed;
      }
 
+      public function getBillrunSubs($key, $returnBillrun, $row) {
+            
+            $billrun_key = $row['expected']['billrun']['billrun_key'];
+            $aid = $row['expected']['billrun']['aid'];
+            $query = array('key' => $billrun_key, 'aid' => $aid);
+            $billrun_subsCollection = Billrun_Factory::db()->billrun_subsCollection();
+            $billrun_subs = $billrun_subsCollection->query($query)->cursor();
+            return $billrun_subs;
+      }
+
+      /**
+       * billrun subs as raw arrays (subs are saved to billrun_subs, not inside the billrun object)
+       */
+      public function getBillrunSubsArray($key, $returnBillrun, $row) {
+            $subs = array();
+            foreach ($this->getBillrunSubs($key, $returnBillrun, $row) as $sub) {
+                $subs[] = $sub->getRawData();
+            }
+            return $subs;
+      }
+
      /**
       * check if all subscribers was calculeted
       * @param int $key number of the test case
@@ -319,10 +340,10 @@
       * @return boolean true if the test is pass and false if the tast is fail
       */
      public function sumSids($key, $returnBillrun, $row) {
-         $this->message .= "<b> sum sid's :</b> <br>";
-         $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
-         $subs = isset($returnBillrun['subs']) && is_array($returnBillrun['subs']) ? $returnBillrun['subs'] : array();
-         if (count($sids) == count($subs) - 1) {
+        $this->message .= "<b> sum sid's :</b> <br>";
+        $subscount  = count($this->getBillrunSubs($key, $returnBillrun, $row));
+        $sids = isset($row['test']['sid']) ? (array) $row['test']['sid'] : array();
+         if (count($sids) == $subscount - 1) {
              $this->message .= "subs equle to sum of sid's" . $this->pass;
              return true;
          } else {
@@ -360,8 +381,9 @@
              $this->message .= "Percentage of tax :$vat %<br>";
          }
          $subsFieldsPaths = (isset($row['expected']['billrun']['subs']) && is_array($row['expected']['billrun']['subs'])) ? $row['expected']['billrun']['subs'] : array();
+        $billrunSubs = !empty($subsFieldsPaths) ? $this->getBillrunSubsArray($key, $returnBillrun, $row) : array();
         foreach($subsFieldsPaths as $path => $expectedValue){
-            $result = Billrun_Util::getIn($returnBillrun['subs'], $path, '');
+            $result = Billrun_Util::getIn($billrunSubs, $path, '');
             if (Billrun_Util::isEqual($result, $expectedValue, 0.00001)) {
                 $this->message .= "subs $path is : " . $result . $this->pass;
             } else {
@@ -542,7 +564,7 @@
          $passed = true;
          $this->message .= "<b> price per sid :</b> <br>";
          $invalidSubs = array();
-         foreach ($returnBillrun['subs'] as $sub) {
+         foreach ($this->getBillrunSubsArray($key, $returnBillrun, $row) as $sub) {
              if (!Billrun_Util::isEqual($sub['totals']['after_vat'], $row['expected']['billrun']['after_vat'][$sub['sid']], 0.000001)) {
                  $passed = false;
                  $this->message .= "sid {$sub['sid']} has worng price ,<b>result</b> : {$sub['totals']['after_vat']} <b>expected</b> :{$row['expected']['billrun']['after_vat'][$sub['sid']]} " . $this->fail;
@@ -857,8 +879,9 @@ public function passthrough($key, $returnBillrun, $row) {
          $passed = true;
          $this->message .= "<br><b> plan field  :</b> <br>";
          $sids = (array) $row['test']['sid'];
+         $billrunSubs = $this->getBillrunSubsArray($key, $returnBillrun, $row);
          foreach ($sids as $sid) {
-             foreach ($returnBillrun['subs'] as $sub) {
+             foreach ($billrunSubs as $sub) {
                  if ($sid == $sub['sid']) {
                      if (!array_key_exists('plan', $sub)) {
                          $this->message .= "plan field does NOT exist in billrun object" . $this->fail;

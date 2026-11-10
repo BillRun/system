@@ -20,15 +20,15 @@ class ReportsAction extends ApiAction {
 	
 	static $DESCRIPTION_LIMIT = 8;
 	
-	protected $request = null;
+	protected $requestData = null;
 	protected $status = true;
 	protected $desc = 'success';
-	protected $response = array();
+	protected $responseData = array();
 	
 	public function execute() {
 		$this->allowed();
-		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests;
-		$action = $this->request['action'];
+		$this->requestData = $this->getRequest()->getRequest(); // supports GET / POST requests;
+		$action = $this->requestData['action'];
 		if (!method_exists($this, $action)) {
 			return $this->setError('Reports controller - cannot find action: ' . $action);
 		}
@@ -38,7 +38,7 @@ class ReportsAction extends ApiAction {
 	}
 	
 	protected function getRevenue($fromCycle, $toCycle) {
-		$this->response = array();
+		$this->responseData = array();
 		
 		$match = array(
 			'billrun_key' => array(
@@ -76,7 +76,7 @@ class ReportsAction extends ApiAction {
 		}
 		
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'billrun_key' => $cycle,
 				'due' => isset($data[$cycle]) ? $data[$cycle] : 0,
 			);
@@ -90,7 +90,7 @@ class ReportsAction extends ApiAction {
 	}
 	
 	protected function getDebt($fromCycle, $toCycle) {
-		$this->response = array();
+		$this->responseData = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			
@@ -110,7 +110,7 @@ class ReportsAction extends ApiAction {
 				array('$group' => $group)
 			)->current();
 			
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'billrun_key' => $cycle,
 				'due' => isset($res['due']) ? $res['due'] : 0,
 			);
@@ -124,12 +124,12 @@ class ReportsAction extends ApiAction {
 	
 	public function totalNumOfCustomers() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
-		$this->response = array();
+		$this->responseData = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			$endTime = Billrun_Billingcycle::getEndTime($cycle);
 			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'billrun_key' => $cycle,
 				'customers_num' => count(Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query)),
 			);
@@ -162,7 +162,7 @@ class ReportsAction extends ApiAction {
 		$existingQuery['sid'] = array('$nin' => array_merge($churnSubscribers, $newSubscribers));
 		$existingSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $existingQuery);
 		
-		$this->response = array(
+		$this->responseData = array(
 			array('state' => 'existing', 'customers_num' => count($existingSubscribers)),
 			array('state' => 'new', 'customers_num' => count($newSubscribers)),
 			array('state' => 'churn', 'customers_num' => count($churnSubscribers)),
@@ -180,7 +180,7 @@ class ReportsAction extends ApiAction {
 		$current = $this->planByCustomersQuery();
 		$lastMonth = $this->planByCustomersQuery(strtotime("-1 month"));
 		foreach ($current as $plan => $amount) {
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'plan' => $plan,
 				'amount' => $amount,
 				'prev_amount' => isset($lastMonth[$plan]) ? $lastMonth[$plan] : 0,
@@ -223,7 +223,7 @@ class ReportsAction extends ApiAction {
 	}
 	
 	public function revenueByPlan() {
-		$this->response = array();
+		$this->responseData = array();
 		$billrunKey = Billrun_Billingcycle::getLastConfirmedBillingCycle();
 		$prevBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($billrunKey);
 		
@@ -289,7 +289,7 @@ class ReportsAction extends ApiAction {
 		);
 		
 		foreach ($sortedRevenues as $plan => $revenue) {
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'plan' => $plan,
 				'amount' => $revenue['amount'],
 				'prev_amount' => isset($revenue['prev']) ? $revenue['prev'] : 0,
@@ -301,7 +301,7 @@ class ReportsAction extends ApiAction {
 		$from = strtotime('12 months ago');
 		$fromCycle = Billrun_Billingcycle::getBillrunKeyByTimestamp($from);
 		$toCycle = Billrun_Billingcycle::getPreviousBillrunKey(Billrun_Billingcycle::getLastConfirmedBillingCycle());
-		$this->response = array();
+		$this->responseData = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			$endTime = Billrun_Billingcycle::getEndTime($cycle);
@@ -323,7 +323,7 @@ class ReportsAction extends ApiAction {
 				array('$group' => $group)
 			)->current();
 			
-			$this->response[] = array(
+			$this->responseData[] = array(
 				'billrun_key' => $cycle,
 				'left_to_pay' => isset($res['left_to_pay']) ? $res['left_to_pay'] : 0,
 			);
@@ -347,7 +347,7 @@ class ReportsAction extends ApiAction {
 			array(
 				'status' => $this->status,
 				'desc' => $this->desc,
-				'details' => $this->response,
+				'details' => $this->responseData,
 			)
 		));
 		return true;

@@ -26,6 +26,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected $start_time = 0;
 	
 	protected $opencors = false;
+	public $actions;
 	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
@@ -159,21 +160,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		}
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		header('Content-Type: application/json');
-	}
-
-	/**
-	 * render override to handle HTTP 1.0 requests
-	 * 
-	 * @param string $tpl template name
-	 * @param array $parameters view parameters
-	 * @return string output
-	 */
-	protected function render($tpl, array $parameters = null) {
-		$ret = parent::render($tpl, $parameters);
-		if ($this->getRequest()->get('SERVER_PROTOCOL') == 'HTTP/1.0' && !is_null($ret) && is_string($ret)) {
-			header('Content-Length: ' . strlen($ret));
-		}
-		return $ret;
 	}
 
 	/**

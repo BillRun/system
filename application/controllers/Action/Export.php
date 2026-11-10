@@ -35,8 +35,9 @@ class ExportAction extends Action_Base {
 		}
 		$export_generators_options = [];
 		if (strtolower($options['type']) === 'all') {
-			$export_generators = Billrun_Factory::config()->getConfigValue('export_generators');
+			$export_generators = Billrun_Factory::db()->export_generatorsCollection()->query([])->cursor();
 			foreach ($export_generators as $export_generator) {
+				$export_generator = $export_generator->getRawData();
 				$options['type'] = $export_generator['name'];
 				$export_generators_options[] = $options;
 			}
@@ -46,7 +47,7 @@ class ExportAction extends Action_Base {
 		
 		foreach ($export_generators_options as $export_generator_options) {
 			$this->getController()->addOutput("Loading exporter");
-			$exportGeneratorSettings = Billrun_Factory::config()->getExportGeneratorSettings($export_generator_options['type'], false);
+			$exportGeneratorSettings = Billrun_Factory::db()->export_generatorsCollection()->query(['name' => $export_generator_options['type']])->cursor()->limit(1)->current()->getRawData();
 			if(isset($exportGeneratorSettings['enabled']) && !$exportGeneratorSettings['enabled']){
 				Billrun_Factory::log($export_generator_options['type'] . ' export generator is not enabled', Zend_Log::INFO);
 				continue;

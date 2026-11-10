@@ -7,7 +7,9 @@ import Field from '@/components/Field';
 import BalancePrepaidEventCondition from './BalancePrepaidEventCondition';
 import {
   validateFieldEventCode,
+  validateFieldKey,
 } from '@/actions/eventActions';
+import { getConfig } from '@/common/Util';
 
 
 class BalancePrepaidEvent extends Component {
@@ -35,6 +37,13 @@ class BalancePrepaidEvent extends Component {
     this.props.updateField(['event_code'], value);
   };
 
+  onChangeKey = (e) => {
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), '_');
+    const isValid = validateFieldKey(value);
+    this.props.setError('key', isValid === true ? null : isValid);
+    this.props.updateField(['key'], value);
+  };
+
   onChangeDescription = (e) => {
     const { value } = e.target;
     this.props.updateField(['event_description'], value);
@@ -48,10 +57,23 @@ class BalancePrepaidEvent extends Component {
   render() {
     const { item, errors, setError } = this.props;
     const isEventCodeError = errors.get('event_code', false);
+    const isKeyError = errors.get('key', false);
     const conditions = item.get('conditions', Immutable.List());
     return (
       <Form className="form-horizontal">
         <Panel header={<span>Details</span>}>
+          <FormGroup validationState={isKeyError ? 'error' : null}>
+            <Col as={ControlLabel} sm={3}>
+              Key
+              <span className="danger-red"> *</span>
+            </Col>
+            <Col sm={7}>
+              <Field id="key" onChange={this.onChangeKey} value={item.get('key', '')} disabled={Boolean(item.get('_id'))} />
+              { isKeyError && (
+                <HelpBlock>{isKeyError}</HelpBlock>
+              )}
+            </Col>
+          </FormGroup>
           <FormGroup validationState={isEventCodeError ? 'error' : null}>
             <Col as={ControlLabel} sm={3}>
               Event Code

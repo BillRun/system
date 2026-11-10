@@ -6,7 +6,7 @@ class Test_Case_3439_75 {
         return [
     'preRun' => [
          'notallowPremature',
-         'removeBillruns',
+        'removeBillruns',
     ],
     'test' => [
         'test_number' => 753439,
@@ -81,7 +81,7 @@ class Test_Case_3439_75 {
     ],
     'expected' => [
         'shouldRunAggregate'=>false
-    ],
+        ],
     
     'postRun' => [
      //   'multi_day_cycle_false',

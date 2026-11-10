@@ -14,6 +14,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	public $now;
 	protected $configByType;
 	protected $bills;
+	public $log;
 	protected $fileType;
 	protected $receiverSource;
 	protected $gatewayName;
@@ -339,7 +340,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 					$no_txid_counter++;
 					continue;
 				}
-				Billrun_Factory::log("Searching for bill with txid: " . $row[$this->tranIdentifierField['field']] , Zend_Log::DEBUG);
+				Billrun_Factory::log("Searching for bill with txid: " . $txid_from_file, Zend_Log::DEBUG);
 				$bill = (static::$type != 'payments') ? Billrun_Bill_Payment::getInstanceByid($txid_from_file) : null;
 			} else if (!is_null($this->tranIdentifierFields) && (static::$type != 'payments')) {
 				Billrun_Factory::log("Searching for bills using configured query, for line number " . $row['row_number'] , Zend_Log::DEBUG);

@@ -8,6 +8,7 @@ import {
 } from '@/actions/exportGeneratorActions';
 
 const defaultState = Immutable.Map({
+  enabled: true,
   filtration: Immutable.List([
     Immutable.Map({
       collection: 'lines',

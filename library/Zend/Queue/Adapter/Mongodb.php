@@ -154,7 +154,7 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 		];
 		
 		if (isset($message['schedule'])) {
-			$row['schedule'] = new MongoDB\BSON\UTCDateTime($message['schedule'] * 1000);
+			$row['schedule'] = new MongoDB\BSON\UTCDateTime((int) ($message['schedule'] * 1000));
 			unset($row['body']['schedule']);
 		}
 		
@@ -204,13 +204,13 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 					[
 						'$or' => [
 							['timeout' => ['$exists' => 0]],
-							['timeout' => ['$lt' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
+							['timeout' => ['$lt' => new MongoDB\BSON\UTCDateTime((int) ($microtime * 1000))]],
 						],
 					],
 					[
 						'$or' => [
 							['schedule' => ['$exists' => 0]],
-							['schedule' => ['$lte' => new MongoDB\BSON\UTCDateTime($microtime * 1000)]],
+							['schedule' => ['$lte' => new MongoDB\BSON\UTCDateTime((int) ($microtime * 1000))]],
 						],
 					]
 				],
@@ -219,7 +219,7 @@ class Zend_Queue_Adapter_Mongodb extends Zend_Queue_Adapter_AdapterAbstract {
 				'$set' => [
 					'handle' => md5(uniqid(rand(), true)),
 					'start_time' => new MongoDB\BSON\UTCDateTime(),
-					'timeout' => new MongoDB\BSON\UTCDateTime(($microtime+$timeout) * 1000),
+					'timeout' => new MongoDB\BSON\UTCDateTime((int) (($microtime+$timeout) * 1000)),
 				],
 				'$inc' => [
 					'try' => 1

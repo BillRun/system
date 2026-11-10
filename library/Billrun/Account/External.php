@@ -19,6 +19,9 @@ class Billrun_Account_External extends Billrun_Account {
     protected $remote_billable_url;
 	protected $remote_billable_authentication;
 	protected $cacheGBAtoGSD = false;
+	protected $gbaCacheEnabled = false;
+	protected $gbaCacheTTL;
+	protected $gbaCachePrefix = 'gba_acc_';
 
 	const API_DATETIME_REGEX='/^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}$/';
 
@@ -35,6 +38,8 @@ class Billrun_Account_External extends Billrun_Account {
 		$this->setCachingTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_ttl', 300));
 		$this->setCachePrefix(Billrun_Factory::config()->getConfigValue('subscribers.account.external_cache_prefix', 'ext_acc_'));
 		$this->setCacheGBAtoGSD( Billrun_Factory::config()->getConfigValue('subscribers.account.cache_gba_to_gsd.enabled',false));
+		$this->setGbaCacheEnabled(Billrun_Factory::config()->getConfigValue('subscribers.account.gba_cache.enabled', 0));
+		$this->setGbaCacheTTL(Billrun_Factory::config()->getConfigValue('subscribers.account.gba_cache.ttl', 86400));
 
 	}
 	
@@ -65,23 +70,30 @@ class Billrun_Account_External extends Billrun_Account {
 			if(!empty($invoicing_days)) {
 				$requestParams['invoicing_days'] = $invoicing_days;
 			}
-			Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
-			//Actually  do the request
-			$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
-			$request->setParameterPost($requestParams);
-			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
-			$request->setConfig(array('timeout' => $requestTimeout));
-			$results = $request->request(Billrun_Http_Request::POST)->getBody();
-			
-			Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
-			
-			$results = json_decode($results, true);
-			//Check for errors
-			if(empty($results)) {
-				throw new Exception('Failed to retrive valid results for billable, remote returned no data.');;
-			}
-			if( empty($results['status']) || !isset($results['data']) ) {
-				throw new Exception("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams));
+			$results = $this->loadBillableFromCache($cycle, $page, $aids);
+			if ($results === null) {
+				$request_type = Billrun_Http_Request::POST;
+				Billrun_Factory::dispatcher()->trigger('beforeGetExternalBillableDetails', array(&$requestParams, &$request_type, &$this));
+				Billrun_Factory::log('Sending request to ' . $this->remote_billable_url . ' with params : ' . json_encode($requestParams), Zend_Log::DEBUG);
+				//Actually  do the request
+				$request = new Billrun_Http_Request($this->remote_billable_url, ['authentication' => $this->remote_billable_authentication]);
+				$request->setParameterPost($requestParams);
+				$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.billable.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
+				$request->setConfig(array('timeout' => $requestTimeout));
+				$results = $request->request(Billrun_Http_Request::POST)->getBody();
+
+				Billrun_Factory::log('Receive response from ' . $this->remote_billable_url . '. response: ' . $results, Zend_Log::DEBUG);
+
+				$results = json_decode($results, true);
+				Billrun_Factory::dispatcher()->trigger('afterGetExternalBillableDetails', array(&$results));
+				//Check for errors
+				if(empty($results)) {
+					throw new Exception('Failed to retrive valid results for billable, remote returned no data.');;
+				}
+				if( empty($results['status']) || !isset($results['data']) ) {
+					throw new Exception("Remote server return an error (status : {$results['status']}) on request : ".json_encode($requestParams));
+				}
+				$this->saveBillableToCache($results, $cycle);
 			}
 			//cache results forfuture GSD/GAD calls
 			if( $this->cacheGBAtoGSD ) {
@@ -135,6 +147,50 @@ class Billrun_Account_External extends Billrun_Account {
 		return true;
 	}
 
+	protected function getBillableCacheKey(\Billrun_DataTypes_MongoCycleTime $cycle, $aid) {
+		return md5(serialize(['aid' => intval($aid), 'start' => $cycle->start()->sec, 'end' => $cycle->end()->sec]));
+	}
+
+	/**
+	 * Load billable data of specific accounts from the per account GBA cache.
+	 * @return array|null reconstructed getBillable results, or null if any of the requested accounts is not cached
+	 */
+	protected function loadBillableFromCache(\Billrun_DataTypes_MongoCycleTime $cycle, $page, $aids) {
+		$cache = Billrun_Factory::cache();
+		if (!$this->gbaCacheEnabled || empty($cache) || empty($aids) || !empty($page)) {
+			return null;
+		}
+		$data = [];
+		foreach ($aids as $aid) {
+			$cachedRevisions = $cache->get($this->getBillableCacheKey($cycle, $aid), $this->gbaCachePrefix);
+			if (empty($cachedRevisions)) {
+				return null; // all the requested accounts must be cached, otherwise do a live GBA call
+			}
+			$data = array_merge($data, $cachedRevisions);
+		}
+		Billrun_Factory::log('Loaded billable data for accounts ' . implode(',', $aids) . ' from the GBA cache.', Zend_Log::DEBUG);
+		return ['status' => 1, 'data' => $data, 'options' => []]; // 'options' key must exist, callers access it unconditionally
+	}
+
+	/**
+	 * Save billable results to the per account GBA cache (one entry per account).
+	 */
+	protected function saveBillableToCache($results, \Billrun_DataTypes_MongoCycleTime $cycle) {
+		$cache = Billrun_Factory::cache();
+		if (!$this->gbaCacheEnabled || empty($cache)) {
+			return;
+		}
+		$revisionsByAid = [];
+		foreach ($results['data'] as $rev) {
+			if (!empty($rev['aid'])) {
+				$revisionsByAid[intval($rev['aid'])][] = $rev;
+			}
+		}
+		foreach ($revisionsByAid as $aid => $revisions) {
+			$cache->set($this->getBillableCacheKey($cycle, $aid), $revisions, $this->gbaCachePrefix, $this->gbaCacheTTL);
+		}
+	}
+
 	/**
 	 * Overrides parent abstract method
 	 */
@@ -146,8 +202,9 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$requestData['date'] = $globalDate;
 		}
-
 		$res = $this->loadCache($requestData, function($requestData) {
+			$request_type = Billrun_Http_Request::POST;
+			Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountsDetails', array(&$requestData, &$request_type, &$this));
 			Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($requestData), Zend_Log::DEBUG);
 			$params = [
 				'authentication' => $this->remote_authentication,
@@ -157,9 +214,11 @@ class Billrun_Account_External extends Billrun_Account {
 			$request->setRawData(json_encode($requestData));
 			$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
 			$request->setConfig(array('timeout' => $requestTimeout));
-			$res = $request->request(Billrun_Http_Request::POST)->getBody();
-			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $res, Zend_Log::DEBUG);
-			return json_decode($res);
+			$resjson = $request->request(Billrun_Http_Request::POST)->getBody();
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $resjson, Zend_Log::DEBUG);
+			$res = json_decode($resjson);
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountsDetailsResponse', array(&$res));
+			return $res;
 		});
 		
 		$accounts = [];
@@ -200,8 +259,9 @@ class Billrun_Account_External extends Billrun_Account {
 		if($globalDate) {
 			$externalQuery['date'] = $globalDate;
 		}
-
 		$results = $this->loadCache($externalQuery, function($externalQuery) {
+			$request_type = Billrun_Http_Request::POST;
+			Billrun_Factory::dispatcher()->trigger('beforeGetExternalAccountDetails', array(&$externalQuery, &$request_type, &$this));
 		Billrun_Factory::log('Sending request to ' . $this->remote . ' with params : ' . json_encode($externalQuery), Zend_Log::DEBUG);		
 		$params = [
 			'authentication' => $this->remote_authentication,
@@ -211,10 +271,11 @@ class Billrun_Account_External extends Billrun_Account {
 		$request->setRawData(json_encode($externalQuery));
 		$requestTimeout = Billrun_Factory::config()->getConfigValue('subscribers.account.timeout', Billrun_Factory::config()->getConfigValue('subscribers.timeout', 600));
 		$request->setConfig(array('timeout' => $requestTimeout));
-		$results = $request->request(Billrun_Http_Request::POST)->getBody();
-		Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $results ,Zend_Log::DEBUG);
-
-			return json_decode($results, true);
+			$resjson = $request->request($request_type)->getBody();
+			Billrun_Factory::log('Receive response from ' . $this->remote . '. response: ' . $resjson ,Zend_Log::DEBUG);
+			$results = json_decode($resjson, true);
+			Billrun_Factory::dispatcher()->trigger('afterGetExternalAccountDetailsResponse', array(&$results));
+			return $results;
 		});
 
 		if (!$results) {
@@ -283,8 +344,28 @@ class Billrun_Account_External extends Billrun_Account {
 		return $query;
 	}
 
+	public function getRemoteDetails() {
+		return $this->remote;
+	}
+	
+	public function setRemoteDetails($url) {
+		$this->remote = $url;
+	}
+
 	public function setCacheGBAtoGSD($newValue ) {
 		$this->cacheGBAtoGSD = $newValue;
+	}
+
+	public function setGbaCacheEnabled($enabled) {
+		$this->gbaCacheEnabled = $enabled;
+	}
+
+	public function setGbaCacheTTL($ttl) {
+		$this->gbaCacheTTL = $ttl;
+	}
+
+	public function setGbaCachePrefix($prefix) {
+		$this->gbaCachePrefix = $prefix;
 	}
 
 }

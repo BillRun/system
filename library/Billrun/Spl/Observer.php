@@ -25,6 +25,7 @@ abstract class Billrun_Spl_Observer implements SplObserver {
 	 *
 	 * @return  mixed  Routine return value
 	 */
+	#[\ReturnTypeWillChange]
 	public function update(SplSubject $subject) {
 
 		// get the event and args from the subject (dispatcher) to use in the plugin

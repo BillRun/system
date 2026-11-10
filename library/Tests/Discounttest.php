@@ -175,8 +175,8 @@ class Tests_Discounttest extends UnitTestCase {
 			$this->message .= $this->fail;
 		}
 		foreach ($expected as $discountName => $dates) {
-
-			if (count($eligibility[$discountName]['eligibility']) == count($dates['eligibility'])) {
+			$dates = (array)$dates;
+			if (count((array)$eligibility[$discountName]['eligibility']) == count((array)$dates['eligibility'])) {
 				$returnEligibal = $eligibility[$discountName]['eligibility'];
 				for ($i = 0; $i <= count($dates['eligibility']) - 1; $i++) {
 					if ($dates['eligibility'][$i]['from']->sec != $returnEligibal[$i]['from']) {
@@ -199,8 +199,8 @@ class Tests_Discounttest extends UnitTestCase {
 				$this->message .= "$discountName missing eligibility" . $this->fail;
 			}
 			if (isset($dates['subs'])) {
-				$subs = $eligibility[$discountName]['subs'];
-				$subsMissing = array_diff(array_keys($dates['subs']), array_keys($subs));
+				$subs =(array)$eligibility[$discountName]['subs'];
+				$subsMissing = array_diff(array_keys($dates['subs']), array_keys((array)$subs));
 				if (!empty($subsMissing)) {
 					$pass = false;
 					$this->message .= "the following eligible subscriber revision are missed: " . implode(', ', $subsMissing) . $this->fail . '<br/>';
@@ -379,7 +379,7 @@ class Tests_Discounttest extends UnitTestCase {
 				$conditions = $this->conditions;
 				foreach ($params as $param) {
 					$type = $param['type'] ? $param['type'] : null;
-					$values = $param['values'] ? $param['values'] : null;
+					$values = isset($param['values']) ? $param['values'] : null;
 					$field = $param['field'] ? $param['field'] : null;
 					$op = isset($param['op']) ? $param['op'] : 'eq';
 					$type2 = $param['type2'] ?? null;

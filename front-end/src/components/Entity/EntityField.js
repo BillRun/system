@@ -4,7 +4,7 @@ import moment from 'moment';
 import Immutable from 'immutable';
 import classNames from 'classnames';
 import { Col, InputGroup, Button } from 'react-bootstrap';
-import { ControlLabel, FormGroup, HelpBlock } from '@/common/BootstrapCompat';
+import { ControlLabel, FormGroup, HelpBlock, InputGroupButton } from '@/common/BootstrapCompat';
 import Field from '../Field';
 import Help from '../Help';
 import { getConfig, formatSelectOptions } from '@/common/Util';
@@ -201,12 +201,14 @@ class EntityField extends Component {
     return (
       <InputGroup>
         {input}
-        <Button className="field-group-remove-button" onClick={this.onClickRemoveInput}>
-          <i
-            className="fa fa-fw fa-trash-o danger-red"
-            title={`Remove ${field.get('title', field.get('field_name', ''))} field`}
-          />
-        </Button>
+        <InputGroupButton className="field-group-remove-button-wrapper">
+          <Button variant="default" className="field-group-remove-button" onClick={this.onClickRemoveInput}>
+            <i
+              className="fa fa-fw fa-trash-o danger-red"
+              title={`Remove ${field.get('title', field.get('field_name', ''))} field`}
+            />
+          </Button>
+        </InputGroupButton>
       </InputGroup>
     );
   }

@@ -32,6 +32,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $includedAids = null;
 	protected $excludedAids = [];
 	protected $shouldLoadAccounts = true;
+	public $data;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
