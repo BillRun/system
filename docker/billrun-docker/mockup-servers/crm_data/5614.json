@@ -1,0 +1,43 @@
+{
+    "status": 1,
+    "data": [
+        {
+            "from": "2020-12-01 00:00:00",
+            "aid": "5614",
+            "invoice_language": "en_GB",
+            "firstname": "yossi",
+            "lastname": "test",
+            "email": "test@gmail.com",
+            "country": "Israel",
+            "address": "hshalom 7",
+            "zip_code": "123ab",
+            "payment_gateway": "",
+            "salutation": "",
+            "invoice_shipping_method": "email",
+            "invoice_detailed": false,
+            "type": "account",
+            "to": "2173-12-01 09:08:46",
+            "creation_time": "2024-12-01 00:00:00"
+        },
+        {
+            "sid": "56141",
+            "aid": "5614",
+            "type": "subscriber",
+            "from": "2022-10-15 00:00:00",
+            "to": "2173-12-01 09:09:06",
+            "plan": "PLAN_5614",
+            "firstname": "yossi",
+            "lastname": "test",
+            "address": "hshalom 7",
+            "country": "Israel",
+            "play": "Default",
+            "activation_date": "2022-10-15 00:00:00",
+            "deactivation_date": "2173-12-01 09:09:06",
+            "plan_activation": "2022-10-15 00:00:00",
+            "plan_deactivation": "2173-12-01 09:09:06",
+            "creation_time": "2024-12-01 00:00:00",
+            "former_plan": null,
+            "services": []
+        }
+    ]
+}
