@@ -29,6 +29,11 @@ class UploadFileAction extends Action_Base {
 		$options["payments_file_type"] = $request->get('payments_file_type');
 		$options["type"] = str_replace('_', '', ucwords($payment_gateway, '_')) . str_replace('_', '', ucwords($options['payments_file_type'], '_'));
 		$options["file_type"] = $request->get('file_type');
+		foreach (['payment_gateway', 'payments_file_type', 'file_type'] as $param) {
+			if (!empty($options[$param]) && !preg_match('/^[a-zA-Z0-9_]+$/', $options[$param])) {
+				return $this->getController()->setError("Illegal " . $param);
+			}
+		}
 		$pgOptions = $options;
 		//			$pgOptions['file_type'] = $options['type'];
 		$pgOptions["receiver"]["receiver_type"] = "PaymentGateway_" .
@@ -37,6 +42,10 @@ class UploadFileAction extends Action_Base {
 			ucfirst($options["type"]);
 		if (!empty($_FILES['file']['name'])) {
 			$file = $_FILES['file'];
+			$file['name'] = basename($file['name']);
+			if (!preg_match('/^[^\.]/', $file['name']) || preg_match('/\.(php\d*|phtml|pht|phar)(\.|$)/i', $file['name'])) {
+				return $this->getController()->setError("Illegal file name");
+			}
 			if (is_uploaded_file($_FILES['file']['tmp_name'])) {
 				$directoryPath = $this->getFilesUploadPath($options);
 				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);

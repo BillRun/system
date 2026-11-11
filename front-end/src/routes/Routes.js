@@ -8,6 +8,7 @@ import CustomersList from '@/components/CustomersList';
 import CustomerSetup from '@/components/CustomerSetup';
 import ProductsList from '@/components/ProductsList';
 import Product from '@/components/Product';
+import OAuthCallback from '@/components/Elements/OAuthCallback';
 import ReportsList from '@/components/ReportsList';
 import Report from '@/components/Report';
 import PlansList from '@/components/PlansList';
@@ -219,6 +220,7 @@ const AppRoutes = () => (
           <Route path="about" element={<About />} />
           <Route path="changepassword/:itemId" element={<ChangePassword />} />
           <Route path="changepassword" element={<ChangePassword />} />
+          <Route path="oauth/callback" element={<OAuthCallback />} />
 
           {/* Import / Export */}
           <Route path="import/:itemType" element={<AuthImporterSetup />} />

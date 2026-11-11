@@ -265,6 +265,7 @@ trait Billrun_Subscriber_External_Cacheable {
 				$cachedEntry = $time ? $this->getCachedExternalEntry($cacheKey, strtotime($time)) : null;
 
 				if ($cachedEntry !== null) {
+					Billrun_Factory::log('Loaded external data from cache (' . $this->getCachePrefix() . ') for query params: ' . json_encode($query['params'] ?? []), Zend_Log::DEBUG);
 					// set the query ID to match the cached result with the query
 					$cachedEntry['id'] = $query['id'];
 					$cachedEntries[] = $cachedEntry;

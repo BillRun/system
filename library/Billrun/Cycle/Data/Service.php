@@ -10,11 +10,11 @@
  * This class represents the service data to be aggregated.
  */
 class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
-	
+
 	protected $quantity = 1;
 	protected $planIncluded = FALSE;
 	protected $serviceID = FALSE;
-	
+
 	public function __construct(array $options) {
 			parent::__construct($options);
 		if(!isset($options['name'], $options['cycle'])) {
@@ -27,7 +27,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->constructOptions($options);
 		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine);
 	}
-	
+
 	protected  function verifyConstrctionOptions($options) {
 	 return !(!isset($options['name'], $options['cycle']));
 	}
@@ -35,18 +35,18 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		if( $this->planIncluded &&
 			!Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE) &&
 			Billrun_Utils_Cycle::shouldBeInCycle($options, $options['cycle']) ) {
-			return [ 'charge' => 0 ];
+			return [ 'charge' => [] ];
 		}
-			
+
 		return parent::getCharges($options);
 	}
-	
+
 	/**
 	 * Translate the plan values to service values.
 	 * @return type
 	 */
 	protected function getFlatLine() {
-		$flatLine = parent::getFlatLine();	
+		$flatLine = parent::getFlatLine();
 		$flatLine['service'] = $this->name;
 		$flatLine['name'] = $this->name;
 		$flatLine['usagev'] = $this->quantity;
@@ -59,9 +59,9 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$flatLine['type'] = 'service';
 		return $flatLine;
 	}
-	
+
 	protected function generateLineStamp($line) {
-		return md5(	$line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . 
+		return md5(	$line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() .
 					$this->cycle->key().$this->serviceID .@$line['cycle']. @$line['prorated_start_date'] . $this->start.$this->quantity);
 	}
 

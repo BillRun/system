@@ -203,6 +203,7 @@ class ReportModel {
 		$formatters = $this->getFieldFormatters();
 		foreach ($results as $result) {
 			$row = $result->getRawData();
+			Billrun_Factory::dispatcher()->trigger('beforeReportFormatData',array($this->report, &$row, &$formatters));
 			$rows[] = $this->formatOutputRow($row, $formatters);
 		}
 		return $rows;

@@ -29,7 +29,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * the file path to process on
 	 * @var file path
 	 */
-	protected $filePath;
+	protected $filePath = '';
 
 	/**
 	 * the file handler to process on
@@ -136,6 +136,8 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param array $options for the file processor
 	 */
 	 protected $shouldremovefromWorkspace = true;
+	public $filename;
+	public $retrievedHostname;
 	public function __construct($options) {
 
 		parent::__construct($options);
@@ -703,7 +705,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (is_string($row) && isset($this->queue_data[$row])) {
 			return $this->queue_data[$row];
 		}
-		if (isset($this->queue_data[$row['stamp']])) {
+		if (!is_string($row) && isset($this->queue_data[$row['stamp']])) {
 			return $this->queue_data[$row['stamp']];
 		}
 		return false;

@@ -229,7 +229,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$authArray = $this->buildInquireQuery($params);
 		$authString = http_build_query($authArray);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Sending to Credit Guard (authenticateCredentials): " . $params['endpoint_url'] . ' ' . $authString, Zend_Log::DEBUG);
+			Billrun_Factory::log("Sending to Credit Guard (authenticateCredentials): " . $params['endpoint_url'] . ' ' . $this->logSafe($authString, [$params['password']]), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($params['endpoint_url'], $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
@@ -397,9 +397,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$codeResult = '';
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Creditguard payment request: " . print_R($paymentArray, 1), Zend_Log::DEBUG);
+			preg_match('/<cardId>([^<]*)<\/cardId>/', $paymentArray['int_in'] ?? '', $cardId);
+			Billrun_Factory::log("Creditguard payment request: " . $this->logSafe($paymentArray, [$cardId[1] ?? null]), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			Billrun_Factory::log("Creditguard payment response: " . print_R($result, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Creditguard payment response: " . $this->logSafe($result, [$cardId[1] ?? null]), Zend_Log::DEBUG);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
 			$result = iconv("utf-8", "iso-8859-8", $result);
@@ -415,13 +416,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (!empty($voucherNumber)) {
 				$additionalParams['payment_identifier'] = $voucherNumber;
 			}
-			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? current($xmlObj->response->doDeal->cardAcquirer->attributes()->code) : '';
-			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? current($xmlObj->response->doDeal->cardBrand->attributes()->code) : '';
-			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? current($xmlObj->response->doDeal->creditCompany->attributes()->code) : '';
-			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? current($xmlObj->response->doDeal->cardType->attributes()->code) : '';
+			$additionalParams['card_acquirer'] = $xmlObj->response->doDeal->cardAcquirer ? (string) $xmlObj->response->doDeal->cardAcquirer->attributes()->code : '';
+			$additionalParams['card_brand'] = $xmlObj->response->doDeal->cardBrand ? (string) $xmlObj->response->doDeal->cardBrand->attributes()->code : '';
+			$additionalParams['credit_company'] = $xmlObj->response->doDeal->creditCompany ? (string) $xmlObj->response->doDeal->creditCompany->attributes()->code : '';
+			$additionalParams['card_type'] = $xmlObj->response->doDeal->cardType ? (string) $xmlObj->response->doDeal->cardType->attributes()->code : '';
 			$additionalParams['uid'] = $xmlObj->response->doDeal->ashraitEmvData->uid ? (string) $xmlObj->response->doDeal->ashraitEmvData->uid : '';
-			$additionalParams['payment_method']['expiration_date'] = $xmlObj->response->doDeal->cardExpiration ? current($xmlObj->response->doDeal->cardExpiration) : '';
-			$additionalParams['payment_method']['last_four_digits'] = $xmlObj->response->doDeal->cardNo ? substr(current($xmlObj->response->doDeal->cardNo), -4) : '';
+			$additionalParams['payment_method']['expiration_date'] = $xmlObj->response->doDeal->cardExpiration ? (string) $xmlObj->response->doDeal->cardExpiration : '';
+			$additionalParams['payment_method']['last_four_digits'] = $xmlObj->response->doDeal->cardNo ? substr((string) $xmlObj->response->doDeal->cardNo, -4) : '';
 			$additionalParams['code'] = $codeResult;
 			$additionalParams['auth_number'] = $xmlObj->response->doDeal->authNumber ? (string) $xmlObj->response->doDeal->authNumber : '';
 			
@@ -785,9 +786,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::INFO);
-			Billrun_Factory::log("Payment gateway token request: " . print_R($postArray, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway token request: " . $this->logSafe($postArray, [$gatewayDetails['card_token']]), Zend_Log::DEBUG);
 			$response = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			Billrun_Factory::log("Payment gateway token response: " . print_R($response, 1), Zend_Log::DEBUG);
+			Billrun_Factory::log("Payment gateway token response: " . $this->logSafe($response, [$gatewayDetails['card_token']]), Zend_Log::DEBUG);
 		}
 		return $response;
 	}
@@ -917,9 +918,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'password' => $params['password'],
 			'int_in' => $xml
 		);
-		Billrun_Factory::log('CreditGuard send refund request: ' . print_R($req, 1));
+		Billrun_Factory::log('CreditGuard send refund request: ' . $this->logSafe($req, [$transaction['gateway_details']['card_token'] ?? null]));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		Billrun_Factory::log('CreditGuard send refund response: ' . print_R($res, 1));
+		Billrun_Factory::log('CreditGuard send refund response: ' . $this->logSafe($res, [$transaction['gateway_details']['card_token'] ?? null]));
 
 		$xml = simplexml_load_string($this->convertXml($res));
 
@@ -977,9 +978,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'password' => $params['password'],
 			'int_in' => $xml
 		);
-		Billrun_Factory::log('CreditGuard send cancel request: ' . print_R($req, 1));
+		Billrun_Factory::log('CreditGuard send cancel request: ' . $this->logSafe($req, [$transaction['gateway_details']['card_token'] ?? null]));
 		$res = Billrun_Util::sendRequest($this->EndpointUrl, http_build_query($req), Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		Billrun_Factory::log('CreditGuard send cancel response: ' . print_R($res, 1));
+		Billrun_Factory::log('CreditGuard send cancel response: ' . $this->logSafe($res, [$transaction['gateway_details']['card_token'] ?? null]));
 
 		$xml = simplexml_load_string($this->convertXml($res));
 

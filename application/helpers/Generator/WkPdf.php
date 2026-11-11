@@ -49,6 +49,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	protected $billrun_data;
 	protected $billrunColl;
+	public $tmp_paths;
+	public $render_detailed_quantitative_services;
+	public $view;
+	public $custom;
 
 	public function __construct($options) {
 		if(!empty($options['is_onetime'])) {
@@ -365,9 +369,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 
 	public function loadLines( $data ) {
-		$aid = $data['aid'];
 		$billrun_key = $data['billrun_key'];
-		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		// BRCD-785: load lines for every contributing aid (invoicing account + rolled-up sub-accounts),
+		// identified by the aid tag on each subs entry. Degenerates to the single aid for a flat account.
+		$aids = array(intval($data['aid']));
+		if (!empty($data['subs'])) {
+			foreach ($data['subs'] as $sub) {
+				if (isset($sub['aid'])) {
+					$aids[] = intval($sub['aid']);
+				}
+			}
+		}
+		$query = array('aid' => array('$in' => array_values(array_unique($aids))), 'billrun' => $billrun_key);
 		$accountLines = Billrun_Factory::db()->linesCollection()->query($query);
 
 		return $accountLines;
@@ -836,4 +849,24 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		return true;
 	}
 			
+
+	/**
+	 * Get the generator export paths (html, pdf, tmp)
+	 * 
+	 * @return array
+	 */
+	public function getPaths() {
+		return $this->paths;
+	}
+
+	/**
+	 * Set a single generator export path
+	 * 
+	 * @param string $type path type (html, pdf, tmp)
+	 * @param string $path the path to set
+	 */
+	public function setPath($type, $path) {
+		$this->paths[$type] = $path;
+	}
+
 }

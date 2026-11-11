@@ -209,6 +209,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             list($curl, $request_data) = $this->buildCurl($request, $access_token);
             Billrun_Factory::log("Israel Invoice:Run approval API with data params - " . $request_data, Zend_Log::DEBUG);
             list($response, $api_output) = $this->getInvoiceApproval($curl);
+            unset($curl);
             Billrun_Factory::log("Israel Invoice:Received approval API response for invoice " . $inv_id . "- " . json_encode($response), Zend_Log::DEBUG);
             if ($this->validateApprovalResponse($response)) {
                 Billrun_Factory::log("Israel Invoice:Approval API response is valid for invoice " . $inv_id, Zend_Log::DEBUG);
@@ -269,9 +270,12 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
 
-        if ($this->approve_accounts_with_vat_number_field && is_null(Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null))) {
-            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'vat_number_field' exists check", Zend_Log::DEBUG);
-            return false;
+        if ($this->approve_accounts_with_vat_number_field) {
+            $vat_number = Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null);
+            if (!is_scalar($vat_number) || !preg_match('/^\d+$/', trim((string) $vat_number))) {
+                Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the numeric 'vat_number_field' check. " . $this->account_vat_number_field_name . " value: " . json_encode($vat_number), Zend_Log::DEBUG);
+                return false;
+            }
         }
 
         $this->cache = Billrun_Factory::cache();
@@ -324,8 +328,6 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             $this->cache->set(self::ACCESS_TOKEN_CACHE_KEY, $response, null, 13800);
             $valid_access_token = true;
         }
-        // Close cURL session
-        curl_close($ch);
         return [$response,$valid_access_token,$output];
     }
 
@@ -393,8 +395,6 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         rewind($verbose_output);
         $output_contents = stream_get_contents($verbose_output);
 
-        // Close cURL session
-        curl_close($curl);
         return [json_decode($response, true), $output_contents];
     }
 

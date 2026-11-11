@@ -31,7 +31,7 @@ class Billrun_Utils_Cycle {
 				( empty($entryConfig['recurrence']['frequency']) &&	( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&
 																	( empty($entryConfig['start']) || $entryConfig['start'] < $horizon ) )
 				|| //  is the  entry a  custom cycle and is aligned  with  current  cycle AND the flat dates is overlaps the curent cycle
-				 (!empty($entryConfig['recurrence']['frequency']) && Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr) % $entryConfig['recurrence']['frequency']) == 0
+				 (!empty($entryConfig['recurrence']['frequency']) && ((int) Billrun_Utils_Time::getMonthsDiff($startDateStr, $endDateStr)) % $entryConfig['recurrence']['frequency']) == 0
 					&& ( empty($entryConfig['end']) || $entryConfig['end'] > $cycle->start() ) &&
 						( empty($entryConfig['start']) || $entryConfig['start'] < $cycle->end() )
 				|| // is the entry a custom cycle entry AND the  subscriber deactevidted  during the current  cycle?
@@ -64,7 +64,7 @@ class Billrun_Utils_Cycle {
 						date("Y-{$recurrenceConfig['start']}-01", $activationDate) :
 						date(Billrun_Base::base_dateformat,$activationDate));
 
-		return Billrun_Utils_Time::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey))) % $recurrenceConfig['frequency'];
+		return ((int) Billrun_Utils_Time::getMonthsDiff($startDate, date(Billrun_Base::base_dateformat, Billrun_Billingcycle::getEndTime($cycleKey)))) % $recurrenceConfig['frequency'];
 	}
 
 	/**
