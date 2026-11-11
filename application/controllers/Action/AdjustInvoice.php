@@ -76,6 +76,9 @@ class AdjustInvoiceAction extends CreditAction {
 		if (empty($this->account) || empty($this->account['aid'])) {
 			throw new Exception('Account ' . $this->aid . ' not found');
 		}
+		if (!Billrun_Billrun::exists($this->aid, $this->billrunKey)) {
+			throw new Exception('Invoice of billrun ' . $this->billrunKey . ' does not exist for account ' . $this->aid);
+		}
 		if (Billrun_Bill_Invoice::isInvoiceConfirmed($this->aid, $this->billrunKey)) {
 			throw new Exception('Invoice of billrun ' . $this->billrunKey . ' is already confirmed for account ' . $this->aid);
 		}
