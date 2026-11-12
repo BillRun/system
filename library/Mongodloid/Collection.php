@@ -587,7 +587,7 @@ class Mongodloid_Collection {
 	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
 	 * @see https://docs.mongodb.com/php-library/current/reference/class/MongoDBCollection/
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
+	public function findAndModify(array $query, array $update = array(), ?array $fields = null, array $options = array(), $retEntity = true) {
 		$query = Mongodloid_TypeConverter::fromMongodloid($query);
 		
 		if (isset($options['remove'])) {

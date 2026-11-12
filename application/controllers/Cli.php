@@ -19,6 +19,7 @@ class CliController extends Yaf_Controller_Abstract {
 	 * @var Zend_Console_Getopt 
 	 */
 	protected $options;
+	public $actions;
 
 	public function init() {
 		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');

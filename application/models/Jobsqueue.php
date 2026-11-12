@@ -54,10 +54,31 @@ class JobsqueueModel extends TableModel {
 		return $result->getRawData();
 	}
 	
-	public function getLatestJobs($job_type, $limit, $future_only = false, $include_cancelled = false) {
+	/**
+	 * the latest jobs of a type, newest first
+	 * 
+	 * @param string $job_type the job type (body.type)
+	 * @param int $limit max number of jobs to return
+	 * @param bool $future_only only jobs scheduled ahead of now
+	 * @param bool $include_cancelled whether cancelled jobs count
+	 * @param array $additionalQuery more conditions on the message fields, e.g. body.config.<field>,
+	 * merged on top of the type
+	 * @param Mongodloid_Date $createdFrom the oldest job to consider; null for no bound. With the type,
+	 * this is the collection's (body.type, created) index, so only that type's index range is read
+	 * @param string $readPreference e.g. 'RP_PRIMARY' when the result must see the latest writes
+	 * 
+	 * @return array the jobs' raw data
+	 */
+	public function getLatestJobs($job_type, $limit, $future_only = false, $include_cancelled = false, array $additionalQuery = [], $createdFrom = null, $readPreference = null) {
 		$query = array(
 			'body.type' => ucfirst($job_type),
 		);
+		
+		if (!is_null($createdFrom)) {
+			$query['created'] = [
+				'$gte' => $createdFrom
+			];
+		}
 		
 		if ($future_only) {
 			$query['schedule'] = [
@@ -70,8 +91,13 @@ class JobsqueueModel extends TableModel {
 				'$ne' => 1
 			];
 		}
+		
+		$query = array_merge($query, $additionalQuery);
 
 		$entries = $this->collection->query($query)->cursor()->sort(['created' => -1])->limit($limit);
+		if (!is_null($readPreference)) {
+			$entries->setReadPreference($readPreference);
+		}
 		$ret = [];
 		foreach ($entries as $entry) {
 			$ret[] = $entry->getRawData();

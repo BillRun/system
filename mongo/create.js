@@ -57,12 +57,12 @@ db.rates.createIndex({'to': 1 }, { unique: false , sparse: true, background: tru
 //Queue Collection
 db.createCollection('queue');
 db.queue.createIndex({'stamp': 1 }, { unique: true });
-db.queue.createIndex({'calc_name': 1 }, { unique: false , sparse: true, background: true});
-db.queue.createIndex({'calc_time': 1 }, { unique: false , sparse: true, background: true});
-db.queue.createIndex({'type': 1 }, { unique: false , sparse: true, background: true});
+db.queue.createIndex({'calc_time': 1, 'urt': 1 }, { unique: false , background: true});//BRCD-3562 chain mode: branch-free index for the cross-stage pull and its marking update
+db.queue.createIndex({'type': 1, 'calc_time': 1, 'urt': 1 }, { unique: false , background: true});//BRCD-3562 chain mode: the same pull and marking update when narrowed by --file_types
 db.queue.createIndex({'aid': 1 }, { unique: false , sparse: true, background: true});
-db.queue.createIndex({"hash": 1, "calc_time": 1, "type": 1}, {"background": true})
-db.queue.createIndex({'urt': 1 , 'type': 1}, { unique: false , sparse: true, background: true });
+db.queue.createIndex({"hash": 1, 'calc_time':1, 'urt':1}, { unique: false , "background": true})
+db.queue.createIndex({'calc_name':1, 'type': 1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
+db.queue.createIndex({'calc_name':1, 'calc_time':1, 'urt': 1  }, { unique: false , background: true });
 
 // rebalance_queue collection
 db.createCollection('rebalance_queue');

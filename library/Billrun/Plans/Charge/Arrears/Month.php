@@ -14,6 +14,9 @@
  */
 class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	
+	public $startOffset;
+	public $endOffset;
+
 
 	public function __construct($plan) {
 		parent::__construct($plan);

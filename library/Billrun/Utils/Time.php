@@ -265,7 +265,7 @@ class Billrun_Utils_Time {
 	 */
 	public static function sortTimeIntervals(&$intervals, $fromField = 'from') {
 		usort($intervals, function ($item1, $item2) use ($fromField) {
-			return $item1[$fromField] >= $item2[$fromField];
+			return $item1[$fromField] <=> $item2[$fromField];
 		});
 	}
 	

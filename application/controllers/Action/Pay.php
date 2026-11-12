@@ -24,7 +24,7 @@ class PayAction extends ApiAction {
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->get('method');
 		$action = !is_null($request->get('action')) ? $request->get('action') : '';
-		$txIdArray = json_decode($request->get('txid'), TRUE);
+		$txIdArray = json_decode($request->get('txid', ''), TRUE);
 		$deposits = array();
 		$paymentTxIds = array();
 		$jsonPayments = $request->get('payments');

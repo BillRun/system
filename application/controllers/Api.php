@@ -26,6 +26,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected $start_time = 0;
 	
 	protected $opencors = false;
+	public $actions;
 	
 	/**
 	 * initialize method for yaf controller (instead of constructor)

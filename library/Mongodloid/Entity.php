@@ -373,6 +373,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	}
 
 	//=============== ArrayAccess Implementation =============
+	#[\ReturnTypeWillChange]
 	public function offsetExists($offset) {
 		$result = $this->_values;
 
@@ -391,14 +392,17 @@ class Mongodloid_Entity implements ArrayAccess {
 		return isset($result[$offset]);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function offsetGet($offset) {
 		return $this->get($offset);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function offsetSet($offset, $value) {
 		return $this->set($offset, $value);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function offsetUnset($offset) {
 		unset($this->_values[$offset]);
 	}

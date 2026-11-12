@@ -112,16 +112,8 @@ class Mongodloid_Connection {
 			unset($options['tags']);
 		}
 
-		if (!empty($options['context'])) {
-			$driver_options = array(
-				'context' => @stream_context_create($options['context'])
-			);
-			unset($options['context']);
-			$options['ssl'] = true;
-		} else {
-			$driver_options = array();
-		}
-		
+		$driver_options = $this->buildTlsOptions($options);
+
 		if(!empty($this->_server) && false === strpos($this->_server, '://')){
 			$this->_server = 'mongodb://' . $this->_server;
 		}
@@ -130,6 +122,79 @@ class Mongodloid_Connection {
 		$this->_connection = new MongoDB\Client($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
 		$this->_connected = true;
+	}
+
+	/**
+	 * Normalize the TLS related options into the tls* URI options.
+	 *
+	 * The "context" driver option (stream context with ssl.* keys) was removed in ext-mongodb 2.0
+	 * (silently ignored), and so was the "ssl" URI option. Legacy db.options.context.ssl.* config is
+	 * translated into the equivalent tls* URI options; explicit tls* options take precedence.
+	 * Boolean URI options are cast, as values coming from ini/env are strings and the driver rejects them.
+	 *
+	 * @param array $options the URI options (by reference)
+	 *
+	 * @return array the driver options
+	 */
+	protected function buildTlsOptions(array &$options) {
+		$driver_options = array();
+
+		if (isset($options['ssl'])) {
+			if (!isset($options['tls'])) {
+				$options['tls'] = $options['ssl'];
+			}
+			unset($options['ssl']);
+		}
+
+		$context = isset($options['context']['ssl']) ? $options['context']['ssl'] : array();
+		unset($options['context']);
+		if (!empty($context)) {
+			$legacyMapping = array(
+				'cafile' => 'tlsCAFile',
+				'local_cert' => 'tlsCertificateKeyFile',
+				'passphrase' => 'tlsCertificateKeyFilePassword',
+			);
+			foreach ($legacyMapping as $contextKey => $tlsKey) {
+				if (!empty($context[$contextKey]) && !isset($options[$tlsKey])) {
+					$options[$tlsKey] = $context[$contextKey];
+				}
+			}
+			if (!isset($options['tlsAllowInvalidCertificates']) && !isset($options['tlsInsecure']) &&
+				((isset($context['allow_self_signed']) && $this->toBool($context['allow_self_signed'])) ||
+				(isset($context['verify_peer']) && !$this->toBool($context['verify_peer'])))) {
+				$options['tlsAllowInvalidCertificates'] = true;
+			}
+			if (!isset($options['tlsAllowInvalidHostnames']) && !isset($options['tlsInsecure']) && isset($context['verify_peer_name']) && !$this->toBool($context['verify_peer_name'])) {
+				$options['tlsAllowInvalidHostnames'] = true;
+			}
+			if (!empty($context['capath'])) {
+				$driver_options['ca_dir'] = $context['capath'];
+			}
+			if (!isset($options['tls'])) {
+				$options['tls'] = true;
+			}
+		}
+
+		// empty value (e.g. tenant overriding an inherited file) means not set, so the system CAs are used
+		foreach (array('tlsCAFile', 'tlsCertificateKeyFile', 'tlsCertificateKeyFilePassword') as $key) {
+			if (isset($options[$key]) && $options[$key] === '') {
+				unset($options[$key]);
+			}
+		}
+
+		$boolOptions = array('tls','tlsInsecure', 'tlsAllowInvalidCertificates', 'tlsAllowInvalidHostnames',
+			'tlsDisableCertificateRevocationCheck', 'tlsDisableOCSPEndpointCheck');
+		foreach ($boolOptions as $key) {
+			if (isset($options[$key]) && !is_bool($options[$key])) {
+				$options[$key] = $this->toBool($options[$key]);
+			}
+		}
+
+		return $driver_options;
+	}
+
+	protected function toBool($value) {
+		return filter_var($value, FILTER_VALIDATE_BOOLEAN);
 	}
 
 	public function isConnected() {
