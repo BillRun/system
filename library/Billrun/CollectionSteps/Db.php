@@ -236,6 +236,13 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$url = $process['settings']['change_state_url'] ?? '';
 		$method = $process['settings']['change_state_method'] ?? 'POST';
 		$headers = $process['settings']['change_state_headers'] ?? array();
+		// the user's rows are validated on configuration save, validated again here for configurations that did not go
+		// through it (e.g. written to the DB by a script) - any invalid row = no custom headers are sent
+		$headersErrors = Billrun_CollectionSteps_Notifiers_Http::getHeadersErrors($headers);
+		if (!empty($headersErrors)) {
+			Billrun_Factory::log('Collection state change: custom headers were not sent: ' . implode(', ', $headersErrors), Zend_Log::ALERT);
+			$headers = array();
+		}
 		if (!is_array($headers)) {
 			$headers = array();
 		}
