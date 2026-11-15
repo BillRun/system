@@ -289,5 +289,27 @@
         "account" :{"type":"","external_url":"","timeout":""},
         "billable"  :{ "url":""}
       
+	},
+	"mailer": {
+		"transport": {
+			"type": "",
+			"host": "",
+			"port": "",
+			"ssl": "",
+			"auth": "",
+			"username": "",
+			"password": "",
+			"oauth2": {
+				"client_id": "",
+				"client_secret": "",
+				"auth_url": "",
+				"token_url": "",
+				"config_path": "",
+				"scope": "",
+				"extra_params": "",
+				"refresh_token": "",
+				"refresh_date":""
+			}
+		}
 	}
 }

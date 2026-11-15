@@ -1105,3 +1105,17 @@ export const getExternalLoginQuery = (protocol, returnTo, provider) => {
     params,
   });
 };
+
+export const saveOAuth2SettingsQuery = (settingsData) => {
+  const formData = new FormData();
+  formData.append('action', 'save');
+  formData.append('data', JSON.stringify(settingsData));
+
+  return ({
+    api: 'oauth2refresh',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
+  });
+};

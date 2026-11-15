@@ -38,7 +38,13 @@ class Billrun_DiscountManager {
 	 */
 	protected $aid = null;
 
-	public function __construct($accountRevisions, $subscribersRevisions = [], Billrun_DataTypes_CycleTime $cycle, $params = []) {
+	/**
+	 * @param array $accountRevisions
+	 * @param array $subscribersRevisions - pass [] when not needed
+	 * @param Billrun_DataTypes_CycleTime $cycle
+	 * @param array $params
+	 */
+	public function __construct($accountRevisions, $subscribersRevisions, Billrun_DataTypes_CycleTime $cycle, $params = []) {
 		$this->cycle = $cycle;
 		$this->aid = $accountRevisions[0]['aid'] ?? null;
 		$rawAccountRevisions = $accountRevisions;
@@ -1616,7 +1622,7 @@ class Billrun_DiscountManager {
 		}
 		
 		usort($ret, function($a, $b) {
-			return $a['value'] < $b['value'];
+			return $b['value'] <=> $a['value'];
 		});
 		return $ret;
 	}

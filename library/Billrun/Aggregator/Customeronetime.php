@@ -30,6 +30,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 	 * @array of arrays
 	 */
 	protected $adjustments = [];
+	public $affectedSids;
 	
 	public function __construct($options = array()) {
 		parent::__construct($options);
