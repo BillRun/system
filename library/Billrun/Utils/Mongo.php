@@ -350,7 +350,7 @@ class Billrun_Utils_Mongo {
 		foreach ($arr as &$value) {
 			if (is_array($value)) {
 				self::convertQueryMongodloidDates($value, $strDatePattern);
-			} else if (preg_match($strDatePattern, $value)) {
+			} else if (is_string($value) && preg_match($strDatePattern, $value)) {
 				$value = new Mongodloid_Date(strtotime($value));
 			}
 		}

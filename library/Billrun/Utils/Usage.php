@@ -150,7 +150,7 @@ class Billrun_Utils_Usage {
 								@Billrun_Util::getFieldVal($row[$timeField],$defaultTime);
 				$retQueries[] =array_merge( $baseQuery , ['time'=> date(Billrun_Base::base_datetimeformat,$timeValue + $offset) ]);
 			};
-			$retQueries[] = array_merge( $baseQuery ,[	'time'=> $defaultTime ]);
+			$retQueries[] = array_merge( $baseQuery ,[	'time'=> date(Billrun_Base::base_datetimeformat, $defaultTime) ]);
 
 			return  $retQueries;
 	}

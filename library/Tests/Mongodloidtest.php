@@ -1023,7 +1023,7 @@ class Tests_Mongodloid extends UnitTestCase{
         $json = json_encode($id);
 		return $this->basicCompare(strlen($stringId), 24,  'id length') &&
 			$this->basicCompare($stringId, $id->{'$id'}, 'id') &&
-			$this->basicCompare($serialized, sprintf('C:'. strlen($class).':"' . $class . '":24:{%s}', $stringId), 'serialize') &&
+			$this->basicCompare($serialized, sprintf('O:'. strlen($class).':"' . $class . '":1:{s:2:"id";s:24:"%s";}', $stringId), 'serialize') &&
 			$this->basicCompare((string) $unserialized, $stringId, 'unserialize') &&
 				$this->basicCompare(get_class($unserialized) , $class, 'instance') &&
 				$this->basicCompare($json, sprintf('{"$id":"%s"}', $stringId), 'json');

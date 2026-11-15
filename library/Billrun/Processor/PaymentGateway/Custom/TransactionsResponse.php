@@ -21,6 +21,7 @@ class Billrun_Processor_PaymentGateway_Custom_TransactionsResponse extends Billr
 	protected $tranIdentifierFields = null;
 	protected $take_first = true;
 	protected $dateField;
+	public $transactionsFields;
 
 
 	public function __construct($options) {

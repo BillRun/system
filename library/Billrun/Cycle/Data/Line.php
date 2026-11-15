@@ -25,7 +25,7 @@ abstract class Billrun_Cycle_Data_Line {
 		$results = array();
 		$this->charges = $this->getCharges($this->constructionOptions);
 		foreach ($this->charges as $key => $charges) {
-			$chargesArr = is_array($charges) && isset($charges[0]) || count($charges) == 0 ? $charges : array($charges);
+			$chargesArr = is_array($charges) && (isset($charges[0]) || count($charges) == 0) ? $charges : array($charges);
 			foreach ($chargesArr as $charge) {
 				$results[] = $this->getLine($key, $charge);
 			}
@@ -39,7 +39,7 @@ abstract class Billrun_Cycle_Data_Line {
 	abstract protected function getLine($chargeKey, $chargeData);
 
 	/**
-	 * 
+	 *
 	 */
 	abstract protected function getCharges($options);
 
@@ -54,7 +54,7 @@ abstract class Billrun_Cycle_Data_Line {
 		if (isset($options['vatable'])) {
 			$this->vatable = $options['vatable'];
 		}
-		
+
 		if (isset($options['subscriber_fields'])) {
 			$this->subscriberFields = $options['subscriber_fields'];
 		}
