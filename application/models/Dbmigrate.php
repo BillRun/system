@@ -16,6 +16,11 @@
  * Used by DbmigrateAction for CLI migration execution and by CreatetenantAction
  * to apply migrations to a newly created tenant database.
  *
+ * An optional base path (e.g. a client plugin root) replaces APPLICATION_PATH,
+ * so only <basePath>/application/migrations/ is applied - the core migrations
+ * are not run in that mode. Without a base path, migrations under
+ * application/migrations/plugins/ are applied after the core ones.
+ *
  * @package  Models
  * @since    5.25.0
  */
@@ -34,9 +39,10 @@ class DbmigrateModel {
 	 *
 	 * @param Billrun_Db $db
 	 * @param mixed      $controller optional controller for addOutput
+	 * @param string|null $basePath optional root containing application/migrations/ (defaults to APPLICATION_PATH)
 	 * @return bool true if migrations were applied (or skipped because none pending), false if no config found
 	 */
-	public function execute(Billrun_Db $db, $controller = null) {
+	public function execute(Billrun_Db $db, $controller = null, $basePath = null) {
 		$this->log($controller, 'Starting DB data migrations...');
 		$db->setReadPreference('RP_PRIMARY');
 
@@ -45,7 +51,7 @@ class DbmigrateModel {
 			return false;
 		}
 
-		$this->applyMigrations($db, $controller);
+		$this->applyMigrations($db, $controller, $basePath);
 		$this->saveConfig($db);
 		$this->log($controller, 'DB data migrations done.');
 		return true;
@@ -74,11 +80,38 @@ class DbmigrateModel {
 	 * Discover migration files, instantiate each, and run any whose task code
 	 * is not already recorded in lastConfig.past_migration_tasks.
 	 *
+	 * Without a base path, application/migrations/ runs first, followed by
+	 * application/migrations/plugins/ (client plugin migrations).
+	 *
+	 * @param Billrun_Db $db
+	 * @param mixed      $controller optional controller for addOutput
+	 * @param string|null $basePath optional root containing application/migrations/ (defaults to APPLICATION_PATH)
+	 */
+	protected function applyMigrations(Billrun_Db $db, $controller = null, $basePath = null) {
+		$dir = rtrim($basePath ?: APPLICATION_PATH, '/') . '/application/migrations';
+		$this->applyMigrationsFromDir($dir, $db, $controller);
+		// In core mode, client plugin migrations (symlinked into
+		// application/migrations/plugins/ by enable_client_plugin.sh) run
+		// after all core migrations.
+		if (!$basePath) {
+			$this->applyMigrationsFromDir($dir . '/plugins', $db, $controller);
+		}
+	}
+
+	/**
+	 * Run the migration files found directly under a single directory
+	 * (non-recursive), in filename order.
+	 *
+	 * @param string     $dir
 	 * @param Billrun_Db $db
 	 * @param mixed      $controller optional controller for addOutput
 	 */
-	protected function applyMigrations(Billrun_Db $db, $controller = null) {
-		$files = glob(APPLICATION_PATH . '/application/migrations/*.php');
+	protected function applyMigrationsFromDir($dir, Billrun_Db $db, $controller = null) {
+		if (!is_dir($dir)) {
+			return;
+		}
+		$this->log($controller, 'Running migrations from ' . $dir);
+		$files = glob($dir . '/*.php') ?: [];
 		sort($files);
 		foreach ($files as $file) {
 			$basename = basename($file);

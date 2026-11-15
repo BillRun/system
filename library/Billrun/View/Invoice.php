@@ -25,11 +25,151 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function loadLines() {
 		$lines_collection = Billrun_Factory::db()->linesCollection();
 		$this->lines = array();
-		$aid = $this->data['aid'];
 		$billrun_key = $this->data['billrun_key'];
-		$query = array('aid' => $aid, 'billrun' => $billrun_key);
+		// BRCD-785: a consolidated invoice may contain subscribers from sub-accounts (each subs entry
+		// carries its own aid), so load lines for every contributing aid - not just the invoicing account.
+		// For a flat account this degenerates to the single own aid.
+		$query = array('aid' => array('$in' => $this->getContributingAids()), 'billrun' => $billrun_key);
 		$accountLines = $lines_collection->query($query);
 		$this->setLines($accountLines);
+	}
+
+	/**
+	 * BRCD-785: the distinct account ids that contribute lines to this invoice - the invoicing account
+	 * plus any rolled-up sub-accounts present in the subs array.
+	 *
+	 * @return int[]
+	 */
+	protected function getContributingAids() {
+		$aids = array(intval($this->data['aid']));
+		if (!empty($this->data['subs'])) {
+			foreach ($this->data['subs'] as $sub) {
+				if (isset($sub['aid'])) {
+					$aids[] = intval($sub['aid']);
+				}
+			}
+		}
+		return array_values(array_unique($aids));
+	}
+
+	/**
+	 * BRCD-2826: per-sub-account breakdown for a hierarchical (consolidated) invoice. Each entry carries a
+	 * textual hierarchy breadcrumb (root > ... > account) and the subtotal rolled up from that account's
+	 * subscribers. Templates can iterate this to render breadcrumbs and per-sub-account subtotals; a flat
+	 * invoice returns a single entry for its own account.
+	 *
+	 * @return array list of ['aid','name','breadcrumb','level','totals'=>['before_vat','after_vat'],'sids'=>int[]]
+	 */
+	public function getSubAccountsBreakdown() {
+		if (empty($this->data['subs'])) {
+			return array();
+		}
+		// Per-account breadcrumb metadata is persisted on the invoice during aggregation, so no live DB
+		// queries are needed at render time.
+		$hierarchyMeta = Billrun_Util::getIn($this->data, array('attributes', 'hierarchy'), array());
+		$byAid = array();
+		foreach ($this->data['subs'] as $sub) {
+			$aid = intval(Billrun_Util::getIn($sub, 'aid', $this->data['aid']));
+			if (!isset($byAid[$aid])) {
+				$byAid[$aid] = array('before_vat' => 0, 'after_vat' => 0, 'sids' => array());
+			}
+			// Each subs entry carries its own per-subscriber totals; summing them per aid yields the
+			// sub-account subtotal.
+			$byAid[$aid]['before_vat'] += Billrun_Util::getIn($sub, array('totals', 'before_vat'), 0);
+			$byAid[$aid]['after_vat'] += Billrun_Util::getIn($sub, array('totals', 'after_vat'), 0);
+			if (isset($sub['sid'])) {
+				$byAid[$aid]['sids'][] = intval($sub['sid']);
+			}
+		}
+		$result = array();
+		foreach ($byAid as $aid => $entry) {
+			$breadcrumb = $this->buildHierarchyBreadcrumb($aid, $hierarchyMeta);
+			$result[] = array(
+				'aid' => $aid,
+				'name' => empty($breadcrumb) ? ('Account ' . $aid) : end($breadcrumb),
+				'breadcrumb' => implode(' > ', $breadcrumb),
+				'level' => count($breadcrumb),
+				'totals' => array('before_vat' => $entry['before_vat'], 'after_vat' => $entry['after_vat']),
+				'sids' => $entry['sids'],
+			);
+		}
+		return $result;
+	}
+
+	/**
+	 * Ordered display names from the invoice's top account down to $aid (BRCD-2826 breadcrumb segments),
+	 * built from the metadata persisted on the invoice during aggregation - no live DB queries.
+	 *
+	 * @param int $aid
+	 * @param array $hierarchyMeta aid => ['name'=>..., 'parent_aid'=>...]
+	 * @return string[]
+	 */
+	protected function buildHierarchyBreadcrumb($aid, $hierarchyMeta) {
+		// Empty map == a non-consolidated (flat) invoice: a single segment of the invoice account's own
+		// name. For consolidated invoices the map always includes the owner's own entry, so the walk below
+		// reaches the root and a 2-level tree yields a two-segment breadcrumb (owner > child).
+		if (empty($hierarchyMeta)) {
+			$name = $this->getInvoiceAccountName();
+			return $name === '' ? array() : array($name);
+		}
+		$names = array();
+		$visited = array();
+		$current = intval($aid);
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		while ($current && !isset($visited[$current]) && isset($hierarchyMeta[$current]) && count($names) <= $maxDepth) {
+			$visited[$current] = true;
+			array_unshift($names, Billrun_Util::getIn($hierarchyMeta, array($current, 'name'), 'Account ' . $current));
+			$parent = Billrun_Util::getIn($hierarchyMeta, array($current, 'parent_aid'), null);
+			$current = is_null($parent) ? null : intval($parent);
+		}
+		if (empty($names)) {
+			$names[] = 'Account ' . intval($aid);
+		}
+		return $names;
+	}
+
+	/**
+	 * Display name of the invoice's own account, from its persisted attributes.
+	 */
+	protected function getInvoiceAccountName() {
+		$attributes = Billrun_Util::getIn($this->data, 'attributes', array());
+		foreach (array('company_name', 'fullname') as $field) {
+			if (!empty($attributes[$field])) {
+				return $attributes[$field];
+			}
+		}
+		return trim(Billrun_Util::getIn($attributes, 'firstname', '') . ' ' . Billrun_Util::getIn($attributes, 'lastname', ''));
+	}
+
+	/**
+	 * BRCD-2826: hierarchy breadcrumb string for a single contributing account on this invoice,
+	 * e.g. "Parent 1 > Sub-Account 1 > Sub-sub-account 1a1". Built from the metadata persisted on the
+	 * billrun doc during aggregation (attributes.hierarchy) - no live DB queries.
+	 *
+	 * Returns an empty string for a flat invoice (no hierarchy metadata) or when the aid is absent from
+	 * the metadata, so callers (templates) can hide the line without their own guards.
+	 *
+	 * @param int $aid          source account aid (typically a subs entry's aid)
+	 * @param string $separator string placed between successive names
+	 * @return string
+	 */
+	public function getAccountHierarchyBreadcrumb($aid, $separator = ' > ') {
+		$meta = Billrun_Util::getIn($this->data, array('attributes', 'hierarchy'), array());
+		$aid = intval($aid);
+		if (empty($meta) || $aid === 0 || !isset($meta[$aid])) {
+			return '';
+		}
+		$names = array();
+		$visited = array();
+		$current = $aid;
+		$maxDepth = Billrun_Cycle_Hierarchy::getMaxDepth();
+		while ($current && !isset($visited[$current]) && isset($meta[$current]) && count($names) <= $maxDepth) {
+			$visited[$current] = true;
+			array_unshift($names, Billrun_Util::getIn($meta, array($current, 'name'), 'Account ' . $current));
+			$parent = Billrun_Util::getIn($meta, array($current, 'parent_aid'), null);
+			$current = is_null($parent) ? null : intval($parent);
+		}
+		return implode($separator, $names);
 	}
 	
 	

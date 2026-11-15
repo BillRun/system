@@ -51,6 +51,7 @@ class Billrun_Billrun {
 	 * @var Mongodloid_Collection
 	 */
 	protected $billrun_coll = null;
+	public $vat;
 
 	/**
 	 *

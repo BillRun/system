@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y \
                 libssl-dev unzip \
                 openjdk-21-jre-headless \
                 python3-pip libpango-1.0-0 libpangoft2-1.0-0 shared-mime-info \
-    && pecl install yaf-3.3.7 \
-    && pecl install mongodb-2.3.3 \
+    && pecl install yaf-3.3.8 \
+    && pecl install mongodb-2.5.5 \
     && pecl install xdebug-3.5.3 \
     && docker-php-ext-enable yaf mongodb xdebug \
     && docker-php-ext-install pcntl bcmath gd zip sockets gmp \
@@ -23,7 +23,7 @@ RUN docker-php-ext-configure pcntl --enable-pcntl \
     && docker-php-ext-install pcntl
 
 RUN wget -O /tmp/jsignpdf.zip \
-        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/3.1.0/jsignpdf-distribution-3.1.0-minimal.zip' \
+        'https://repo1.maven.org/maven2/com/github/kwart/jsign/jsignpdf-distribution/3.2.1/jsignpdf-distribution-3.2.1-minimal.zip' \
     && unzip /tmp/jsignpdf.zip -d /opt \
     && rm -f /tmp/jsignpdf.zip
 

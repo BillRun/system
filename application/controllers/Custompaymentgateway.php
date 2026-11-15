@@ -49,12 +49,12 @@ class CustompaymentgatewayController extends ApiController {
 		if ($res2 = Billrun_Bill_Payment::validateChargeFilters($options['params'])) {
 			return $this->setError("Input validation didn't pass for system params - " . $res2);
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['cpg_type'] . ' payment_gateway=' . $options['gateway_name'] . ' file_type=' . $options['file_type'];
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type ' . $options['cpg_type'] . ' payment_gateway=' . escapeshellarg($options['gateway_name']) . ' file_type=' . escapeshellarg($options['file_type']);
 		if (!is_null($options['pay_mode'])) {
-			$cmd .= " pay_mode=" . $options['pay_mode'];
+			$cmd .= ' pay_mode=' . escapeshellarg($options['pay_mode']);
 		}
 		foreach ($options['params'] as $name => $value) {
-			$cmd .= " " . $name . "=" . (is_array($value) ? implode(",", $value) : $value);
+			$cmd .= ' ' . $name . '=' . escapeshellarg(is_array($value) ? implode(",", $value) : $value);
 		}
 		try {
 			$success = Billrun_Util::forkProcessCli($cmd);
@@ -83,15 +83,24 @@ class CustompaymentgatewayController extends ApiController {
 		if (empty($paymentsGatewaysConfig)) {
 			return "Payment gateways configuration is empty";
 		} else {
-			$gatewaysOptions = array_column($paymentsGatewaysConfig, 'name');
-			if (!in_array($options['gateway_name'], $gatewaysOptions)) {
+			$gatewayConfig = current(array_filter($paymentsGatewaysConfig, function ($gateway) use ($options) {
+				return isset($gateway['name']) && $gateway['name'] === $options['gateway_name'];
+			}));
+			if (empty($gatewayConfig)) {
 				return "gateway_name parameter's value isn't valid";
+			}
+			$fileTypes = array_column($gatewayConfig[$options['cpg_type']] ?? [], 'file_type');
+			if (!in_array($options['file_type'], $fileTypes, true)) {
+				return "file_type parameter's value isn't valid";
 			}
 		}
 		if (!empty($options['params'])) {
 			$email_reg = "/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix";
 			$general_reg = "/^[\w\d_-]+$/";
 			foreach ($options['params'] as $name => $value) {
+				if (!preg_match('/^\w+$/D', $name)) {
+					return $name;
+				}
 				if (!in_array($name, $validation_excluded_params)) {
 					if (preg_match($email_reg, $value)) {
 						continue;

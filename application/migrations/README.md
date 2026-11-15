@@ -19,7 +19,7 @@ php public/index.php --env <env> --dbinit
          │     └── ShardingModel::execute()       (no-op when not on mongos)
          └── DbmigrateModel::execute()
                ├── load latest config record
-               ├── glob *.php in this directory (sorted)
+               ├── glob *.php in this directory (sorted), then in plugins/
                ├── for each: skip if task code is in past_migration_tasks
                ├── otherwise run it and record the task code
                └── insert mutated config as a new revision
@@ -34,6 +34,32 @@ php public/index.php --env <env> --dbmigrate
 `CreatetenantAction` calls the same models when provisioning a new tenant
 database, so migrations in this directory also apply to every newly
 created tenant on its first init.
+
+## Plugin migrations
+
+Client plugins ship their own PHP migrations under
+`<plugin root>/application/migrations/`.
+
+In the docker setup, `enable_client_plugin.sh` symlinks them into
+`application/migrations/plugins/`. A plain `--dbinit` / `--dbmigrate` runs
+every core migration in this directory first, then the ones under
+`plugins/` (same filename convention, sorted by filename). That
+subdirectory is the only one that is scanned. Other subdirectories, such
+as `samples/`, are ignored.
+
+You can also run a plugin's migrations straight from its repo with `--path`:
+
+```
+php public/index.php --env <env> --dbmigrate --path=/path/to/plugin
+```
+
+- Only the plugin directory is applied - core migrations are not run in
+  this mode (run plain `--dbmigrate` for those).
+- The same filename convention and `Billrun_Migration_Base` contract apply.
+- Task codes are recorded in the same `past_migration_tasks` list, so they
+  must be unique across core and all plugins.
+- If `<path>/application/migrations/` does not exist, the command prints an
+  error and nothing is migrated.
 
 ## Filename convention
 

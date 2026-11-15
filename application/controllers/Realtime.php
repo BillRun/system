@@ -29,6 +29,7 @@ class RealtimeController extends ApiController {
 	 * method to execute real-time event
 	 */
 	public function execute() {
+		Billrun_Runtime::setRealtimeRequest();
 		$this->allowed();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->setRealtimeReadPreference();
