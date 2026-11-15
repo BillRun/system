@@ -76,6 +76,9 @@ class AdjustInvoiceAction extends CreditAction {
 		if (empty($this->account) || empty($this->account['aid'])) {
 			throw new Exception('Account ' . $this->aid . ' not found');
 		}
+		if (Billrun_Billingcycle::isCycleRunning($this->billrunKey, (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100), $this->getInvoicingDay())) {
+			throw new Exception('Billing cycle ' . $this->billrunKey . ' is currently running');
+		}
 		if (!Billrun_Billrun::exists($this->aid, $this->billrunKey)) {
 			throw new Exception('Invoice of billrun ' . $this->billrunKey . ' does not exist for account ' . $this->aid);
 		}
@@ -154,13 +157,24 @@ class AdjustInvoiceAction extends CreditAction {
 		return $processor;
 	}
 
+	/**
+	 * @return int|null the account's invoicing day on a multi-day cycle, null otherwise
+	 */
+	protected function getInvoicingDay() {
+		if (Billrun_Factory::config()->isMultiDayCycle() && !empty($this->account['invoicing_day'])) {
+			return $this->account['invoicing_day'];
+		}
+		return null;
+	}
+
 	protected function scheduleInvoiceRegeneration() {
 		$jobSettings = [
 			'aid' => $this->aid,
 			'billrun_key' => $this->billrunKey,
 		];
-		if (Billrun_Factory::config()->isMultiDayCycle() && !empty($this->account['invoicing_day'])) {
-			$jobSettings['invoicing_day'] = $this->account['invoicing_day'];
+		$invoicingDay = $this->getInvoicingDay();
+		if (!empty($invoicingDay)) {
+			$jobSettings['invoicing_day'] = $invoicingDay;
 		}
 		$jobsManager = Billrun_Jobsmanager::getInstance();
 		if ($jobsManager->push('Cycle_Account', $jobSettings) === false) {
