@@ -237,7 +237,15 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		$method = $process['settings']['change_state_method'] ?? 'POST';
 		$headers = $process['settings']['change_state_headers'] ?? array();
 		// the user's rows are validated on configuration save, validated again here for configurations that did not go
-		// through it (e.g. written to the DB by a script) - any invalid row = no custom headers are sent
+		// through it (e.g. written to the DB by a script) - blacklisted rows are not sent, any other invalid row = no
+		// custom headers are sent
+		if (is_array($headers)) {
+			$blacklistedNames = array();
+			$headers = Billrun_CollectionSteps_Notifiers_Http::removeBlacklistedHeaders($headers, $blacklistedNames);
+			if (!empty($blacklistedNames)) {
+				Billrun_Factory::log('Collection state change: blacklisted custom headers were not sent: ' . implode(', ', $blacklistedNames), Zend_Log::ALERT);
+			}
+		}
 		$headersErrors = Billrun_CollectionSteps_Notifiers_Http::getHeadersErrors($headers);
 		if (!empty($headersErrors)) {
 			Billrun_Factory::log('Collection state change: custom headers were not sent: ' . implode(', ', $headersErrors), Zend_Log::ALERT);

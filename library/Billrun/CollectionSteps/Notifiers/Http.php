@@ -89,6 +89,28 @@ class Billrun_CollectionSteps_Notifiers_Http extends Billrun_CollectionSteps_Not
 	}
 
 	/**
+	 * removes the blacklisted headers (see BLACKLISTED_HEADERS)
+	 *
+	 * @param array $headers [['key' => name, 'value' => value], ...]
+	 * @param array $removedNames the names of the removed headers
+	 *
+	 * @return array the headers that are not blacklisted
+	 */
+	public static function removeBlacklistedHeaders($headers, &$removedNames = array()) {
+		$removedNames = array();
+		$allowedHeaders = array();
+		foreach ($headers as $header) {
+			$name = is_array($header) && is_string($header['key'] ?? null) ? trim($header['key']) : '';
+			if (in_array(strtolower($name), static::BLACKLISTED_HEADERS)) {
+				$removedNames[] = $name;
+				continue;
+			}
+			$allowedHeaders[] = $header;
+		}
+		return $allowedHeaders;
+	}
+
+	/**
 	 * validates custom headers rows
 	 *
 	 * @param mixed $rows [['key' => name, 'value' => value], ...]
