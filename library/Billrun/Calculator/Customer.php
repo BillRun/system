@@ -74,6 +74,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideMandatoryFields = TRUE;
+	public $plans;
+	public $lines_coll;
+	public $subscribers_by_stamp;
+	public $accounts_by_stamp;
 
 	/**
 	 * These mapping are required raw field that must be filled by the customer calculator.
@@ -180,6 +184,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 			$subscriber = $this->subscriber;
 		}
+		Billrun_Factory::dispatcher()->trigger('afterGetSubscriberForRow', array(&$row, &$subscriber, $this));
 		if (!$subscriber || !$subscriber->isValid()) {
 			if ($this->isOutgoingCall($row)) {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::NOTICE);

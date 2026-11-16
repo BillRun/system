@@ -22,6 +22,11 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
   protected $cache;
   protected $matchingPathsByType;
   protected $moreSelctiveQuery = array();
+  public $nonWorkingDaysCollection;
+  public $inaNumbersCollection;
+  public $tariffsProfilesCollection;
+  public $tariffSwitchingClassesCollection;
+  public $priceByStamp;
 
   const RESPONSE_STATUS_OK = 200;
   const INVALID_TOKEN_ERROR = "invalid_token";
@@ -1106,8 +1111,10 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
 
       $segmentDuration = (float) $duration / $durationDivide;
 
-      // baseCharge only on the first CDR of the call (call_offset == 0 or absent)
-      $applyBaseCharge = ($callDurationBefore == 0.0);
+      // baseCharge fires on answer: only on the first CDR of the call (call_offset == 0
+      // or absent) and only if the call was actually answered (duration > 0).
+      // An unanswered call (duration = 0) is not charged at all.
+      $applyBaseCharge = ($callDurationBefore == 0.0 && $segmentDuration > 0);
 
       // How much of the free startInterval pool is still remaining for this segment
       $startIntervalRemaining = max($startInterval - $callDurationBefore, 0.0);
@@ -1213,7 +1220,7 @@ class teldasPlugin extends Billrun_Plugin_BillrunPluginBase {
    * switch only needs to write one unit consistently.
    */
   protected function getCallDurationBefore($line, $matchingPaths) {
-      $raw = $line['call_offset'] ?? null;
+      $raw = $line['usagev_offset'] ?? $line['call_offset'] ?? null;
       if (is_null($raw) || $raw === '') {
           return 0.0;
       }

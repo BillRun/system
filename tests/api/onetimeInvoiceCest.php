@@ -169,6 +169,37 @@ class onetimeInvoiceCest
         $I->assertEquals(20, $subscriberLine['aprice']);
     }
 
+    /**
+     * Regression for BRCD-5162 (5bd267e1ec2): an immediate invoice whose CDRs name ONLY a subscriber
+     * (no account-level sid=0 line) must still be created.
+     *
+     * The onetime aggregator always adds the account pseudo-subscriber (sid 0). When sid 0 is not in
+     * affected_sids, Billrun_Cycle_Subscriber::aggregate() skips loadSubscriberLines() and leaves
+     * $usageLines unset, so array_merge() receives null: a TypeError (HTTP 500) on PHP >= 8, a silent
+     * warning on 7.4. Every other test in this file sends a sid=0 CDR, which is exactly the one shape
+     * that hides the defect.
+     */
+    public function testOnetime_invoice_subscriber_only_cdr(ApiTester $I)
+    {
+        $this->createData($I);
+        $aid = $this->accountDetails['aid'];
+        $I->generateSubscriber(['aid' => $aid, 'plan' => 'ONETIME_INVOICE_TEST_PLAN']);
+        $sid = json_decode($I->grabResponse(), true)['entity']['sid'];
+
+        // sid is set explicitly so getCdrs() does not default it to the account level (0)
+        $subscriberCdr = ["aid" => $aid, "sid" => $sid, "rate" => "ONETIME_INVOICE_TEST_RATE", "aprice" => 100];
+        $I->sendOnetimeInvoiceApi($this->getCdrs([$subscriberCdr]), $aid, ['send_email' => 0, 'step' => 0]);
+
+        $I->dontSeeResponseContainsJson([
+            'status' => 0
+        ]);
+        $I->dontSeeResponseContains('array_merge');
+
+        $subscriberLine = $I->grabFromCollection('lines', ['type' => 'credit', 'aid' => $aid, 'sid' => $sid]);
+        $I->assertNotEmpty($subscriberLine, 'the subscriber-only CDR must be invoiced');
+        $I->assertEquals(100, $subscriberLine['aprice']);
+    }
+
     public function getCdrs($cdrs) {
         foreach ($cdrs as &$cdr) {
             $cdr['sid'] = isset($cdr['sid']) ? $cdr['sid'] : 0;

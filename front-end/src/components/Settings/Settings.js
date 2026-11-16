@@ -18,6 +18,7 @@ import EditMenu from './EditMenu';
 import UsageTypes from './UsageTypes';
 import Subscribers, { isSubscribersValid } from './Subscribers';
 import System from './System';
+import Email from './Email';
 import Sms from './Sms';
 import { ActionButtons } from '@/components/Elements';
 import { getSettings, updateSetting, saveSettings, fetchFile, getCurrencies, sendTestSms, testSubscribersAuth } from '@/actions/settingsActions';
@@ -80,6 +81,7 @@ class Settings extends Component {
       'file_types',
       'system',
       'plugins',
+      'mailer',
       'plays',
       'smser',
     ];
@@ -195,6 +197,7 @@ class Settings extends Component {
     const tenant = settings.get('tenant', Immutable.Map());
     const mainMenuOverrides = settings.getIn(['menu', 'main'], Immutable.Map());
     const mainMenu = prossessMenuTree(combineMenuOverrides(mainMenuOverrides), 'root');
+    const mailer = settings.get('mailer', Immutable.Map());
     const smser = settings.get('smser', Immutable.Map());
 
     return (
@@ -295,6 +298,12 @@ class Settings extends Component {
           <Tab title="Plugins" eventKey={100}>
             <Panel style={{ borderTop: 'none' }}>
               <Plugins onChange={this.onChangeFieldValue} data={plugins} />
+            </Panel>
+          </Tab>
+
+          <Tab title="Email" eventKey={11}>
+            <Panel style={{ borderTop: 'none' }}>
+              <Email onChange={this.onChangeFieldValue} data={mailer} />
             </Panel>
           </Tab>
 

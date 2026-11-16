@@ -4,12 +4,14 @@ import Immutable from 'immutable';
 import { Col, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap';
 import { ControlLabel, FormGroup, HelpBlock, InputGroupButton } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
+import { getConfig } from '@/common/Util';
 import {
   gitTimeOptions,
   gitPeriodLabel,
 } from '../EventsUtil';
 import {
   validateFieldEventCode,
+  validateFieldKey,
   validateFieldRecurrenceValue,
   validateFieldDateRangeValue,
 } from '@/actions/eventActions';
@@ -28,6 +30,12 @@ const FraudEventDetails = ({ item = Immutable.Map(), eventsSettings = Immutable.
     onUpdate(['event_code'], value);
     const isValid = validateFieldEventCode(value);
     setError('event_code', isValid === true ? null : isValid);
+  };
+  const onChangeKey = (e) => {
+    const value = e.target.value.toUpperCase().replace(getConfig('keyUppercaseCleanRegex', /./), '_');
+    onUpdate(['key'], value);
+    const isValid = validateFieldKey(value);
+    setError('key', isValid === true ? null : isValid);
   };
   const onChaneEventDescription = (e) => {
     const { value } = e.target;
@@ -95,10 +103,26 @@ const FraudEventDetails = ({ item = Immutable.Map(), eventsSettings = Immutable.
   const emailAdderssesValue = prepareEmailAddressesValue();
   const isNotifyByEmail = item.getIn(['notify_by_email', 'notify'], false);
   const isEventCodeError = errors.get('event_code', false);
+  const isKeyError = errors.get('key', false);
   const isRecurrenceValueError = errors.get('recurrence.value', false);
   const isDatRangeValueError = errors.get('date_range.value', false);
   return (
     <Col sm={12}>
+      <FormGroup validationState={isKeyError ? 'error' : null}>
+        <Col as={ControlLabel} sm={3}>
+          Key <span className="danger-red"> *</span>
+        </Col>
+        <Col sm={7}>
+          <Field
+            onChange={onChangeKey}
+            value={item.get('key', '')}
+            disabled={Boolean(item.get('_id'))}
+          />
+          { isKeyError && (
+            <HelpBlock>{isKeyError}</HelpBlock>
+          )}
+        </Col>
+      </FormGroup>
       <FormGroup validationState={isEventCodeError ? 'error' : null}>
         <Col as={ControlLabel} sm={3}>
           Event Code <span className="danger-red"> *</span>

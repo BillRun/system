@@ -29,6 +29,7 @@ class RealtimeController extends ApiController {
 	 * method to execute real-time event
 	 */
 	public function execute() {
+		Billrun_Runtime::setRealtimeRequest();
 		$this->allowed();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->setRealtimeReadPreference();
@@ -80,7 +81,7 @@ class RealtimeController extends ApiController {
 
 		$this->event['uf'] = $decoder->decode($requestBody);
 	}
-	
+
 	/**
 	 * get input processor configuration
 	 *
@@ -233,7 +234,7 @@ class RealtimeController extends ApiController {
 		$this->updateLineResponse($data, $response);
 		return $response;
 	}
-	
+
 	/**
 	 * method to return the collection the initial line exists
 	 * in prepaid it would be archive collection, while postpaid it will be lines collection

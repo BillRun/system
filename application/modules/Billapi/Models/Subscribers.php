@@ -409,6 +409,10 @@ class Models_Subscribers extends Models_Entity {
 		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->setReadPreference('RP_PRIMARY')->current()['to'];
 		$subscriberActivation = $revisionsFrom->current()['from'];
 		foreach ($revisionsFrom as $revision) {
+			if ($first) {
+				$first = false;
+				$subscriberActivation = $revision['from'];
+			}
 			$revisionsArray[] = $revision->getRawData();
 		}
 		foreach ($revisionsArray as &$revision) {

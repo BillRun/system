@@ -139,7 +139,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		$this->services = [];
 		$this->servicesUsed = array();
-		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
+		$this->setCallOffset($this->row['usagev_offset'] ?? $this->row['call_offset'] ?? 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
@@ -164,7 +164,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
+			if ($this->isPrepricedCredit()) {
+				$charges = $this->getPrepricedCreditCharges();
+			} else {
+				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getServices(), $this->getCallOffset(), $this->row['urt']->sec);
+			}
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -216,6 +220,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance();
+		}
+		if ($pricingData === false) {
+			return false;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
@@ -324,6 +331,19 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	public function updateBalance($rate, $plan, $usage_type, $volume) {
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan);
+
+		$aprice = $pricingData[$this->pricingField] ?? null;
+		if (is_numeric($aprice)) {
+			$taxCalc = $this->calculator->getTaxCalculator();
+			if ($taxCalc && method_exists($taxCalc, 'getRowTaxData')) {
+				$lineForTax = array_merge($this->row->getRawData(), $pricingData);
+				$taxData = $taxCalc->getRowTaxData($lineForTax);
+				if ($taxData !== false) {
+					$pricingData['final_charge'] = $aprice + ($taxData['total_amount'] ?? 0);
+				}
+			}
+		}
+
 		if (isset($this->row['billrun_pretend']) && $this->row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
@@ -345,7 +365,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$notInGroupVolume = $balancePricingData['out_group'] ?? ($balancePricingData['over_group'] ?? 0);
 			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $notInGroupVolume);
-			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
+			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this, $this->balance));
 			$ret = $this->balance->update($query, $update);
 			if ($ret === FALSE) {
 				Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
@@ -389,7 +409,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 				list($query, $update) = $balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
 
-				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this));
+				Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this, $balance));
 				$ret = $balance->update($query, $update);
 				if ($ret === FALSE) {
 					Billrun_Factory::log('Update subscriber balance failed on updated existing document.' . PHP_EOL . 'Query: ' . print_R($query, 1) . PHP_EOL . 'Update: ' . print_R($update, 1), Zend_Log::NOTICE);
@@ -1163,7 +1183,32 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 	}
 
-	protected function getServiceQuantity($servicesData = array(), $serviceName) {
+	/**
+	 * A credit whose amount was fixed by its creator (credit API / one-time
+	 * invoice) carries the "prepriced" flag and its amount in the pricing field.
+	 * Such a line is not re-priced from its rate: pricing keeps the amount and
+	 * only enriches the line (rate pricing data, tax).
+	 *
+	 * @return boolean
+	 */
+	protected function isPrepricedCredit() {
+		return $this->row['type'] === 'credit' && $this->isPrepriced() && isset($this->row[$this->pricingField]);
+	}
+
+	/**
+	 * Get the charges of a pre-priced credit - the amount already on the line.
+	 *
+	 * @return float
+	 */
+	protected function getPrepricedCreditCharges() {
+		return (float) $this->row[$this->pricingField];
+	}
+
+	/**
+	 * @param array $servicesData - pass [] when not needed
+	 * @param string $serviceName
+	 */
+	protected function getServiceQuantity($servicesData, $serviceName) {
 		$quantity = 1;
 		foreach ($servicesData as $service) {
 			if ($service['name'] == $serviceName && !empty($service['quantity'])) {

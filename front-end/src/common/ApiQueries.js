@@ -224,17 +224,6 @@ export const getInputProcessorActionQuery = (fileType, action) => ({
   ],
 });
 
-export const getExportGeneratorActionQuery = (name, action) => ({
-  api: 'settings',
-  params: [
-    { category: 'export_generators' },
-    { action },
-    { data: JSON.stringify({ name }) },
-  ],
-});
-
-export const saveExportGeneratorQuery = generator => saveSettingsQuery(generator, 'export_generators');
-
 export const getCreditChargeQuery = params => ({
   api: 'credit',
   params,
@@ -396,6 +385,8 @@ export const getEntitesQuery = (collection, project = {}, query = {}, sort = nul
     case 'users':
     case 'suggestions':
     case 'bills':
+    case 'export_generators':
+    case 'eventsettings':
       action = 'get';
       break;
     default:
@@ -440,6 +431,12 @@ export const getDeleteLineQuery = id => ({
 // List
 export const getAccountsQuery = (project = { aid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('accounts', project, {type: 'account'});
+
+export const getHierarchyQuery = (aid) => ({
+  action: 'gethierarchy',
+  entity: 'accounts',
+  params: [{ query: JSON.stringify({ aid }) }],
+});
 export const getSubscriptionsWithAidQuery = (project = { aid: 1, sid: 1, firstname: 1, lastname: 1 }) =>
   getEntitesQuery('subscribers', project, {type: 'subscriber'});
 export const getSubscribersByAidQuery = (aid) =>
@@ -1097,5 +1094,19 @@ export const getExternalLoginQuery = (protocol, returnTo, provider) => {
     api: 'Auth',
     action: 'login',
     params,
+  });
+};
+
+export const saveOAuth2SettingsQuery = (settingsData) => {
+  const formData = new FormData();
+  formData.append('action', 'save');
+  formData.append('data', JSON.stringify(settingsData));
+
+  return ({
+    api: 'oauth2refresh',
+    options: {
+      method: 'POST',
+      body: formData,
+    },
   });
 };

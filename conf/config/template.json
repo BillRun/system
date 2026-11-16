@@ -112,8 +112,6 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"balance" : [],
-		"fraud" : [],
 		"settings": {
 			"http": {
 				"url": "",
@@ -126,6 +124,9 @@
 			}
 		}
 	},
+	"eventsettings" : {
+		"fields": []
+	},
 	"suggestions" : {
 		"fields": []
 	},
@@ -133,6 +134,9 @@
 		"fields": []
 	},
 	"user" : {
+		"fields": []
+	},
+	"export_generator" : {
 		"fields": []
 	},
 	"taxation" :{
@@ -263,6 +267,7 @@
 	}
   },
 	"system" : {
+		"enable_customer_hierarchy": false,
 		"closed_cycle_changes": false
 	},
 	"plays": [
@@ -284,5 +289,27 @@
         "account" :{"type":"","external_url":"","timeout":""},
         "billable"  :{ "url":""}
       
+	},
+	"mailer": {
+		"transport": {
+			"type": "",
+			"host": "",
+			"port": "",
+			"ssl": "",
+			"auth": "",
+			"username": "",
+			"password": "",
+			"oauth2": {
+				"client_id": "",
+				"client_secret": "",
+				"auth_url": "",
+				"token_url": "",
+				"config_path": "",
+				"scope": "",
+				"extra_params": "",
+				"refresh_token": "",
+				"refresh_date":""
+			}
+		}
 	}
 }

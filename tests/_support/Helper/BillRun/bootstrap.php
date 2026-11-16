@@ -11,7 +11,7 @@ if (\Billrun_Factory::config()->isProd()) {
     Billrun_Factory::log('ERROR: Running Codeception tests on production is forbidden!', Zend_Log::ERR);
     exit(1);
 }
-Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+// Register Models_* classes from the Billapi module without clobbering Yaf's main library path.
 spl_autoload_register(function ($class) {
     if (strpos($class, 'Models_') === 0) {
         $file = APPLICATION_PATH . '/application/modules/Billapi/' . str_replace('_', '/', $class) . '.php';

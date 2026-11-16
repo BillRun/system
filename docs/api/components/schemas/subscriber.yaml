@@ -1,0 +1,72 @@
+Subscriber:
+  type: object
+  description: |
+    Subscriber (end customer). Stored in the `subscribers` collection
+    with `type=subscriber`. Identified by `sid` (auto-incrementing) and
+    linked to an account via `aid`.
+  allOf:
+    - $ref: "common.yaml#/Revision"
+    - type: object
+      properties:
+        type:
+          type: string
+          enum: [subscriber]
+          default: subscriber
+        sid:        { type: integer, description: "Subscriber ID" }
+        aid:        { type: integer, description: "Parent account ID" }
+        firstname:  { type: string }
+        lastname:   { type: string }
+        plan:       { type: string, description: "Plan name (matches `/billapi/plans` `name`)" }
+        play:       { type: string, description: "Play (vertical, e.g. mobile/fixed/data)" }
+        plan_activation: { type: string, format: date-time }
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              name:        { type: string }
+              service_id:  { type: string }
+              quantity:    { type: integer }
+              from:        { type: string, format: date-time }
+              to:          { type: string, format: date-time }
+        discounts:
+          type: array
+          items:
+            type: object
+            properties:
+              key:  { type: string }
+              from: { type: string, format: date-time }
+              to:   { type: string, format: date-time }
+        overrides:
+          type: object
+          additionalProperties: true
+  additionalProperties: true
+
+SubscriberUpdate:
+  type: object
+  description: |
+    Payload for `create`/`update`/`closeandnew`/`permanentchange`/`reopen`
+    on `/billapi/subscribers`.
+  properties:
+    from: { type: string, format: date-time }
+    to:   { type: string, format: date-time }
+    aid:  { type: integer }
+    sid:
+      type: integer
+      description: Auto-generated on `create`; required to identify on `update`.
+    plan: { type: string }
+    play: { type: string }
+    services:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    discounts:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    overrides:
+      type: object
+      additionalProperties: true
+  additionalProperties: true

@@ -1,0 +1,3585 @@
+openapi: 3.1.0
+info:
+  title: BillRun REST API
+  version: '6.0'
+  summary: Open-source billing & rating platform - REST API reference.
+  description: |
+    BillRun exposes three families of HTTP endpoints:
+
+    - `/billapi/{collection}/{action}` - the modern entity API (CRUD + lifecycle
+      actions on accounts, subscribers, plans, services, rates, balances, bills,
+      discounts, charges, taxes, users, reports, etc).
+    - `/api/{action}` - the legacy action API used for one-off operations such as
+      credit, payment, refunds, reports, subscribers lookup, and admin tasks.
+    - `/realtime` - the realtime rating/charging endpoint used by network
+      elements (OCS-style start / update / release events).
+
+    Authentication is one of:
+
+    - Session cookie obtained via `POST /auth/login`.
+    - OAuth2 access token issued by `POST /oauth2/token`.
+    - Per-request signature using a shared secret (the `signature` parameter)
+      for machine-to-machine integrations.
+
+    See [docs.bill.run](https://docs.bill.run/en/api/security) for the
+    authoritative behavior documentation; this OpenAPI document mirrors that
+    interface.
+  contact:
+    name: BillRun
+    url: https://bill.run
+    email: cloud_support@billrun.com
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  termsOfService: https://bill.run/terms
+servers:
+  - url: https://{host}
+    description: Self-hosted BillRun instance
+    variables:
+      host:
+        default: billing.example.com
+        description: Hostname of your BillRun deployment
+security:
+  - sessionCookie: []
+  - oauth2:
+      - read
+      - write
+      - admin
+  - secretSignature: []
+tags:
+  - name: Auth
+    description: Login, logout, available authentication protocols.
+  - name: OAuth2
+    description: OAuth2 token endpoint.
+  - name: BillAPI
+    description: |
+      Modern entity API at `/billapi/{collection}/{action}`. The same set of
+      actions (get, uniqueget, create, update, close, closeandnew, reopen,
+      delete, move, permanentchange, import, export) is applied to a range of
+      collections (accounts, subscribers, plans, services, rates, balances,
+      bills, charges, discounts, prepaidincludes, prepaidgroups, taxes,
+      reports, users, etc).
+  - name: Credit
+    description: Credit lines (one-off charges or refunds).
+  - name: Payment
+    description: Payments, bills, payment methods, adjustments.
+  - name: Realtime
+    description: Realtime charging events (start / update / release).
+  - name: Reports
+    description: Run/list/export reports.
+  - name: Outgoing
+    description: |
+      Endpoints that **BillRun calls on a 3rd-party CRM** when running in
+      external-subscribers mode (accounts and subscribers are stored in the CRM,
+      not in BillRun). Implement these on the CRM side.
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in and obtain a session cookie
+      description: |
+        Authenticate with one of the configured providers and receive a
+        `PHPSESSID` cookie. The cookie must be sent on subsequent requests.
+
+        The available providers are returned by `GET /auth/options`. The
+        `protocol` field selects which provider to use (defaults to
+        `internal`). For `internal`, the username/password pair is checked
+        against the BillRun users collection.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                protocol:
+                  type: string
+                  default: internal
+                  example: internal
+                  description: Authentication protocol (`internal`, `ldap`, `saml`, etc.).
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                remember:
+                  type: boolean
+                  description: Persist the session beyond the browser tab.
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: Authentication result
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: PHPSESSID session cookie.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    enum:
+                      - 0
+                      - 1
+                  desc:
+                    type: string
+                  details:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out and destroy the session
+      description: Terminates the session associated with the request cookie.
+      responses:
+        '200':
+          $ref: '#/components/responses/Envelope'
+  /auth/options:
+    get:
+      tags:
+        - Auth
+      summary: List supported authentication protocols
+      description: |
+        Returns the configured authentication providers, derived from
+        `auth.protocols` and `auth.<protocol>` config keys. Use this to render
+        a "Sign in with..." picker.
+      security: []
+      responses:
+        '200':
+          description: Available providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    enum:
+                      - 1
+                  desc:
+                    type: string
+                  details:
+                    type: object
+                    properties:
+                      protocols:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              example: internal
+                            label:
+                              type: string
+                              example: Username / Password
+                            name:
+                              type: string
+                              example: internal_default
+  /oauth2/token:
+    post:
+      tags:
+        - OAuth2
+      summary: Issue an OAuth2 access token
+      description: |
+        OAuth2 token endpoint. Supports the `client_credentials`,
+        `password`, and `refresh_token` grants depending on what the
+        BillRun OAuth2 server is configured for.
+
+        The returned `access_token` should be sent on subsequent calls as
+        `Authorization: Bearer <token>`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - grant_type
+                - client_id
+                - client_secret
+              properties:
+                grant_type:
+                  type: string
+                  enum:
+                    - client_credentials
+                    - password
+                    - refresh_token
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                  format: password
+                scope:
+                  type: string
+                  description: Space-separated list of requested scopes.
+                  example: read write
+                username:
+                  type: string
+                  description: Required for the `password` grant.
+                password:
+                  type: string
+                  format: password
+                  description: Required for the `password` grant.
+                refresh_token:
+                  type: string
+                  description: Required for the `refresh_token` grant.
+      responses:
+        '200':
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 3600
+                  scope:
+                    type: string
+                  refresh_token:
+                    type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid_grant
+                  error_description:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /billapi/{collection}/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Generic entity API
+      operationId: billapi.generic
+      description: |
+        Generic shape of every BillAPI endpoint. See the per-collection paths
+        below for the parameter list applicable to a given collection/action
+        combination.
+
+        ### Request shape
+
+        Parameters can be sent either as `application/x-www-form-urlencoded`
+        or `application/json`. The two most common are:
+
+        - `query` - a JSON-encoded MongoDB-style filter, used by read actions
+          (`get`, `uniqueget`) and by mutating actions that target a specific
+          revision (`update`, `close`, `closeandnew`, `delete`, ...).
+        - `update` - a JSON-encoded entity payload, used by all mutating
+          actions.
+
+        ### Response shape
+
+        All responses use the standard envelope - see
+        [Envelope](#components/schemas/Envelope).
+      parameters:
+        - $ref: '#/components/parameters/Collection'
+        - $ref: '#/components/parameters/Action'
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Update'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Project'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: JSON-encoded filter
+                update:
+                  type: string
+                  description: JSON-encoded entity payload
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /billapi/accounts/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Accounts collection
+      operationId: billapi.accounts
+      description: |
+        Customer accounts. Backed by the `subscribers` MongoDB collection
+        with `type=account`.
+
+        Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+        `closeandnew`, `reopen`, `delete`, `permanentchange`, `import`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - permanentchange
+              - import
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  description: Filter for reads / targeted writes.
+                  properties:
+                    _id:
+                      type: string
+                      description: Mongo ObjectId
+                    aid:
+                      type: integer
+                      description: Account ID
+                    firstname:
+                      type: string
+                    lastname:
+                      type: string
+                    company_name:
+                      type: string
+                    contact_name:
+                      type: string
+                    phone:
+                      type: string
+                    creation_time:
+                      type: string
+                      format: date-time
+                  additionalProperties: true
+                update:
+                  $ref: '#/components/schemas/AccountUpdate'
+      responses:
+        '200':
+          description: Accounts result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        oneOf:
+                          - type: array
+                            items:
+                              $ref: '#/components/schemas/Account'
+                          - type: object
+                            additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /billapi/subscribers/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Subscribers collection
+      operationId: billapi.subscribers
+      description: |
+        Subscribers belong to an account (linked by `aid`). Identified by
+        `sid` (auto-incremented).
+
+        Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+        `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`,
+        `import`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+              - permanentchange
+              - import
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    sid:
+                      type: integer
+                    aid:
+                      type: integer
+                    services.from:
+                      type: string
+                      format: date-time
+                    services.to:
+                      type: string
+                      format: date-time
+                    services.name:
+                      type: array
+                      items:
+                        type: string
+                    creation_time:
+                      type: string
+                      format: date-time
+                  additionalProperties: true
+                update:
+                  $ref: '#/components/schemas/SubscriberUpdate'
+      responses:
+        '200':
+          description: Subscribers result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        oneOf:
+                          - type: array
+                            items:
+                              $ref: '#/components/schemas/Subscriber'
+                          - type: object
+                            additionalProperties: true
+  /billapi/plans/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Plans collection
+      operationId: billapi.plans
+      description: |
+        Billing plans (a.k.a. "rate plans"). Plans bundle recurring charges,
+        inclusive units, and rate overrides.
+
+        Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+        `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+              - permanentchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    name:
+                      type: string
+                    to:
+                      type: string
+                      format: date-time
+                  additionalProperties: true
+                update:
+                  $ref: '#/components/schemas/PlanUpdate'
+      responses:
+        '200':
+          description: Plans result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Plan'
+  /billapi/services/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Services collection
+      operationId: billapi.services
+      description: |
+        Services are reusable bundles that can be attached to subscribers or
+        accounts (e.g. "VOIP Add-on", "Roaming Pack").
+
+        Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+        `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+              - permanentchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  additionalProperties: true
+                update:
+                  $ref: '#/components/schemas/ServiceUpdate'
+      responses:
+        '200':
+          description: Services result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Service'
+  /billapi/rates/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Rates / products collection
+      operationId: billapi.rates
+      description: |
+        Rates (called "Products" in the UI) define how usage is priced.
+        Identified by `key`.
+
+        Supported actions: `get`, `uniqueget`, `create`, `update`, `close`,
+        `closeandnew`, `reopen`, `delete`, `move`, `permanentchange`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+              - permanentchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    key:
+                      type: string
+                  additionalProperties: true
+                update:
+                  $ref: '#/components/schemas/RateUpdate'
+      responses:
+        '200':
+          description: Rates result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Rate'
+  /billapi/balances/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Balances collection
+      operationId: billapi.balances
+      description: |
+        Monthly / cycle balance buckets per subscriber. Tracks inclusive
+        units consumed and over-usage charges.
+
+        Supported actions: `get`, `uniqueget`, `update`, `delete`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - update
+              - delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    sid:
+                      type: integer
+                    aid:
+                      type: integer
+                    billrun:
+                      type: string
+                      description: Billing cycle key (YYYYMM)
+                  additionalProperties: true
+                update:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Balances result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Balance'
+  /billapi/bills/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Bills collection
+      operationId: billapi.bills
+      description: |
+        Bill documents - covers both invoices (`type=inv`) and payment
+        receipts/refunds (`type=rec`, `type=ref`).
+
+        Supported actions: `get`, `uniqueget`, `update`, `delete`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - update
+              - delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    aid:
+                      type: integer
+                    type:
+                      type: string
+                      enum:
+                        - inv
+                        - rec
+                        - ref
+                    invoice_id:
+                      type: integer
+                    due:
+                      type: string
+                      format: date-time
+                    billrun_key:
+                      type: string
+                  additionalProperties: true
+                update:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Bills result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bill'
+  /billapi/charges/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Charges collection
+      operationId: billapi.charges
+      description: |
+        One-off or recurring charge definitions (e.g. activation fees,
+        late-payment fees).
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Charges result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Charge'
+  /billapi/discounts/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Discounts collection
+      operationId: billapi.discounts
+      description: |
+        Discount definitions. Can apply to plans, services, rates, or
+        arbitrary subscriber attributes.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+              - permanentchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Discounts result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Discount'
+  /billapi/prepaidincludes/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Prepaid includes (inclusive unit pools)
+      operationId: billapi.prepaidincludes
+      description: |
+        Definitions of inclusive-unit pools used by plans and services
+        (minutes, MB, SMS).
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Prepaid includes result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PrepaidInclude'
+  /billapi/prepaidgroups/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Prepaid groups
+      operationId: billapi.prepaidgroups
+      description: Grouping of prepaid includes for shared consumption.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Envelope'
+  /billapi/taxes/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Taxes collection
+      operationId: billapi.taxes
+      description: |
+        Tax rate definitions. Linked from plans, services and rates via the
+        `tax` array.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - closeandnew
+              - reopen
+              - delete
+              - move
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Taxes result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Tax'
+  /billapi/reports/{action}:
+    post:
+      tags:
+        - BillAPI
+        - Reports
+      summary: Reports collection (definitions)
+      operationId: billapi.reports
+      description: |
+        CRUD on saved report definitions. To **run** a report, see
+        `POST /api/report`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Reports result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Report'
+  /billapi/users/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Users collection (admin/operator users)
+      operationId: billapi.users
+      description: |
+        Operator user accounts used to log in to BillRun. Subscribers (end
+        customers) live in the `subscribers` collection - see
+        `/billapi/subscribers/`.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - delete
+              - changepassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Users result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+  /billapi/lines/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Lines (usage events / CDRs)
+      operationId: billapi.lines
+      description: |
+        Raw usage records (a.k.a. "lines" or "CDRs"). Read-only via BillAPI;
+        mutating actions are normally driven by the calculator/aggregator
+        pipeline.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Lines result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Line'
+  /billapi/autorenew/{action}:
+    post:
+      tags:
+        - BillAPI
+      summary: Autorenew rules
+      operationId: billapi.autorenew
+      description: |
+        Auto-renewal subscriptions that automatically re-charge a balance
+        or top-up at a defined interval.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - get
+              - uniqueget
+              - create
+              - update
+              - close
+              - delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Envelope'
+  /api/credit:
+    post:
+      tags:
+        - Credit
+      summary: Credit a subscriber / account
+      operationId: api.credit
+      description: |
+        Create a credit line for a subscriber or account. Used both for
+        ad-hoc charges (positive `aprice`) and refunds (negative `aprice`).
+
+        The credit is recorded immediately as a `lines` record with
+        `type=credit` and goes into the next billing cycle (or the cycle
+        specified by `billrun_key`). For multi-installment credits, set
+        `installments` to a positive integer.
+
+        Implemented by `Action_CreditAction::execute()`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum:
+                    - prepone
+                  description: |
+                    Optional sub-action. `prepone` brings forward all future
+                    installments for the given `aid`/`sid`. When omitted the
+                    endpoint creates a fresh credit line.
+                aid:
+                  type: integer
+                  description: Account ID
+                sid:
+                  type: integer
+                  description: Subscriber ID
+                aprice:
+                  type: number
+                  description: |
+                    Charge amount. Positive = debit the customer, negative =
+                    refund / credit.
+                usagev:
+                  type: number
+                  description: Usage volume credited (where applicable).
+                usaget:
+                  type: string
+                  description: Usage type (e.g. `call`, `sms`, `data`, `flat`).
+                arate:
+                  type: string
+                  description: Product / rate `key` to associate this credit with.
+                arategroup:
+                  type: string
+                  description: Optional rate group.
+                billrun_key:
+                  type: string
+                  description: Target billing cycle (`YYYYMM`). Defaults to the next open cycle.
+                installments:
+                  type: integer
+                  minimum: 1
+                  description: Split the credit into N installments.
+                reason:
+                  type: string
+                  description: Free-text justification.
+                suggestion_stamp:
+                  type: string
+                  description: |
+                    When set, the credit is created from a pre-approved
+                    suggestion (see the `suggestions` collection). Multiple
+                    credit lines are written from one call - the response
+                    status will be `2` if some sub-requests fail.
+              required:
+                - aid
+                - aprice
+      responses:
+        '200':
+          description: Credit recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Line'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/bulkcredit:
+    post:
+      tags:
+        - Credit
+      summary: Credit multiple subscribers in a single call
+      operationId: api.bulkcredit
+      description: |
+        Batch version of `/api/credit`. Accepts an array of credit requests
+        and processes each independently - one failure does not roll the
+        others back. The response status is `1` if all succeeded, `2` if
+        partial, `0` if all failed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - credits
+              properties:
+                credits:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      aid:
+                        type: integer
+                      sid:
+                        type: integer
+                      aprice:
+                        type: number
+                      usagev:
+                        type: number
+                      usaget:
+                        type: string
+                      arate:
+                        type: string
+                      billrun_key:
+                        type: string
+                      reason:
+                        type: string
+                    required:
+                      - aid
+                      - aprice
+      responses:
+        '200':
+          description: Bulk credit result (one envelope per input row)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: object
+                              additionalProperties: true
+                            status:
+                              type: integer
+                              enum:
+                                - 0
+                                - 1
+                            error:
+                              type: string
+                            line:
+                              $ref: '#/components/schemas/Line'
+  /api/pay:
+    post:
+      tags:
+        - Payment
+      summary: Pay / refund / deposit / split bill
+      operationId: api.pay
+      description: |
+        Multi-purpose payment endpoint. The `action` parameter selects the
+        sub-operation; when omitted, the call processes one or more
+        payments via the configured gateway.
+
+        Implemented by `Action_PayAction::execute()`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                method:
+                  type: string
+                  description: |
+                    Payment method. One of the registered Bill_Payment
+                    subclasses (`credit`, `cash`, `cheque`, `direct_debit`,
+                    `installment_agreement`, ...).
+                action:
+                  type: string
+                  enum:
+                    - split_bill
+                    - use_deposit
+                    - cancel_payments
+                    - merge_installments
+                  description: |
+                    Sub-action. When set:
+                      - `split_bill`: split a bill into installments
+                      - `use_deposit`: unfreeze a previously frozen deposit
+                      - `cancel_payments`: cancel queued/processing payments
+                      - `merge_installments`: combine installments back together
+                payments:
+                  type: string
+                  description: |
+                    JSON-encoded array of payment objects. Required when
+                    `action` is empty.
+                txid:
+                  type: string
+                  description: |
+                    JSON-encoded array of transaction IDs. Required for
+                    `use_deposit` and `cancel_payments`.
+                uf:
+                  type: string
+                  description: |
+                    JSON-encoded user fields to attach to the payment(s).
+              required: []
+      responses:
+        '200':
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          record_ids:
+                            type: array
+                            items:
+                              type: string
+                          deposits_saved:
+                            type: integer
+                          payments:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Bill'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/bill:
+    post:
+      tags:
+        - Payment
+      summary: Get / list bills (invoices, receipts, refunds)
+      operationId: api.bill
+      description: |
+        Fetch bills (invoices `inv`, payment receipts `rec`, refunds `ref`)
+        for one or more accounts. Supports pagination and filtering on
+        billing cycle, type, due date, and payment status.
+
+        Backed by `Action_BillAction::execute()`. For schema-validated
+        filtering, prefer `/billapi/bills/get`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                aid:
+                  type: string
+                  description: |
+                    Single AID or JSON array of AIDs. Required when `query`
+                    is not supplied.
+                query:
+                  type: string
+                  description: JSON-encoded Mongo filter.
+                billrun_key:
+                  type: string
+                  description: Filter by billing cycle (YYYYMM).
+                type:
+                  type: string
+                  enum:
+                    - inv
+                    - rec
+                    - ref
+                page:
+                  type: integer
+                  minimum: 0
+                size:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                sort:
+                  type: string
+      responses:
+        '200':
+          description: List of bills
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bill'
+  /api/cards:
+    post:
+      tags:
+        - Payment
+      summary: Tokenize a payment card / start periodic payment
+      operationId: api.cards
+      description: |
+        Initiate a payment-card tokenization flow with the configured
+        payment gateway. Returns a redirect URL where the customer can
+        enter card details on a hosted page; on success BillRun receives a
+        tokenized identifier that can be used for subsequent recurring
+        charges.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - aid
+              properties:
+                aid:
+                  type: integer
+                sid:
+                  type: integer
+                ok_redirect:
+                  type: string
+                  format: uri
+                fail_redirect:
+                  type: string
+                  format: uri
+                return_url:
+                  type: string
+                  format: uri
+                tenant_url:
+                  type: string
+                action:
+                  type: string
+                  enum:
+                    - start_periodic_payment
+                    - retrieve_token
+                    - delete_token
+      responses:
+        '200':
+          description: Tokenization result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          url:
+                            type: string
+                            format: uri
+                            description: Hosted-payment-page URL
+                          gateway:
+                            type: string
+                          request_id:
+                            type: string
+  /api/adjustpayments:
+    post:
+      tags:
+        - Payment
+      summary: Adjust / reconcile payments
+      operationId: api.adjustpayments
+      description: |
+        Apply manual adjustments to outstanding payments (mark paid,
+        reject, deny, unconfirm). Implemented by
+        `Action_AdjustPaymentAction`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - adjustment_type
+              properties:
+                adjustment_type:
+                  type: string
+                  enum:
+                    - paid
+                    - rejected
+                    - denied
+                    - refunded
+                    - cancelled
+                txid:
+                  type: string
+                  description: JSON-encoded array of transaction IDs to adjust.
+                reason:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Envelope'
+  /api/onetimeinvoice:
+    post:
+      tags:
+        - Payment
+      summary: Generate a one-time invoice
+      operationId: api.onetimeinvoice
+      description: |
+        Generate an invoice for a list of charges outside of the regular
+        billing cycle. Returns the invoice document on success.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - aid
+                - charges
+              properties:
+                aid:
+                  type: integer
+                sid:
+                  type: integer
+                billrun_key:
+                  type: string
+                charges:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      aprice:
+                        type: number
+                      usaget:
+                        type: string
+                      arate:
+                        type: string
+                      reason:
+                        type: string
+                issue_invoice:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Invoice issued
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      entity:
+                        $ref: '#/components/schemas/Bill'
+  /api/accountinvoices:
+    post:
+      tags:
+        - Payment
+      summary: List invoices for an account
+      operationId: api.accountinvoices
+      description: |
+        Return all invoices for one or more accounts, with optional
+        filtering by cycle / paid status. Backed by
+        `Action_InvoicesAction`.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - aid
+              properties:
+                aid:
+                  type: string
+                  description: AID or JSON array of AIDs.
+                billrun_key:
+                  type: string
+                paid:
+                  type: string
+                  enum:
+                    - 'true'
+                    - 'false'
+                page:
+                  type: integer
+                size:
+                  type: integer
+      responses:
+        '200':
+          description: Invoices for the requested account(s)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bill'
+  /realtime:
+    post:
+      tags:
+        - Realtime
+      summary: Realtime charging event
+      operationId: realtime.event
+      description: |
+        Realtime event endpoint used by network elements (PGW, MMSC, SBC,
+        etc.) for online charging. The shape of the request body depends on
+        the configured `file_type`, which selects the parser and the rating
+        pipeline.
+
+        A typical flow:
+
+        1. **Session start (`record_type=start_request`)** - reserve units;
+           BillRun returns a granted volume + transaction ID.
+        2. **Session update (`record_type=update_request`)** - mid-session
+           re-authorization (consume, request additional units).
+        3. **Session release (`record_type=release_request`)** - settle the
+           actual used volume and free any reservation.
+
+        Implementation: `RealtimeController::execute()` delegates to the
+        configured decoder (JSON / KV / Diameter-mapped). Returned codes
+        come from `conf/realtime/return_codes.ini`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file_type
+                - request
+              properties:
+                file_type:
+                  type: string
+                  description: |
+                    Realtime file-type key (configured under the BillRun
+                    input processors). Determines the parser and the rating
+                    rules to apply.
+                  example: ggsn_event
+                request:
+                  type: object
+                  description: |
+                    Event payload. Fields are processor-specific; the
+                    example below shows a generic data-session event.
+                  additionalProperties: true
+                  properties:
+                    record_type:
+                      type: string
+                      enum:
+                        - start_request
+                        - update_request
+                        - release_request
+                        - final_request
+                    session_id:
+                      type: string
+                    imsi:
+                      type: string
+                    msisdn:
+                      type: string
+                    charging_id:
+                      type: string
+                    usaget:
+                      type: string
+                      enum:
+                        - call
+                        - sms
+                        - mms
+                        - data
+                        - flat
+                    usagev:
+                      type: number
+                      description: Volume consumed in this event.
+                    request_num:
+                      type: integer
+                    reserved_units:
+                      type: number
+                    apn:
+                      type: string
+                    rating_group:
+                      type: integer
+                    result_code:
+                      type: integer
+                    start_time:
+                      type: string
+                      format: date-time
+                    end_time:
+                      type: string
+                      format: date-time
+      responses:
+        '200':
+          description: Realtime decision
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    enum:
+                      - 0
+                      - 1
+                  desc:
+                    type: string
+                  tx_id:
+                    type: string
+                    description: Transaction ID
+                  line_stamp:
+                    type: string
+                  charging_decision:
+                    type: object
+                    properties:
+                      granted_units:
+                        type: number
+                      validity_time:
+                        type: integer
+                        description: Seconds
+                      quota_threshold:
+                        type: number
+                      result_code:
+                        type: integer
+                  balance:
+                    type: object
+                    additionalProperties: true
+                  rating:
+                    type: object
+                    properties:
+                      arate:
+                        type: string
+                      aprice:
+                        type: number
+                      usagev:
+                        type: number
+                      usaget:
+                        type: string
+                  line:
+                    $ref: '#/components/schemas/Line'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/reports:
+    get:
+      tags:
+        - Reports
+      summary: List report definitions
+      operationId: api.reports.list
+      description: |
+        Return the catalogue of saved report definitions visible to the
+        authenticated user.
+      parameters:
+        - name: query
+          in: query
+          description: JSON-encoded filter (e.g. by `key` or by user).
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        '200':
+          description: Report definitions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Report'
+  /api/report:
+    post:
+      tags:
+        - Reports
+      summary: Run a report
+      operationId: api.report.run
+      description: |
+        Execute a saved report (by `key` or `_id`) or an ad-hoc one passed
+        inline via the `report` field. Returns either the rendered rows
+        directly (small results) or a file URL for large ones.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  description: Report key to run (omit if passing `report` inline).
+                _id:
+                  type: string
+                  description: Report Mongo ObjectId.
+                report:
+                  type: string
+                  description: JSON-encoded inline report definition.
+                format:
+                  type: string
+                  enum:
+                    - json
+                    - csv
+                    - xlsx
+                  default: json
+                params:
+                  type: string
+                  description: JSON-encoded runtime parameters (date ranges, filters, etc).
+                page:
+                  type: integer
+                  minimum: 0
+                size:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Report result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeSchema'
+                  - type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          columns:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                label:
+                                  type: string
+                                type:
+                                  type: string
+                          rows:
+                            type: array
+                            items:
+                              type: object
+                              additionalProperties: true
+                          total:
+                            type: integer
+                          file_url:
+                            type: string
+                            format: uri
+                            description: Set for `csv`/`xlsx` formats.
+  /crm/billable:
+    post:
+      tags:
+        - Outgoing
+      summary: '[CRM] GBA - Get Billable Accounts'
+      operationId: outgoing.gba
+      description: |
+        Called by BillRun's cycle aggregator at cycle-close time to fetch
+        every account (with embedded subscriber revisions) that should be
+        billed in the requested window. The CRM must return the data
+        **paginated** - BillRun calls this repeatedly with increasing
+        `page` until the response runs out of rows.
+
+        Source: `Billrun_Account_External::getBillable()`.
+
+        Request fields:
+
+        - `start_date` / `end_date` - cycle window. Formatted per the
+          `subscribers.billable.single_day_cycle_format` config (default
+          `Y-m-d`, or `Y-m-d H:i:s` for same-day cycles).
+        - `page` / `size` - pagination.
+        - `aids` - optional comma-separated AID filter, used when BillRun
+          is rebilling a subset.
+        - `invoicing_days` - optional invoicing-day filter for tenants
+          that split the cycle across multiple invoicing days.
+
+        Response must include a truthy `status` and a `data` array;
+        BillRun translates `firstname`->`first_name` and
+        `lastname`->`last_name` automatically on the way in.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - start_date
+                - end_date
+                - page
+                - size
+              properties:
+                start_date:
+                  type: string
+                  description: Cycle start (formatted per config).
+                  example: '2026-05-01'
+                end_date:
+                  type: string
+                  description: Cycle end (formatted per config).
+                  example: '2026-06-01'
+                page:
+                  type: integer
+                  minimum: 0
+                  description: 0-based page index.
+                size:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  description: Page size.
+                aids:
+                  type: string
+                  description: Optional comma-separated list of AIDs to restrict to.
+                  example: 1001,1002,1003
+                invoicing_days:
+                  type: string
+                  description: Optional invoicing-day filter.
+      responses:
+        '200':
+          description: Paginated billable accounts + their subscriber revisions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - data
+                properties:
+                  status:
+                    description: |
+                      Truthy on success. BillRun treats `0`/empty as a
+                      fatal error and aborts the cycle.
+                    oneOf:
+                      - type: integer
+                      - type: boolean
+                  desc:
+                    type: string
+                  data:
+                    type: array
+                    description: |
+                      Mixed list of account and subscriber revisions for
+                      the window. Each item carries a `type` field
+                      (`account` or `subscriber`) so BillRun can route it.
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/Account'
+                        - $ref: '#/components/schemas/Subscriber'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+        4XX:
+          description: Client error - BillRun treats this as a hard failure.
+  /crm/account:
+    post:
+      tags:
+        - Outgoing
+      summary: '[CRM] GAD - Get Account Details'
+      operationId: outgoing.gad
+      description: |
+        Fetch one or more account revisions by query. Used during rating
+        and on ad-hoc lookups. The CRM receives a JSON envelope with a
+        `query` array - each entry describes a set of `params` to match
+        and the effective `time` for the lookup.
+
+        Source: `Billrun_Account_External::getAccountDetails()` /
+        `getAccountsDetails()`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - params
+                    properties:
+                      id:
+                        type: string
+                        description: Stable hash of the params for caching / de-duplication.
+                      time:
+                        type: string
+                        description: |
+                          Effective-time of the revision (formatted per
+                          `subscribers.account.external.time_format`,
+                          default `Y-m-d H:i:s.u`).
+                      params:
+                        type: array
+                        description: AND-ed filter parameters.
+                        items:
+                          type: object
+                          required:
+                            - key
+                            - operator
+                            - value
+                          properties:
+                            key:
+                              type: string
+                              example: aid
+                            operator:
+                              type: string
+                              enum:
+                                - equal
+                                - not_equal
+                                - gt
+                                - gte
+                                - lt
+                                - lte
+                                - in
+                                - not_in
+                              example: equal
+                            value:
+                              description: Value to compare. Type depends on the field.
+                              oneOf:
+                                - type: string
+                                - type: integer
+                                - type: number
+                                - type: boolean
+                                - type: array
+                limit:
+                  type: integer
+                  description: Optional global limit across all sub-queries.
+                date:
+                  type: string
+                  description: Optional global effective-date.
+      responses:
+        '200':
+          description: Array of account revisions (one per matching query).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        4XX:
+          description: Client error.
+  /crm/subscriber:
+    post:
+      tags:
+        - Outgoing
+      summary: '[CRM] GSD - Get Subscriber Details'
+      operationId: outgoing.gsd
+      description: |
+        Fetch one or more subscriber revisions by query. Same envelope
+        shape as GAD - a `query` array of `{id, time, params}` entries.
+
+        Source: `Billrun_Subscriber_External::getSubscriberDetails()`.
+
+        When `subscribers.account.cache_gba_to_gsd.enabled` is on, BillRun
+        pre-populates the local GSD cache from the previous GBA response
+        so the cycle close does not hammer this endpoint for every line
+        it rates.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - params
+                    properties:
+                      id:
+                        type: string
+                      time:
+                        type: string
+                        description: Effective-time of the revision.
+                      params:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - key
+                            - operator
+                            - value
+                          properties:
+                            key:
+                              type: string
+                              example: sid
+                            operator:
+                              type: string
+                              enum:
+                                - equal
+                                - not_equal
+                                - gt
+                                - gte
+                                - lt
+                                - lte
+                                - in
+                                - not_in
+                            value:
+                              oneOf:
+                                - type: string
+                                - type: integer
+                                - type: number
+                                - type: boolean
+                                - type: array
+                limit:
+                  type: integer
+                date:
+                  type: string
+      responses:
+        '200':
+          description: Array of subscriber revisions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscriber'
+        4XX:
+          description: Client error.
+  /api:
+    get:
+      tags:
+        - BillAPI
+      summary: Health check
+      description: Heartbeat. Verifies the DB is reachable.
+      security: []
+      parameters:
+        - name: simple
+          in: query
+          schema:
+            type: boolean
+          description: When true, returns a plain `SUCCESS`/`FAILED` string instead of JSON.
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    enum:
+                      - 0
+                      - 1
+                  message:
+                    type: string
+                    example: BillRun API Success
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: PHPSESSID
+      description: |
+        Obtained by calling `POST /auth/login` with a valid username/password
+        (or other configured protocol such as LDAP/SAML). The session cookie is
+        set automatically by the server and must be sent on every subsequent
+        request.
+    oauth2:
+      type: oauth2
+      description: |
+        OAuth2 client credentials grant. Issued by `POST /oauth2/token`.
+        Pass the returned access token in the `Authorization: Bearer <token>`
+        header on every subsequent request.
+      flows:
+        clientCredentials:
+          tokenUrl: /oauth2/token
+          scopes:
+            read: Read-only access
+            write: Read + write access (modify entities)
+            admin: Admin-level access (configuration, users, system actions)
+    secretSignature:
+      type: apiKey
+      in: query
+      name: signature
+      description: |
+        HMAC-style signature computed from the request parameters and a
+        pre-shared secret (configured in BillRun under
+        `Settings -> Security -> Shared Secret`).
+
+        The same value can be passed in the request body for POST requests.
+        Validated by `Billrun_Utils_Security::validateData`. Used for
+        machine-to-machine integrations that do not maintain a session cookie
+        or OAuth2 token.
+  parameters:
+    Collection:
+      name: collection
+      in: path
+      required: true
+      description: |
+        The entity collection to operate on. One of the supported BillRun
+        collections.
+      schema:
+        type: string
+        enum:
+          - accounts
+          - subscribers
+          - plans
+          - services
+          - rates
+          - balances
+          - bills
+          - charges
+          - discounts
+          - prepaidincludes
+          - prepaidgroups
+          - taxes
+          - reports
+          - users
+          - lines
+          - autorenew
+          - archive
+          - audit
+          - billrun
+          - events
+          - log
+          - queue
+          - suggestions
+    Action:
+      name: action
+      in: path
+      required: true
+      description: |
+        The action to perform on the collection. Not every collection supports
+        every action - the BillAPI loads `conf/modules/billapi/<collection>.ini`
+        at runtime and rejects unconfigured action/collection combinations.
+      schema:
+        type: string
+        enum:
+          - get
+          - uniqueget
+          - create
+          - update
+          - close
+          - closeandnew
+          - reopen
+          - delete
+          - move
+          - permanentchange
+          - import
+          - export
+          - changepassword
+    Query:
+      name: query
+      in: query
+      description: |
+        JSON-encoded MongoDB-style filter. Fields available for filtering are
+        declared per collection/action in the billapi ini config.
+      schema:
+        type: string
+        example: '{"sid":12345}'
+    Update:
+      name: update
+      in: query
+      description: |
+        JSON-encoded entity payload for create / update / close / closeandnew /
+        permanentchange / move actions. Validated against the
+        `update_parameters` list in the collection's ini config.
+      schema:
+        type: string
+        example: '{"plan":"GOLD","from":"2026-01-01T00:00:00+00:00"}'
+    Page:
+      name: page
+      in: query
+      description: 0-based page index for paginated reads (`get` / `uniqueget`).
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      description: Page size for paginated reads.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 10
+    Sort:
+      name: sort
+      in: query
+      description: |
+        JSON object mapping field name -> direction (`1` ascending, `-1`
+        descending). Only fields explicitly allowed by the collection are
+        accepted; `enable_sort=1` must be set on the action.
+      schema:
+        type: string
+        example: '{"creation_time":-1}'
+    Project:
+      name: project
+      in: query
+      description: |
+        JSON projection of fields to include (`1`) or exclude (`0`) from the
+        response - MongoDB projection semantics.
+      schema:
+        type: string
+        example: '{"firstname":1,"lastname":1,"sid":1}'
+  responses:
+    Envelope:
+      description: Standard BillRun response envelope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeSchema'
+    BadRequest:
+      description: Invalid or missing parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorSchema'
+    Unauthorized:
+      description: Missing or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorSchema'
+    Forbidden:
+      description: Authenticated but lacks permission for this action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorSchema'
+    NotFound:
+      description: Entity not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorSchema'
+  schemas:
+    Envelope:
+      $ref: '#/components/schemas/EnvelopeSchema'
+    Error:
+      $ref: '#/components/schemas/ErrorSchema'
+    Account:
+      type: object
+      description: |
+        Customer account. Stored in the `subscribers` collection with
+        `type=account`. Identified by the auto-incrementing `aid` field.
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - account
+              default: account
+            aid:
+              type: integer
+              description: Account ID
+            account_import_id:
+              type: string
+            firstname:
+              type: string
+            lastname:
+              type: string
+            company_name:
+              type: string
+            contact_name:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            street:
+              type: string
+            city:
+              type: string
+            country:
+              type: string
+            zip:
+              type: string
+            vat_number:
+              type: string
+            invoice_language:
+              type: string
+              example: en
+            services:
+              type: array
+              items:
+                $ref: '#/components/schemas/Discount'
+            overrides:
+              type: object
+              additionalProperties: true
+            payment_gateway:
+              type: object
+              additionalProperties: true
+            tenant_return_url:
+              type: string
+              format: uri
+      additionalProperties: true
+    Subscriber:
+      type: object
+      description: |
+        Subscriber (end customer). Stored in the `subscribers` collection
+        with `type=subscriber`. Identified by `sid` (auto-incrementing) and
+        linked to an account via `aid`.
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - subscriber
+              default: subscriber
+            sid:
+              type: integer
+              description: Subscriber ID
+            aid:
+              type: integer
+              description: Parent account ID
+            firstname:
+              type: string
+            lastname:
+              type: string
+            plan:
+              type: string
+              description: Plan name (matches `/billapi/plans` `name`)
+            play:
+              type: string
+              description: Play (vertical, e.g. mobile/fixed/data)
+            plan_activation:
+              type: string
+              format: date-time
+            services:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  service_id:
+                    type: string
+                  quantity:
+                    type: integer
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+            discounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+            overrides:
+              type: object
+              additionalProperties: true
+      additionalProperties: true
+    Plan:
+      type: object
+      description: |
+        Billing plan. Defines the recurring charges, inclusive units, and
+        rate overrides bundled together as a sellable package.
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            name:
+              type: string
+              description: Plan identifier (must match `/^[A-Z0-9_]+$/`).
+              example: GOLD
+            description:
+              type: string
+            price:
+              type: array
+              description: |
+                Tiered price points (per cycle / per period). Each entry has
+                its own `from`/`to`, `price`, and optional `proration` flag.
+              items:
+                type: object
+                properties:
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+                  price:
+                    type: number
+                  proration:
+                    type: boolean
+            recurrence:
+              type: array
+              description: Recurrence rules (cycle, period).
+              items:
+                type: object
+                properties:
+                  cycle:
+                    type: integer
+                  period:
+                    type: string
+                    enum:
+                      - day
+                      - week
+                      - month
+                      - year
+                  unit:
+                    type: integer
+            upfront:
+              type: boolean
+              description: Charge upfront (vs. in arrears).
+            connection_type:
+              type: string
+              enum:
+                - prepaid
+                - postpaid
+            notifications_threshold:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            disallowed_rates:
+              type: array
+              items:
+                type: string
+            pp_threshold:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            include:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  quantity:
+                    type: number
+                  unit:
+                    type: string
+            rates:
+              type: array
+              items:
+                type: string
+            play:
+              type: array
+              items:
+                type: string
+            tax:
+              type: array
+              items:
+                type: string
+            prorated_start:
+              type: boolean
+            prorated_end:
+              type: boolean
+            prorated_termination:
+              type: boolean
+            rounding_rules:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            operation:
+              type: string
+            charging_type:
+              type: string
+              enum:
+                - postpaid
+                - prepaid
+              deprecated: true
+            type:
+              type: string
+              deprecated: true
+      additionalProperties: true
+    Service:
+      type: object
+      description: |
+        Service bundle attachable to a subscriber or account (e.g. an
+        add-on, an extra data pack, a one-time activation fee).
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            price:
+              type: array
+              items:
+                type: object
+                properties:
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+                  price:
+                    type: number
+                  proration:
+                    type: boolean
+            quantitative:
+              type: boolean
+              description: Allows multiple quantities per subscriber.
+            balance_period:
+              type: string
+              description: Validity period of attached balances (`1M`, `30D`, ...).
+            include:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            play:
+              type: array
+              items:
+                type: string
+            tax:
+              type: array
+              items:
+                type: string
+            prorated_start:
+              type: boolean
+            prorated_end:
+              type: boolean
+            prorated_termination:
+              type: boolean
+            params:
+              type: object
+              additionalProperties: true
+      additionalProperties: true
+    Rate:
+      type: object
+      description: |
+        Rate definition (called "Product" in the UI). Describes how a unit of
+        usage is priced. Identified by `key`.
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            key:
+              type: string
+              description: Rate identifier (must match `/^[A-Z0-9_]+$/`).
+              example: CALL_INTL
+            description:
+              type: string
+            invoice_label:
+              type: string
+            pricing_method:
+              type: string
+              enum:
+                - tiered
+                - flat
+                - customRate
+            tariff_category:
+              type: string
+              description: e.g. `retail`, `wholesale`.
+            add_to_retail:
+              type: boolean
+            play:
+              type: string
+            rates:
+              type: object
+              description: |
+                Per-usaget pricing tables. Keys are usage types
+                (`call`, `sms`, `data`, ...); values are arrays of price
+                tiers.
+              additionalProperties:
+                type: object
+                properties:
+                  rate:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from:
+                          type: number
+                        to:
+                          type: number
+                        interval:
+                          type: number
+                        price:
+                          type: number
+                        ceil:
+                          type: boolean
+                  category:
+                    type: string
+                  access:
+                    type: number
+            params:
+              type: object
+              additionalProperties: true
+            tax:
+              type: array
+              items:
+                type: string
+            rounding_rules:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+      additionalProperties: true
+    Balance:
+      type: object
+      description: |
+        Per-subscriber balance bucket for a given billing cycle. Tracks
+        inclusive units used and over-usage charges.
+      properties:
+        _id:
+          type: string
+        sid:
+          type: integer
+        aid:
+          type: integer
+        plan:
+          type: string
+        billrun_month:
+          type: string
+          description: Billing cycle key (YYYYMM).
+        period:
+          type: string
+          enum:
+            - default
+            - custom
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        balance:
+          type: object
+          description: Per-usage-type totals (currency + units).
+          additionalProperties:
+            type: object
+            properties:
+              cost:
+                type: number
+              usagev:
+                type: number
+              count:
+                type: integer
+        totals:
+          type: object
+          additionalProperties: true
+        pp_includes_external_ids:
+          type: array
+          items:
+            type: string
+        pp_includes_name:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+        creation_time:
+          type: string
+          format: date-time
+        notifications:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: true
+    Bill:
+      type: object
+      description: |
+        Bill document - covers invoices (`type=inv`), payment receipts
+        (`type=rec`), and refunds (`type=ref`). Stored in the `bills`
+        collection.
+      properties:
+        _id:
+          type: string
+        type:
+          type: string
+          enum:
+            - inv
+            - rec
+            - ref
+        aid:
+          type: integer
+        invoice_id:
+          type: integer
+          description: Invoice number (type=inv only)
+        txid:
+          type: string
+          description: Transaction ID (type=rec/ref)
+        billrun_key:
+          type: string
+          description: Billing cycle (YYYYMM).
+        method:
+          type: string
+          description: Payment method (`credit`, `cash`, `cheque`, `direct_debit`, ...).
+        amount:
+          type: number
+          description: Gross amount
+        total:
+          type: number
+          description: Total after tax / discounts
+        paid:
+          type: boolean
+          description: Whether the bill has been fully paid.
+        paid_amount:
+          type: number
+        due:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+        paid_date:
+          type: string
+          format: date-time
+        issue_date:
+          type: string
+          format: date-time
+        urt:
+          type: string
+          format: date-time
+          description: Unified record time.
+        currency:
+          type: string
+        invoice_file:
+          type: string
+          description: Path to the generated PDF, if any.
+        payment_gateway:
+          type: object
+          additionalProperties: true
+        left_to_pay:
+          type: number
+        pays:
+          type: array
+          description: For receipts, the invoice(s) being paid.
+          items:
+            type: object
+            properties:
+              inv:
+                type: integer
+              amount:
+                type: number
+        left:
+          type: object
+          additionalProperties: true
+        cancel:
+          type: object
+          description: Cancellation metadata.
+          additionalProperties: true
+        creation_time:
+          type: string
+          format: date-time
+      additionalProperties: true
+    Line:
+      type: object
+      description: |
+        Usage line / CDR. The atomic unit of billable activity in BillRun -
+        every call, SMS, data session, credit, recurring charge, etc.
+        becomes a row in the `lines` collection.
+      properties:
+        _id:
+          type: string
+        stamp:
+          type: string
+          description: Unique record ID (typically a hash of the source fields).
+        type:
+          type: string
+          description: |
+            Line origin. Common values: `nsn`, `tap3`, `cdr`, `flat`,
+            `credit`, `service`, `discount`, `automatic_payment`.
+        usaget:
+          type: string
+          description: Usage type. e.g. `call`, `sms`, `mms`, `data`, `flat`.
+        usagev:
+          type: number
+          description: Usage volume in the unit of `usaget`
+        aprice:
+          type: number
+          description: Charge amount before tax
+        final_charge:
+          type: number
+          description: Charge amount after tax
+        aid:
+          type: integer
+        sid:
+          type: integer
+        plan:
+          type: string
+        arate:
+          type: string
+          description: Reference to the rate document (Mongo DBRef).
+        arate_key:
+          type: string
+          description: Rate key (denormalized)
+        arategroup:
+          type: string
+        in_group:
+          type: number
+          description: Volume covered by inclusive units
+        over_group:
+          type: number
+        billrun:
+          type: string
+          description: Billing cycle (YYYYMM).
+        urt:
+          type: string
+          format: date-time
+          description: Unified record time - the rating timestamp.
+        process_time:
+          type: string
+          format: date-time
+        src:
+          type: string
+          description: Calling ID / source
+        dst:
+          type: string
+          description: Destination
+        channel:
+          type: string
+        charging_type:
+          type: string
+          enum:
+            - postpaid
+            - prepaid
+        tax_data:
+          type: object
+          additionalProperties: true
+        log_stamp:
+          type: string
+        file:
+          type: string
+      additionalProperties: true
+    Discount:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            key:
+              type: string
+              description: Stable identifier
+            description:
+              type: string
+            type:
+              type: string
+              enum:
+                - monetary
+                - percentage
+                - units
+            value:
+              type: number
+            priority:
+              type: integer
+            plan:
+              type: array
+              items:
+                type: string
+            services:
+              type: array
+              items:
+                type: string
+            rates:
+              type: array
+              items:
+                type: string
+            subject:
+              type: object
+              additionalProperties: true
+              description: Mongo-style selector for entities the discount applies to.
+            conditions:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            play:
+              type: array
+              items:
+                type: string
+            params:
+              type: object
+              additionalProperties: true
+            tax:
+              type: array
+              items:
+                type: string
+    Charge:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            key:
+              type: string
+            description:
+              type: string
+            type:
+              type: string
+              enum:
+                - recurring
+                - one_time
+                - late_fee
+            price:
+              type: number
+            currency:
+              type: string
+            cycles:
+              type: integer
+              description: Number of cycles to apply (recurring only)
+            tax:
+              type: array
+              items:
+                type: string
+            params:
+              type: object
+              additionalProperties: true
+    Tax:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            key:
+              type: string
+            description:
+              type: string
+            rate:
+              type: number
+              description: Tax rate as a fraction (0.17 = 17%).
+            type:
+              type: string
+              enum:
+                - vat
+                - gst
+                - sales
+            country:
+              type: string
+            region:
+              type: string
+            compound:
+              type: boolean
+    PrepaidInclude:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Revision'
+        - type: object
+          properties:
+            external_id:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            charging_by:
+              type: string
+              enum:
+                - total_cost
+                - usagev
+                - cost
+            charging_by_usaget:
+              type: string
+              description: Usage type (call, sms, data, ...) for usage-based balances.
+            priority:
+              type: integer
+            operation:
+              type: string
+              enum:
+                - inc
+                - dec
+                - abs
+            notifications_threshold:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            shared:
+              type: boolean
+            group:
+              type: string
+            recurrence:
+              type: object
+              additionalProperties: true
+    User:
+      type: object
+      description: |
+        Operator/admin user (the kind that logs in to BillRun's back office).
+        Subscribers are *not* stored here - see the `subscribers` collection.
+      properties:
+        _id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        last_login:
+          type: string
+          format: date-time
+        created:
+          type: string
+          format: date-time
+        enabled:
+          type: boolean
+        settings:
+          type: object
+          additionalProperties: true
+    Report:
+      type: object
+      description: Saved report definition (run via `POST /api/report`).
+      properties:
+        _id:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        entity:
+          type: string
+          description: Source collection (`lines`, `bills`, `subscribers`, ...).
+        columns:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              type:
+                type: string
+                enum:
+                  - string
+                  - number
+                  - date
+                  - currency
+              op:
+                type: string
+                description: Aggregation operator (`sum`, `avg`, ...).
+        conditions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        sort:
+          type: object
+          additionalProperties:
+            type: integer
+            enum:
+              - -1
+              - 1
+        creation_time:
+          type: string
+          format: date-time
+        last_run:
+          type: string
+          format: date-time
+        shared:
+          type: boolean
+    Revision:
+      type: object
+      description: |
+        Common revision-tracking fields. All time-bound entities in BillRun
+        (accounts, subscribers, plans, services, rates, ...) carry these and
+        follow a "close current revision + create new revision" pattern for
+        historical changes.
+      properties:
+        _id:
+          type: string
+          description: Mongo ObjectId of this revision.
+        from:
+          type: string
+          format: date-time
+          description: Effective-from boundary of this revision.
+        to:
+          type: string
+          format: date-time
+          description: |
+            Effective-to boundary. Open revisions use the sentinel
+            `2099-01-01` (configurable).
+        creation_time:
+          type: string
+          format: date-time
+        revision_info:
+          type: object
+          description: Optional metadata about prior/next revisions.
+          additionalProperties: true
+    ErrorSchema:
+      type: object
+      properties:
+        status:
+          type: integer
+          enum:
+            - 0
+        desc:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+            context:
+              type: object
+              additionalProperties: true
+    EnvelopeSchema:
+      type: object
+      description: |
+        Common response envelope. Almost every BillRun endpoint wraps its
+        result in this shape.
+      properties:
+        status:
+          type: integer
+          description: |
+            `1` on success, `0` on hard failure, `2` on partial success (some
+            items in a batch succeeded).
+          enum:
+            - 0
+            - 1
+            - 2
+        desc:
+          type: string
+          description: Human-readable description (`"success"` on success).
+        details:
+          description: Action-specific payload.
+          type:
+            - object
+            - array
+            - string
+            - 'null'
+        entity:
+          type: object
+          description: The affected entity after the operation, when applicable.
+          additionalProperties: true
+        input:
+          type: object
+          description: Echo of the request input (for debugging / audit).
+          additionalProperties: true
+      required:
+        - status
+    AccountUpdate:
+      type: object
+      description: |
+        Payload accepted by `create`/`update`/`closeandnew`/`permanentchange`
+        on `/billapi/accounts`. Mandatory parameters are enforced for the
+        `create` action only.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        aid:
+          type: integer
+          description: Auto-generated on `create`; required to identify on `update`.
+        account_import_id:
+          type: string
+        invoice_language:
+          type: string
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              from:
+                type: string
+                format: date-time
+              to:
+                type: string
+                format: date-time
+        overrides:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    SubscriberUpdate:
+      type: object
+      description: |
+        Payload for `create`/`update`/`closeandnew`/`permanentchange`/`reopen`
+        on `/billapi/subscribers`.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        aid:
+          type: integer
+        sid:
+          type: integer
+          description: Auto-generated on `create`; required to identify on `update`.
+        plan:
+          type: string
+        play:
+          type: string
+        services:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        discounts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        overrides:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    PlanUpdate:
+      type: object
+      description: Payload for create/update/closeandnew on `/billapi/plans`.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        name:
+          type: string
+          pattern: ^[A-Z0-9_]+$
+        price:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        description:
+          type: string
+        recurrence:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        upfront:
+          type: boolean
+        connection_type:
+          type: string
+        notifications_threshold:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        disallowed_rates:
+          type: array
+          items:
+            type: string
+        pp_threshold:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        include:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        rates:
+          type: array
+          items:
+            type: string
+        play:
+          type: array
+          items:
+            type: string
+        tax:
+          type: array
+          items:
+            type: string
+        prorated_start:
+          type: boolean
+        prorated_end:
+          type: boolean
+        prorated_termination:
+          type: boolean
+        operation:
+          type: string
+        rounding_rules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - name
+        - price
+        - recurrence
+        - upfront
+        - connection_type
+      additionalProperties: true
+    ServiceUpdate:
+      type: object
+      description: Payload for create/update/closeandnew on `/billapi/services`.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        quantitative:
+          type: boolean
+        balance_period:
+          type: string
+        include:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        play:
+          type: array
+          items:
+            type: string
+        tax:
+          type: array
+          items:
+            type: string
+        prorated_start:
+          type: boolean
+        prorated_end:
+          type: boolean
+        prorated_termination:
+          type: boolean
+        params:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    RateUpdate:
+      type: object
+      description: Payload for create/update on `/billapi/rates`.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        key:
+          type: string
+          pattern: ^[A-Z0-9_]+$
+        rates:
+          type: object
+          additionalProperties: true
+        description:
+          type: string
+        params:
+          type: object
+          additionalProperties: true
+        pricing_method:
+          type: string
+          enum:
+            - tiered
+            - flat
+            - customRate
+        tariff_category:
+          type: string
+        add_to_retail:
+          type: boolean
+        play:
+          type: string
+        tax:
+          type: array
+          items:
+            type: string
+        invoice_label:
+          type: string
+        rounding_rules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - key
+        - rates
+        - pricing_method
+        - tariff_category
+      additionalProperties: true
