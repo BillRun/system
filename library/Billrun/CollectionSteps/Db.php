@@ -224,8 +224,10 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 * @param array $aids the accounts whose collection state changed
 	 * @param boolean $in true - the accounts entered collection, false - the accounts left collection
 	 * @param array $process the collection process the accounts belong to
-	 * @param array $debtByAid aid => debt of the accounts, as calculated by the collect run; sent in the in_collection
-	 *                         request instead of the plain aids when change_state_include_debt is enabled (see isChangeStateWithDebt)
+	 * @param array $debtByAid aid => debt of the accounts, as calculated by the collect run: the debt of the accounts entering
+	 *                         collection, the balance (the debt left below the minimum, 0 - settled, negative - credit) of the
+	 *                         accounts leaving it; sent instead of the plain aids when change_state_include_debt is enabled
+	 *                         (see isChangeStateWithDebt)
 	 *
 	 * @return boolean false if any of the batches failed
 	 */
@@ -242,7 +244,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 		$state = $in ? 'in_collection' : 'out_of_collection';
 		$processName = $process['name'] ?? '';
-		$withDebt = $in && $this->isChangeStateWithDebt($process);
+		$withDebt = $this->isChangeStateWithDebt($process);
 		$batches = array_chunk($aids, $batchSize);
 		$batchesCount = count($batches);
 		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
@@ -275,15 +277,17 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 
 	/**
-	 * whether the in_collection state change request should carry the debt of each account -
-	 * {"accounts": [{"aid": ..., "debt": ...}]} instead of {"aids": [...]}. Off by default (the request is unchanged),
-	 * enabled per process (settings.change_state_include_debt) or globally (collection.settings.change_state_include_debt)
+	 * whether the state change requests should carry the debt of each account -
+	 * {"accounts": [{"aid": ..., "debt": ...}]} instead of {"aids": [...]}: the in_collection request with the debt
+	 * calculated by the collect run, the out_of_collection request with the balance (negative - the account is in credit).
+	 * Off by default (the requests are unchanged), enabled per process
+	 * (settings.change_state_include_debt) or globally (collection.settings.change_state_include_debt)
 	 *
 	 * @param array $process the collection process
 	 *
 	 * @return boolean
 	 */
-	protected function isChangeStateWithDebt($process) {
+	public function isChangeStateWithDebt($process) {
 		$includeDebt = $process['settings']['change_state_include_debt'] ??
 			Billrun_Factory::config()->getConfigValue('collection.settings.change_state_include_debt', false);
 		return filter_var($includeDebt, FILTER_VALIDATE_BOOLEAN);
@@ -293,7 +297,8 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	 * builds the accounts list of a state change request batch
 	 *
 	 * @param array $aids the accounts of the batch
-	 * @param array $debtByAid aid => debt
+	 * @param array $debtByAid aid => debt: the collect run's debt of an account entering collection, or the balance of an
+	 *                         account leaving it (the debt left below the minimum, 0 - settled, negative - credit)
 	 *
 	 * @return array [['aid' => aid, 'debt' => debt], ...]
 	 */
@@ -302,7 +307,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		foreach ($aids as $aid) {
 			$accounts[] = array(
 				'aid' => $aid,
-				'debt' => $debtByAid[$aid] ?? null,
+				'debt' => $debtByAid[$aid],
 			);
 		}
 		return $accounts;

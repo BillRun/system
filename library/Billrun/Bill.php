@@ -814,7 +814,18 @@ abstract class Billrun_Bill {
 		);
 	}
 
-	public static function getContractorsInCollection($aids = array(), $minDebt = null) {
+	/**
+	 * the balance of the accounts subject to collection (see getBalanceByAids)
+	 *
+	 * @param array $aids the accounts to check, empty - all
+	 * @param float $minDebt the minimum debt, null - the configured one
+	 * @param boolean $withCredit false - the accounts with at least the minimum debt, each with 'total' - its debt (the credit
+	 *                            is ignored); true - every account with a balance, 'total' - its debt minus its credit
+	 *                            (negative - in credit), the minimum debt is not applied
+	 *
+	 * @return array aid => ['aid', 'total']
+	 */
+	public static function getContractorsInCollection($aids = array(), $minDebt = null, $withCredit = false) {
 		$account = Billrun_Factory::account();
 		Billrun_Factory::log()->log("Pulling excluded/included accounts from/in collection, according to the configuration", Zend_Log::DEBUG);
 		$exempted = $account->getExcludedFromCollection($aids);
@@ -839,7 +850,7 @@ abstract class Billrun_Bill {
 		}
 
 		Billrun_Factory::log()->log("Calculating balance for the accounts that were found relevant for collection", Zend_Log::DEBUG);
-		return static::getBalanceByAids($aidsQuery, true, true, $minDebt);
+		return static::getBalanceByAids($aidsQuery, true, !$withCredit, $minDebt);
 	}
 
 	public function getDueBeforeVat() {
@@ -1589,10 +1600,10 @@ abstract class Billrun_Bill {
 				'aid' => '$_id',
 			),
 		);
-		if ($only_debts) {			
-                            $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
-			$minBalance = is_null($min_debt) ? Billrun_Factory::config()->getConfigValue('collection.settings.min_debt',  '10'): $min_debt;
-			$minBalance = floatval((!is_numeric($minBalance) ? '10' : $minBalance));
+		if ($only_debts) {			              
+      $project3['$project']['total'] = array('$add'=> array(array('$add' => array(array('$add' => array('$total_debt_valid', '$total_debt_invalid')), '$total_pending_debt_valid')),'$total_pending_debt_invalid'));
+			$minBalance = is_null($min_debt) ? Billrun_Factory::config()->getConfigValue('collection.settings.min_debt', Billrun_Collection::DEFAULT_MIN_DEBT) : $min_debt;
+			$minBalance = floatval(!is_numeric($minBalance) ? Billrun_Collection::DEFAULT_MIN_DEBT : $minBalance);
 			$match2 = array(
 				'$match' => array(
 					'total' => array(
