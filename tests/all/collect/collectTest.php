@@ -621,6 +621,78 @@ public function testCollectInCollectionWithoutAids()
         $this->tester->resetCollectionStateChangeRequests($run);
     }
 
+    /**
+     * BRCD-5548: the custom HTTP headers of the state change request (process settings change_state_headers).
+     * Blacklisted headers are refused when the configuration is saved; when they are in the configuration anyway
+     * (written to the DB by a script), the request is sent with the legit custom headers only.
+     * The headers are asserted as the CRM receives them, through the state change receiver mock.
+     */
+    public function testCollectStateChangeSendsOnlyLegitCustomHeaders()
+    {
+        $run = uniqid('brcd5548_');
+        $processes = $this->defaultCollectionProcesses;
+        $this->assertSame('default_process', $processes[1]['name']);
+        $processes[1]['settings']['change_state_url'] = $this->tester->getCollectionStateChangeUrl($run);
+        $this->initCollectionConfig($processes, $this->defaultWithoutRejectionSettings);
+        $this->tester->resetCollectionStateChangeRequests($run);
+
+        $legitHeaders = [
+            ['key' => 'X-Tenant-Id', 'value' => 'legit-tenant-' . $run],
+            ['key' => 'X-Source-System', 'value' => 'legit-source-' . $run],
+        ];
+        // the whole blacklist of the task, one of the names not in its usual case (header names are case insensitive)
+        $blacklistedHeaders = array_map(function ($name) use ($run) {
+            return ['key' => $name, 'value' => 'blacklisted-' . strtolower($name) . '-' . $run];
+        }, ['Authorization', 'x-api-key', 'Cookie', 'Host', 'Transfer-Encoding', 'Connection', 'Content-Type', 'Accept', 'X-Custom-Feature', 'Prefer']);
+        // blacklisted rows before, between and after the legit ones
+        $this->setChangeStateHeadersInDb('default_process', array_merge(
+            array_slice($blacklistedHeaders, 0, 5),
+            [$legitHeaders[0]],
+            array_slice($blacklistedHeaders, 5),
+            [$legitHeaders[1]]
+        ));
+
+        $this->tester->createAccountWithAllMandatoryCustomFields();
+        $aid = json_decode($this->tester->grabResponse(), true)['entity']['aid'];
+        $this->tester->payApi(["amount" => 10, "aid" => $aid, "dir" => "tc"]);
+
+        $this->sendCollectCommand(['aids' => $aid]);
+
+        $this->tester->seeInCollection('subscribers', ['in_collection' => true, 'aid' => $aid, 'type' => "account"]);
+        $this->seeStateChangeInSingleDefaultBatch(1, 'in_collection', 'default_process');
+
+        // the request is still sent, even though some of its configured headers are blacklisted
+        $requests = $this->tester->grabCollectionStateChangeRequests($run);
+        $this->assertCount(1, $requests, 'the state change request is sent');
+        $this->assertSame('collection state change', $requests[0]['post']['step_code']);
+        $this->assertEquals([$aid], array_map('intval', $requests[0]['post']['extra_params']['aids']));
+        $received = array_change_key_case($requests[0]['headers'], CASE_LOWER);
+
+        // the legit headers are sent as configured
+        foreach ($legitHeaders as $header) {
+            $name = strtolower($header['key']);
+            $this->assertArrayHasKey($name, $received, "legit header {$header['key']} is sent");
+            $this->assertSame($header['value'], $received[$name], "legit header {$header['key']} is sent with its configured value");
+        }
+
+        // none of the blacklisted headers is sent: no header of the request carries a blacklisted row value...
+        foreach ($blacklistedHeaders as $header) {
+            $this->assertNotContains($header['value'], $received, "blacklisted header {$header['key']} is not sent");
+        }
+        // ...the ones only the configuration could add are not on the request at all...
+        foreach (['authorization', 'x-api-key', 'cookie', 'x-custom-feature', 'prefer'] as $name) {
+            $this->assertArrayNotHasKey($name, $received, "blacklisted header {$name} is not sent");
+        }
+        // ...and Accept stays the one BillRun sets
+        $this->assertSame('application/json', $received['accept'] ?? null);
+
+        $this->tester->seeInLogFile('Collection state change: blacklisted custom headers were not sent: ' . implode(', ', array_column($blacklistedHeaders, 'key')));
+        // the rest of the headers are not dropped along with the blacklisted ones
+        $this->tester->dontSeeInLogFile('Collection state change: custom headers were not sent');
+
+        $this->tester->resetCollectionStateChangeRequests($run);
+    }
+
     protected function initCollectionConfig($collectionProcesses, $rejectionSettings){
         $this->tester->setSettings('collection', ['processes' => $collectionProcesses, 'settings' => [
             "run_on_holidays" => true,
@@ -665,12 +737,34 @@ public function testCollectInCollectionWithoutAids()
      * and the config collection is capped so the latest revision cannot be updated in place.
      */
     protected function setRejectionRequiredSettings($rejectionSettings) {
+        $this->insertConfigRevision(function (&$config) use ($rejectionSettings) {
+            $config['collection']['settings']['rejection_required'] = $rejectionSettings;
+        });
+    }
+
+    /**
+     * Writes the custom headers of a process state change request directly as a new config revision,
+     * the way a script would - ConfigModel::updateConfig refuses the blacklisted ones.
+     */
+    protected function setChangeStateHeadersInDb($processName, $headers) {
+        $this->insertConfigRevision(function (&$config) use ($processName, $headers) {
+            $index = array_search($processName, array_column($config['collection']['processes'], 'name'));
+            $this->assertNotFalse($index, "process {$processName} is configured");
+            $config['collection']['processes'][$index]['settings']['change_state_headers'] = $headers;
+        });
+    }
+
+    /**
+     * Inserts the latest config revision again, changed by $change - a direct DB write,
+     * without the validations of ConfigModel::updateConfig.
+     */
+    protected function insertConfigRevision(callable $change) {
         $configColl = \Billrun_Factory::db()->configCollection();
         $latest = $configColl->query([])->cursor()->sort(['_id' => -1])->limit(1)->current();
         $raw = $latest->getRawData();
         unset($raw['_id']);
         $raw['urt'] = new \MongoDB\BSON\UTCDateTime(); // loadDbConfig picks the latest revision by urt
-        $raw['collection']['settings']['rejection_required'] = $rejectionSettings;
+        $change($raw);
         $configColl->insert(new \Mongodloid_Entity($raw));
         \Billrun_Config::getInstance()->loadDbConfig();
     }
