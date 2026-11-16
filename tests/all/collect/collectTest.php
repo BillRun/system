@@ -760,10 +760,12 @@ public function testCollectInCollectionWithoutAids()
      */
     protected function insertConfigRevision(callable $change) {
         $configColl = \Billrun_Factory::db()->configCollection();
-        $latest = $configColl->query([])->cursor()->sort(['_id' => -1])->limit(1)->current();
+        // the latest revision is picked the way the application picks it (loadDbConfig): by urt, not by _id - the _id
+        // of revisions inserted in the same second by different processes (php-fpm, this test) does not follow their order
+        $latest = $configColl->query([])->cursor()->sort(['urt' => -1, '_id' => -1])->limit(1)->current();
         $raw = $latest->getRawData();
         unset($raw['_id']);
-        $raw['urt'] = new \MongoDB\BSON\UTCDateTime(); // loadDbConfig picks the latest revision by urt
+        $raw['urt'] = new \MongoDB\BSON\UTCDateTime(); // makes this revision the latest
         $change($raw);
         $configColl->insert(new \Mongodloid_Entity($raw));
         \Billrun_Config::getInstance()->loadDbConfig();
