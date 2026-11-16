@@ -463,6 +463,37 @@
 			"changeable_props": ["select_options"]
 		}]
     },
+    "productgroups": {
+        "fields": [{
+            "field_name": "key",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "from",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "system": true,
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "description",
+            "system": true,
+            "mandatory": true
+        }, {
+            "field_name": "property_type",
+            "system": true
+        }, {
+            "field_name": "usage_types",
+            "system": true
+        }, {
+            "field_name": "rates",
+            "system": true,
+            "mandatory": true
+        }]
+    },
     "plans": {
         "fields": [{
             "field_name": "from",

@@ -417,9 +417,19 @@ class Billrun_Rates_Util {
 	 * Check if rate include in the given entity (service/plan)
 	 * @param string $rate_key
 	 * @param mixed $entity
+	 * @param int $time unix timestamp used to resolve products groups revisions
 	 * @return boolean return true if rate include in the given entity false otherwise
 	 */
-	public static function checkIfRateInclude($rate_key, $entity){
+	public static function checkIfRateInclude($rate_key, $entity, $time = null){
+            if (!empty($entity['include']['products_groups'])) {
+                foreach ($entity['include']['products_groups'] as $entry) {
+                    $productsGroup = Billrun_Factory::productgroup(['key' => $entry['key'], 'time' => is_null($time) ? time() : $time]);
+                    if (!$productsGroup->isEmpty() && in_array($rate_key, (array) $productsGroup->get('rates'))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
             if(!isset($entity['include']['groups'])){
                 return false;
             }

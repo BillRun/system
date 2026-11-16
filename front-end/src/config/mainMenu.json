@@ -8,6 +8,15 @@
     "order": 0,
     "parent": "postpaid"
   },
+  "products_groups": {
+    "title": "Products Groups",
+    "icon": "",
+    "route": "products_groups",
+    "show": true,
+    "roles": [],
+    "order": 1,
+    "parent": "postpaid"
+  },
   "prepaid": {
     "title": "Prepaid",
     "icon": "fa-cubes",
@@ -69,7 +78,7 @@
     "route": "plans",
     "show": true,
     "roles": [],
-    "order": 1,
+    "order": 2,
     "parent": "postpaid"
   },
   "services": {
@@ -78,7 +87,7 @@
     "route": "services",
     "show": true,
     "roles": [],
-    "order": 2,
+    "order": 3,
     "parent": "postpaid"
   },
   "discounts": {
@@ -87,7 +96,7 @@
     "route": "discounts",
     "show": true,
     "roles": [],
-    "order": 3,
+    "order": 4,
     "parent": "postpaid"
   },
   "charges": {
@@ -96,7 +105,7 @@
     "route": "charges",
     "show": true,
     "roles": [],
-    "order": 4,
+    "order": 5,
     "parent": "postpaid"
   },
   "customers": {

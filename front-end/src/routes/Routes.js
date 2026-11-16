@@ -55,6 +55,7 @@ import { ImmediateInvoiceSetup } from '../components/ImmediateInvoice';
 import { RefundInvoiceSetup } from '../components/RefundInvoice';
 import SuggestionsSetup, { SuggestionsList } from '../components/Suggestions';
 import { TaxList, TaxSetup, TaxMapping } from '@/components/Tax';
+import { ProductsGroupsList, ProductsGroupSetup } from '@/components/ProductsGroups';
 
 // Pre-compute Authentication-wrapped components (required because Authentication()
 // returns a component, and JSX can't call functions inside angle brackets).
@@ -71,6 +72,8 @@ const AuthChargesList         = Authentication(ChargesList);
 const AuthCharge              = Authentication(Charge);
 const AuthProductsList        = Authentication(ProductsList);
 const AuthProduct             = Authentication(Product);
+const AuthProductsGroupsList  = Authentication(ProductsGroupsList);
+const AuthProductsGroupSetup  = Authentication(ProductsGroupSetup);
 const AuthPrepaidPlansList    = Authentication(PrepaidPlansList);
 const AuthPrepaidPlan         = Authentication(PrepaidPlan);
 const AuthChargingPlansList   = Authentication(ChargingPlansList);
@@ -154,6 +157,11 @@ const AppRoutes = () => (
           <Route path="products" element={<AuthProductsList />} />
           <Route path="products/product/:itemId" element={<AuthProduct />} />
           <Route path="products/product" element={<AuthProduct />} />
+
+          {/* Products Groups */}
+          <Route path="products_groups" element={<AuthProductsGroupsList />} />
+          <Route path="products_groups/products_group/:itemId" element={<AuthProductsGroupSetup />} />
+          <Route path="products_groups/products_group" element={<AuthProductsGroupSetup />} />
 
           {/* Prepaid Plans */}
           <Route path="prepaid_plans" element={<AuthPrepaidPlansList />} />

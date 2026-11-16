@@ -33,6 +33,12 @@ export default class ProductSearchByUsagetype extends Component {
     this.loadOptions();
   }
 
+  componentDidUpdate(prevProps) {
+    if (!Immutable.is(prevProps.usages, this.props.usages) || prevProps.plays !== this.props.plays) {
+      this.loadOptions();
+    }
+  }
+
   onChangeGroupRates = (productKeys) => {
     const productKeysList = (productKeys.length) ? productKeys.split(',') : [];
     this.props.onChangeGroupRates(Immutable.List(productKeysList));

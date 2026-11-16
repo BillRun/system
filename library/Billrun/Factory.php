@@ -111,6 +111,13 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Service
 	 */
 	protected static $service = array();
+
+	/**
+	 * products group instances
+	 *
+	 * @var array
+	 */
+	protected static $productgroup = [];
 	/**
 	 * Smser instance
 	 * 
@@ -544,6 +551,25 @@ class Billrun_Factory {
 			self::$service[$stamp] = new Billrun_Service($params);
 		}
 		return self::$service[$stamp];
+	}
+
+	/**
+	 * method to retrieve the products group instance
+	 *
+	 * @return Billrun_Productgroups
+	 */
+	static public function productgroup($params) {
+
+		if (isset($params['disableCache']) && $params['disableCache']) {
+			return new Billrun_Productgroups($params);
+		}
+		// unique stamp per products group
+		$stamp = Billrun_Util::generateArrayStamp($params);
+
+		if (!isset(self::$productgroup[$stamp])) {
+			self::$productgroup[$stamp] = new Billrun_Productgroups($params);
+		}
+		return self::$productgroup[$stamp];
 	}
 
 	/**

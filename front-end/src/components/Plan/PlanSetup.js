@@ -36,6 +36,7 @@ import { clearItems, getRevisions, clearRevisions } from '@/actions/entityListAc
 import { showSuccess } from '@/actions/alertsActions';
 import { modeSelector, itemSelector, idSelector, tabSelector, revisionsSelector, itemSourceSelector } from '@/selectors/entitySelector';
 
+const SHOW_PLAN_INCLUDES_TAB = false;
 
 class PlanSetup extends Component {
 
@@ -282,18 +283,20 @@ class PlanSetup extends Component {
             </Panel>
           </Tab>
 
-          <Tab title="Included Products" eventKey={3}>
-            <Panel style={{ borderTop: 'none' }}>
-              <PlanIncludesTab
-                mode={mode}
-                plays={plays.join(',')}
-                includeGroups={includeGroups}
-                onChangeFieldValue={this.onChangeFieldValue}
-                onGroupAdd={this.onGroupAdd}
-                onGroupRemove={this.onGroupRemove}
-              />
-            </Panel>
-          </Tab>
+          { SHOW_PLAN_INCLUDES_TAB &&
+            <Tab title="Included Products" eventKey={3}>
+              <Panel style={{ borderTop: 'none' }}>
+                <PlanIncludesTab
+                  mode={mode}
+                  plays={plays.join(',')}
+                  includeGroups={includeGroups}
+                  onChangeFieldValue={this.onChangeFieldValue}
+                  onGroupAdd={this.onGroupAdd}
+                  onGroupRemove={this.onGroupRemove}
+                />
+              </Panel>
+            </Tab>
+          }
 
           <Tab title="Included Services" eventKey={4}>
             <Panel style={{ borderTop: 'none' }}>

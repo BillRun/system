@@ -34,7 +34,7 @@ export const searchProductsByKeyAndUsagetQuery = (usages, notKeys = [], plays = 
   };
 
   const additionConditions = []; // for addition conditions in $AND
-  if (usagesToQuery[0] !== 'cost') {
+  if (usagesToQuery.length !== 0 && usagesToQuery[0] !== 'cost') {
     additionConditions.push(
       { $or: usagesToQuery.map(usage => ({ [`rates.${usage}`]: { $exists: true } })) },
     );
@@ -356,6 +356,27 @@ export const getGroupsQuery = collection => ({
   ],
 });
 
+// include.groups is matched for the service counters that are still stored there,
+// not for backward compatibility to the old include groups structure
+export const getServicesGroupsQuery = () => ({
+  action: 'uniqueget',
+  entity: 'services',
+  params: [
+    { query: JSON.stringify({
+      $or: [
+        { 'include.groups': { $exists: true } },
+        { 'include.products_groups': { $exists: true } },
+      ],
+    }) },
+    { project: JSON.stringify({
+      name: 1,
+      include: 1,
+    }) },
+    { page: 0 },
+    { size: 9999 },
+  ],
+});
+
 export const getPlaysQuery = () => ({
   action: 'uniqueget',
   entity: 'subscribers',
@@ -462,9 +483,41 @@ export const getIncludedServicesKeysQuery = () => getEntitesQuery('services', { 
 });
 export const getPlansKeysQuery = (project = { name: 1, description: 1 }, query = {}, sort = { name: 1 }) => getEntitesQuery('plans', project, query, sort);
 export const getUserKeysQuery = () => getEntitesQuery('users', { username: 1 });
+// one revision per products group key: the active one, else a future one, else the last
+// expired one, so a service that references a group whose revisions are all over still
+// resolves its property type, units and products instead of showing them blank
+export const getProductsGroupsOptionsQuery = () => ({
+  action: 'uniqueget',
+  entity: 'productgroups',
+  params: [
+    { page: 0 },
+    { size: 9999 },
+    { query: JSON.stringify({}) },
+    { project: JSON.stringify({ key: 1, description: 1, property_type: 1, usage_types: 1, rates: 1 }) },
+    { sort: JSON.stringify({ key: 1 }) },
+    { states: JSON.stringify([0, 1, 2]) },
+  ],
+});
+// every revision of every products group with its dates: the service includes tab offers
+// only the groups with a revision overlapping the service revision, as the backend
+// validates on save (the API does not type from / to in a free query, so the dates are
+// compared on the client)
+export const getProductsGroupsRevisionsQuery = () => ({
+  action: 'get',
+  entity: 'productgroups',
+  params: [
+    { page: 0 },
+    { size: 9999 },
+    { query: JSON.stringify({}) },
+    { project: JSON.stringify({ key: 1, description: 1, property_type: 1, usage_types: 1, rates: 1, from: 1, to: 1 }) },
+    { sort: JSON.stringify({ key: 1, from: 1 }) },
+    { state: JSON.stringify([0, 1, 2]) },
+  ],
+});
 export const getAllGroupsQuery = () => ([
   getGroupsQuery('plans'),
-  getGroupsQuery('services'),
+  getServicesGroupsQuery(),
+  getProductsGroupsOptionsQuery(),
 ]);
 export const getBucketGroupsQuery = () => getEntitesQuery('prepaidgroups');
 export const getTaxRatesQuery = getEntitesQuery('taxes', { key: 1, description: 1 });
@@ -476,6 +529,7 @@ export const fetchDiscountByIdQuery = id => getEntityByIdQuery('discounts', id);
 export const fetchChargeByIdQuery = id => getEntityByIdQuery('charges', id);
 export const fetchReportByIdQuery = id => getEntityByIdQuery('reports', id);
 export const fetchtaxeByIdQuery = id => getEntityByIdQuery('taxes', id);
+export const fetchProductsGroupByIdQuery = id => getEntityByIdQuery('productgroups', id);
 export const fetchPlanByIdQuery = id => getEntityByIdQuery('plans', id);
 export const fetchPrepaidGroupByIdQuery = id => getEntityByIdQuery('prepaidgroups', id);
 export const fetchUserByIdQuery = id => getEntityByIdQuery('users', id);

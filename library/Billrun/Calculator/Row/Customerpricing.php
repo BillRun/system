@@ -680,7 +680,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function isRateInServicesGroups($rate, $usageType, $services) {
 		foreach ($services as $service) {
-			if ($service->isRateInEntityGroup($rate, $usageType)) {
+			if ($service->isRateInEntityGroup($rate, $usageType, $this->row['urt']->sec)) {
 				return true;
 			}
 		}
@@ -709,7 +709,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			$serviceName = $service->getName();
 			$serviceQuantity = 1;
-			$serviceGroups = $service->getRateGroups($rate, $usageType, 'without');
+			$serviceGroups = $service->getRateGroups($rate, $usageType, 'without', $this->row['urt']->sec);
 			$aid = $this->row->getRawData()['aid'];
 			foreach ($serviceGroups as $serviceGroup) {
 				$relatedBalance = $this->getRelatedBalance($service, $serviceGroup, $key, $rate, $usageType);

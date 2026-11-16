@@ -97,6 +97,7 @@ export default class ServiceDetails extends Component {
     if (playWasRemoved) {
       this.props.updateItem(['rates'], Immutable.Map());
       this.props.updateItem(['include', 'groups'], Immutable.Map());
+      this.props.updateItem(['include', 'products_groups'], Immutable.List());
     }
   }
 

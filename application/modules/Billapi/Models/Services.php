@@ -21,6 +21,9 @@ class Models_Services extends Models_Entity {
 		$this->validatePrice();
 		$this->validateTierLimitCycles();
 		$this->validateRecurrence();
+		if (in_array($this->action, array('create', 'update', 'closeandnew', 'permanentchange'))) {
+			$this->validateProductsGroups();
+		}
 	}
 
 	public function applyCacheChange($new = null, $old = null) {
@@ -96,8 +99,148 @@ class Models_Services extends Models_Entity {
 	}
 
 	/**
+	 * Validate the structure of the service's included products groups
+	 * (include.products_groups). Each entry references a products group by key
+	 * and is either usage based (value + unit, the group must have a property
+	 * type) or monetary based (cost).
+	 *
+	 * A usage based value is stored in the property type base unit - like the old
+	 * include.groups values - and the entry unit is the unit it is displayed in.
+	 *
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function validateProductsGroups() {
+		if (!isset($this->update['include']) || !array_key_exists('products_groups', $this->update['include'])) {
+			return;
+		}
+		$entries = $this->update['include']['products_groups'];
+		// a list is expected - an associative or gapped array is unexpected input and is
+		// rejected rather than silently reindexed, so a caller sending the wrong shape
+		// is told about it instead of having it stored as a mongo object
+		if (!is_array($entries) || $entries !== array_values($entries)) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'include.products_groups must be a list of products groups');
+		}
+		// array_column drops entries that are not an array or carry no key, so a count
+		// mismatch means at least one entry has no products group to reference
+		$keys = array_column($entries, 'key');
+		if (count($keys) !== count($entries) || in_array('', $keys, true)) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Each included products group must have a key');
+		}
+		$usedKeys = array();
+		foreach ($entries as $entry) {
+			$key = $entry['key'];
+			// including the same products group more than once does not seem to be needed,
+			// so it is deliberately limited to a single entry per group - this is a product
+			// decision and not a technical constraint, it can be relaxed if a need comes up
+			if (isset($usedKeys[$key])) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '" cannot be included more than once');
+			}
+			$usedKeys[$key] = true;
+			$productsGroup = $this->getReferencedProductsGroup($key);
+			if ($productsGroup->isEmpty()) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Unknown products group: ' . $key);
+			}
+			$this->validateProductsGroupQuota($entry, $productsGroup);
+			foreach (array('account_shared', 'account_pool', 'quantity_affected') as $flag) {
+				if (array_key_exists($flag, $entry) && !is_bool($entry[$flag])) {
+					throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": ' . $flag . ' must be boolean');
+				}
+			}
+		}
+		$this->validateProductsGroupsQuotaTypeUnchanged($entries);
+	}
+
+	/**
+	 * Validate the quota of a single included products group: usage based
+	 * entries hold value + unit and require a group with a property type,
+	 * monetary based entries hold cost only.
+	 *
+	 * @param array $entry the include.products_groups entry
+	 * @param Mongodloid_Entity $productsGroup the referenced products group
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function validateProductsGroupQuota($entry, $productsGroup) {
+		$key = $entry['key'];
+		$hasValue = array_key_exists('value', $entry);
+		$hasCost = array_key_exists('cost', $entry);
+		if ($hasValue === $hasCost) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '" must have either a value (usage based) or a cost (monetary based)');
+		}
+		if ($hasCost) {
+			if (!is_numeric($entry['cost']) || $entry['cost'] <= 0) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": cost must be a positive number');
+			}
+			if (array_key_exists('unit', $entry)) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": unit is not allowed for a monetary based quota');
+			}
+			return;
+		}
+		$value = $entry['value'];
+		if ($value !== Billrun_Service::UNLIMITED_VALUE && (!is_numeric($value) || $value <= 0)) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": value must be a positive number or ' . Billrun_Service::UNLIMITED_VALUE);
+		}
+		$propertyType = isset($productsGroup['property_type']) ? $productsGroup['property_type'] : null;
+		if (is_null($propertyType) || $propertyType === '') {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '" has no property type and can only be included as monetary based');
+		}
+		if (empty($entry['unit']) || !is_string($entry['unit'])) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": unit is mandatory for a usage based quota');
+		}
+		$units = array_column(Billrun_Utils_Units::getUnitsOfMeasureByPropertyType($propertyType), 'name');
+		if (!in_array($entry['unit'], $units)) {
+			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": unknown unit "' . $entry['unit'] . '" for property type "' . $propertyType . '"');
+		}
+	}
+
+	/**
+	 * After a service was saved, the quota of an included products group cannot
+	 * be changed from usage based to monetary based or vice versa.
+	 *
+	 * @param array $entries the new include.products_groups entries
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function validateProductsGroupsQuotaTypeUnchanged($entries) {
+		if (is_null($this->before) || $this->before->isEmpty()) {
+			return;
+		}
+		$beforeEntries = Billrun_Util::getIn($this->before->getRawData(), 'include.products_groups', array());
+		if (!is_array($beforeEntries)) {
+			return;
+		}
+		// the saved entries indexed by their products group key, to look each new entry
+		// up directly instead of scanning the saved list for every one of them
+		$beforeByKey = array_column($beforeEntries, null, 'key');
+		foreach ($entries as $entry) {
+			$key = $entry['key'];
+			if (!isset($beforeByKey[$key])) {
+				continue;
+			}
+			if (array_key_exists('cost', $entry) !== array_key_exists('cost', $beforeByKey[$key])) {
+				throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Products group "' . $key . '": the quota cannot be changed from usage based to monetary based or vice versa');
+			}
+		}
+	}
+
+	/**
+	 * Get a products group by key, with revisions overlapping the service revision.
+	 *
+	 * @param string $key the products group key
+	 * @return Mongodloid_Entity
+	 */
+	protected function getReferencedProductsGroup($key) {
+		$from = isset($this->update['from']) ? $this->update['from'] : (isset($this->before['from']) ? $this->before['from'] : new Mongodloid_Date());
+		$to = isset($this->update['to']) ? $this->update['to'] : (isset($this->before['to']) ? $this->before['to'] : new Mongodloid_Date(strtotime(self::UNLIMITED_DATE)));
+		$query = array(
+			'key' => $key,
+			'from' => array('$lt' => $to),
+			'to' => array('$gt' => $from),
+		);
+		return Billrun_Factory::db()->productgroupsCollection()->query($query)->cursor()->limit(1)->current();
+	}
+
+	/**
 	 * method to add entity custom fields values from request
-	 * 
+	 *
 	 * @param array $fields array of field settings
 	 */
 	protected function getCustomFields($update = array()) {

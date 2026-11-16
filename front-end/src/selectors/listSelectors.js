@@ -364,7 +364,7 @@ const selectUsedPropertyTypes = (groupsOptions, propertyTypes) => {
   if (groupsOptions) {
     return Immutable.Set().withMutations((setWithMutations) => {
       groupsOptions.forEach((group) => {
-        const groupsInService = group.getIn(['include', 'groups']);
+        const groupsInService = group.getIn(['include', 'groups'], Immutable.Map());
         groupsInService.forEach((groupInService) => {
           setWithMutations.union(inferPropTypeFromUsageType(propertyTypes, groupInService.get('usage_types', Immutable.Map())));
         });

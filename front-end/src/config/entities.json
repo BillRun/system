@@ -47,6 +47,17 @@
     "itemType": "prepaid_include",
     "itemsType": "prepaid_includes"
   },
+  "products_group": {
+    "collection": "productgroups",
+    "audited": true,
+    "uniqueField": "key",
+    "itemName": "products group",
+    "itemsName": "products groups",
+    "itemType": "products_group",
+    "itemsType": "products_groups",
+    "settingsKey": "productgroups",
+    "defaultListFields": ["key", "description", "usage_types", "rates"]
+  },
   "product": {
     "collection": "rates",
     "audited": true,

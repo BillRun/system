@@ -24,7 +24,17 @@ class Billrun_Utils_Units {
 		if (!$usageTypeData || !isset($usageTypeData['property_type'])) {
 			return array();
 		}
-		$propertyTypeData = self::getPropertyTypeData($usageTypeData['property_type']);
+		return self::getUnitsOfMeasureByPropertyType($usageTypeData['property_type']);
+	}
+
+	/**
+	 * get all units of measure of a property type
+	 *
+	 * @param string $propertyType
+	 * @return array
+	 */
+	public static function getUnitsOfMeasureByPropertyType($propertyType) {
+		$propertyTypeData = self::getPropertyTypeData($propertyType);
 		return isset($propertyTypeData['uom']) ? $propertyTypeData['uom'] : array();
 	}
 	
@@ -243,6 +253,22 @@ class Billrun_Utils_Units {
 			return false;
 		}
 		return $usageTypeData['property_type'];
+	}
+
+	/**
+	 * get all the activity (usage) types of a property type
+	 *
+	 * @param string $propertyType
+	 * @return array activity type names
+	 */
+	public static function getUsagetsByPropertyType($propertyType) {
+		$usagets = array();
+		foreach (self::getUsageTypes() as $usageTypeData) {
+			if (isset($usageTypeData['usage_type'], $usageTypeData['property_type']) && $usageTypeData['property_type'] === $propertyType) {
+				$usagets[] = $usageTypeData['usage_type'];
+			}
+		}
+		return array_values(array_unique($usagets));
 	}
 
 }

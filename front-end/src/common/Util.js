@@ -558,6 +558,147 @@ export const getGroupUnit = group => (isGroupMonetaryBased(group)
   ? 'cost'
   : group.get('usage_types', Immutable.Map()).valueSeq().get(0, Immutable.Map()).get('unit', false));
 
+export const getUomByPropertyType = (propertyTypes, propertyType) =>
+  (propertyTypes.find(prop => prop.get('type', '') === propertyType) || Immutable.Map()).get('uom', Immutable.List());
+
+export const getUnitLabelByPropertyType = (propertyTypes, propertyType, unit) =>
+  (getUomByPropertyType(propertyTypes, propertyType)
+    .find(uom => uom.get('name', '') === unit) || Immutable.Map()).get('label', unit);
+
+/**
+ * Convert the include.products_groups references of a service fetched from the API
+ * into the include.groups shape the Events / Reports screens consume.
+ * The products of the group and its activity types are taken from the referenced
+ * products group, keyed by its key.
+ * There is no backward compatibility to the old include.groups structure - of the
+ * groups stored there only the service counters, which were not moved to products
+ * groups, are kept.
+ * Operates on the plain (not immutable) service object.
+ */
+export const mergeServiceProductsGroupsIncludes = (service, productsGroupsByKey) => {
+  const include = service.include || {};
+  const entries = Array.isArray(include.products_groups) ? include.products_groups : [];
+  const oldGroups = (include.groups && !Array.isArray(include.groups)) ? include.groups : {};
+  const groups = {};
+  Object.keys(oldGroups).forEach((groupName) => {
+    if (oldGroups[groupName] && oldGroups[groupName].counter_only) {
+      groups[groupName] = oldGroups[groupName];
+    }
+  });
+  entries.forEach((entry) => {
+    if (!entry || !entry.key) {
+      return;
+    }
+    const productsGroup = productsGroupsByKey[entry.key] || {};
+    const group = {
+      account_shared: entry.account_shared || false,
+      account_pool: entry.account_pool || false,
+      quantity_affected: entry.quantity_affected || false,
+      rates: productsGroup.rates || [],
+    };
+    if (Object.prototype.hasOwnProperty.call(entry, 'cost')) {
+      group.cost = entry.cost;
+    } else {
+      group.value = entry.value;
+      group.unit = entry.unit;
+      group.usage_types = {};
+      (productsGroup.usage_types || []).forEach((usageType) => {
+        group.usage_types[usageType] = { unit: entry.unit };
+      });
+    }
+    groups[entry.key] = group;
+  });
+  return Object.assign({}, service, {
+    include: Object.assign({}, include, { groups }),
+  });
+};
+
+/**
+ * Collect the group names already taken in the balance groups namespace from the
+ * getAllGroupsQuery responses: the include.groups names of plans and services (the
+ * service counters), the include.products_groups keys of services and the products
+ * groups keys. A products group key becomes a balance group name exactly like a
+ * counter name does, so a counter cannot be named after a products group.
+ * Operates on the plain (not immutable) API responses, returns a plain array of unique names.
+ */
+export const collectExistingGroupNames = (responses = []) => {
+  const names = new Set();
+  responses.forEach((response) => {
+    const details = (response && response.data && Array.isArray(response.data.details))
+      ? response.data.details
+      : [];
+    details.forEach((item) => {
+      if (!item) {
+        return;
+      }
+      if (typeof item.key === 'string' && item.key !== '') { // a products group
+        names.add(item.key);
+      }
+      const include = item.include || {};
+      if (include.groups && !Array.isArray(include.groups)) {
+        Object.keys(include.groups).forEach(name => names.add(name));
+      }
+      if (Array.isArray(include.products_groups)) {
+        include.products_groups.forEach((entry) => {
+          if (entry && typeof entry.key === 'string' && entry.key !== '') {
+            names.add(entry.key);
+          }
+        });
+      }
+    });
+  });
+  return [...names];
+};
+
+/**
+ * The products groups a service revision can include, resolved the way the backend
+ * validates them: a group is available when one of its revisions overlaps the service
+ * revision dates. Of the overlapping revisions the one in effect at the service start
+ * is returned, else the earliest, so the screen shows the products the service starts with.
+ * @param {Immutable.List} revisions every revision of every products group, from / to as date strings
+ * @param {moment} serviceFrom the service revision start
+ * @param {moment|null} serviceTo the service revision end, null for unlimited
+ * @return {Immutable.List} one revision per available products group key
+ */
+export const getProductsGroupsForRevision = (revisions, serviceFrom, serviceTo = null) => revisions
+  .filter((revision) => {
+    const from = getItemDateValue(revision, 'from', moment(0));
+    const startsBeforeEnd = serviceTo === null || from.isBefore(serviceTo);
+    const endsAfterStart = !revision.has('to') || getItemDateValue(revision, 'to').isAfter(serviceFrom);
+    return startsBeforeEnd && endsAfterStart;
+  })
+  .groupBy(revision => revision.get('key', ''))
+  .map((groupRevisions) => {
+    const sorted = groupRevisions.sortBy(revision => getItemDateValue(revision, 'from', moment(0)).valueOf());
+    return sorted.findLast(revision => !getItemDateValue(revision, 'from', moment(0)).isAfter(serviceFrom)) || sorted.first();
+  })
+  .toList();
+
+/**
+ * The latest revision of every products group, to still show the details of a group
+ * that a service includes although none of its revisions overlaps the service revision.
+ * @param {Immutable.List} revisions every revision of every products group
+ * @return {Immutable.List} one revision per products group key
+ */
+export const getProductsGroupsLatestRevisions = revisions => revisions
+  .groupBy(revision => revision.get('key', ''))
+  .map(groupRevisions => groupRevisions.maxBy(revision => getItemDateValue(revision, 'from', moment(0)).valueOf()))
+  .toList();
+
+/**
+ * the unit of measure data of a unit name, looked up across all property types.
+ * unit names are unique across the property types, and for an include entry the
+ * backend validates the unit against the products group property type.
+ */
+export const getUomDataByUnitName = (propertyTypes, unit) => propertyTypes
+  .map(propertyType => propertyType.get('uom', Immutable.List()).find(uom => uom.get('name', '') === unit))
+  .find(uom => uom !== undefined) || Immutable.Map();
+
+/**
+ * include values are stored in the property type base unit and displayed in the
+ * chosen unit: values are converted to the base unit on save (toBaseUnit) and
+ * back to the chosen unit on load - include.groups and include.products_groups alike.
+ */
 export const getPlanConvertedIncludes = (propertyTypes, usageTypes, item, toBaseUnit = true) => {
   const convertedIncludes = item.get('include', Immutable.Map()).withMutations((includesWithMutations) => {
     includesWithMutations.get('groups', Immutable.Map()).forEach((include, group) => {
@@ -569,6 +710,16 @@ export const getPlanConvertedIncludes = (propertyTypes, usageTypes, item, toBase
         const newConvertedValue = (newValue === 'UNLIMITED') ? newValue : parseFloat(newValue);
         includesWithMutations.setIn(['groups', group, 'value'], newConvertedValue);
       }
+    });
+    includesWithMutations.get('products_groups', Immutable.List()).forEach((productsGroup, index) => {
+      const unit = productsGroup.get('unit', '');
+      const value = productsGroup.get('value', '');
+      // monetary based entries carry no unit, and UNLIMITED has no magnitude to convert
+      const factor = getUomDataByUnitName(propertyTypes, unit).get('unit', false);
+      if (unit === '' || value === '' || value === 'UNLIMITED' || factor === false) {
+        return;
+      }
+      includesWithMutations.setIn(['products_groups', index, 'value'], toBaseUnit ? value * factor : value / factor);
     });
   });
   return !convertedIncludes.isEmpty()
