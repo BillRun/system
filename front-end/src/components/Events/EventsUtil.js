@@ -54,6 +54,12 @@ export const buildBalanceConditionPath = (trigger, limitation, params = {}) => {
         related_entities: Immutable.List()
       })]);
     }
+    case 'cost_with_tax':
+      return Immutable.List([Immutable.Map({
+        path: 'balance.cost_with_tax',
+        total_path: '',
+        related_entities: Immutable.List(),
+      })]);
     case 'none':
     default:
       return Immutable.List([Immutable.Map({
@@ -72,6 +78,9 @@ export const getLimitationFromBalanceConditionPath = (path) => {
   }
   if (path.indexOf('.totals.') !== -1) {
     return 'activity_type';
+  }
+  if (path === 'balance.cost_with_tax') {
+    return 'cost_with_tax';
   }
   return 'none';
 };
@@ -165,9 +174,11 @@ export const getConditionDescription = (condition, params) => {
       return `${pref} of group(s) ${getBalanceConditionName(condition)} ${getConditionValue(condition, params)}`;
     case 'activity_type':
       return `${pref} of ${activityType} activity ${getBalanceConditionName(condition)} ${getConditionValue(condition, params)}`;
+    case 'cost_with_tax':
+      return `Total charge including taxes ${getBalanceConditionName(condition)} ${getConditionValue(condition, params)}`;
     case 'none':
     default:
-      return `Total cost ${getBalanceConditionName(condition)} ${getConditionValue(condition, params)}`;
+      return `Total charge ${getBalanceConditionName(condition)} ${getConditionValue(condition, params)}`;
   }
 };
 

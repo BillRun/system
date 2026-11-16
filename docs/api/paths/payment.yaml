@@ -1,0 +1,276 @@
+pay:
+  post:
+    tags: [Payment]
+    summary: Pay / refund / deposit / split bill
+    operationId: api.pay
+    description: |
+      Multi-purpose payment endpoint. The `action` parameter selects the
+      sub-operation; when omitted, the call processes one or more
+      payments via the configured gateway.
+
+      Implemented by `Action_PayAction::execute()`.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              method:
+                type: string
+                description: |
+                  Payment method. One of the registered Bill_Payment
+                  subclasses (`credit`, `cash`, `cheque`, `direct_debit`,
+                  `installment_agreement`, ...).
+              action:
+                type: string
+                enum: [split_bill, use_deposit, cancel_payments, merge_installments]
+                description: |
+                  Sub-action. When set:
+                    - `split_bill`: split a bill into installments
+                    - `use_deposit`: unfreeze a previously frozen deposit
+                    - `cancel_payments`: cancel queued/processing payments
+                    - `merge_installments`: combine installments back together
+              payments:
+                type: string
+                description: |
+                  JSON-encoded array of payment objects. Required when
+                  `action` is empty.
+              txid:
+                type: string
+                description: |
+                  JSON-encoded array of transaction IDs. Required for
+                  `use_deposit` and `cancel_payments`.
+              uf:
+                type: string
+                description: |
+                  JSON-encoded user fields to attach to the payment(s).
+            required: []
+    responses:
+      "200":
+        description: Payment processed
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: object
+                      properties:
+                        record_ids:
+                          type: array
+                          items: { type: string }
+                        deposits_saved: { type: integer }
+                        payments:
+                          type: array
+                          items: { $ref: "../components/schemas/bill.yaml#/Bill" }
+      "400": { $ref: "../components/responses.yaml#/BadRequest" }
+      "401": { $ref: "../components/responses.yaml#/Unauthorized" }
+
+bill:
+  post:
+    tags: [Payment]
+    summary: Get / list bills (invoices, receipts, refunds)
+    operationId: api.bill
+    description: |
+      Fetch bills (invoices `inv`, payment receipts `rec`, refunds `ref`)
+      for one or more accounts. Supports pagination and filtering on
+      billing cycle, type, due date, and payment status.
+
+      Backed by `Action_BillAction::execute()`. For schema-validated
+      filtering, prefer `/billapi/bills/get`.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              aid:
+                type: string
+                description: |
+                  Single AID or JSON array of AIDs. Required when `query`
+                  is not supplied.
+              query:
+                type: string
+                description: JSON-encoded Mongo filter.
+              billrun_key:
+                type: string
+                description: Filter by billing cycle (YYYYMM).
+              type:
+                type: string
+                enum: [inv, rec, ref]
+              page: { type: integer, minimum: 0 }
+              size: { type: integer, minimum: 1, maximum: 1000 }
+              sort: { type: string }
+    responses:
+      "200":
+        description: List of bills
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/bill.yaml#/Bill" }
+
+cards:
+  post:
+    tags: [Payment]
+    summary: Tokenize a payment card / start periodic payment
+    operationId: api.cards
+    description: |
+      Initiate a payment-card tokenization flow with the configured
+      payment gateway. Returns a redirect URL where the customer can
+      enter card details on a hosted page; on success BillRun receives a
+      tokenized identifier that can be used for subsequent recurring
+      charges.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            required: [aid]
+            properties:
+              aid: { type: integer }
+              sid: { type: integer }
+              ok_redirect:   { type: string, format: uri }
+              fail_redirect: { type: string, format: uri }
+              return_url:    { type: string, format: uri }
+              tenant_url:    { type: string }
+              action:
+                type: string
+                enum: [start_periodic_payment, retrieve_token, delete_token]
+    responses:
+      "200":
+        description: Tokenization result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: object
+                      properties:
+                        url:        { type: string, format: uri, description: "Hosted-payment-page URL" }
+                        gateway:    { type: string }
+                        request_id: { type: string }
+
+adjustpayments:
+  post:
+    tags: [Payment]
+    summary: Adjust / reconcile payments
+    operationId: api.adjustpayments
+    description: |
+      Apply manual adjustments to outstanding payments (mark paid,
+      reject, deny, unconfirm). Implemented by
+      `Action_AdjustPaymentAction`.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            required: [adjustment_type]
+            properties:
+              adjustment_type:
+                type: string
+                enum: [paid, rejected, denied, refunded, cancelled]
+              txid:
+                type: string
+                description: JSON-encoded array of transaction IDs to adjust.
+              reason: { type: string }
+    responses:
+      "200":
+        $ref: "../components/responses.yaml#/Envelope"
+
+onetimeinvoice:
+  post:
+    tags: [Payment]
+    summary: Generate a one-time invoice
+    operationId: api.onetimeinvoice
+    description: |
+      Generate an invoice for a list of charges outside of the regular
+      billing cycle. Returns the invoice document on success.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [aid, charges]
+            properties:
+              aid: { type: integer }
+              sid: { type: integer }
+              billrun_key: { type: string }
+              charges:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    aprice: { type: number }
+                    usaget: { type: string }
+                    arate:  { type: string }
+                    reason: { type: string }
+              issue_invoice:
+                type: boolean
+                default: true
+    responses:
+      "200":
+        description: Invoice issued
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    entity: { $ref: "../components/schemas/bill.yaml#/Bill" }
+
+accountinvoices:
+  post:
+    tags: [Payment]
+    summary: List invoices for an account
+    operationId: api.accountinvoices
+    description: |
+      Return all invoices for one or more accounts, with optional
+      filtering by cycle / paid status. Backed by
+      `Action_InvoicesAction`.
+    requestBody:
+      required: true
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            required: [aid]
+            properties:
+              aid:
+                type: string
+                description: AID or JSON array of AIDs.
+              billrun_key: { type: string }
+              paid:
+                type: string
+                enum: ["true", "false"]
+              page: { type: integer }
+              size: { type: integer }
+    responses:
+      "200":
+        description: Invoices for the requested account(s)
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "../components/responses.yaml#/EnvelopeSchema"
+                - type: object
+                  properties:
+                    details:
+                      type: array
+                      items: { $ref: "../components/schemas/bill.yaml#/Bill" }

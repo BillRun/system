@@ -60,7 +60,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	/**
 	 * Actions to do after loading
 	 */
-	protected function afterLoad($data) {
+	protected function afterLoad(&$data) {
 		
 	}
 	

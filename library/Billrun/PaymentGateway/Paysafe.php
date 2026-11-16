@@ -231,7 +231,7 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 		);
 		$customerRequest = json_encode($data);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
+			Billrun_Factory::log("Request for creating customer: " . $this->logSafe($customerRequest), Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->redirectHostUrl, $customerRequest, Zend_Http_Client::POST, array('Content-Type: application/json', 'Authorization: Basic ' . $encodedAuth), null, 0);
 			Billrun_Factory::log("Response for Paysafe for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
@@ -259,9 +259,9 @@ class Billrun_PaymentGateway_Paysafe extends Billrun_PaymentGateway {
 	private function setEndpointUrl($params){
 		$version = !empty($params['Version']) ? $params['Version'] : $this->version;
 		if (Billrun_Factory::config()->isProd()) {
-			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
+			$this->EndpointUrl = "https://api.paysafe.com/cardpayments/" . ($version ?? '') . "/accounts/" . ($params['Account'] ?? '') . "/auths";
 		} else { // test/dev environment
-			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . $version . "/accounts/" . $params['Account'] . "/auths";
+			$this->EndpointUrl = "https://api.test.paysafe.com/cardpayments/" . ($version ?? '') . "/accounts/" . ($params['Account'] ?? '') . "/auths";
 		}
 	}
 	

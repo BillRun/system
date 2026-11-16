@@ -318,8 +318,48 @@ class Billrun_Factory {
 	 */
 	static public function mailer() {
 		try {
-			$mailer = new Zend_Mail();
-			$mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+            $mailer = new Zend_Mail();
+            $mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+			foreach ((array) $mailerTransport as $key => $value) {
+				if (is_string($value) && trim($value) === '') {
+					unset($mailerTransport[$key]);
+				}
+			}
+			if (isset($mailerTransport['auth']) && $mailerTransport['auth'] !== 'oauth2' && empty($mailerTransport['username'])) {
+				// no credentials to authenticate with - use an unauthenticated SMTP session
+				unset($mailerTransport['auth']);
+			}
+			$oauthSettings = isset($mailerTransport['oauth2']) ? $mailerTransport['oauth2'] : [];
+            if (isset($mailerTransport['auth']) && $mailerTransport['auth'] === 'oauth2') {
+				$oauthParams = [
+					'access_token_url' => isset($oauthSettings['token_url']) ? $oauthSettings['token_url'] : '',
+					'cache' => true,
+					'data' => [
+						'client_id'     => isset($oauthSettings['client_id']) ? $oauthSettings['client_id'] : '',
+						'client_secret' => isset($oauthSettings['client_secret']) ? $oauthSettings['client_secret'] : '',
+						'refresh_token' => isset($oauthSettings['refresh_token']) ? $oauthSettings['refresh_token'] : '',
+						'grant_type'    => 'refresh_token',
+					]
+				];
+
+				$authClient = new Billrun_AuthClient_Oauth2($oauthParams);
+				$tokenData = $authClient->fetchTokenData();
+				$accessToken = $tokenData['access_token'] ?? null;
+
+
+				if (isset($tokenData['refresh_token']) && $tokenData['refresh_token'] !== $oauthSettings['refresh_token']) {
+					Billrun_Factory::config()->setConfigValue('mailer.transport.oauth2.refresh_token', $tokenData['refresh_token']);
+					$mailerTransport['oauth2']['refresh_token'] = $tokenData['refresh_token'];
+				}
+                if (!$accessToken) {
+                    throw new Exception('OAuth2 Token generation failed');
+                }
+                $mailerTransport['accessToken'] = $accessToken;                
+                if (!isset($mailerTransport['email']) && isset($mailerTransport['username'])) {
+                    $mailerTransport['email'] = $mailerTransport['username'];
+                }
+            }
+
 			if (!empty($mailerTransport)) {
 				$className = 'Zend_Mail_Transport_' . ucfirst($mailerTransport['type']);
 				$transport = new $className($mailerTransport['host'], $mailerTransport);
@@ -550,8 +590,13 @@ class Billrun_Factory {
 
 	public static function auth() {
 		if (!isset(self::$auth)) {
-			Billrun_Util::setHttpSessionTimeout(null, 'Lax');
-			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
+			if (php_sapi_name() === 'cli') {
+				// no HTTP session in CLI (cron/tests); Yaf_Session hangs/segfaults on PHP 8.5 (BRCD-3318)
+				self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_NonPersistent());
+			} else {
+				Billrun_Util::setHttpSessionTimeout(null, 'Lax');
+				self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
+			}
 		}
 		return self::$auth;
 	}

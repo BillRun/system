@@ -1,0 +1,111 @@
+realtime:
+  post:
+    tags: [Realtime]
+    summary: Realtime charging event
+    operationId: realtime.event
+    description: |
+      Realtime event endpoint used by network elements (PGW, MMSC, SBC,
+      etc.) for online charging. The shape of the request body depends on
+      the configured `file_type`, which selects the parser and the rating
+      pipeline.
+
+      A typical flow:
+
+      1. **Session start (`record_type=start_request`)** - reserve units;
+         BillRun returns a granted volume + transaction ID.
+      2. **Session update (`record_type=update_request`)** - mid-session
+         re-authorization (consume, request additional units).
+      3. **Session release (`record_type=release_request`)** - settle the
+         actual used volume and free any reservation.
+
+      Implementation: `RealtimeController::execute()` delegates to the
+      configured decoder (JSON / KV / Diameter-mapped). Returned codes
+      come from `conf/realtime/return_codes.ini`.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [file_type, request]
+            properties:
+              file_type:
+                type: string
+                description: |
+                  Realtime file-type key (configured under the BillRun
+                  input processors). Determines the parser and the rating
+                  rules to apply.
+                example: ggsn_event
+              request:
+                type: object
+                description: |
+                  Event payload. Fields are processor-specific; the
+                  example below shows a generic data-session event.
+                additionalProperties: true
+                properties:
+                  record_type:
+                    type: string
+                    enum: [start_request, update_request, release_request, final_request]
+                  session_id:
+                    type: string
+                  imsi:
+                    type: string
+                  msisdn:
+                    type: string
+                  charging_id:
+                    type: string
+                  usaget:
+                    type: string
+                    enum: [call, sms, mms, data, flat]
+                  usagev:
+                    type: number
+                    description: Volume consumed in this event.
+                  request_num:
+                    type: integer
+                  reserved_units:
+                    type: number
+                  apn:
+                    type: string
+                  rating_group:
+                    type: integer
+                  result_code:
+                    type: integer
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+    responses:
+      "200":
+        description: Realtime decision
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:    { type: integer, enum: [0, 1] }
+                desc:      { type: string }
+                tx_id:     { type: string, description: "Transaction ID" }
+                line_stamp: { type: string }
+                charging_decision:
+                  type: object
+                  properties:
+                    granted_units:    { type: number }
+                    validity_time:    { type: integer, description: "Seconds" }
+                    quota_threshold:  { type: number }
+                    result_code:      { type: integer }
+                balance:
+                  type: object
+                  additionalProperties: true
+                rating:
+                  type: object
+                  properties:
+                    arate:  { type: string }
+                    aprice: { type: number }
+                    usagev: { type: number }
+                    usaget: { type: string }
+                line:
+                  $ref: "../components/schemas/line.yaml#/Line"
+      "400": { $ref: "../components/responses.yaml#/BadRequest" }
+      "401": { $ref: "../components/responses.yaml#/Unauthorized" }
