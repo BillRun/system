@@ -804,5 +804,28 @@
   },
   "plays": [
 	{ "name": "Default", "enabled": true, "default": true }
-  ]
+  ],
+  "collection": {
+    "processes": [{
+      "name": "default_process",
+      "label": "Default process",
+      "conditions": [],
+      "settings": {},
+      "steps": []
+    }],
+    "settings": {
+      "run_on_holidays": true,
+      "run_on_days": [true, true, true, true, true, true, true],
+      "run_on_hours": [],
+      "rejection_required": {
+        "conditions": {
+          "customers": [{
+            "field": "aid",
+            "op": "exists",
+            "value": false
+          }]
+        }
+      }
+    }
+  }
 }

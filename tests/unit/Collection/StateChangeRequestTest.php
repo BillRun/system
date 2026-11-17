@@ -115,7 +115,7 @@ class StateChangeRequestTest extends \Codeception\Test\Unit {
 				$batchLabel = $label . ': batch ' . ($index + 1);
 				$this->assertSame('collection state change', $step['step_code'], $batchLabel);
 				$this->assertSame('httpnoack', $step['step_type'], $batchLabel);
-				$this->assertSame(array('url' => self::CHANGE_STATE_URL, 'method' => 'POST'), $step['step_config'], $batchLabel);
+				$this->assertSame(array_merge(array('url' => self::CHANGE_STATE_URL, 'method' => 'POST'), array('headers' => array(array('key' => 'Accept', 'value' => 'application/json')))), $step['step_config'], $batchLabel);
 				$this->assertSame($extraParams, $step['extra_params'], $batchLabel);
 				$this->assertNotEmpty($step['creation_time'], $batchLabel);
 			}
