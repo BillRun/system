@@ -113,7 +113,7 @@ build:
       fi
       docker buildx build --tag billrun/billrun:$CI_COMMIT_TAG $LATEST_TAG --push --no-cache -f docker/cicd/Dockerfile .
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(alpha|beta|rc)\d+(\.\d+)?)?$/'
 
 container_scanning:
   tags: [CI_SAST]
@@ -127,7 +127,7 @@ container_scanning:
     GIT_STRATEGY: clone
     CS_SEVERITY_THRESHOLD: HIGH
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(beta|rc)\d+(\.\d+)?)?$/'
+    - if: '$CI_COMMIT_TAG =~ /^([5-9]|[1-9]\d+)\.\d+\.\d+(-(alpha|beta|rc)\d+(\.\d+)?)?$/'
 
 include:
   - template: Jobs/Secret-Detection.gitlab-ci.yml
