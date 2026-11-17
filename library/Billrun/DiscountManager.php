@@ -269,7 +269,7 @@ class Billrun_DiscountManager {
 								)){
 								$overrideDiscountName = true;
 								$subDiscount['key_forced'] = true;
-								$this->handleForceDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName);
+								$this->handleForceDiscountForSubRev($subDiscount, $subscriberRevision, $accountRevisions, $overrideDiscountName, true);
 							}
 						}
 					}
@@ -319,14 +319,14 @@ class Billrun_DiscountManager {
 
 		}
 
-		protected function handleForceDiscountForSubRev($forcedDiscount, $subscriberRevision, $accountRevisions, $forcedDiscountName = true){
+		protected function handleForceDiscountForSubRev($forcedDiscount, $subscriberRevision, $accountRevisions, $forcedDiscountName = true, $forceDiscountStart = false){
 			$sid = $subscriberRevision['sid'];
 			if($forcedDiscountName){
 				$this->eligibleDiscounts[$forcedDiscount['key']]['subs'][$sid] = Billrun_Utils_Time::getIntervalsDifference(@$this->eligibleDiscounts[$forcedDiscount['key']]['subs'][$sid], [['from' => $subscriberRevision['from']->sec, 'to' =>  $subscriberRevision['to']->sec]]);
 				if (empty($this->eligibleDiscounts[$forcedDiscount['key']]['subs'][$sid])) {
 					unset($this->eligibleDiscounts [$forcedDiscount['key']]['subs'][$sid]);
 				}
-				$forcedDiscount['key'] = 'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid .'_'. $forcedDiscount['from'] ;
+				$forcedDiscount['key'] = 'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid . ( $forceDiscountStart ? '_'. $forcedDiscount['from'] : '' ) ;
 			}
 			$eligibility = $this->getDiscountEligibility($forcedDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $forcedDiscount, $eligibility);
