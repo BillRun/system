@@ -18,6 +18,7 @@ modules:
         - \Helper\CollectionWrapper
         - \Helper\BillRun\Mockups\PaymentGateway
         - \Helper\LogChecker
+        - \Helper\Worker
         - WebDriver:
             url: http://web
             host: chrome

@@ -1112,6 +1112,23 @@ class BillRunAPI extends \Codeception\Module{
         $this->sendBillapiCreate($charge, 'charges');
     }
     
+  
+    public function sendAdjustInvoice($params)
+    {
+        // Get the REST module to send requests
+        /** @var REST $rest */
+        $rest = $this->getModule('REST');
+        $rest->amBearerAuthenticated($this->getAccessToken());
+        $parameters = [
+            'aid' => $params['aid'],
+            'billrun_key' => $params['billrun_key']
+        ];
+         foreach($params['credit_lines'] as $credit_line){
+           $parameters['credit_lines'][]=$credit_line;
+        }   
+        $ret =  $rest->sendGet("/api/adjustinvoice", $parameters);
+        return json_decode($ret, true);
+    }
 
     public function generateDiscount($override = [], $byApi= false)
   {
