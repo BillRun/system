@@ -11,6 +11,16 @@ class Crm extends \Helper\BillRun\Mockups\Mockup
     return $this->getDomain() . 'crm';
   }
 
+  /**
+   * The log-line prefix of an outgoing external CRM request, derived from the
+   * configured url of the entity - 'account' (gad), 'subscriber' (gsd) or
+   * 'billable' (gba). Use with seeCountInLogFile to count the CRM requests.
+   */
+  public function getExternalRequestLog($entity = 'account') {
+    $configKey = $entity === 'billable' ? 'subscribers.billable.url' : "subscribers.{$entity}.external_url";
+    return 'Sending request to ' . \Billrun_Factory::config()->getConfigValue($configKey, '');
+  }
+
   public function enableExternalModeSettings($data = [], $pluginName = '') {
     $model = new \ConfigModel();
     $model->updateConfig('subscribers', $this->getExternalConfiguration($pluginName));
@@ -103,7 +113,8 @@ public function getDBConfiguration() {
 
   /**
    * the state change requests the mock received for $run, in the order they arrived, as the CRM sees them:
-   * each has 'post' (the parsed form fields: step_code, step_type, extra_params, creation_time) and 'raw' (the body as sent)
+   * each has 'headers' (the request headers, name => value), 'post' (the parsed form fields: step_code, step_type,
+   * extra_params, creation_time) and 'raw' (the body as sent)
    *
    * @return array
    */

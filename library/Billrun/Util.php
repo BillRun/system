@@ -1109,6 +1109,9 @@ class Billrun_Util {
 	 * @return mixed the fixed date sting if possible or false  if the date couldn't be fixed.
 	 */
 	public static function fixShortHandYearDate($date, $format = "Y") {
+		if ($date === null) {
+			return false;
+		}
 		if (!preg_match('/^' . date($format, strtotime($date)) . '/', $date)) {
 			$date = substr(date("Y"), 0, 2) . $date;
 		}
@@ -1558,7 +1561,7 @@ class Billrun_Util {
 		if (!is_string($regex)) {
 			return false;
 		}
-		return !(@preg_match($regex, null) === false);
+		return !(@preg_match($regex, '') === false);
 	}
 
 	public static function getCompanyName() {

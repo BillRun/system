@@ -64,6 +64,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->_isValid;
 	}
 	
+	#[\ReturnTypeWillChange]
 	public function count($foundOnly = true) {
 		$options =  $this->_options;
 		if(!$foundOnly){
@@ -81,6 +82,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * 
 	 * @return \Mongodloid_Entity
 	 */
+	#[\ReturnTypeWillChange]
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
@@ -92,6 +94,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		new Mongodloid_Entity(Mongodloid_Result::getResult($this->_iterator->current(), __FUNCTION__), null, false);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function key() {
 		if ($this->_iterator === null) {
             return;
@@ -104,6 +107,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->_iterator->key();
 	}
 
+	#[\ReturnTypeWillChange]
 	public function next() {
 		if ($this->_iterator === null) {
           $this->doQuery();
@@ -113,6 +117,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		return $this->current();
 	}
 
+	#[\ReturnTypeWillChange]
 	public function rewind() {
 		if (!is_null($this->_iterator)) {
 			$lastCalledStack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
@@ -127,6 +132,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$this->_iterator = null;
 	}
 
+	#[\ReturnTypeWillChange]
 	public function valid() {
 		if ($this->_iterator === null) {
             false;
@@ -204,6 +210,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	public function setReadPreference($readPreference, array $tags = array()) {
 		$this->errorIfOpened();
 		
+		if (empty($readPreference)) {
+			return $this;
+		}
 		$strippedReadPreference = preg_replace('/^RP_/', '', $readPreference);
 		if (defined('MongoDB\Driver\ReadPreference::' . $readPreference)) {
 			$mode = constant('MongoDB\Driver\ReadPreference::' . $readPreference);

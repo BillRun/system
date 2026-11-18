@@ -58,6 +58,8 @@ class Billrun_Cycle_Account_Invoice {
 
 	protected $totalGroupHashMap = array();
 	protected $groupingSumExtraFields = array();
+	public $groupingMinExtraFields;
+	public $groupingMaxExtraFields;
 	protected $groupingEnabled = true;
 
 	protected $aggregationTranslations = [];

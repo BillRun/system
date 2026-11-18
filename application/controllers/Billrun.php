@@ -218,7 +218,7 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function render(string $tpl, array $parameters = null): string {
+	protected function render(string $tpl, ?array $parameters = null): string {
 		return parent::render('index', $parameters);
 	}
 	
@@ -238,7 +238,7 @@ class BillrunController extends ApiController {
 		$params['mode'] = $request->get('charge_mode');
 		$params['min_invoice_date'] = $request->get('min_invoice_date');
 		$params['exclude_accounts'] = $request->get('exclude_accounts');
-		$params['uf'] = json_decode($request->get('uf'), true);
+		$params['uf'] = json_decode($request->get('uf') ?? '', true);
 		if (!$this->validateParams($params)) {
 			throw new Exception("One or more of the parameters of the 'charge' command is not valid");
 		}
@@ -278,7 +278,7 @@ class BillrunController extends ApiController {
 	 */
 	protected function chargeSync($mode, $params, $request) {
 		$aid = intval($params['aids']);
-		$paymentData = json_decode($request->get('payment_data'), JSON_OBJECT_AS_ARRAY);
+		$paymentData = json_decode($request->get('payment_data') ?? '', JSON_OBJECT_AS_ARRAY);
 		if (!empty($paymentData)) {
 			$params['payment_data'] = [
 				$aid => $paymentData,
