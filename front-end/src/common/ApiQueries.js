@@ -229,6 +229,15 @@ export const getCreditChargeQuery = params => ({
   params,
 });
 
+export const getAdjustInvoiceQuery = (aid, billrunKey, creditLines) => ({
+  api: 'adjustinvoice',
+  params: [
+    { aid },
+    { billrun_key: billrunKey },
+    { credit_lines: JSON.stringify(creditLines) },
+  ],
+});
+
 /* List Components queries */
 export const usageListQuery = (query, page, sort, size) => ({
   entity: 'lines',
