@@ -113,7 +113,8 @@ public function getDBConfiguration() {
 
   /**
    * the state change requests the mock received for $run, in the order they arrived, as the CRM sees them:
-   * each has 'post' (the parsed form fields: step_code, step_type, extra_params, creation_time) and 'raw' (the body as sent)
+   * each has 'headers' (the request headers, name => value), 'post' (the parsed form fields: step_code, step_type,
+   * extra_params, creation_time) and 'raw' (the body as sent)
    *
    * @return array
    */
