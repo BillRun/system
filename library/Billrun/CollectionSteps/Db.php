@@ -271,7 +271,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		Billrun_Factory::log('Collection state change: notifying ' . count($aids) . ' accounts in ' . $batchesCount . ' batches (batch size: ' . $batchSize . ', state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
 		$result = true;
 		foreach ($batches as $index => $batchAids) {
-			Billrun_Factory::log('Collection state change: sending batch ' . ($index + 1) . '/' . $batchesCount . ' with ' . count($batchAids) . ' accounts (state: ' . $state . ', process: ' . $processName . ')', Zend_Log::DEBUG);
+			Billrun_Factory::log('Collection state change: sending batch ' . ($index + 1) . '/' . $batchesCount . ' with ' . count($batchAids) . ' accounts (state: ' . $state . ', process: ' . $processName . '), aids: ' . implode(',', $batchAids), Zend_Log::DEBUG);
 			$extraParams = array('state' => $state);
 			if ($withDebt) {
 				$extraParams['accounts'] = $this->getChangeStateAccounts($batchAids, $debtByAid);
