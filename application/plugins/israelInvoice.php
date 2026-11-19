@@ -197,6 +197,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             } else {
                 Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " should get approval number", Zend_Log::DEBUG);
             }
+            $this->validateConditionsBeforeApproval($invoice_data);
             Billrun_Factory::log("Trying to get access token", Zend_Log::DEBUG);
             list($response, $success, $api_output) = $this->getAccessToken();
             $access_token = $response;
@@ -269,11 +270,20 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             return false;
         }
 
+        return true;
+    }
+
+    /**
+     * Validates the conditions required for requesting an approval number, for an invoice that needs one.
+     * Throws an exception when a condition fails, so the invoice won't be confirmed without an approval number
+     * @param array $invoice_data - invoice billrun data
+     * @throws Exception
+     */
+    public function validateConditionsBeforeApproval($invoice_data) {
         if ($this->approve_accounts_with_vat_number_field) {
             $vat_number = Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null);
             if (!is_scalar($vat_number) || !preg_match('/^\d+$/', trim((string) $vat_number))) {
-                Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the numeric 'vat_number_field' check. " . $this->account_vat_number_field_name . " value: " . json_encode($vat_number), Zend_Log::DEBUG);
-                return false;
+                throw new Exception("Invoice " . $invoice_data['invoice_id'] . " needs an approval number but didn't pass the numeric 'vat_number_field' check. " . $this->account_vat_number_field_name . " value: " . json_encode($vat_number));
             }
         }
 
@@ -281,8 +291,6 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         if (empty($this->cache)) {
             throw new Exception("Couldn't create Billrun cache for israel invoice access token");
         }
-
-        return true;
     }
 
     public function getAccessToken() {
