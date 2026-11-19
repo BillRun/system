@@ -123,7 +123,7 @@ class Billrun_Sms_Smpp extends Billrun_Sms_Abstract {
 				$ports = array('1775');
 			}
 			
-			$this->transportSocket = new \smpp\transport\Socket($hosts, $ports, true);
+			$this->transportSocket = new Billrun_Sms_Smpp_Socket($hosts, $ports, true);
 			$this->transportSocket->setRecvTimeout($this->socketTimeout);
 			$this->transportSocket->setSendTimeout($this->socketTimeout);
 			$this->smppClient = new smpp\Client($this->transportSocket);
