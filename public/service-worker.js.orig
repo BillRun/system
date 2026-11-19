@@ -15,10 +15,10 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox
 
 importScripts(
 <<<<<<< HEAD
-  "/precache-manifest.a0542db6c25afe45dc756519640fdc64.js"
+  "/precache-manifest.2b00db920af9083e1b3592da9100fbfc.js"
 =======
-  "/precache-manifest.8afbcd671065eb1cde8f1d1d65e9129d.js"
->>>>>>> master
+  "/precache-manifest.87a07f989521712190043066d07f6e35.js"
+>>>>>>> release-5.19
 );
 
 self.addEventListener('message', (event) => {
