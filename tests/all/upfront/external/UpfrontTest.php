@@ -1893,4 +1893,185 @@ class UpfrontExternalTest extends \Codeception\Test\Unit
         // the upfront billing of February must equal the arrears billing of the same scenario
         $this->assertEqualsWithDelta($arrearsNet, $upfrontFebruaryNet, $this->epsilon);
     }
+
+    /*
+     * ============ BRCD-5611 - subscriber discounts sharing a key, on an upfront plan ============
+     *
+     * Two subscribers of one account hold a subscriber level (on-the-fly) discount with the same
+     * key, so one of them is discounted under a subscriber private key
+     * (SUBSCRIBER_DISCOUNT_<key>_SID_<sid>...). The upfront discount reconciliation matches the
+     * discount CDRs of the previous run with the deserved ones by that key, so the key a
+     * subscriber is discounted under must stay matchable from one run to the next.
+     *
+     * Covers:
+     * 23. Nothing changes between the runs - nothing is reconciled.
+     * 24. The discount is replaced (new value, new from) only after it was given upfront,
+     *     backdated to the start of the month it was given for - the difference is charged back.
+     * 25. The upfront discount was billed with the private key format used before BRCD-5611 -
+     *     it is still matched, so the discount is not given again.
+     */
+
+    /**
+     * The discount CDRs an account got in a cycle run
+     * @param int $aid
+     * @param string $billrunKey
+     * @param array $query narrows the CDRs, e.g. ['is_upfront' => true] for the discounts of the
+     * next (upfront paid) cycle or ['charge_op' => 'refund'] for the reconciliation ones
+     * @return array
+     */
+    protected function grabDiscountCdrs($aid, $billrunKey, $query = [])
+    {
+        $baseQuery = array('aid' => $aid, 'billrun' => $billrunKey, 'type' => 'credit', 'usaget' => 'discount');
+        return iterator_to_array(\Billrun_Factory::db()->linesCollection()->query(array_merge($baseQuery, $query))->cursor(), false);
+    }
+
+    /**
+     * The total amount of the given discount CDRs, by subscriber
+     * @param array $cdrs
+     * @return array sid => amount
+     */
+    protected function sumCdrsBySid($cdrs)
+    {
+        $ret = [];
+        foreach ($cdrs as $cdr) {
+            $ret[$cdr['sid']] = ($ret[$cdr['sid']] ?? 0) + $cdr['aprice'];
+        }
+        return $ret;
+    }
+
+    /**
+     * 23. Nothing changes between the runs - the upfront discounts the 202607 run gave for July
+     *     are exactly the deserved ones, so the 202608 run reconciles nothing and only discounts
+     *     August upfront.
+     */
+    public function testUpfrontSharedKeySubscriberDiscountUnchangedIsNotReconciled()
+    {
+        $aid = 41023;
+        $firstSid = 51023;
+        $secondSid = 51024;
+        $planName = 'UPFRONT_ADV_PLAN23';
+        $discountKey = 'SHARED_SUB_DISCOUNT_23';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+
+        // the previous run pays July upfront - the plan of each subscriber and its own discount
+        $this->defaultOptions['stamp'] = '202607';
+        $this->tester->runCycle($this->defaultOptions);
+        $oldDiscountCdrs = $this->grabDiscountCdrs($aid, '202607', ['is_upfront' => true]);
+        $oldDiscounts = $this->sumCdrsBySid($oldDiscountCdrs);
+        $this->assertEqualsWithDelta(-10, $oldDiscounts[$firstSid], $this->epsilon);
+        $this->assertEqualsWithDelta(-20, $oldDiscounts[$secondSid], $this->epsilon);
+        // the scenario under test - the shared key leaves one subscriber with a private key
+        $oldKeys = array_unique(array_map(function ($cdr) { return $cdr['key']; }, $oldDiscountCdrs));
+        $this->assertCount(2, $oldKeys, 'each subscriber was expected to be discounted under its own key');
+        $this->assertContains($discountKey, $oldKeys);
+
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+
+        // July was discounted correctly in advance - no discount reconciliation
+        $reconcileCdrs = $this->grabDiscountCdrs($aid, '202608', ['charge_op' => 'refund']);
+        $this->assertEmpty($reconcileCdrs, 'the July discounts did not change - no reconciliation CDR was expected');
+
+        // August is discounted upfront, each subscriber by its own discount
+        $upfrontDiscounts = $this->sumCdrsBySid($this->grabDiscountCdrs($aid, '202608', ['is_upfront' => true]));
+        $this->assertEqualsWithDelta(-10, $upfrontDiscounts[$firstSid], $this->epsilon);
+        $this->assertEqualsWithDelta(-20, $upfrontDiscounts[$secondSid], $this->epsilon);
+
+        // August upfront: (100 - 10) + (100 - 20)
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => $aid));
+        $this->assertEqualsWithDelta(170, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 24. The 202607 run gave the second subscriber its discount (20) upfront for July. Only after
+     *     that run the discount is replaced, backdated to the start of July, by a new one with the
+     *     same key - a new value (4) and a new from date - so the 202608 run charges back the
+     *     difference (16) and discounts August by the new value.
+     *     A replacement the 202607 run already knew about, or one starting mid July, is not this
+     *     case - there the old discount CDR is matched by its own key.
+     */
+    public function testUpfrontSharedKeySubscriberDiscountReplacedIsReconciled()
+    {
+        $aid = 41024;
+        $firstSid = 51025;
+        $secondSid = 51026;
+        $planName = 'UPFRONT_ADV_PLAN24';
+        $discountKey = 'SHARED_SUB_DISCOUNT_24';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+
+        // the previous run pays July upfront, by the discounts known at the time
+        // (crm_data/41024_2026-06-01_2026-07-01.json)
+        $this->defaultOptions['stamp'] = '202607';
+        $this->tester->runCycle($this->defaultOptions);
+        $oldDiscountCdrs = $this->grabDiscountCdrs($aid, '202607', ['is_upfront' => true, 'sid' => $secondSid]);
+        $this->assertCount(1, $oldDiscountCdrs, 'upfront discount CDR was not created by the previous run');
+        $this->assertEqualsWithDelta(-20, $oldDiscountCdrs[0]['aprice'], $this->epsilon);
+        // the scenario under test - the replaced discount is the one given under a private key
+        $this->assertNotEquals($discountKey, $oldDiscountCdrs[0]['key'], 'the second subscriber was expected to be discounted under a subscriber private key');
+
+        // the discount of the second subscriber is replaced from 2026-07-01 - the 202608 run is
+        // served the new one (crm_data/41024_2026-07-01_2026-08-01.json)
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+
+        // the previous run gave -20 for July but only -4 is deserved -> charge back the
+        // difference. the reconciliation may be split to several CDRs, so the total is asserted
+        $reconciled = $this->sumCdrsBySid($this->grabDiscountCdrs($aid, '202608', ['charge_op' => 'refund']));
+        $this->assertArrayHasKey($secondSid, $reconciled, 'discount reconciliation CDR was not created');
+        $this->assertEqualsWithDelta(20 - 4, $reconciled[$secondSid], $this->epsilon);
+        // the discount of the first subscriber did not change
+        $this->assertArrayNotHasKey($firstSid, $reconciled, 'the discount of the first subscriber did not change - no reconciliation CDR was expected');
+
+        // August is discounted upfront - the second subscriber by its new discount
+        $upfrontDiscounts = $this->sumCdrsBySid($this->grabDiscountCdrs($aid, '202608', ['is_upfront' => true]));
+        $this->assertEqualsWithDelta(-10, $upfrontDiscounts[$firstSid], $this->epsilon);
+        $this->assertEqualsWithDelta(-4, $upfrontDiscounts[$secondSid], $this->epsilon);
+
+        // August upfront: (100 - 10) + (100 - 4), and the July correction (16)
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => $aid));
+        $this->assertEqualsWithDelta(90 + 96 + 16, $billrun['totals']['before_vat'], $this->epsilon);
+    }
+
+    /**
+     * 25. Like 23. but the 202607 run is a run of the version before BRCD-5611, which billed the
+     *     private key without the discount from date (SUBSCRIBER_DISCOUNT_<key>_SID_<sid>) - its
+     *     upfront discount CDR is rewritten to that format. The 202608 run must still match it
+     *     with the deserved discount, otherwise July is discounted twice.
+     */
+    public function testUpfrontSharedKeySubscriberDiscountOfLegacyKeyRunIsNotGivenAgain()
+    {
+        $aid = 41023;
+        $planName = 'UPFRONT_ADV_PLAN23';
+        $discountKey = 'SHARED_SUB_DISCOUNT_23';
+        $this->defaultOptions['force_accounts'] = [$aid];
+        $this->tester->generatePlan(['name' => $planName, 'upfront' => 1]);
+
+        $this->defaultOptions['stamp'] = '202607';
+        $this->tester->runCycle($this->defaultOptions);
+
+        // the private key CDRs, as the version before BRCD-5611 billed them
+        $legacyCdrs = 0;
+        foreach ($this->grabDiscountCdrs($aid, '202607', ['is_upfront' => true]) as $oldDiscountCdr) {
+            if ($oldDiscountCdr['key'] == $discountKey) {
+                continue;
+            }
+            $legacyKey = 'SUBSCRIBER_DISCOUNT_' . $discountKey . '_SID_' . $oldDiscountCdr['sid'];
+            \Billrun_Factory::db()->linesCollection()->update(array('stamp' => $oldDiscountCdr['stamp']), array('$set' => array('key' => $legacyKey, 'arate_key' => $legacyKey)));
+            $legacyCdrs++;
+        }
+        $this->assertEquals(1, $legacyCdrs, 'one subscriber was expected to be discounted under a subscriber private key');
+
+        $this->defaultOptions['stamp'] = '202608';
+        $this->tester->runCycle($this->defaultOptions);
+
+        // July was already discounted in advance - it must not be discounted again
+        $reconcileCdrs = $this->grabDiscountCdrs($aid, '202608', ['charge_op' => 'refund']);
+        $this->assertEmpty($reconcileCdrs, 'the July discounts did not change - no reconciliation CDR was expected');
+
+        // August upfront: (100 - 10) + (100 - 20)
+        $billrun = $this->tester->grabFromCollection('billrun', array('billrun_key' => '202608', 'aid' => $aid));
+        $this->assertEqualsWithDelta(170, $billrun['totals']['before_vat'], $this->epsilon);
+    }
 }
