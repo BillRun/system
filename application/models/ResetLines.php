@@ -796,6 +796,7 @@ class ResetLinesModel {
         if (!empty($this->aids) && !empty($this->billrun_key)) {
             foreach ($this->stampsByAidAndSid as $aid => $sids) {
                 foreach ($sids as $sid => $stamps) {
+                    Billrun_Factory::dispatcher()->trigger('beforeRebalanceBalanceTx2Stamps', array(&$stamps, $aid, $sid, $this));
                     $query = array(
                         'aid' => $aid,
                         'sid' => $sid
@@ -996,6 +997,8 @@ class ResetLinesModel {
 						'_id' => new Mongodloid_Id($balanceId),
 					);
                     $stamps = array_merge($this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [], $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? []);
+                    // a plugin can change the tx2 stamps of the balance (e.g. none - no "subtract once" guard)
+                    Billrun_Factory::dispatcher()->trigger('beforeRebalanceBalanceTx2Stamps', array(&$stamps, $balanceToUpdate['aid'], $balanceToUpdate['sid'], $this));
                     foreach ($stamps as $stamp) {
                         $query['tx2.' . $stamp] = array('$exists' => false);
                         $updateData['$set']['tx2.' . $stamp] = true;
@@ -1048,6 +1051,8 @@ class ResetLinesModel {
 							'_id' => $balanceToUpdate['_id'],
 						);
                         $stamps = array_merge($this->stampsToRecoverByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? [], $this->stampsByAidAndSid[$balanceToUpdate['aid']][$balanceToUpdate['sid']] ?? []);
+                        // a plugin can change the tx2 stamps of the balance (e.g. none - no "subtract once" guard)
+                        Billrun_Factory::dispatcher()->trigger('beforeRebalanceBalanceTx2Stamps', array(&$stamps, $balanceToUpdate['aid'], $balanceToUpdate['sid'], $this));
                         foreach ($stamps as $stamp) {
                             $query['tx2.' . $stamp] = array('$exists' => false);
                             $updateData['$set']['tx2.' . $stamp] = true;
