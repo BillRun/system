@@ -2236,14 +2236,14 @@ class Billrun_Util {
 				}
 				switch($ruleKey) {
 					case '$push' :
-								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null),
-																					static::getIn($mainArr,$srcFieldKey, null))
+								static::setIn( $mainArr, $srcFieldKey, array_merge(static::getIn($secArr, $srcFieldKey, null) ?? [],
+																					static::getIn($mainArr,$srcFieldKey, null) ?? [])
 											);
 						break;
 					case '$addToSet' :
-						static::setIn( $mainArr, $srcFieldKey, array_merge(@array_udiff(	static::getIn($secArr, $srcFieldKey, null),
-																						static::getIn($mainArr,$srcFieldKey, null),function($a,$b) {return strcmp(md5(json_encode($a)),md5(json_encode($b)));}),
-																		static::getIn($mainArr,$srcFieldKey, null))
+						static::setIn( $mainArr, $srcFieldKey, array_merge(@array_udiff(	static::getIn($secArr, $srcFieldKey, null) ?? [],
+																						static::getIn($mainArr,$srcFieldKey, null) ?? [],function($a,$b) {return strcmp(md5(json_encode($a)),md5(json_encode($b)));}),
+																		static::getIn($mainArr,$srcFieldKey, null) ?? [])
 									);
 						break;
 					case '$mergeArrayByRules' :
