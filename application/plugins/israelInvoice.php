@@ -192,13 +192,13 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         try {
             $inv_id = $invoice_bill['invoice_id'];
             if (!$this->invoiceNeedsApproval($invoice_data, $invoice_bill)) {
-                Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " shouldn't get approval number", Zend_Log::DEBUG);
+                Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " didn't pass the refund, tax and threshold checks, no approval number is requested", Zend_Log::DEBUG);
                 return;
             } else {
-                Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " should get approval number", Zend_Log::DEBUG);
+                Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " passed the refund, tax and threshold checks, checking the account VAT number and the cache", Zend_Log::DEBUG);
             }
             $this->validateConditionsBeforeApproval($invoice_data);
-            Billrun_Factory::log("Trying to get access token", Zend_Log::DEBUG);
+            Billrun_Factory::log("Israel Invoice:invoice " . $inv_id . " passed the account VAT number and cache checks, trying to get access token", Zend_Log::DEBUG);
             list($response, $success, $api_output) = $this->getAccessToken();
             $access_token = $response;
             if (!$success) {
@@ -234,9 +234,9 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
     public function invoiceNeedsApproval($invoice_data) {
-        Billrun_Factory::log("Israel Invoice:check if invoice " . $invoice_data['invoice_id'] . " needs an approval number", Zend_Log::DEBUG);
+        Billrun_Factory::log("Israel Invoice:checking the refund, tax and threshold conditions for invoice " . $invoice_data['invoice_id'], Zend_Log::DEBUG);
         if ($this->apply_to_refund_invoices && ($invoice_data['totals']['before_vat'] > 0)) {
-            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'refund' check", Zend_Log::DEBUG);
+            Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " didn't pass the refund check - amount before VAT is positive and 'apply_to_refund_invoices' is on", Zend_Log::DEBUG);
             return false;
         }
         $invoice_tax = 0;
@@ -245,7 +245,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             $invoice_tax += abs($tax_amount);
         }
         if ($invoice_tax == 0) {
-            Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'tax' check", Zend_Log::DEBUG);
+            Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " didn't pass the tax check - all its items are non-taxable", Zend_Log::DEBUG);
             return false;
         }
         $relative_date = $this->getInvoiceRelativeDate($invoice_data);
@@ -254,22 +254,23 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
             $from = strtotime($threshold['from']);
             $to =  strtotime($threshold['to']);
             if (($index == 0) && ($relative_date < $from)) {
-                Billrun_Factory::log("Didn't find relevant threshold dates&amount for invoice " . $invoice_data['invoice_id'] . " relative date", Zend_Log::ERR);
+                Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " didn't pass the threshold check - invoice date " . date('Y-m-d', $relative_date) . " is before the first threshold", Zend_Log::ERR);
                 return false;
             }
             if (($from <= $relative_date) && ($to > $relative_date)) {
                 $found_relevant_threshold = true;
                 if ($invoice_data['totals']['before_vat'] < $threshold['amount']) {
-                    Billrun_Factory::log("Invoice " . $invoice_data['invoice_id'] . " didn't pass the 'threshold' check", Zend_Log::DEBUG);
+                    Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " didn't pass the threshold check - amount before VAT " . $invoice_data['totals']['before_vat'] . " is below the threshold " . $threshold['amount'], Zend_Log::DEBUG);
                     return false;
                 }
             }
         }
         if (!$found_relevant_threshold) {
-            Billrun_Factory::log("Didn't find relevant threshold dates&amount for invoice " . $invoice_data['invoice_id'] . " relative date", Zend_Log::ERR);
+            Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " didn't pass the threshold check - no threshold covers invoice date " . date('Y-m-d', $relative_date), Zend_Log::ERR);
             return false;
         }
 
+        Billrun_Factory::log("Israel Invoice:invoice " . $invoice_data['invoice_id'] . " passed the refund, tax and threshold checks", Zend_Log::DEBUG);
         return true;
     }
 
@@ -283,7 +284,7 @@ class israelInvoicePlugin extends Billrun_Plugin_BillrunPluginBase {
         if ($this->approve_accounts_with_vat_number_field) {
             $vat_number = Billrun_Util::getIn($invoice_data, 'attributes.' . $this->account_vat_number_field_name, null);
             if (!is_scalar($vat_number) || !preg_match('/^\d+$/', trim((string) $vat_number))) {
-                throw new Exception("Invoice " . $invoice_data['invoice_id'] . " needs an approval number but didn't pass the numeric 'vat_number_field' check. " . $this->account_vat_number_field_name . " value: " . json_encode($vat_number));
+                throw new Exception("Invoice " . $invoice_data['invoice_id'] . " didn't pass the numeric account VAT number check - " . $this->account_vat_number_field_name . " value: " . json_encode($vat_number));
             }
         }
 

@@ -68,7 +68,7 @@ class IsraelInvoiceApprovalTest extends \Codeception\Test\Unit {
 			} catch (PHPUnit\Framework\AssertionFailedError $e) {
 				throw $e;
 			} catch (Exception $e) {
-				$this->assertStringContainsString("'vat_number_field' check", $e->getMessage());
+				$this->assertStringContainsString('numeric account VAT number check', $e->getMessage());
 			}
 		}
 	}
