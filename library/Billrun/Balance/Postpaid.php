@@ -157,6 +157,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'new' => true,
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
+		Billrun_Factory::dispatcher()->trigger('beforeCreateBasicBalance', array(&$update, $urt, $service_name));
 		$output = $this->collection()->findAndModify($query, $update, array(), $options, false);
 
 		if (!is_array($output)) {
@@ -221,6 +222,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+			if (isset($pricingData['final_charge'])) {
+				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost_with_tax'] = $pricingData['final_charge'];
+				$update['$inc']['balance.cost_with_tax'] = $pricingData['final_charge'];
+			}
 			if (isset($pricingData['out_group'])) {
 				$update['$inc']['balance.totals.' . $row['usaget'] . '.out_group' . '.usagev'] = $pricingData['out_group'];
 			}

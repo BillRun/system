@@ -28,6 +28,7 @@ class Billrun_Spl_Subject implements SplSubject {
 	 *
 	 * @return  void
 	 */
+	#[\ReturnTypeWillChange]
 	public function attach(SplObserver $observer) {
 		$this->observers[] = $observer;
 	}
@@ -40,6 +41,7 @@ class Billrun_Spl_Subject implements SplSubject {
 	 * @return  boolean  True if the observer object was detached.
 	 *
 	 */
+	#[\ReturnTypeWillChange]
 	public function detach(SplObserver $observer) {
 		$key = array_search($observer, $this->observers);
 		if ($key) {
@@ -59,6 +61,7 @@ class Billrun_Spl_Subject implements SplSubject {
 	 * @return  array  An array of results from each function call.
 	 *
 	 */
+	#[\ReturnTypeWillChange]
 	public function notify() {
 		foreach ($this->observers as $observer) {
 			$observer->update($this);

@@ -220,14 +220,16 @@ class Billrun_Billingcycle {
 				$nextCycleMonth = str_pad(reset($monthsList),2,'0',STR_PAD_LEFT);
 				$year++;
 			}
-			return "${year}${nextCycleMonth}";
-		} else if(!empty(self::$followingCycleKeysTable[$key])) { //regular cached  cycle
+			return "{$year}{$nextCycleMonth}";
+		} else if($key !== null && !empty(self::$followingCycleKeysTable[$key])) { //regular cached  cycle
 			return self::$followingCycleKeysTable[$key];
 		}
 		$datetime = $key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
-		self::$followingCycleKeysTable[$key] = $ret;
+		if ($key !== null) {
+			self::$followingCycleKeysTable[$key] = $ret;
+		}
 		return $ret;
 	}
 

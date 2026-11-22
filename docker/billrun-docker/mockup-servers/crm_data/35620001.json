@@ -1,0 +1,24 @@
+{
+  "status": 1,
+  "data": [
+    {
+      "aid": 35620001,
+      "type": "account",
+      "from": "2025-01-01 00:00:00",
+      "to": "2200-01-01 02:00:00",
+      "firstname": "BRCD-3562",
+      "lastname": "Bulk A"
+    },
+    {
+      "aid": 35620001,
+      "sid": 3562101,
+      "type": "subscriber",
+      "from": "2025-01-01 00:00:00",
+      "to": "2200-01-01 02:00:00",
+      "plan": "PLAN_BULK_E2E",
+      "play": "Default",
+      "firstname": "0561234567",
+      "lastname": "test"
+    }
+  ]
+}

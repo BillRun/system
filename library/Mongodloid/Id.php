@@ -45,6 +45,7 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Seria
     /**
      * @return stdClass
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         $object = new stdClass();
@@ -98,5 +99,21 @@ class Mongodloid_Id implements Mongodloid_TypeInterface, JsonSerializable, Seria
     public function unserialize($serialized)
     {
         $this->setMongoID(new MongoDB\BSON\ObjectId($serialized));
+    }
+
+    /**
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        return ['id' => $this->_stringID];
+    }
+
+    /**
+     * @param array $data
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->setMongoID(new MongoDB\BSON\ObjectId($data['id']));
     }
 }

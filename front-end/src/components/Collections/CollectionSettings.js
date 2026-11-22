@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Immutable from 'immutable';
-import { Col, Form } from 'react-bootstrap';
+import { Button, Col, Form } from 'react-bootstrap';
 import { ControlLabel, FormGroup, HelpBlock, Panel } from '@/common/BootstrapCompat';
 import Field from '@/components/Field';
+import { CreateButton } from '@/components/Elements';
 import {
   getConfig,
   formatSelectOptions,
@@ -34,11 +35,27 @@ const CollectionSettings = ({ process = Immutable.Map(), index = 0, errors = Imm
     onChange(['settings', 'change_state_method'], value);
   }
 
+  const onAddChangeStateHeader = () => {
+    const headers = process.getIn(['settings', 'change_state_headers'], Immutable.List());
+    onChange(['settings', 'change_state_headers'], headers.push(Immutable.Map({ key: '', value: '' })));
+  }
+
+  const onChangeChangeStateHeader = (headerIndex, field) => (e) => {
+    const { value } = e.target;
+    onChange(['settings', 'change_state_headers', headerIndex, field], value);
+  }
+
+  const onRemoveChangeStateHeader = headerIndex => () => {
+    const headers = process.getIn(['settings', 'change_state_headers'], Immutable.List());
+    onChange(['settings', 'change_state_headers'], headers.delete(headerIndex));
+  }
+
   const name = process.getIn(['name'], '');
   const label = process.getIn(['label'], '');
   const minDebt = process.getIn(['settings', 'min_debt'], '');
   const changeStateUrl = process.getIn(['settings', 'change_state_url'], '');
   const changeStateMethod =process.getIn(['settings', 'change_state_method'], '');
+  const changeStateHeaders = process.getIn(['settings', 'change_state_headers'], Immutable.List());
   const methodOptions = httpMethods.map(formatSelectOptions).toArray();
   return (
     <Col sm={12}>
@@ -103,6 +120,33 @@ const CollectionSettings = ({ process = Immutable.Map(), index = 0, errors = Imm
                 clearable={false}
               />
               { errors.has([index, 'label'].join('.')) && <HelpBlock>{errors.get([index, 'settings', 'change_state_method'].join('.'), '')}</HelpBlock> }
+            </Col>
+          </FormGroup>
+        <FormGroup>
+            <Col sm={2} as={ControlLabel}>
+              HTTP Headers
+            </Col>
+            <Col sm={6}>
+              { !changeStateHeaders.isEmpty() && (
+                <div className="form-group row form-inner-edit-row mr0 ml0">
+                  <div className="col-sm-5"><label>Key</label></div>
+                  <div className="col-sm-5"><label>Value</label></div>
+                </div>
+              )}
+              { changeStateHeaders.map((header, headerIndex) => (
+                <div className="form-group row form-inner-edit-row mr0 ml0" key={`change_state_header_${headerIndex}`}>
+                  <div className="col-sm-5">
+                    <Field value={header.get('key', '')} onChange={onChangeChangeStateHeader(headerIndex, 'key')} />
+                  </div>
+                  <div className="col-sm-5">
+                    <Field value={header.get('value', '')} onChange={onChangeChangeStateHeader(headerIndex, 'value')} />
+                  </div>
+                  <div className="col-sm-2 actions">
+                    <Button onClick={onRemoveChangeStateHeader(headerIndex)} size="sm"><i className="fa fa-trash-o danger-red" />&nbsp;Remove</Button>
+                  </div>
+                </div>
+              )).toArray()}
+              <CreateButton onClick={onAddChangeStateHeader} label="Add Header" buttonStyle={{}} />
             </Col>
           </FormGroup>
         </Panel>

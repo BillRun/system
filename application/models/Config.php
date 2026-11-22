@@ -233,6 +233,10 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if ($category === 'collection') {
+			$data = $this->removeEmptyCollectionHeaders($data);
+		}
+
 		if(empty($category)) {
 			if (!$this->updateRoot($updatedData, $data)) {
 				return 0;
@@ -346,14 +350,7 @@ class ConfigModel {
 			throw new Exception("Custom header template is too long, maximum size is {$max}.");
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
-			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
-		} else if (strpos($category, 'events.') === 0 && !$this->validateEvents($category, $data)) {
-			throw new Exception("Error saving events");
-		} else if (strpos($category, 'event.') === 0) {
-			$eventType = explode('.', $category)[1];
-			if ($this->validateEvent($eventType, $data)) {
-				$updatedData['events'][$eventType][] = $data;
-			}
+			throw new Exception("Custom footer template is too long, maximum size is {$max}.");
 		} else if ($category === 'plugins') {
 			throw new Exception('Only one plugin can be saved');
 		} else if ($category === 'plugin') {
@@ -483,7 +480,9 @@ class ConfigModel {
 					break;
 				}
 			}
-		
+
+			$this->validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField);
+
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = [
 					'name' => $fieldName,
@@ -506,8 +505,30 @@ class ConfigModel {
 		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
 			throw new Exception('cannot make field\s [' . implode(', ', array_column($uniqueFields, 'name')) .'] unique because for one of those fields there is more than one entity with the same value');
 		}
-		
+
 		return true;
+	}
+
+	/**
+	 * the 'encrypted' field type can only be chosen when a custom field is first
+	 * created, not changed to/from afterwards - existing data was already
+	 * written encrypted/plaintext under the old type, and there is no
+	 * migration that transparently re-encrypts or decrypts it in place
+	 *
+	 * @param string $fieldName
+	 * @param array $field
+	 * @param array|false $prevField false if the field did not exist before (new field)
+	 * @throws Exception on validation failure
+	 */
+	protected function validateEncryptedFieldTypeUnchanged($fieldName, $field, $prevField) {
+		if (!$prevField) {
+			return;
+		}
+		$prevType = Billrun_Util::getFieldVal($prevField['type'], 'string');
+		$newType = Billrun_Util::getFieldVal($field['type'], 'string');
+		if ($prevType !== $newType && ($prevType === 'encrypted' || $newType === 'encrypted')) {
+			throw new Exception("cannot change field {$fieldName} type from {$prevType} to {$newType}: the encrypted type can only be set when the field is created");
+		}
 	}
 	
 	/**
@@ -1220,54 +1241,6 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
-	/**
-	 * 
-	 * @todo Insert validations
-	 * @param string $category
-	 * @param type $data
-	 * @return boolean
-	 */
-	protected function validateEvents($category, $events) {
-		$eventType = explode('.', $category)[1];
-		foreach ($events as $event) {
-			$this->validateEvent($type, $event);
-		}
-		
-		return TRUE;
-	}
-	
-	protected function validateEvent($eventType, $event) {
-		switch ($eventType) {
-			case 'fraud':
-				return $this->validateFraudEvent($event);
-			case 'balance':
-				return $this->validateBalanceEvent($event);
-			case 'settings':
-			default:
-				return true;
-		}
-		return true;
-	}
-
-
-	protected function validateBalanceEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		return true;
-	}
-
-	protected function validateFraudEvent($event) {
-		if (!isset($event['event_code'])) {
-			throw new Exception('Event code is missing');
-		}
-		$recurrenceBaseUnits = $event['recurrence']['value'] * ($event['recurrence']['type'] == 'hourly' ? 60 : 1);
-		$dateRangeBaseUnits = $event['date_range']['value'] * ($event['date_range']['type'] == 'hourly' ? 60 : 1);
-		if ($dateRangeBaseUnits < $recurrenceBaseUnits) {
-			throw new Exception('Event recurrence must be less than or equal to date range');
-		}
-		return true;
-	}
 
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
@@ -1288,6 +1261,44 @@ class ConfigModel {
 		return strlen($str) <= $size;
 	}
 	
+	/**
+	 * removes the custom headers rows with an empty key and an empty value, and the headers list of a process
+	 * that has no other rows, so they are not saved
+	 *
+	 * @param mixed $collections collection configuration
+	 *
+	 * @return mixed
+	 */
+	protected function removeEmptyCollectionHeaders($collections) {
+		if (empty($collections['processes']) || !is_array($collections['processes'])) {
+			return $collections;
+		}
+		foreach ($collections['processes'] as &$process) {
+			if (!isset($process['settings']['change_state_headers']) || !is_array($process['settings']['change_state_headers'])) {
+				continue;
+			}
+			$headers = array_values(array_filter($process['settings']['change_state_headers'], function($row) {
+				if (!is_array($row)) {
+					return true; // kept for the validation to reject
+				}
+				foreach (['key', 'value'] as $field) {
+					$value = $row[$field] ?? '';
+					if (!is_string($value) || trim($value) !== '') {
+						return true;
+					}
+				}
+				return false;
+			}));
+			if (empty($headers)) {
+				unset($process['settings']['change_state_headers']);
+			} else {
+				$process['settings']['change_state_headers'] = $headers;
+			}
+		}
+		unset($process);
+		return $collections;
+	}
+
 	protected function validateCollection($collections) {
 		$processes = Billrun_Util::getIn($collections, 'processes', []);
 		$processes_count = count($processes);
@@ -1303,6 +1314,10 @@ class ConfigModel {
 			$settings = Billrun_Util::getIn($process, ['settings'], []);
 			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
 				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
+			}
+			$headersErrors = Billrun_CollectionSteps_Notifiers_Http::getHeadersErrors($settings['change_state_headers'] ?? []);
+			if (!empty($headersErrors)) {
+				throw new Exception("Process #{$p_i} Settings: Collection State Change " . implode(', ', $headersErrors));
 			}
 			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
 			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {
@@ -1496,7 +1511,7 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3');
+		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3', 'nsn');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
