@@ -636,11 +636,11 @@ class Billrun_DiscountManager {
 		}
 
 		if ( $searchInActualKeys &&
-             ($remappedDiscounts = 	Billrun_Util::mapArrayToStructuredHash(
-                 	array_values( $this->subscribersDiscounts[$billrunKey]??[] ),
-                	['key']
-             	)) &&
-            	!empty($remappedDiscounts) ) {
+				($remappedDiscounts = Billrun_Util::mapArrayToStructuredHash(
+                 							array_values( $this->subscribersDiscounts[$billrunKey]??[] ),
+                							['key']
+				)) &&
+				!empty($remappedDiscounts) ) {
 			return $remappedDiscounts[$discountKey];
 		}
 
