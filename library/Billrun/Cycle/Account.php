@@ -156,15 +156,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	public static function expandSubRevisions($revision, $minFrom, $maxTo, $mongoServices = []) {
 		$retRevisions = [];
 		$cutDates = [];
-
-		// If the revision *starts* after  the cycle ignore it and it should not  be expanded.
-		if ($revision['from'] >= $maxTo) {
-			return [];
-		}
-
 		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan','plan_activation','plan_deactivation']);
 		$revision['from'] = max($minFrom,$revision['from']);
 		$revision['to'] = min($maxTo,$revision['to']);
+
+		// Filter out invalid  revisions  and  revisions in future cycles
+ 		if ($revision['from'] >= $revision['to']) {
+			return [];
+		}
 		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
 		$allFroms = call_user_func_array('array_merge', array_map(function($v) use ($revision) {
 									return isset ($revision[$v]) 	? array_map(function ($iv) { return $iv->sec;}, array_column($revision[$v], 'from'))
