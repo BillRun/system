@@ -63,8 +63,8 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         $this->tester->runCycle($this->defaultOptions);
         $billrun = $this->tester->getFromCollection('billrun', array('billrun_key' => '202501', 'aid' =>  $data['account']['aid']));
         $output = $this->tester->confirmInvoices(['stamp'=>$billrun['billrun_key'],'invoices'=>$billrun['invoice_id']]);
-        $messages[0] = "Invoice {$billrun['invoice_id']} didn't pass the 'threshold' check";
-        $messages[1] = "Invoice:invoice {$billrun['invoice_id']} shouldn't get approval number";
+        $messages[0] ="Israel Invoice:invoice " . $billrun['invoice_id'] . " didn't pass the threshold check - amount before VAT " . $billrun['totals']['before_vat'] . " is below the threshold " ;
+        $messages[1] = "Israel Invoice:invoice " . $billrun['invoice_id'] . " didn't pass the refund, tax and threshold checks, no approval number is requested";
         $output->seeInShellOutput($messages[0] );
         $output->seeInShellOutput($messages[1] );
         $this->tester->seeInCollection('bills', ['billrun_key' => '202501', 'aid' =>  $data['account']['aid'],'invoice_confirmation_number'=>['$exists'=>false]]);
@@ -126,28 +126,41 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
         return ['aid' => $data['account']['aid'], 'billrun_key' => $billrunKey, 'billrun' => $billrun, 'output' => $output];
     }
 
+    /**
+     * BRCD-4598 (MR 7052): an invoice that passed the refund, tax and threshold checks but failed the numeric
+     * account VAT number check is NOT confirmed at all - no approval request and no bill
+     * @param array $res - runAndConfirmAboveThreshold result
+     * @param string $vatNumberJson - the account vat number field value, as it is printed to the log (json encoded)
+     */
+    protected function assertNotConfirmedBecauseOfVatNumber($res, $vatNumberJson)
+    {
+        $invoiceId = $res['billrun']['invoice_id'];
+        $res['output']->seeInShellOutput("Israel Invoice:invoice " . $invoiceId . " passed the refund, tax and threshold checks, checking the account VAT number and the cache");
+        $res['output']->seeInShellOutput("Israel Invoice:invoice " . $invoiceId . " will not be confirmed. Error 0: Invoice " . $invoiceId . " didn't pass the numeric account VAT number check - company_id value: " . $vatNumberJson);
+        $res['output']->seeInShellOutput("Failed to create bill from invoice " . $invoiceId);
+        $res['output']->dontSeeInShellOutput("Israel Invoice:invoice " . $invoiceId . " passed the account VAT number and cache checks, trying to get access token");
+        $res['output']->dontSeeInShellOutput("Israel Invoice:Run approval API with data params");
+        $this->tester->dontSeeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid']]);
+        $this->tester->seeInCollection('billrun', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'billed' => ['$exists' => false], 'invoice_confirmation_number' => ['$exists' => false]]);
+    }
+
     // BRCD-4598: approve_accounts_with_vat_number_field=true + private account (company_id exists but empty)
-    // -> must NOT get an approval number
+    // -> must NOT get an approval number, and the invoice is not confirmed
     public function test_flagTrue_privateAccountWithEmptyVatNumber_shouldNotBeApproved()
     {
         $this->tester->setIsraelInvoiceSettings($this->tester, ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => true]]]);
         $res = $this->runAndConfirmAboveThreshold(['company_id' => '']);
         $this->assertSame('', $res['billrun']['attributes']['company_id'], 'company_id should be passed through to the billrun attributes as an empty string');
-        $res['output']->seeInShellOutput("Invoice {$res['billrun']['invoice_id']} didn't pass the numeric 'vat_number_field' check");
-        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} shouldn't get approval number");
-        $res['output']->dontSeeInShellOutput("Israel Invoice:Run approval API with data params");
-        $this->tester->seeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'invoice_confirmation_number' => ['$exists' => false]]);
+        $this->assertNotConfirmedBecauseOfVatNumber($res, '""');
     }
 
     // BRCD-4598: approve_accounts_with_vat_number_field=true + private account (no company_id at all)
-    // -> must NOT get an approval number
+    // -> must NOT get an approval number, and the invoice is not confirmed
     public function test_flagTrue_privateAccountWithoutVatNumberField_shouldNotBeApproved()
     {
         $this->tester->setIsraelInvoiceSettings($this->tester, ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => true]]]);
         $res = $this->runAndConfirmAboveThreshold();
-        $res['output']->seeInShellOutput("Invoice {$res['billrun']['invoice_id']} didn't pass the numeric 'vat_number_field' check");
-        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} shouldn't get approval number");
-        $this->tester->seeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'invoice_confirmation_number' => ['$exists' => false]]);
+        $this->assertNotConfirmedBecauseOfVatNumber($res, 'null');
     }
 
     // BRCD-4598: approve_accounts_with_vat_number_field=true + business account (company_id set)
@@ -156,7 +169,8 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
     {
         $this->tester->setIsraelInvoiceSettings($this->tester, ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => true]]]);
         $res = $this->runAndConfirmAboveThreshold(['company_id' => '123456789']);
-        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} should get approval number");
+        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} passed the refund, tax and threshold checks, checking the account VAT number and the cache");
+        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} passed the account VAT number and cache checks, trying to get access token");
         $res['output']->seeInShellOutput('"customer_vat_number":123456789');
         $res['output']->seeInShellOutput("Israel Invoice:Approval API response is valid for invoice {$res['billrun']['invoice_id']}");
         $this->tester->seeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'invoice_confirmation_number' => ['$exists' => true, '$ne' => null]]);
@@ -168,22 +182,20 @@ class IsraelInvoiceTest extends \Codeception\Test\Unit
     {
         $this->tester->setIsraelInvoiceSettings($this->tester, ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => false]]]);
         $res = $this->runAndConfirmAboveThreshold(['company_id' => '']);
-        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} should get approval number");
+        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} passed the refund, tax and threshold checks, checking the account VAT number and the cache");
+        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} passed the account VAT number and cache checks, trying to get access token");
         $res['output']->seeInShellOutput('"customer_vat_number":999999998');
         $res['output']->seeInShellOutput("Israel Invoice:Approval API response is valid for invoice {$res['billrun']['invoice_id']}");
         $this->tester->seeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'invoice_confirmation_number' => ['$exists' => true, '$ne' => null]]);
     }
 
     // BRCD-4598 (MR 6962): approve_accounts_with_vat_number_field=true + non numeric company_id
-    // -> must NOT get an approval number
+    // -> must NOT get an approval number, and the invoice is not confirmed
     public function test_flagTrue_accountWithNonNumericVatNumber_shouldNotBeApproved()
     {
         $this->tester->setIsraelInvoiceSettings($this->tester, ['configuration' => ['values' => ['approve_accounts_with_vat_number_field' => true]]]);
         $res = $this->runAndConfirmAboveThreshold(['company_id' => 'AB123456']);
-        $res['output']->seeInShellOutput("Invoice {$res['billrun']['invoice_id']} didn't pass the numeric 'vat_number_field' check");
-        $res['output']->seeInShellOutput("Israel Invoice:invoice {$res['billrun']['invoice_id']} shouldn't get approval number");
-        $res['output']->dontSeeInShellOutput("Israel Invoice:Run approval API with data params");
-        $this->tester->seeInCollection('bills', ['billrun_key' => $res['billrun_key'], 'aid' => $res['aid'], 'invoice_confirmation_number' => ['$exists' => false]]);
+        $this->assertNotConfirmedBecauseOfVatNumber($res, '"AB123456"');
     }
 
 }
