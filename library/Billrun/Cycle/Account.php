@@ -13,13 +13,13 @@
  * @since    5.2
  */
 class Billrun_Cycle_Account extends Billrun_Cycle_Common {
-	
+
 	/**
-	 * 
+	 *
 	 * @var Billrun_Cycle_Account_Invoice
 	 */
 	protected $invoice;
-	
+
 	/**
 	 * Hold all the discounts that are  applied to the account.
 	 * @var array
@@ -33,14 +33,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	public function aggregate($data = array()) {
 		Billrun_Factory::log("Subscriber records to aggregate: " . count($this->records));
-		
+
 		$results = parent::aggregate();
-		
+
 		Billrun_Factory::log("Account aggregated " . count($results) . ' subscriber records.');
-		
+
 		return $results;
 	}
-	
+
 	/**
 	 * Write the invoice to the Billrun collection
 	 */
@@ -58,7 +58,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->invoice->updateTotals();
 		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
-	
+
 	public function addConfigurableData() {
 		$this->invoice->addConfigurableData();
 	}
@@ -156,10 +156,16 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	public static function expandSubRevisions($revision, $minFrom, $maxTo, $mongoServices = []) {
 		$retRevisions = [];
 		$cutDates = [];
+
+		// If the revision *starts* after  the cycle ignore it and it should not  be expanded.
+		if ($revision['from'] >= $maxTo) {
+			return [];
+		}
+
 		$subRevCopyFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields_to_copy',['plan','plan_activation','plan_deactivation']);
 		$revision['from'] = max($minFrom,$revision['from']);
 		$revision['to'] = min($maxTo,$revision['to']);
-		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);	
+		$subRevisionsFields = Billrun_Factory::config()->getConfigValue('billrun.subscriber.sub_revision_fields',['services','plans']);
 		$allFroms = call_user_func_array('array_merge', array_map(function($v) use ($revision) {
 									return isset ($revision[$v]) 	? array_map(function ($iv) { return $iv->sec;}, array_column($revision[$v], 'from'))
 																	: [];
@@ -422,7 +428,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 		return $cycleSub;
 	}
-	
+
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
 		$flatEntry = array(
 			'aid' => intval($subscriber['aid']),
@@ -433,15 +439,15 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'usaget' => 'flat',
 			'urt' => new Mongodloid_Date($cycle->getFlatsTime()),
 		);
-		
+
 		return $flatEntry;
 	}
 
 	//--------------------------------------------------
-	
+
 	public function save() {
 		$this->invoice->save();
 	}
-		
-	
+
+
 }
