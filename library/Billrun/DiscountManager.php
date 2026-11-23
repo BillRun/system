@@ -679,7 +679,8 @@ class Billrun_DiscountManager {
 						}
 					foreach ($typeConditions as $typeCondition) {
 						foreach (Billrun_Util::getIn($typeCondition, 'fields', []) as $field) {
-							if (in_array($field['value'], ['active', 'notActive'])) {
+							// strict - loose comparison matches value true (e.g. "plan exists: true") to 'active'
+							if (in_array($field['value'], ['active', 'notActive'], true)) {
 								self::$discountsDateRangeFields[$billrunKey][$type][] = $field['field'];
 							}
 						}
