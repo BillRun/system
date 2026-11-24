@@ -1,0 +1,167 @@
+{
+    "Different discount values in same cycle produce separate CDRs (BRCD-5611 / SLTCH-1089)": {
+        "account_revs": [
+            {
+                "aid": 7000,
+                "sid": 0,
+                "type": "account",
+                "discounts": [],
+                "from": "2026-01-01T00:00:00Z",
+                "to": "2127-01-01T00:00:00Z"
+            }
+        ],
+        "subscribers_revs": {
+            "70001": [
+                {
+                    "sid": 70001,
+                    "aid": 7000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [
+                        {
+                            "key": "PLAN_DISCOUNT",
+                            "description": "Plan A Discount",
+                            "type": "percentage",
+                            "proration": "no",
+                            "from": "2026-01-01T00:00:00Z",
+                            "to": "2127-01-01T00:00:00Z",
+                            "subject": {
+                                "plan": {
+                                    "PLAN_A": {
+                                        "value": 0.1
+                                    }
+                                }
+                            },
+                            "params": {}
+                        }
+                    ],
+                    "from": "2026-01-01T00:00:00Z",
+                    "to": "2127-01-01T00:00:00Z"
+                }
+            ],
+            "70002": [
+                {
+                    "sid": 70002,
+                    "aid": 7000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [
+                        {
+                            "key": "PLAN_DISCOUNT",
+                            "description": "Plan A Discount",
+                            "type": "percentage",
+                            "proration": "no",
+                            "from": "2026-04-01T00:00:00Z",
+                            "to": "2127-01-01T00:00:00Z",
+                            "subject": {
+                                "plan": {
+                                    "PLAN_A": {
+                                        "value": 0.5
+                                    }
+                                }
+                            },
+                            "params": {}
+                        }
+                    ],
+                    "from": "2026-06-01T00:00:00Z",
+                    "to": "2026-06-16T00:00:00Z"
+                },
+                {
+                    "sid": 70002,
+                    "aid": 7000,
+                    "type": "subscriber",
+                    "plan": "PLAN_A",
+                    "discounts": [
+                        {
+                            "key": "PLAN_DISCOUNT",
+                            "description": "Plan A Discount",
+                            "type": "percentage",
+                            "proration": "no",
+                            "from": "2026-06-16T00:00:00Z",
+                            "to": "2127-01-01T00:00:00Z",
+                            "subject": {
+                                "plan": {
+                                    "PLAN_A": {
+                                        "value": 0.2
+                                    }
+                                }
+                            },
+                            "params": {}
+                        }
+                    ],
+                    "from": "2026-06-16T00:00:00Z",
+                    "to": "2026-07-01T00:00:00Z"
+                }
+            ]
+        },
+        "cycle": "202607",
+        "flat_lines": [
+            {
+                "_id": "line_jun1_jun15",
+                "aid": 7000,
+                "sid": 70002,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-15T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 50.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-01T00:00:00Z",
+                "end_date": "2026-06-16T00:00:00Z",
+                "prorated_start": true,
+                "prorated_end": true,
+                "stamp": "flat_jun1_jun15",
+                "tax_data": {
+                    "total_amount": 0,
+                    "total_tax": 0,
+                    "taxes": []
+                }
+            },
+            {
+                "_id": "line_jun16_jul1",
+                "aid": 7000,
+                "sid": 70002,
+                "source": "billrun",
+                "billrun": "202607",
+                "type": "flat",
+                "usaget": "flat",
+                "urt": "2026-06-30T23:59:59Z",
+                "plan": "PLAN_A",
+                "name": "PLAN_A",
+                "usagev": 1,
+                "vatable": false,
+                "aprice": 50.0,
+                "full_price": 100.0,
+                "charge_op": "charge",
+                "cycle": 0,
+                "start_date": "2026-06-16T00:00:00Z",
+                "end_date": "2026-07-01T00:00:00Z",
+                "prorated_start": true,
+                "prorated_end": true,
+                "stamp": "flat_jun16_jul1",
+                "tax_data": {
+                    "total_amount": 0,
+                    "total_tax": 0,
+                    "taxes": []
+                }
+            }
+        ],
+        "result": [
+            {
+                "aprice": -50.0,
+                "eligible_line": "flat_jun1_jun15"
+            },
+            {
+                "aprice": -20.0,
+                "eligible_line": "flat_jun16_jul1"
+            }
+        ]
+    }
+}

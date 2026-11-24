@@ -1,69 +1,115 @@
 <?php
 
+/**
+ * Tests for subscriber discount calculation via Billrun_DiscountManager.
+ *
+ * BRCD-5033 — account-level discount must not override a subscriber's own discount
+ * for the same key. When the subscriber's subject/params differ from the account's,
+ * handleForceDiscountForSubRev creates a subscriber-specific key so the subscriber
+ * gets their own value while other subscribers keep the account value.
+ *
+ * BRCD-5611 / SLTCH-1089 — same forced discount key, different 'from' dates across
+ * revisions in one cycle must yield separate CDRs. Fix: append '_<from_ms>' to the
+ * forced key so each revision version has its own eligibility entry.
+ */
 class DiscountTest extends \Codeception\Test\Unit {
 	/**
 	 * @var \UnitTester
 	 */
 	protected $tester;
-	protected $isRun =false;
+	protected $isRun = false;
 
-	private $defaultTimezone;
+	private $defaultTimezone = null;
 
 	protected function _before() {
-		//Set  the  default timezone to UTC  for  the tests
-		if(!$this->isRun) {
+		//Set the default timezone to UTC for the tests
+		if (!$this->isRun) {
 			$this->isRun = true;
-			//load the  config so  we  can  ovverride the  timezone AFTER  it  waas  set by configuration
+			//load the config so we can override the timezone AFTER it was set by configuration
 			Billrun_Factory::config();
 			$this->defaultTimezone = date_default_timezone_get();
 			date_default_timezone_set('UTC');
 		}
 	}
 
-	protected function _after()	{
+	protected function _after() {
+		if ($this->defaultTimezone !== null) {
+			date_default_timezone_set($this->defaultTimezone);
+		}
 	}
 
-	// tests
+	/**
+	 * General subscriber discount scenarios: on-the-fly discounts, account-level discounts
+	 * applied to subscribers, proration (inherited and fixed), and multi-revision plan lines.
+	 * Covers the full CDR field set including amounts, tax, subject, and eligibility window.
+	 */
 	public function testSubscriberOnTheFlyDiscounts() {
-		$tests =  json_decode(file_get_contents(__DIR__."/TestData/discount_test_data.json"),true);
-		$resDIscountsFieldsToCompare = [
-			'final_charge' => 1,
-			'tax_data' => 1,
-			'name' => 1,
-			'aprice' => 1,
-			'eligible_line' => 1,
+		$this->runDiscountTestCasesFromFile('discount_test_data.json', [
+			'final_charge'     => 1,
+			'tax_data'         => 1,
+			'name'             => 1,
+			'aprice'           => 1,
+			'eligible_line'    => 1,
 			'discount_subject' => 1,
-			'discount_from' => 1,
-			'discount_to' => 1
-		];
+			'discount_from'    => 1,
+			'discount_to'      => 1,
+		]);
+	}
 
-		foreach( $tests as $tstKey => $tstVal) {
-			//Setup  the  eligiblity based on the account and subscribers revisions
+	/**
+	 * BRCD-5033 — when a subscriber holds the same discount key as the account but
+	 * with a different value, the subscriber must receive their own value and the
+	 * account value must remain intact for all other subscribers.
+	 *
+	 * Two sub-cases exercise this with matching and mismatched discount 'from' dates,
+	 * confirming that the 'from' date difference does not affect the override logic.
+	 */
+	public function testAccountDiscountDoesNotOverrideSubscriberDiscount() {
+		$this->runDiscountTestCasesFromFile('account_subscriber_discount_override_test_data.json', [
+			'aprice'        => 1,
+			'eligible_line' => 1,
+		]);
+	}
+
+	/**
+	 * BRCD-5611 / SLTCH-1089 — same forced discount key with different 'from' dates
+	 * across revisions in one cycle must yield separate CDRs with the correct value each.
+	 */
+	public function testForcedDiscountMultiRevisionProducesSeparateCdrs() {
+		$this->runDiscountTestCasesFromFile('forced_discount_multi_revision_test_data.json', [
+			'aprice'        => 1,
+			'eligible_line' => 1,
+		]);
+	}
+
+	/**
+	 * Loads all test cases from a JSON file under TestData/, runs generateCdrs for each,
+	 * and asserts that the filtered CDR output matches the expected result.
+	 */
+	protected function runDiscountTestCasesFromFile(string $jsonFile, array $fieldsToCompare): void {
+		$tests = json_decode(file_get_contents(__DIR__ . '/TestData/' . $jsonFile), true);
+
+		foreach ($tests as $tstKey => $tstVal) {
 			Billrun_Utils_Mongo::convertQueryMongoDates($tstVal['account_revs']);
 			Billrun_Utils_Mongo::convertQueryMongoDates($tstVal['subscribers_revs']);
-			$dm = new Billrun_DiscountManager(	$tstVal['account_revs'],
-												$tstVal['subscribers_revs'],
-												new Billrun_DataTypes_CycleTime( $tstVal['cycle']) );
+			$dm = new Billrun_DiscountManager(
+				$tstVal['account_revs'],
+				$tstVal['subscribers_revs'],
+				new Billrun_DataTypes_CycleTime($tstVal['cycle'])
+			);
 
-			// Generate  the  Cdrs  based on  the flat lines  provided
 			Billrun_Utils_Mongo::convertQueryMongoDates($tstVal['flat_lines']);
 			$res = $dm->generateCdrs($tstVal['flat_lines']);
 
-			// Covert Stirng dates to mongo  dates and Filter out unrelated  fields
 			Billrun_Utils_Mongo::convertQueryMongoDates($tstVal['result']);
-			$tstVal['result'] = array_map(function($v) use ($resDIscountsFieldsToCompare) {
-				return array_intersect_key($v, $resDIscountsFieldsToCompare);
-			},$tstVal['result']);
-			$res = array_map(function($v) use ($resDIscountsFieldsToCompare) {
-				return array_intersect_key($v, $resDIscountsFieldsToCompare);
-			},$res);
-
-			$this->assertEquals($tstVal['result'], $res, $tstKey);
+			$filter = function ($v) use ($fieldsToCompare) {
+				return array_intersect_key($v, $fieldsToCompare);
+			};
+			$this->assertEquals(
+				array_map($filter, $tstVal['result']),
+				array_map($filter, $res),
+				$tstKey
+			);
 		}
-	
-		//Reset the timezone to the default one,put it on the last test
-		date_default_timezone_set($this->defaultTimezone );
-
-
 	}
 }
