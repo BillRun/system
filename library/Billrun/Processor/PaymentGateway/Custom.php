@@ -14,6 +14,7 @@ class Billrun_Processor_PaymentGateway_Custom extends Billrun_Processor_Updater 
 	public $now;
 	protected $configByType;
 	protected $bills;
+	public $log;
 	protected $fileType;
 	protected $receiverSource;
 	protected $gatewayName;

@@ -25,6 +25,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @var array
 	 */
 	protected $discounts= array();
+	public $revisions;
 
 
 	/**

@@ -42,15 +42,15 @@ class Billrun_AuditTrail_Util {
 	/**
 	 * Log audit trail events (by adding them to 'log' collection with source='audit')
 	 * 
-	 * @param string $type
-	 * @param string $keyField
-	 * @param string $collection
-	 * @param array $oldRevisions - mapped by revision _id
+	 * @param string $type - pass '' when not needed
+	 * @param string $keyField - pass '' when not needed
+	 * @param string $collection - pass '' when not needed
+	 * @param array $oldRevisions - mapped by revision _id, pass [] when not needed
 	 * @param array $newRevisions - mapped by revision _id
 	 * @param array $additionalParams
 	 * @return number of success audits, false in a caseof failure
 	 */
-	public static function trackMultipleChanges($type = '', $keyField = '', $collection = '', $oldRevisions = [], $newRevisions, array $additionalParams = array()) {
+	public static function trackMultipleChanges($type, $keyField, $collection, $oldRevisions, $newRevisions, array $additionalParams = array()) {
 		Billrun_Factory::log("Track changes in audit trail", Zend_Log::DEBUG);
 		$logEntrys = [];
 		$trackUser = static::getUser();
@@ -99,7 +99,16 @@ class Billrun_AuditTrail_Util {
 		return $trackUser;
 	}
 
-	protected static function createLogEntry($trackUser = null, $type = '', $key = '', $collection = '', $old, $new, array $additionalParams = array()) {
+	/**
+	 * @param array|null $trackUser - pass null when not needed
+	 * @param string $type - pass '' when not needed
+	 * @param string $key - pass '' when not needed
+	 * @param string $collection - pass '' when not needed
+	 * @param mixed $old
+	 * @param mixed $new
+	 * @param array $additionalParams
+	 */
+	protected static function createLogEntry($trackUser, $type, $key, $collection, $old, $new, array $additionalParams = array()) {
 		$basicLogEntry = array(
 			'source' => 'audit',
 			'collection' => $collection,

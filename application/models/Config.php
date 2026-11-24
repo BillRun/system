@@ -233,6 +233,10 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if ($category === 'collection') {
+			$data = $this->removeEmptyCollectionHeaders($data);
+		}
+
 		if(empty($category)) {
 			if (!$this->updateRoot($updatedData, $data)) {
 				return 0;
@@ -346,7 +350,7 @@ class ConfigModel {
 			throw new Exception("Custom header template is too long, maximum size is {$max}.");
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
-			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
+			throw new Exception("Custom footer template is too long, maximum size is {$max}.");
 		} else if ($category === 'plugins') {
 			throw new Exception('Only one plugin can be saved');
 		} else if ($category === 'plugin') {
@@ -1257,6 +1261,44 @@ class ConfigModel {
 		return strlen($str) <= $size;
 	}
 	
+	/**
+	 * removes the custom headers rows with an empty key and an empty value, and the headers list of a process
+	 * that has no other rows, so they are not saved
+	 *
+	 * @param mixed $collections collection configuration
+	 *
+	 * @return mixed
+	 */
+	protected function removeEmptyCollectionHeaders($collections) {
+		if (empty($collections['processes']) || !is_array($collections['processes'])) {
+			return $collections;
+		}
+		foreach ($collections['processes'] as &$process) {
+			if (!isset($process['settings']['change_state_headers']) || !is_array($process['settings']['change_state_headers'])) {
+				continue;
+			}
+			$headers = array_values(array_filter($process['settings']['change_state_headers'], function($row) {
+				if (!is_array($row)) {
+					return true; // kept for the validation to reject
+				}
+				foreach (['key', 'value'] as $field) {
+					$value = $row[$field] ?? '';
+					if (!is_string($value) || trim($value) !== '') {
+						return true;
+					}
+				}
+				return false;
+			}));
+			if (empty($headers)) {
+				unset($process['settings']['change_state_headers']);
+			} else {
+				$process['settings']['change_state_headers'] = $headers;
+			}
+		}
+		unset($process);
+		return $collections;
+	}
+
 	protected function validateCollection($collections) {
 		$processes = Billrun_Util::getIn($collections, 'processes', []);
 		$processes_count = count($processes);
@@ -1272,6 +1314,10 @@ class ConfigModel {
 			$settings = Billrun_Util::getIn($process, ['settings'], []);
 			if (empty($settings['change_state_method']) && !empty($settings['change_state_url'])) {
 				throw new Exception("Process #{$p_i} Settings: HTTP Method is missing");
+			}
+			$headersErrors = Billrun_CollectionSteps_Notifiers_Http::getHeadersErrors($settings['change_state_headers'] ?? []);
+			if (!empty($headersErrors)) {
+				throw new Exception("Process #{$p_i} Settings: Collection State Change " . implode(', ', $headersErrors));
 			}
 			$min_debt = Billrun_Util::getIn($settings, 'min_debt', '');
 			if (!is_numeric($min_debt) || floatval($min_debt) < 0) {

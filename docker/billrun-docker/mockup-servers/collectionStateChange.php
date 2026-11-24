@@ -4,7 +4,7 @@
  *
  * Stands in for the CRM endpoint configured as a collection process change_state_url and records
  * every request BillRun sends there, so tests can assert what the CRM actually received
- * (the form fields as parsed by the receiver, and the raw body as sent).
+ * (the request headers, the form fields as parsed by the receiver, and the raw body as sent).
  *
  *   POST   /collection-state-change/<run>   record the request, respond {"success": true}
  *   GET    /collection-state-change/<run>   the recorded requests of <run>, as a JSON list
@@ -36,6 +36,7 @@ switch ($_SERVER['REQUEST_METHOD'] ?? 'GET') {
 		$requests[] = [
 			'time' => date('c'),
 			'content_type' => $_SERVER['CONTENT_TYPE'] ?? '',
+			'headers' => getallheaders(),
 			'raw' => file_get_contents('php://input') ?: '',
 			'post' => $_POST,
 			'query' => $_GET,

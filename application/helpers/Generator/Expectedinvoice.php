@@ -41,6 +41,7 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	 * @var string - invoicing day (between 1 to 28)
 	 */
 	protected $invoicing_day = null;
+	public $now;
 
 	
 	public function __construct($options) {

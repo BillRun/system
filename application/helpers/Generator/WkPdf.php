@@ -49,6 +49,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	protected $billrun_data;
 	protected $billrunColl;
+	public $tmp_paths;
+	public $render_detailed_quantitative_services;
+	public $view;
+	public $custom;
 
 	public function __construct($options) {
 		if(!empty($options['is_onetime'])) {
