@@ -329,7 +329,7 @@ class Billrun_DiscountManager {
 				}
 				$forcedDiscount['key'] = $overridenKey =  'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid ;
 				$overridenKey .=  ( $forceDiscountStart ? '_'. $forcedDiscount['from'] : '' );
-				$forcedDiscount['eligibility_key'] = $overridenKey;
+				$forcedDiscount['eligebility_key'] = $overridenKey;
 			}
 			$eligibility = $this->getDiscountEligibility($forcedDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $forcedDiscount, $eligibility, $overridenKey);
@@ -1353,7 +1353,7 @@ class Billrun_DiscountManager {
 		}
 		$cdrs = is_null($eligibility) ? [] : $this->generateCycleDiscountCdrs($type, $cycleLines, $discount, $eligibility, $discountedAmount);
 		$upfrontEligibilities = $type == 'charge' ? $this->upfrontEligibleCharges : $this->upfrontEligibleDiscounts;
-		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [ $discount['eligibility_key'] ?? $discount['key'] ], null);
+		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [ $discount['eligebility_key'] ?? $discount['key'] ], null);
 		if (!empty($upfrontLines) && !is_null($this->upfrontCycle) && !empty($upfrontEligibility)) {
 			$cycle = $this->cycle;
 			$this->cycle = $this->upfrontCycle;
