@@ -329,6 +329,7 @@ class Billrun_DiscountManager {
 				}
 				$forcedDiscount['key'] = $overridenKey =  'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid ;
 				$overridenKey .=  ( $forceDiscountStart ? '_'. $forcedDiscount['from'] : '' );
+				$forcedDiscount['eligibility_key'] = $overridenKey;
 			}
 			$eligibility = $this->getDiscountEligibility($forcedDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $forcedDiscount, $eligibility, $overridenKey);
@@ -1297,9 +1298,6 @@ class Billrun_DiscountManager {
 			$upfrontOnlyKeys = array_diff(array_keys($upfrontEligibilities), array_keys($eligibilities));
 			foreach (array_merge(array_keys($eligibilities), $upfrontOnlyKeys) as $key) { // discounts/charges are ordered by priority
 				$eligibility = Billrun_Util::getFieldVal($eligibilities[$key], null);
-                if( !empty($eligibility['discount']) && $key != ($eligibility['discount']['key'] ) ) {
-                      $key =  $eligibility['discount']['key'];
-                }
 				if (!is_null($eligibility)) {
 					$entity = $type == 'charge' ? $this->getCharge($key, $this->cycle->key()) : ($eligibility['discount'] ?? $this->getDiscount($key, $this->cycle->key()));
 				} else {
@@ -1355,7 +1353,7 @@ class Billrun_DiscountManager {
 		}
 		$cdrs = is_null($eligibility) ? [] : $this->generateCycleDiscountCdrs($type, $cycleLines, $discount, $eligibility, $discountedAmount);
 		$upfrontEligibilities = $type == 'charge' ? $this->upfrontEligibleCharges : $this->upfrontEligibleDiscounts;
-		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [$discount['key']], null);
+		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [ $discount['eligibility_key'] ?? $discount['key'] ], null);
 		if (!empty($upfrontLines) && !is_null($this->upfrontCycle) && !empty($upfrontEligibility)) {
 			$cycle = $this->cycle;
 			$this->cycle = $this->upfrontCycle;
@@ -2094,6 +2092,7 @@ class Billrun_DiscountManager {
 		$collection = $isChargeLine ? Billrun_Factory::db()->chargesCollection() : Billrun_Factory::db()->discountsCollection();
 		$discountLine = array(
 			'key' => $discount['key'],
+			'eligebility_key' => $discount['eligebility_key' ] ?? $discount['key'],
 			'name' => $discount['description'],
 			'type' => 'credit',
 			'description' => $discount['description'],
