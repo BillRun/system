@@ -327,9 +327,8 @@ class Billrun_DiscountManager {
 				if (empty($this->eligibleDiscounts[$forcedDiscount['key']]['subs'][$sid])) {
 					unset($this->eligibleDiscounts [$forcedDiscount['key']]['subs'][$sid]);
 				}
-				$forcedDiscount['key'] = $overridenKey =  'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid ;
-				$overridenKey .=  ( $forceDiscountStart ? '_'. $forcedDiscount['from'] : '' );
-				$forcedDiscount['eligebility_key'] = $overridenKey;
+				$forcedDiscount['key'] = 'SUBSCRIBER_DISCOUNT_' . $forcedDiscount['key'] . '_SID_' . $sid;
+				$forcedDiscount['eligibility_key'] = $overridenKey = $forcedDiscount['key'] . ($forceDiscountStart ? '_' . $forcedDiscount['from'] : '');
 			}
 			$eligibility = $this->getDiscountEligibility($forcedDiscount, $accountRevisions, [$sid =>[$subscriberRevision]]);
 			$this->setEligibility($this->eligibleDiscounts, $forcedDiscount, $eligibility, $overridenKey);
@@ -1353,7 +1352,7 @@ class Billrun_DiscountManager {
 		}
 		$cdrs = is_null($eligibility) ? [] : $this->generateCycleDiscountCdrs($type, $cycleLines, $discount, $eligibility, $discountedAmount);
 		$upfrontEligibilities = $type == 'charge' ? $this->upfrontEligibleCharges : $this->upfrontEligibleDiscounts;
-		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [ $discount['eligebility_key'] ?? $discount['key'] ], null);
+		$upfrontEligibility = Billrun_Util::getIn($upfrontEligibilities, [ $discount['eligibility_key'] ?? $discount['key'] ], null);
 		if (!empty($upfrontLines) && !is_null($this->upfrontCycle) && !empty($upfrontEligibility)) {
 			$cycle = $this->cycle;
 			$this->cycle = $this->upfrontCycle;
@@ -2092,7 +2091,7 @@ class Billrun_DiscountManager {
 		$collection = $isChargeLine ? Billrun_Factory::db()->chargesCollection() : Billrun_Factory::db()->discountsCollection();
 		$discountLine = array(
 			'key' => $discount['key'],
-			'eligebility_key' => $discount['eligebility_key' ] ?? $discount['key'],
+			'eligibility_key' => $discount['eligibility_key'] ?? $discount['key'],
 			'name' => $discount['description'],
 			'type' => 'credit',
 			'description' => $discount['description'],
